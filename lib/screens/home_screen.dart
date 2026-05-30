@@ -41,11 +41,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
   String _dummyCurrentTime = '--:--';
   String _lastStartTime = '';
 
+  ///
   @override
   void initState() {
     super.initState();
   }
 
+  ///
   @override
   void dispose() {
     _countdownTimer?.cancel();
@@ -53,6 +55,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
     super.dispose();
   }
 
+  ///
   void _startCountdown(String startTime) {
     _countdownTimer?.cancel();
 
@@ -100,6 +103,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
     });
   }
 
+  ///
   String _formatCountdown(int totalSeconds) {
     final int h = totalSeconds ~/ 3600;
     final int m = (totalSeconds % 3600) ~/ 60;
@@ -176,13 +180,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                           padding: const EdgeInsets.all(5),
                           decoration: BoxDecoration(
                             color: (appParamState.selectedScheduleDate == e.key)
-                                ? Colors.yellowAccent.withValues(alpha: 0.1)
+                                ? Colors.greenAccent.withValues(alpha: 0.1)
                                 : Colors.transparent,
 
                             border: Border.all(color: Colors.white.withValues(alpha: 0.4)),
                           ),
                           alignment: Alignment.center,
-                          child: Text(e.key),
+                          child: Text(e.key, style: const TextStyle(color: Colors.white)),
                         ),
                       ),
                     );
@@ -214,11 +218,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                               color:
                                   (appParamState.selectedScheduleKaisuuBashoDayName ==
                                       '${e.kaisuu}回 ${e.bashoName} ${e.day}日')
-                                  ? Colors.yellowAccent.withValues(alpha: 0.1)
+                                  ? Colors.greenAccent.withValues(alpha: 0.1)
                                   : Colors.transparent,
                             ),
                             alignment: Alignment.center,
-                            child: Text('${e.kaisuu}回 ${e.bashoName} ${e.day}日'),
+                            child: Text(
+                              '${e.kaisuu}回 ${e.bashoName} ${e.day}日',
+                              style: const TextStyle(color: Colors.white),
+                            ),
                           ),
                         ),
                       );
@@ -226,7 +233,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                   ),
                 ] else ...<Widget>[
                   if (widget.scheduleDateBashoMap.isNotEmpty) ...<Widget>[
-                    const Text('日付を選択してください', style: TextStyle(fontSize: 12, color: Colors.yellowAccent)),
+                    const Text('日付を選択してください', style: TextStyle(fontSize: 12, color: Colors.greenAccent)),
                   ],
                 ],
 
@@ -266,12 +273,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                                     padding: const EdgeInsets.symmetric(horizontal: 5),
                                     child: CircleAvatar(
                                       backgroundColor: (appParamState.selectedRaceNumber == index + 1)
-                                          ? Colors.yellowAccent.withValues(alpha: 0.2)
+                                          ? Colors.greenAccent.withValues(alpha: 0.2)
                                           : Colors.black.withValues(alpha: 0.4),
 
                                       child: Text(
                                         raceModelList[index].race.toString(),
-                                        style: const TextStyle(fontSize: 14),
+                                        style: const TextStyle(fontSize: 14, color: Colors.white),
                                       ),
                                     ),
                                   ),
@@ -305,7 +312,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                                       _dummyCurrentTime,
                                       style: const TextStyle(fontSize: 11, color: Colors.white54),
                                     ),
-                                    Text(_formatCountdown(_remainingSeconds), style: const TextStyle(fontSize: 13)),
+                                    Text(
+                                      _formatCountdown(_remainingSeconds),
+                                      style: const TextStyle(fontSize: 13, color: Colors.white),
+                                    ),
                                   ],
                                 ),
                               ],
@@ -317,8 +327,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                                 Text(
                                   '🚩　$startTime　$raceName',
                                   style: (raceName == 'レースを選択してください')
-                                      ? const TextStyle(color: Colors.yellowAccent, fontSize: 12)
-                                      : const TextStyle(fontSize: 14),
+                                      ? const TextStyle(color: Colors.greenAccent, fontSize: 12)
+                                      : const TextStyle(fontSize: 14, color: Colors.white),
                                 ),
 
                                 const SizedBox(),
@@ -331,7 +341,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                   ),
                 ] else ...<Widget>[
                   if (widget.scheduleDateBashoMap[appParamState.selectedScheduleDate] != null) ...<Widget>[
-                    const Text('会場を選択してください', style: TextStyle(fontSize: 12, color: Colors.yellowAccent)),
+                    const Text('会場を選択してください', style: TextStyle(fontSize: 12, color: Colors.greenAccent)),
                   ],
                 ],
 
@@ -367,7 +377,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                             context.findAncestorStateOfType<AppRootState>()?.restartApp();
                           }
                         },
-                        icon: const Icon(Icons.refresh),
+                        icon: const Icon(Icons.refresh, color: Colors.greenAccent),
                       ),
                     ],
                   ),
@@ -452,15 +462,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
               decoration: BoxDecoration(
                 border: Border.all(color: Colors.white.withValues(alpha: 0.4)),
 
-                ///GGG
                 color: (appParamState.selectedTiming == e)
-                    ? Colors.yellowAccent.withValues(alpha: 0.1)
+                    ? Colors.greenAccent.withValues(alpha: 0.1)
                     : (appParamState.selectedTiming == '' && e == minTiming)
                     ? Colors.red.withValues(alpha: 0.3)
                     : Colors.transparent,
               ),
               alignment: Alignment.center,
-              child: Text(ogtNamesMap[e] ?? ''),
+              child: Text(ogtNamesMap[e] ?? '', style: const TextStyle(color: Colors.white)),
             ),
           ),
         );
@@ -603,36 +612,39 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
 
                   const SizedBox(height: 10),
 
-                  Row(
-                    children: <Widget>[
-                      const SizedBox(width: 20),
+                  DefaultTextStyle(
+                    style: const TextStyle(color: Colors.white),
+                    child: Row(
+                      children: <Widget>[
+                        const SizedBox(width: 20),
 
-                      if (horseModelMap[element.num] != null) ...<Widget>[
+                        if (horseModelMap[element.num] != null) ...<Widget>[
+                          Row(
+                            children: <Widget>[
+                              SizedBox(width: 15, child: Text(horseModelMap[element.num]!.waku.toString())),
+                              const Text('枠'),
+                            ],
+                          ),
+                        ],
+
+                        const SizedBox(width: 20),
+
                         Row(
                           children: <Widget>[
-                            SizedBox(width: 15, child: Text(horseModelMap[element.num]!.waku.toString())),
-                            const Text('枠'),
+                            SizedBox(width: 20, child: Text(element.num.toString())),
+                            const Text('番'),
                           ],
                         ),
-                      ],
 
-                      const SizedBox(width: 20),
+                        const SizedBox(width: 20),
 
-                      Row(
-                        children: <Widget>[
-                          SizedBox(width: 20, child: Text(element.num.toString())),
-                          const Text('番'),
+                        if (horseModelMap[element.num] != null) ...<Widget>[
+                          Expanded(
+                            child: Text(horseModelMap[element.num]!.name, maxLines: 1, overflow: TextOverflow.ellipsis),
+                          ),
                         ],
-                      ),
-
-                      const SizedBox(width: 20),
-
-                      if (horseModelMap[element.num] != null) ...<Widget>[
-                        Expanded(
-                          child: Text(horseModelMap[element.num]!.name, maxLines: 1, overflow: TextOverflow.ellipsis),
-                        ),
                       ],
-                    ],
+                    ),
                   ),
 
                   if (oddsTimelineMap[element.num] != null) ...<Widget>[
@@ -665,7 +677,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                             : filterMinutes.toString();
 
                         final Color circleColor = (appParamState.selectedTiming == entryTimingKey)
-                            ? Colors.yellowAccent
+                            ? Colors.greenAccent
                             : (appParamState.selectedTiming.isEmpty && entryTimingKey == activeTimingKey)
                             ? Colors.red
                             : Colors.white;
@@ -680,7 +692,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                               padding: const EdgeInsets.only(bottom: 5),
                               child: Align(
                                 alignment: Alignment.bottomCenter,
-                                child: Text(entry.value, style: const TextStyle(fontSize: 10)),
+                                child: Text(entry.value, style: const TextStyle(fontSize: 10, color: Colors.white)),
                               ),
                             ),
 
@@ -731,7 +743,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
               ? 'レース開始時点のオッズデータはありません。'
               : '${appParamState.selectedTiming}分前のオッズデータはありません。',
 
-          style: const TextStyle(color: Colors.yellowAccent, fontSize: 12),
+          style: const TextStyle(color: Colors.greenAccent, fontSize: 12),
         ),
       );
     }
