@@ -38,7 +38,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
 
   Timer? _countdownTimer;
   int _remainingSeconds = 0;
-  String _dummyCurrentTime = '--:--';
+  String _currentTime = '--:--';
   String _lastStartTime = '';
 
   ///
@@ -61,7 +61,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
 
     if (startTime == '--:--') {
       setState(() {
-        _dummyCurrentTime = '--:--';
+        _currentTime = '--:--';
         _remainingSeconds = 0;
       });
       return;
@@ -71,21 +71,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
     final int hour = int.tryParse(parts[0]) ?? 0;
     final int minute = int.tryParse(parts[1]) ?? 0;
 
-    final DateTime raceTime = DateTime(2000, 1, 1, hour, minute);
-
-    // ignore: flutter_style_todos
-    // TODO: ダミー実装。現在時刻に直す際はここを変更する。
-    // 本来は DateTime.now() から raceTime までの差分を _remainingSeconds にセットし、
-    // _dummyCurrentTime も DateTime.now() の時刻文字列に置き換える。
-    // 00:00:00 になったらそのまま止まる仕様でOK。
-    final DateTime dummyTime = raceTime.subtract(const Duration(minutes: 20));
+    final DateTime now = DateTime.now();
+    final DateTime raceTime = DateTime(now.year, now.month, now.day, hour, minute);
+    final int diff = raceTime.difference(now).inSeconds;
 
     setState(() {
-      _dummyCurrentTime =
-          // ignore: flutter_style_todos
-          '${dummyTime.hour.toString().padLeft(2, '0')}:${dummyTime.minute.toString().padLeft(2, '0')}'; // TODO: DateTime.now() の HH:mm に置き換える
-      // ignore: flutter_style_todos
-      _remainingSeconds = 20 * 60; // TODO: raceTime.difference(DateTime.now()).inSeconds に置き換える
+      _currentTime = '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
+      _remainingSeconds = diff > 0 ? diff : 0;
     });
 
     _countdownTimer = Timer.periodic(const Duration(seconds: 1), (Timer timer) {
@@ -174,6 +166,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                       child: GestureDetector(
                         onTap: () {
                           appParamNotifier.setSelectedScheduleDate(date: e.key);
+
+                          appParamNotifier.setSelectedScheduleKaisuuBashoDay(kbd: '', name: '');
+                          appParamNotifier.setSelectedRaceNumber(num: 0);
                         },
                         child: Container(
                           margin: const EdgeInsets.all(5),
@@ -208,6 +203,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
 
                               name: '${e.kaisuu}回 ${e.bashoName} ${e.day}日',
                             );
+
+                            appParamNotifier.setSelectedRaceNumber(num: 0);
                           },
                           child: Container(
                             margin: const EdgeInsets.all(5),
@@ -308,10 +305,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                                 Column(
                                   crossAxisAlignment: CrossAxisAlignment.end,
                                   children: <Widget>[
-                                    Text(
-                                      _dummyCurrentTime,
-                                      style: const TextStyle(fontSize: 11, color: Colors.white54),
-                                    ),
+                                    Text(_currentTime, style: const TextStyle(fontSize: 11, color: Colors.white54)),
                                     Text(
                                       _formatCountdown(_remainingSeconds),
                                       style: const TextStyle(fontSize: 13, color: Colors.white),
@@ -417,14 +411,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
 
     final List<OddsModel> oddsModelList = <OddsModel>[];
 
-    if (widget.raceMap['${appParamState.selectedScheduleDate}_${appParamState.selectedScheduleKaisuuBashoDay}'] !=
-        null) {
+    final String mapKey = '${appParamState.selectedScheduleDate}_${appParamState.selectedScheduleKaisuuBashoDay}';
+
+    if (widget.raceMap[mapKey] != null) {
       if (appParamState.selectedRaceNumber > 0) {
-        if (widget.oddsMap['${appParamState.selectedScheduleDate}_${appParamState.selectedScheduleKaisuuBashoDay}'] !=
-            null) {
-          for (final OddsModel element
-              in widget
-                  .oddsMap['${appParamState.selectedScheduleDate}_${appParamState.selectedScheduleKaisuuBashoDay}']!) {
+        if (widget.oddsMap[mapKey] != null) {
+          for (final OddsModel element in widget.oddsMap[mapKey]!) {
             if (element.race == appParamState.selectedRaceNumber) {
               oddsModelList.add(element);
             }
@@ -737,14 +729,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
     }
 
     if (list.isEmpty) {
-      list.add(
-        Text(
-          (appParamState.selectedTiming == '0')
-              ? 'レース開始時点のオッズデータはありません。'
-              : '${appParamState.selectedTiming}分前のオッズデータはありません。',
+      String beforeMinutesText = '';
+      if (appParamState.selectedTiming != '') {
+        if (appParamState.selectedTiming == '0') {
+          beforeMinutesText = 'レース開始時点の';
+        } else {
+          beforeMinutesText = '${appParamState.selectedTiming}分前の';
+        }
+      }
 
-          style: const TextStyle(color: Colors.greenAccent, fontSize: 12),
-        ),
+      list.add(
+        Text('$beforeMinutesTextオッズデータはありません。', style: const TextStyle(color: Colors.greenAccent, fontSize: 12)),
       );
     }
 
