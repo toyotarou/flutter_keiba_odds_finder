@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:scroll_to_index/scroll_to_index.dart';
@@ -34,6 +36,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
   final AutoScrollController _raceScrollController = AutoScrollController();
   int _prevRaceNumber = 0;
 
+  Timer? _countdownTimer;
+  int _remainingSeconds = 0;
+  String _dummyCurrentTime = '--:--';
+  String _lastStartTime = '';
+
   @override
   void initState() {
     super.initState();
@@ -41,8 +48,63 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
 
   @override
   void dispose() {
+    _countdownTimer?.cancel();
     _raceScrollController.dispose();
     super.dispose();
+  }
+
+  void _startCountdown(String startTime) {
+    _countdownTimer?.cancel();
+
+    if (startTime == '--:--') {
+      setState(() {
+        _dummyCurrentTime = '--:--';
+        _remainingSeconds = 0;
+      });
+      return;
+    }
+
+    final List<String> parts = startTime.split(':');
+    final int hour = int.tryParse(parts[0]) ?? 0;
+    final int minute = int.tryParse(parts[1]) ?? 0;
+
+    final DateTime raceTime = DateTime(2000, 1, 1, hour, minute);
+
+    // ignore: flutter_style_todos
+    // TODO: ダミー実装。現在時刻に直す際はここを変更する。
+    // 本来は DateTime.now() から raceTime までの差分を _remainingSeconds にセットし、
+    // _dummyCurrentTime も DateTime.now() の時刻文字列に置き換える。
+    // 00:00:00 になったらそのまま止まる仕様でOK。
+    final DateTime dummyTime = raceTime.subtract(const Duration(minutes: 20));
+
+    setState(() {
+      _dummyCurrentTime =
+          // ignore: flutter_style_todos
+          '${dummyTime.hour.toString().padLeft(2, '0')}:${dummyTime.minute.toString().padLeft(2, '0')}'; // TODO: DateTime.now() の HH:mm に置き換える
+      // ignore: flutter_style_todos
+      _remainingSeconds = 20 * 60; // TODO: raceTime.difference(DateTime.now()).inSeconds に置き換える
+    });
+
+    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (Timer timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+      setState(() {
+        if (_remainingSeconds > 0) {
+          _remainingSeconds--;
+        } else {
+          timer.cancel();
+        }
+      });
+    });
+  }
+
+  String _formatCountdown(int totalSeconds) {
+    final int h = totalSeconds ~/ 3600;
+    final int m = (totalSeconds % 3600) ~/ 60;
+    final int s = totalSeconds % 60;
+    return '${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
   }
 
   ///
@@ -81,6 +143,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
 
       raceModelList =
           widget.raceMap['${appParamState.selectedScheduleDate}_${appParamState.selectedScheduleKaisuuBashoDay}']!;
+    }
+
+    if (startTime != _lastStartTime) {
+      _lastStartTime = startTime;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _startCountdown(startTime);
+        }
+      });
     }
 
     return Scaffold(
@@ -222,9 +293,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
 
                         child: Stack(
                           children: <Widget>[
-                            const Row(
+                            Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: <Widget>[SizedBox(), Text('-----')],
+                              children: <Widget>[
+                                const SizedBox(),
+
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: <Widget>[
+                                    Text(
+                                      _dummyCurrentTime,
+                                      style: const TextStyle(fontSize: 11, color: Colors.white54),
+                                    ),
+                                    Text(_formatCountdown(_remainingSeconds), style: const TextStyle(fontSize: 13)),
+                                  ],
+                                ),
+                              ],
                             ),
 
                             Row(
@@ -368,6 +452,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
               decoration: BoxDecoration(
                 border: Border.all(color: Colors.white.withValues(alpha: 0.4)),
 
+                ///GGG
                 color: (appParamState.selectedTiming == e)
                     ? Colors.yellowAccent.withValues(alpha: 0.1)
                     : (appParamState.selectedTiming == '' && e == minTiming)
@@ -468,22 +553,170 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
     int i = 1;
     for (final OddsModel element in displayList) {
       list.add(
-        Column(
+        Stack(
           children: <Widget>[
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: <Widget>[Text(i.toString()), Text(element.num.toString()), Text(element.odds)],
+            Container(
+              height: 120,
+              margin: const EdgeInsets.symmetric(vertical: 10),
+              padding: const EdgeInsets.only(top: 5),
+              decoration: BoxDecoration(
+                border: Border(left: BorderSide(color: Colors.greenAccent.withValues(alpha: 0.1), width: 10)),
+              ),
             ),
 
-            if (horseModelMap[element.num] != null) ...<Widget>[Text(horseModelMap[element.num]!.name)],
-
-            if (oddsTimelineMap[element.num] != null) ...<Widget>[
-              Row(
-                children: oddsTimelineMap[element.num]!.map((String e) {
-                  return Text(e);
-                }).toList(),
+            Container(
+              margin: const EdgeInsets.symmetric(vertical: 10),
+              padding: const EdgeInsets.only(top: 5),
+              decoration: BoxDecoration(
+                border: Border(bottom: BorderSide(color: Colors.greenAccent.withValues(alpha: 0.2), width: 2)),
               ),
-            ],
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: <Widget>[
+                      Opacity(
+                        opacity: 0.4,
+                        child: Container(
+                          margin: const EdgeInsets.only(top: 5, left: 15),
+                          padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 20),
+
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.greenAccent.withValues(alpha: 0.5)),
+                          ),
+                          child: Row(
+                            children: <Widget>[
+                              SizedBox(
+                                width: 20,
+                                child: Text(i.toString(), style: const TextStyle(color: Colors.greenAccent)),
+                              ),
+                              const Text('番人気', style: TextStyle(color: Colors.greenAccent)),
+                            ],
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox.shrink(),
+                    ],
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  Row(
+                    children: <Widget>[
+                      const SizedBox(width: 20),
+
+                      if (horseModelMap[element.num] != null) ...<Widget>[
+                        Row(
+                          children: <Widget>[
+                            SizedBox(width: 15, child: Text(horseModelMap[element.num]!.waku.toString())),
+                            const Text('枠'),
+                          ],
+                        ),
+                      ],
+
+                      const SizedBox(width: 20),
+
+                      Row(
+                        children: <Widget>[
+                          SizedBox(width: 20, child: Text(element.num.toString())),
+                          const Text('番'),
+                        ],
+                      ),
+
+                      const SizedBox(width: 20),
+
+                      if (horseModelMap[element.num] != null) ...<Widget>[
+                        Expanded(
+                          child: Text(horseModelMap[element.num]!.name, maxLines: 1, overflow: TextOverflow.ellipsis),
+                        ),
+                      ],
+                    ],
+                  ),
+
+                  if (oddsTimelineMap[element.num] != null) ...<Widget>[
+                    const SizedBox(height: 10),
+
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: oddsTimelineMap[element.num]!.asMap().entries.map((MapEntry<int, String> entry) {
+                        if (entry.value.isEmpty) {
+                          return Container(
+                            width: 30,
+                            height: 30,
+                            margin: const EdgeInsets.only(top: 8),
+                            decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.2)),
+                          );
+                        }
+
+                        const List<String> timingLabels = <String>['S', '21', '18', '15', '12', '9', '6', '3', 'E'];
+
+                        const List<String> timingKeys = <String>['24', '21', '18', '15', '12', '9', '6', '3', '0'];
+
+                        final String entryTimingKey = timingKeys[entry.key];
+
+                        final String activeTimingKey = filterMinutes == null
+                            ? ''
+                            : filterMinutes == 999
+                            ? '24'
+                            : filterMinutes == -999
+                            ? '0'
+                            : filterMinutes.toString();
+
+                        final Color circleColor = (appParamState.selectedTiming == entryTimingKey)
+                            ? Colors.yellowAccent
+                            : (appParamState.selectedTiming.isEmpty && entryTimingKey == activeTimingKey)
+                            ? Colors.red
+                            : Colors.white;
+
+                        return Stack(
+                          children: <Widget>[
+                            Container(
+                              width: 30,
+                              height: 30,
+                              decoration: BoxDecoration(color: Colors.greenAccent.withValues(alpha: 0.2)),
+                              margin: const EdgeInsets.only(top: 8),
+                              padding: const EdgeInsets.only(bottom: 5),
+                              child: Align(
+                                alignment: Alignment.bottomCenter,
+                                child: Text(entry.value, style: const TextStyle(fontSize: 10)),
+                              ),
+                            ),
+
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: <Widget>[
+                                Container(
+                                  decoration: BoxDecoration(color: circleColor, shape: BoxShape.circle),
+                                  width: 12,
+                                  height: 12,
+                                  child: Center(
+                                    child: Text(
+                                      timingLabels[entry.key],
+                                      style: TextStyle(
+                                        fontSize: 9,
+
+                                        color: circleColor == Colors.red ? Colors.white : Colors.black,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+
+                                getUpDownIcon(entry: entry, timeLineMap: oddsTimelineMap[element.num]!.asMap().entries),
+                              ],
+                            ),
+                          ],
+                        );
+                      }).toList(),
+                    ),
+                  ],
+
+                  const SizedBox(height: 10),
+                ],
+              ),
+            ),
           ],
         ),
       );
@@ -504,5 +737,47 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
     }
 
     return SingleChildScrollView(child: Column(children: list));
+  }
+
+  ///
+  Widget getUpDownIcon({required MapEntry<int, String> entry, required Iterable<MapEntry<int, String>> timeLineMap}) {
+    if (entry.key == 0) {
+      return const SizedBox.shrink();
+    }
+
+    final String currentValue = entry.value;
+
+    if (currentValue.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    final List<MapEntry<int, String>> list = timeLineMap.toList();
+
+    String prevValue = '';
+    for (int i = entry.key - 1; i >= 0; i--) {
+      if (list[i].value.isNotEmpty) {
+        prevValue = list[i].value;
+        break;
+      }
+    }
+
+    if (prevValue.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    final double? current = double.tryParse(currentValue);
+    final double? prev = double.tryParse(prevValue);
+
+    if (current == null || prev == null) {
+      return const SizedBox.shrink();
+    }
+
+    if (current > prev) {
+      return const Icon(Icons.arrow_upward, size: 15, color: Colors.redAccent);
+    } else if (current < prev) {
+      return const Icon(Icons.arrow_downward, size: 15, color: Colors.greenAccent);
+    } else {
+      return const Icon(Icons.drag_handle, size: 15, color: Colors.white54);
+    }
   }
 }
