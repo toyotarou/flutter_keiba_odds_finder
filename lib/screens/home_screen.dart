@@ -6,6 +6,7 @@ import 'package:scroll_to_index/scroll_to_index.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../controllers/controllers_mixin.dart';
+import '../extensions/extensions.dart';
 import '../main.dart';
 import '../models/horse_model.dart';
 import '../models/odds_model.dart';
@@ -151,245 +152,293 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
     }
 
     return Scaffold(
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: DefaultTextStyle(
-            style: const TextStyle(fontSize: 14),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+      body: Stack(
+        children: <Widget>[
+          Positioned(
+            bottom: 0,
+            right: 0,
+            child: Opacity(
+              opacity: 0.4,
+              child: Container(
+                width: context.screenSize.width / 2.5,
+                height: 300,
+                decoration: const BoxDecoration(image: DecorationImage(image: AssetImage('assets/images/bg.png'))),
+              ),
+            ),
+          ),
+
+          Positioned(
+            top: 50,
+            left: 20,
+
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
               children: <Widget>[
-                //=====================//
-                Row(
-                  children: widget.scheduleDateBashoMap.entries.map((MapEntry<String, List<ScheduleModel>> e) {
-                    return Expanded(
-                      child: GestureDetector(
-                        onTap: () {
-                          appParamNotifier.setSelectedScheduleDate(date: e.key);
-
-                          appParamNotifier.setSelectedScheduleKaisuuBashoDay(kbd: '', name: '');
-                          appParamNotifier.setSelectedRaceNumber(num: 0);
-                        },
-                        child: Container(
-                          margin: const EdgeInsets.all(5),
-                          padding: const EdgeInsets.all(5),
-                          decoration: BoxDecoration(
-                            color: (appParamState.selectedScheduleDate == e.key)
-                                ? Colors.greenAccent.withValues(alpha: 0.1)
-                                : Colors.transparent,
-
-                            border: Border.all(color: Colors.white.withValues(alpha: 0.4)),
-                          ),
-                          alignment: Alignment.center,
-                          child: Text(e.key, style: const TextStyle(color: Colors.white)),
-                        ),
-                      ),
-                    );
-                  }).toList(),
-                ),
-
-                //=====================//
-                const SizedBox(height: 5),
-
-                //=====================//
-                if (widget.scheduleDateBashoMap[appParamState.selectedScheduleDate] != null) ...<Widget>[
-                  Row(
-                    children: widget.scheduleDateBashoMap[appParamState.selectedScheduleDate]!.map((ScheduleModel e) {
-                      return Expanded(
-                        child: GestureDetector(
-                          onTap: () {
-                            appParamNotifier.setSelectedScheduleKaisuuBashoDay(
-                              kbd: '${e.kaisuu}_${e.basho}_${e.day}',
-
-                              name: '${e.kaisuu}回 ${e.bashoName} ${e.day}日',
-                            );
-
-                            appParamNotifier.setSelectedRaceNumber(num: 0);
-                          },
-                          child: Container(
-                            margin: const EdgeInsets.all(5),
-                            padding: const EdgeInsets.all(5),
-                            decoration: BoxDecoration(
-                              border: Border.all(color: Colors.white.withValues(alpha: 0.4)),
-
-                              color:
-                                  (appParamState.selectedScheduleKaisuuBashoDayName ==
-                                      '${e.kaisuu}回 ${e.bashoName} ${e.day}日')
-                                  ? Colors.greenAccent.withValues(alpha: 0.1)
-                                  : Colors.transparent,
-                            ),
-                            alignment: Alignment.center,
-                            child: Text(
-                              '${e.kaisuu}回 ${e.bashoName} ${e.day}日',
-                              style: const TextStyle(color: Colors.white),
-                            ),
-                          ),
-                        ),
-                      );
-                    }).toList(),
+                Opacity(
+                  opacity: 0.3,
+                  child: Container(
+                    width: context.screenSize.width / 2.5,
+                    height: 50,
+                    decoration: const BoxDecoration(
+                      image: DecorationImage(image: AssetImage('assets/images/baganryoku_title.png')),
+                    ),
                   ),
-                ] else ...<Widget>[
-                  if (widget.scheduleDateBashoMap.isNotEmpty) ...<Widget>[
-                    const Text('日付を選択してください', style: TextStyle(fontSize: 12, color: Colors.greenAccent)),
-                  ],
-                ],
+                ),
+                const SizedBox(width: 10),
 
-                //=====================//
-                const SizedBox(height: 5),
+                Text('ODDS FINDER', style: TextStyle(color: Colors.green[700], fontSize: 18)),
+              ],
+            ),
+          ),
 
-                //=====================//
-                if (widget
-                        .raceMap['${appParamState.selectedScheduleDate}_${appParamState.selectedScheduleKaisuuBashoDay}'] !=
-                    null) ...<Widget>[
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      const SizedBox(height: 5),
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: DefaultTextStyle(
+                style: const TextStyle(fontSize: 14),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    const SizedBox(height: 40),
 
-                      SingleChildScrollView(
-                        controller: _raceScrollController,
-                        scrollDirection: Axis.horizontal,
-                        child: Row(
-                          // ignore: always_specify_types
-                          children: List.generate(
-                            widget
-                                .raceMap['${appParamState.selectedScheduleDate}_${appParamState.selectedScheduleKaisuuBashoDay}']!
-                                .length,
-                            (int index) {
-                              return AutoScrollTag(
-                                // ignore: always_specify_types
-                                key: ValueKey(index),
-                                controller: _raceScrollController,
-                                index: index,
-                                child: GestureDetector(
-                                  onTap: () {
-                                    appParamNotifier.setSelectedRaceNumber(num: index + 1);
-                                  },
+                    //=====================//
+                    Row(
+                      children: widget.scheduleDateBashoMap.entries.map((MapEntry<String, List<ScheduleModel>> e) {
+                        return Expanded(
+                          child: GestureDetector(
+                            onTap: () {
+                              appParamNotifier.setSelectedScheduleDate(date: e.key);
 
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(horizontal: 5),
-                                    child: CircleAvatar(
-                                      backgroundColor: (appParamState.selectedRaceNumber == index + 1)
-                                          ? Colors.greenAccent.withValues(alpha: 0.2)
-                                          : Colors.black.withValues(alpha: 0.4),
+                              appParamNotifier.setSelectedScheduleKaisuuBashoDay(kbd: '', name: '');
+                              appParamNotifier.setSelectedRaceNumber(num: 0);
+                            },
+                            child: Container(
+                              margin: const EdgeInsets.all(5),
+                              padding: const EdgeInsets.all(5),
+                              decoration: BoxDecoration(
+                                color: (appParamState.selectedScheduleDate == e.key)
+                                    ? Colors.greenAccent.withValues(alpha: 0.1)
+                                    : Colors.transparent,
 
-                                      child: Text(
-                                        raceModelList[index].race.toString(),
-                                        style: const TextStyle(fontSize: 14, color: Colors.white),
+                                border: Border.all(color: Colors.white.withValues(alpha: 0.4)),
+                              ),
+                              alignment: Alignment.center,
+                              child: Text(e.key, style: const TextStyle(color: Colors.white)),
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+
+                    //=====================//
+                    const SizedBox(height: 5),
+
+                    //=====================//
+                    if (widget.scheduleDateBashoMap[appParamState.selectedScheduleDate] != null) ...<Widget>[
+                      Row(
+                        children: widget.scheduleDateBashoMap[appParamState.selectedScheduleDate]!.map((
+                          ScheduleModel e,
+                        ) {
+                          return Expanded(
+                            child: GestureDetector(
+                              onTap: () {
+                                appParamNotifier.setSelectedScheduleKaisuuBashoDay(
+                                  kbd: '${e.kaisuu}_${e.basho}_${e.day}',
+
+                                  name: '${e.kaisuu}回 ${e.bashoName} ${e.day}日',
+                                );
+
+                                appParamNotifier.setSelectedRaceNumber(num: 0);
+                              },
+                              child: Container(
+                                margin: const EdgeInsets.all(5),
+                                padding: const EdgeInsets.all(5),
+                                decoration: BoxDecoration(
+                                  border: Border.all(color: Colors.white.withValues(alpha: 0.4)),
+
+                                  color:
+                                      (appParamState.selectedScheduleKaisuuBashoDayName ==
+                                          '${e.kaisuu}回 ${e.bashoName} ${e.day}日')
+                                      ? Colors.greenAccent.withValues(alpha: 0.1)
+                                      : Colors.transparent,
+                                ),
+                                alignment: Alignment.center,
+                                child: Text(
+                                  '${e.kaisuu}回 ${e.bashoName} ${e.day}日',
+                                  style: const TextStyle(color: Colors.white),
+                                ),
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ] else ...<Widget>[
+                      if (widget.scheduleDateBashoMap.isNotEmpty) ...<Widget>[
+                        const Text('日付を選択してください', style: TextStyle(fontSize: 12, color: Colors.greenAccent)),
+                      ],
+                    ],
+
+                    //=====================//
+                    const SizedBox(height: 5),
+
+                    //=====================//
+                    if (widget
+                            .raceMap['${appParamState.selectedScheduleDate}_${appParamState.selectedScheduleKaisuuBashoDay}'] !=
+                        null) ...<Widget>[
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          const SizedBox(height: 5),
+
+                          SingleChildScrollView(
+                            controller: _raceScrollController,
+                            scrollDirection: Axis.horizontal,
+                            child: Row(
+                              // ignore: always_specify_types
+                              children: List.generate(
+                                widget
+                                    .raceMap['${appParamState.selectedScheduleDate}_${appParamState.selectedScheduleKaisuuBashoDay}']!
+                                    .length,
+                                (int index) {
+                                  return AutoScrollTag(
+                                    // ignore: always_specify_types
+                                    key: ValueKey(index),
+                                    controller: _raceScrollController,
+                                    index: index,
+                                    child: GestureDetector(
+                                      onTap: () {
+                                        appParamNotifier.setSelectedRaceNumber(num: index + 1);
+                                      },
+
+                                      child: Padding(
+                                        padding: const EdgeInsets.symmetric(horizontal: 5),
+                                        child: CircleAvatar(
+                                          backgroundColor: (appParamState.selectedRaceNumber == index + 1)
+                                              ? Colors.greenAccent.withValues(alpha: 0.2)
+                                              : Colors.black.withValues(alpha: 0.4),
+
+                                          child: Text(
+                                            raceModelList[index].race.toString(),
+                                            style: const TextStyle(fontSize: 14, color: Colors.white),
+                                          ),
+                                        ),
                                       ),
                                     ),
-                                  ),
-                                ),
-                              );
-                            },
-                          ).toList(),
-                        ),
-                      ),
+                                  );
+                                },
+                              ).toList(),
+                            ),
+                          ),
 
-                      const SizedBox(height: 5),
+                          const SizedBox(height: 5),
 
-                      Divider(color: Colors.white.withValues(alpha: 0.5), thickness: 5),
+                          Divider(color: Colors.white.withValues(alpha: 0.5), thickness: 5),
 
-                      const SizedBox(height: 5),
+                          const SizedBox(height: 5),
 
-                      Padding(
-                        padding: const EdgeInsets.all(5),
+                          Padding(
+                            padding: const EdgeInsets.all(5),
 
-                        child: Stack(
-                          children: <Widget>[
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            child: Stack(
                               children: <Widget>[
-                                const SizedBox(),
-
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: <Widget>[
-                                    Text(_currentTime, style: const TextStyle(fontSize: 11, color: Colors.white54)),
-                                    Text(
-                                      _formatCountdown(_remainingSeconds),
-                                      style: const TextStyle(fontSize: 13, color: Colors.white),
+                                    const SizedBox(),
+
+                                    Column(
+                                      crossAxisAlignment: CrossAxisAlignment.end,
+                                      children: <Widget>[
+                                        Text(_currentTime, style: const TextStyle(fontSize: 11, color: Colors.white54)),
+                                        Text(
+                                          _formatCountdown(_remainingSeconds),
+                                          style: const TextStyle(fontSize: 13, color: Colors.white),
+                                        ),
+                                      ],
                                     ),
+                                  ],
+                                ),
+
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: <Widget>[
+                                    Text(
+                                      '🚩　$startTime　$raceName',
+                                      style: (raceName == 'レースを選択してください')
+                                          ? const TextStyle(color: Colors.greenAccent, fontSize: 12)
+                                          : const TextStyle(fontSize: 14, color: Colors.white),
+                                    ),
+
+                                    const SizedBox(),
                                   ],
                                 ),
                               ],
                             ),
-
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: <Widget>[
-                                Text(
-                                  '🚩　$startTime　$raceName',
-                                  style: (raceName == 'レースを選択してください')
-                                      ? const TextStyle(color: Colors.greenAccent, fontSize: 12)
-                                      : const TextStyle(fontSize: 14, color: Colors.white),
-                                ),
-
-                                const SizedBox(),
-                              ],
-                            ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
+                    ] else ...<Widget>[
+                      if (widget.scheduleDateBashoMap[appParamState.selectedScheduleDate] != null) ...<Widget>[
+                        const Text('会場を選択してください', style: TextStyle(fontSize: 12, color: Colors.greenAccent)),
+                      ],
                     ],
-                  ),
-                ] else ...<Widget>[
-                  if (widget.scheduleDateBashoMap[appParamState.selectedScheduleDate] != null) ...<Widget>[
-                    const Text('会場を選択してください', style: TextStyle(fontSize: 12, color: Colors.greenAccent)),
-                  ],
-                ],
 
-                //=====================//
-                const SizedBox(height: 5),
-
-                //=====================//
-                if (appParamState.selectedRaceNumber > 0) ...<Widget>[
-                  SizedBox(height: 40, child: displayRaceMinutesRow()),
-
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-
-                    children: <Widget>[
-                      const SizedBox.shrink(),
-
-                      IconButton(
-                        onPressed: () async {
-                          final SharedPreferences prefs = await SharedPreferences.getInstance();
-                          await prefs.setString('reload_selected_schedule_date', appParamState.selectedScheduleDate);
-                          await prefs.setString(
-                            'reload_selected_schedule_kaisuu_basho_day',
-                            appParamState.selectedScheduleKaisuuBashoDay,
-                          );
-                          await prefs.setString(
-                            'reload_selected_schedule_kaisuu_basho_day_name',
-                            appParamState.selectedScheduleKaisuuBashoDayName,
-                          );
-                          await prefs.setInt('reload_selected_race_number', appParamState.selectedRaceNumber);
-
-                          if (mounted) {
-                            // ignore: use_build_context_synchronously
-                            context.findAncestorStateOfType<AppRootState>()?.restartApp();
-                          }
-                        },
-                        icon: const Icon(Icons.refresh, color: Colors.greenAccent),
-                      ),
-                    ],
-                  ),
-
-                  if (widget.scheduleDateBashoMap.isNotEmpty) ...<Widget>[
-                    Divider(color: Colors.white.withValues(alpha: 0.5)),
-
+                    //=====================//
                     const SizedBox(height: 5),
+
+                    //=====================//
+                    if (appParamState.selectedRaceNumber > 0) ...<Widget>[
+                      SizedBox(height: 40, child: displayRaceMinutesRow()),
+
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+
+                        children: <Widget>[
+                          const SizedBox.shrink(),
+
+                          IconButton(
+                            onPressed: () async {
+                              final SharedPreferences prefs = await SharedPreferences.getInstance();
+                              await prefs.setString(
+                                'reload_selected_schedule_date',
+                                appParamState.selectedScheduleDate,
+                              );
+                              await prefs.setString(
+                                'reload_selected_schedule_kaisuu_basho_day',
+                                appParamState.selectedScheduleKaisuuBashoDay,
+                              );
+                              await prefs.setString(
+                                'reload_selected_schedule_kaisuu_basho_day_name',
+                                appParamState.selectedScheduleKaisuuBashoDayName,
+                              );
+                              await prefs.setInt('reload_selected_race_number', appParamState.selectedRaceNumber);
+
+                              if (mounted) {
+                                // ignore: use_build_context_synchronously
+                                context.findAncestorStateOfType<AppRootState>()?.restartApp();
+                              }
+                            },
+                            icon: const Icon(Icons.refresh, color: Colors.greenAccent),
+                          ),
+                        ],
+                      ),
+
+                      if (widget.scheduleDateBashoMap.isNotEmpty) ...<Widget>[
+                        Divider(color: Colors.white.withValues(alpha: 0.5)),
+
+                        const SizedBox(height: 5),
+                      ],
+
+                      Expanded(child: displayRaceHorseList()),
+                    ],
+
+                    //=====================//
                   ],
-
-                  Expanded(child: displayRaceHorseList()),
-                ],
-
-                //=====================//
-              ],
+                ),
+              ),
             ),
           ),
-        ),
+        ],
       ),
     );
   }
