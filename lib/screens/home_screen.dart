@@ -12,6 +12,7 @@ import '../models/netkeiba_odds_model.dart';
 import '../models/odds_model.dart';
 import '../models/race_model.dart';
 import '../models/schedule_model.dart';
+import '../utility/utility.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({
@@ -36,11 +37,6 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<HomeScreen> {
-  // タイミング定数（毎フレーム生成しないようクラスレベルで保持）
-  static const List<String> _timingLabels = <String>['S', '21', '18', '15', '12', '9', '6', '3', 'E'];
-  static const List<String> _timingKeys = <String>['24', '21', '18', '15', '12', '9', '6', '3', '0'];
-  static const List<int> _timingOrder = <int>[999, 21, 18, 15, 12, 9, 6, 3, -999];
-
   final AutoScrollController _raceScrollController = AutoScrollController();
   final AutoScrollController _horseListScrollController = AutoScrollController();
   int _prevRaceNumber = 0;
@@ -51,6 +47,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
   final ValueNotifier<int> _remainingSecondsNotifier = ValueNotifier<int>(0);
   final ValueNotifier<String> _currentTimeNotifier = ValueNotifier<String>('--:--');
   String _lastStartTime = '';
+
+  Utility utility = Utility();
 
   ///
   @override
@@ -177,12 +175,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
           );
         }
 
-        final String entryTimingKey = _timingKeys[entry.key];
+        final String entryTimingKey = widget.oddsGetTiming.split('|')[entry.key];
+
         final Color circleColor = (selectedTiming == entryTimingKey)
             ? Colors.greenAccent
             : (selectedTiming.isEmpty && entryTimingKey == activeTimingKey)
             ? Colors.red
             : Colors.white;
+
+        final List<String> exOddsGetTiming = widget.oddsGetTiming.split('|');
+        final String circleMinute = entry.key == 0
+            ? 'S'
+            : entry.key == exOddsGetTiming.length - 1
+            ? 'E'
+            : exOddsGetTiming[entry.key];
 
         return Stack(
           children: <Widget>[
@@ -207,7 +213,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                   height: 12,
                   child: Center(
                     child: Text(
-                      _timingLabels[entry.key],
+                      circleMinute,
                       style: TextStyle(
                         fontSize: 9,
                         color: circleColor == Colors.red ? Colors.white : Colors.black,
@@ -650,12 +656,32 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
       return cmp != 0 ? cmp : b.minutesBeforeStart.compareTo(a.minutesBeforeStart);
     });
 
+    final List<String> timingParts = widget.oddsGetTiming.split('|');
+    final List<int> timingOrder = List<int>.generate(timingParts.length, (int i) {
+      if (i == 0) {
+        return 999;
+      }
+      if (timingParts[i] == '0') {
+        return -999;
+      }
+      return int.parse(timingParts[i]);
+    });
+
     final Map<int, List<String>> oddsTimelineMap = <int, List<String>>{};
     for (final OddsModel e in oddsModelList) {
-      oddsTimelineMap.putIfAbsent(e.num, () => List<String>.filled(_timingOrder.length, ''));
-      final int idx = _timingOrder.indexOf(e.minutesBeforeStart);
+      oddsTimelineMap.putIfAbsent(e.num, () => List<String>.filled(timingParts.length, ''));
+      final int idx = timingOrder.indexOf(e.minutesBeforeStart);
       if (idx != -1) {
         oddsTimelineMap[e.num]![idx] = e.odds;
+      }
+    }
+
+    final Map<int, List<String>> netkeibaOddsTimelineMap = <int, List<String>>{};
+    for (final NetkeibaOddsModel e in netkeibaOddsModelList) {
+      netkeibaOddsTimelineMap.putIfAbsent(e.num, () => List<String>.filled(timingParts.length, ''));
+      final int idx = timingOrder.indexOf(e.minutesBeforeStart);
+      if (idx != -1) {
+        netkeibaOddsTimelineMap[e.num]![idx] = e.odds;
       }
     }
 
@@ -664,15 +690,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
     final Map<int, Map<String, String>> fukuOddsMap = <int, Map<String, String>>{};
     for (final OddsModel e in oddsModelList) {
       fukuOddsMap[e.num] = <String, String>{'fukuMin': e.fukuMin, 'fukuMax': e.fukuMax};
-    }
-
-    final Map<int, List<String>> netkeibaOddsTimelineMap = <int, List<String>>{};
-    for (final NetkeibaOddsModel e in netkeibaOddsModelList) {
-      netkeibaOddsTimelineMap.putIfAbsent(e.num, () => List<String>.filled(_timingOrder.length, ''));
-      final int idx = _timingOrder.indexOf(e.minutesBeforeStart);
-      if (idx != -1) {
-        netkeibaOddsTimelineMap[e.num]![idx] = e.odds;
-      }
     }
 
     int? filterMinutes;
@@ -722,6 +739,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
     }
 
     _displayListLength = displayList.length;
+
+    final Map<int, Color> horseWakuColorMap = utility.getHorseWakuColorMap();
 
     return ListView.builder(
       controller: _horseListScrollController,
@@ -793,11 +812,23 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                           const SizedBox(width: 20),
 
                           if (horse != null) ...<Widget>[
-                            Row(
-                              children: <Widget>[
-                                SizedBox(width: 15, child: Text(horse.waku.toString())),
-                                const Text('枠'),
-                              ],
+                            Container(
+                              padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
+                              decoration: BoxDecoration(
+                                color: (horseWakuColorMap[horse.waku] != null)
+                                    ? horseWakuColorMap[horse.waku]!.withValues(alpha: 0.2)
+                                    : Colors.yellowAccent.withValues(alpha: 0.2),
+                              ),
+
+                              child: DefaultTextStyle(
+                                style: const TextStyle(fontSize: 12),
+                                child: Row(
+                                  children: <Widget>[
+                                    SizedBox(width: 15, child: Text(horse.waku.toString())),
+                                    const Text('枠'),
+                                  ],
+                                ),
+                              ),
                             ),
                           ],
 

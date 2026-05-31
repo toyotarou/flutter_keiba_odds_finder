@@ -102,6 +102,10 @@ class _MyAppState extends ConsumerState<MyApp> with ControllersMixin<MyApp> {
     netkeibaRaceNotifier.getAllNetkeibaRaceData();
     oddsGetTimingNotifier.getAllOddsGetTimingData();
 
+    //
+    // ///DDD
+    // print(kIsWeb);
+
     if (widget.reloadDate.isNotEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         appParamNotifier.setSelectedScheduleDate(date: widget.reloadDate);

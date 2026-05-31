@@ -76,10 +76,6 @@ class AppParam extends _$AppParam {
   ///
   void setSelectedRaceNumber({required int num}) => state = state.copyWith(selectedRaceNumber: num);
 
-
-
-
-  ///DDD
   ///
   void setSelectedTiming({required String timing}) => state = state.copyWith(selectedTiming: timing);
 }
