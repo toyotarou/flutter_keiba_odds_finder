@@ -828,7 +828,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                                 alignment: Alignment.center,
                                 decoration: BoxDecoration(color: Colors.greenAccent.withValues(alpha: 0.1)),
                                 padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 10),
-                                child: const Text('複勝（最終）'),
+                                child: const Text('複勝（最終）', style: TextStyle(color: Colors.white)),
                               ),
                               const SizedBox(width: 5),
                               Container(
@@ -838,7 +838,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                                   border: Border(bottom: BorderSide(color: Colors.greenAccent.withValues(alpha: 0.5))),
                                 ),
                                 padding: const EdgeInsets.only(bottom: 3),
-                                child: Text(fukuOddsMap[element.num]!['fukuMin'] ?? ''),
+                                child: Text(
+                                  fukuOddsMap[element.num]!['fukuMin'] ?? '',
+                                  style: const TextStyle(color: Colors.white),
+                                ),
                               ),
                               const SizedBox(child: Text(' / ')),
                               Container(
@@ -848,7 +851,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                                   border: Border(bottom: BorderSide(color: Colors.greenAccent.withValues(alpha: 0.5))),
                                 ),
                                 padding: const EdgeInsets.only(bottom: 3),
-                                child: Text(fukuOddsMap[element.num]!['fukuMax'] ?? ''),
+                                child: Text(
+                                  fukuOddsMap[element.num]!['fukuMax'] ?? '',
+                                  style: const TextStyle(color: Colors.white),
+                                ),
                               ),
                             ],
                           ),
