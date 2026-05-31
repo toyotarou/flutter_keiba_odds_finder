@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:scroll_to_index/scroll_to_index.dart';
@@ -13,6 +14,8 @@ import '../models/odds_model.dart';
 import '../models/race_model.dart';
 import '../models/schedule_model.dart';
 import '../utility/utility.dart';
+import 'components/horse_odds_ranking_display_alert.dart';
+import 'parts/odds_finder_dialog.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({
@@ -496,29 +499,42 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: <Widget>[
-                          IconButton(
-                            onPressed: () async {
-                              final SharedPreferences prefs = await SharedPreferences.getInstance();
-                              await prefs.setString(
-                                'reload_selected_schedule_date',
-                                appParamState.selectedScheduleDate,
-                              );
-                              await prefs.setString(
-                                'reload_selected_schedule_kaisuu_basho_day',
-                                appParamState.selectedScheduleKaisuuBashoDay,
-                              );
-                              await prefs.setString(
-                                'reload_selected_schedule_kaisuu_basho_day_name',
-                                appParamState.selectedScheduleKaisuuBashoDayName,
-                              );
-                              await prefs.setInt('reload_selected_race_number', appParamState.selectedRaceNumber);
+                          Row(
+                            children: <Widget>[
+                              IconButton(
+                                onPressed: () async {
+                                  final SharedPreferences prefs = await SharedPreferences.getInstance();
+                                  await prefs.setString(
+                                    'reload_selected_schedule_date',
+                                    appParamState.selectedScheduleDate,
+                                  );
+                                  await prefs.setString(
+                                    'reload_selected_schedule_kaisuu_basho_day',
+                                    appParamState.selectedScheduleKaisuuBashoDay,
+                                  );
+                                  await prefs.setString(
+                                    'reload_selected_schedule_kaisuu_basho_day_name',
+                                    appParamState.selectedScheduleKaisuuBashoDayName,
+                                  );
+                                  await prefs.setInt('reload_selected_race_number', appParamState.selectedRaceNumber);
 
-                              if (mounted) {
-                                // ignore: use_build_context_synchronously
-                                context.findAncestorStateOfType<AppRootState>()?.restartApp();
-                              }
-                            },
-                            icon: const Icon(Icons.refresh, color: Colors.greenAccent),
+                                  if (mounted) {
+                                    // ignore: use_build_context_synchronously
+                                    context.findAncestorStateOfType<AppRootState>()?.restartApp();
+                                  }
+                                },
+                                icon: const Icon(Icons.refresh, color: Colors.greenAccent),
+                              ),
+
+                              if (!kIsWeb) ...<Widget>[
+                                IconButton(
+                                  onPressed: () {
+                                    OddsFinderDialog(context: context, widget: HorseOddsRankingDisplayAlert());
+                                  },
+                                  icon: Icon(Icons.list, color: Colors.white.withValues(alpha: 0.5)),
+                                ),
+                              ],
+                            ],
                           ),
 
                           Row(
