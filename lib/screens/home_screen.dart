@@ -6,9 +6,9 @@ import 'package:scroll_to_index/scroll_to_index.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../controllers/controllers_mixin.dart';
-import '../extensions/extensions.dart';
 import '../main.dart';
 import '../models/horse_model.dart';
+import '../models/netkeiba_odds_model.dart';
 import '../models/odds_model.dart';
 import '../models/race_model.dart';
 import '../models/schedule_model.dart';
@@ -20,6 +20,7 @@ class HomeScreen extends ConsumerStatefulWidget {
     required this.raceMap,
     required this.horseMap,
     required this.oddsMap,
+    required this.netkeibaOddsMap,
     required this.oddsGetTiming,
   });
 
@@ -27,6 +28,7 @@ class HomeScreen extends ConsumerStatefulWidget {
   final Map<String, List<RaceModel>> raceMap;
   final Map<String, List<HorseModel>> horseMap;
   final Map<String, List<OddsModel>> oddsMap;
+  final Map<String, List<NetkeibaOddsModel>> netkeibaOddsMap;
   final String oddsGetTiming;
 
   @override
@@ -34,26 +36,62 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<HomeScreen> {
+  // タイミング定数（毎フレーム生成しないようクラスレベルで保持）
+  static const List<String> _timingLabels = <String>['S', '21', '18', '15', '12', '9', '6', '3', 'E'];
+  static const List<String> _timingKeys = <String>['24', '21', '18', '15', '12', '9', '6', '3', '0'];
+  static const List<int> _timingOrder = <int>[999, 21, 18, 15, 12, 9, 6, 3, -999];
+
   final AutoScrollController _raceScrollController = AutoScrollController();
+  final AutoScrollController _horseListScrollController = AutoScrollController();
   int _prevRaceNumber = 0;
+  int _currentHorseIndex = 0;
 
   Timer? _countdownTimer;
-  int _remainingSeconds = 0;
-  String _currentTime = '--:--';
+  final ValueNotifier<int> _remainingSecondsNotifier = ValueNotifier<int>(0);
+  final ValueNotifier<String> _currentTimeNotifier = ValueNotifier<String>('--:--');
   String _lastStartTime = '';
 
   ///
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _syncAppParam());
+  }
+
+  ///
+  @override
+  void didUpdateWidget(HomeScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.scheduleDateBashoMap != widget.scheduleDateBashoMap ||
+        oldWidget.raceMap != widget.raceMap ||
+        oldWidget.horseMap != widget.horseMap ||
+        oldWidget.oddsMap != widget.oddsMap ||
+        oldWidget.oddsGetTiming != widget.oddsGetTiming) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _syncAppParam());
+    }
   }
 
   ///
   @override
   void dispose() {
     _countdownTimer?.cancel();
+    _remainingSecondsNotifier.dispose();
+    _currentTimeNotifier.dispose();
     _raceScrollController.dispose();
+    _horseListScrollController.dispose();
     super.dispose();
+  }
+
+  ///
+  void _syncAppParam() {
+    if (!mounted) {
+      return;
+    }
+    appParamNotifier.setKeepScheduleDateBashoMap(map: widget.scheduleDateBashoMap);
+    appParamNotifier.setKeepRaceMap(map: widget.raceMap);
+    appParamNotifier.setKeepHorseMap(map: widget.horseMap);
+    appParamNotifier.setKeepOddsMap(map: widget.oddsMap);
+    appParamNotifier.setConfigOddsGetTiming(oddsGetTiming: widget.oddsGetTiming);
   }
 
   ///
@@ -61,10 +99,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
     _countdownTimer?.cancel();
 
     if (startTime == '--:--') {
-      setState(() {
-        _currentTime = '--:--';
-        _remainingSeconds = 0;
-      });
+      _currentTimeNotifier.value = '--:--';
+      _remainingSecondsNotifier.value = 0;
       return;
     }
 
@@ -76,28 +112,24 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
     final DateTime raceTime = DateTime(now.year, now.month, now.day, hour, minute);
     final int diff = raceTime.difference(now).inSeconds;
 
-    setState(() {
-      _currentTime = '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
-      _remainingSeconds = diff > 0 ? diff : 0;
-    });
+    _currentTimeNotifier.value = '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
+    _remainingSecondsNotifier.value = diff > 0 ? diff : 0;
 
     _countdownTimer = Timer.periodic(const Duration(seconds: 1), (Timer timer) {
       if (!mounted) {
         timer.cancel();
         return;
       }
-      setState(() {
-        if (_remainingSeconds > 0) {
-          _remainingSeconds--;
-        } else {
-          timer.cancel();
-        }
-      });
+      if (_remainingSecondsNotifier.value > 0) {
+        _remainingSecondsNotifier.value--;
+      } else {
+        timer.cancel();
+      }
     });
   }
 
   ///
-  String _formatCountdown(int totalSeconds) {
+  static String _formatCountdown(int totalSeconds) {
     final int h = totalSeconds ~/ 3600;
     final int m = (totalSeconds % 3600) ~/ 60;
     final int s = totalSeconds % 60;
@@ -105,41 +137,118 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
   }
 
   ///
+  void _scrollHorseList(int delta) {
+    final int next = _currentHorseIndex + delta;
+    if (next < 0) {
+      return;
+    }
+    setState(() => _currentHorseIndex = next);
+    _horseListScrollController.scrollToIndex(next, preferPosition: AutoScrollPosition.begin);
+  }
+
+  ///
+  static String _beforeMinutesText(String selectedTiming) {
+    if (selectedTiming == '0') {
+      return 'レース開始時点の';
+    }
+    if (selectedTiming.isNotEmpty) {
+      return '$selectedTiming分前の';
+    }
+    return '';
+  }
+
+  ///
+  Widget _buildOddsTimelineRow({
+    required List<String> timeline,
+    required String activeTimingKey,
+    required String selectedTiming,
+  }) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: timeline.asMap().entries.map((MapEntry<int, String> entry) {
+        if (entry.value.isEmpty) {
+          return Container(
+            width: 30,
+            height: 30,
+            margin: const EdgeInsets.only(top: 8),
+            decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.2)),
+          );
+        }
+
+        final String entryTimingKey = _timingKeys[entry.key];
+        final Color circleColor = (selectedTiming == entryTimingKey)
+            ? Colors.greenAccent
+            : (selectedTiming.isEmpty && entryTimingKey == activeTimingKey)
+            ? Colors.red
+            : Colors.white;
+
+        return Stack(
+          children: <Widget>[
+            Container(
+              width: 30,
+              height: 30,
+              decoration: BoxDecoration(color: Colors.greenAccent.withValues(alpha: 0.2)),
+              margin: const EdgeInsets.only(top: 8),
+              padding: const EdgeInsets.only(bottom: 5),
+              child: Align(
+                alignment: Alignment.bottomCenter,
+                child: Text(entry.value, style: const TextStyle(fontSize: 10, color: Colors.white)),
+              ),
+            ),
+
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: <Widget>[
+                Container(
+                  decoration: BoxDecoration(color: circleColor, shape: BoxShape.circle),
+                  width: 12,
+                  height: 12,
+                  child: Center(
+                    child: Text(
+                      _timingLabels[entry.key],
+                      style: TextStyle(
+                        fontSize: 9,
+                        color: circleColor == Colors.red ? Colors.white : Colors.black,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+
+                getUpDownIcon(entry: entry, timeLineMap: timeline.asMap().entries),
+              ],
+            ),
+          ],
+        );
+      }).toList(),
+    );
+  }
+
+  ///
   @override
   Widget build(BuildContext context) {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      appParamNotifier.setKeepScheduleDateBashoMap(map: widget.scheduleDateBashoMap);
-      appParamNotifier.setKeepRaceMap(map: widget.raceMap);
-      appParamNotifier.setKeepHorseMap(map: widget.horseMap);
-      appParamNotifier.setKeepOddsMap(map: widget.oddsMap);
-      appParamNotifier.setConfigOddsGetTiming(oddsGetTiming: widget.oddsGetTiming);
+    final int selected = appParamState.selectedRaceNumber;
+    if (selected > 0 && selected != _prevRaceNumber) {
+      _prevRaceNumber = selected;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _raceScrollController.scrollToIndex(selected - 1, preferPosition: AutoScrollPosition.middle);
+        }
+      });
+    }
 
-      final int selected = appParamState.selectedRaceNumber;
-      if (selected > 0 && selected != _prevRaceNumber) {
-        _prevRaceNumber = selected;
-        _raceScrollController.scrollToIndex(selected - 1, preferPosition: AutoScrollPosition.middle);
-      }
-    });
+    final String mapKey = '${appParamState.selectedScheduleDate}_${appParamState.selectedScheduleKaisuuBashoDay}';
 
     String raceName = 'レースを選択してください';
     String startTime = '--:--';
+    final List<RaceModel> raceModelList = widget.raceMap[mapKey] ?? <RaceModel>[];
 
-    List<RaceModel> raceModelList = <RaceModel>[];
-
-    if (widget.raceMap['${appParamState.selectedScheduleDate}_${appParamState.selectedScheduleKaisuuBashoDay}'] !=
-        null) {
-      if (appParamState.selectedRaceNumber > 0) {
-        final RaceModel race = widget
-            .raceMap['${appParamState.selectedScheduleDate}_${appParamState.selectedScheduleKaisuuBashoDay}']!
-            .firstWhere((RaceModel e) => e.race == appParamState.selectedRaceNumber);
-
-        raceName = race.raceName;
-
-        startTime = race.startTime.substring(0, race.startTime.lastIndexOf(':'));
-      }
-
-      raceModelList =
-          widget.raceMap['${appParamState.selectedScheduleDate}_${appParamState.selectedScheduleKaisuuBashoDay}']!;
+    if (widget.raceMap[mapKey] != null && appParamState.selectedRaceNumber > 0) {
+      final RaceModel race = widget.raceMap[mapKey]!.firstWhere(
+        (RaceModel e) => e.race == appParamState.selectedRaceNumber,
+      );
+      raceName = race.raceName;
+      startTime = race.startTime.substring(0, race.startTime.lastIndexOf(':'));
     }
 
     if (startTime != _lastStartTime) {
@@ -157,36 +266,32 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
           Positioned(
             bottom: 0,
             right: 0,
-            child: Opacity(
-              opacity: 0.4,
-              child: Container(
-                width: context.screenSize.width / 2.5,
-                height: 300,
-                decoration: const BoxDecoration(image: DecorationImage(image: AssetImage('assets/images/bg.png'))),
-              ),
-            ),
+            child: Opacity(opacity: 0.4, child: Image.asset('assets/images/bg.png', width: 220)),
           ),
 
           Positioned(
-            top: 50,
+            top: 70,
             left: 20,
-
             child: Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                 Opacity(
                   opacity: 0.3,
-                  child: Container(
-                    width: context.screenSize.width / 2.5,
-                    height: 50,
-                    decoration: const BoxDecoration(
-                      image: DecorationImage(image: AssetImage('assets/images/baganryoku_title.png')),
-                    ),
+                  child: Transform.scale(
+                    scaleX: 1.0,
+                    scaleY: 2.0,
+                    alignment: Alignment.centerLeft,
+                    child: Image.asset('assets/images/baganryoku_title.png', width: 180),
                   ),
                 ),
-                const SizedBox(width: 10),
 
-                Text('ODDS FINDER', style: TextStyle(color: Colors.green[700], fontSize: 18)),
+                const SizedBox(width: 20),
+
+                Transform.scale(
+                  scaleX: 1.0,
+                  scaleY: 4.0,
+                  child: Text('ODDS FINDER', style: TextStyle(fontSize: 14, color: Colors.green[700])),
+                ),
               ],
             ),
           ),
@@ -208,7 +313,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                           child: GestureDetector(
                             onTap: () {
                               appParamNotifier.setSelectedScheduleDate(date: e.key);
-
                               appParamNotifier.setSelectedScheduleKaisuuBashoDay(kbd: '', name: '');
                               appParamNotifier.setSelectedRaceNumber(num: 0);
                             },
@@ -218,8 +322,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                               decoration: BoxDecoration(
                                 color: (appParamState.selectedScheduleDate == e.key)
                                     ? Colors.greenAccent.withValues(alpha: 0.1)
-                                    : Colors.transparent,
-
+                                    : Colors.black.withValues(alpha: 0.3),
                                 border: Border.all(color: Colors.white.withValues(alpha: 0.4)),
                               ),
                               alignment: Alignment.center,
@@ -239,15 +342,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                         children: widget.scheduleDateBashoMap[appParamState.selectedScheduleDate]!.map((
                           ScheduleModel e,
                         ) {
+                          final String label = '${e.kaisuu}回 ${e.bashoName} ${e.day}日';
                           return Expanded(
                             child: GestureDetector(
                               onTap: () {
                                 appParamNotifier.setSelectedScheduleKaisuuBashoDay(
                                   kbd: '${e.kaisuu}_${e.basho}_${e.day}',
-
-                                  name: '${e.kaisuu}回 ${e.bashoName} ${e.day}日',
+                                  name: label,
                                 );
-
                                 appParamNotifier.setSelectedRaceNumber(num: 0);
                               },
                               child: Container(
@@ -255,18 +357,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                                 padding: const EdgeInsets.all(5),
                                 decoration: BoxDecoration(
                                   border: Border.all(color: Colors.white.withValues(alpha: 0.4)),
-
-                                  color:
-                                      (appParamState.selectedScheduleKaisuuBashoDayName ==
-                                          '${e.kaisuu}回 ${e.bashoName} ${e.day}日')
+                                  color: (appParamState.selectedScheduleKaisuuBashoDayName == label)
                                       ? Colors.greenAccent.withValues(alpha: 0.1)
                                       : Colors.transparent,
                                 ),
                                 alignment: Alignment.center,
-                                child: Text(
-                                  '${e.kaisuu}回 ${e.bashoName} ${e.day}日',
-                                  style: const TextStyle(color: Colors.white),
-                                ),
+                                child: Text(label, style: const TextStyle(color: Colors.white)),
                               ),
                             ),
                           );
@@ -282,9 +378,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                     const SizedBox(height: 5),
 
                     //=====================//
-                    if (widget
-                            .raceMap['${appParamState.selectedScheduleDate}_${appParamState.selectedScheduleKaisuuBashoDay}'] !=
-                        null) ...<Widget>[
+                    if (widget.raceMap[mapKey] != null) ...<Widget>[
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: <Widget>[
@@ -294,39 +388,28 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                             controller: _raceScrollController,
                             scrollDirection: Axis.horizontal,
                             child: Row(
-                              // ignore: always_specify_types
-                              children: List.generate(
-                                widget
-                                    .raceMap['${appParamState.selectedScheduleDate}_${appParamState.selectedScheduleKaisuuBashoDay}']!
-                                    .length,
-                                (int index) {
-                                  return AutoScrollTag(
-                                    // ignore: always_specify_types
-                                    key: ValueKey(index),
-                                    controller: _raceScrollController,
-                                    index: index,
-                                    child: GestureDetector(
-                                      onTap: () {
-                                        appParamNotifier.setSelectedRaceNumber(num: index + 1);
-                                      },
-
-                                      child: Padding(
-                                        padding: const EdgeInsets.symmetric(horizontal: 5),
-                                        child: CircleAvatar(
-                                          backgroundColor: (appParamState.selectedRaceNumber == index + 1)
-                                              ? Colors.greenAccent.withValues(alpha: 0.2)
-                                              : Colors.black.withValues(alpha: 0.4),
-
-                                          child: Text(
-                                            raceModelList[index].race.toString(),
-                                            style: const TextStyle(fontSize: 14, color: Colors.white),
-                                          ),
+                              children: List<Widget>.generate(widget.raceMap[mapKey]!.length, (int index) {
+                                return AutoScrollTag(
+                                  key: ValueKey<int>(index),
+                                  controller: _raceScrollController,
+                                  index: index,
+                                  child: GestureDetector(
+                                    onTap: () => appParamNotifier.setSelectedRaceNumber(num: index + 1),
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(horizontal: 5),
+                                      child: CircleAvatar(
+                                        backgroundColor: (appParamState.selectedRaceNumber == index + 1)
+                                            ? Colors.greenAccent.withValues(alpha: 0.2)
+                                            : Colors.black.withValues(alpha: 0.4),
+                                        child: Text(
+                                          raceModelList[index].race.toString(),
+                                          style: const TextStyle(fontSize: 14, color: Colors.white),
                                         ),
                                       ),
                                     ),
-                                  );
-                                },
-                              ).toList(),
+                                  ),
+                                );
+                              }),
                             ),
                           ),
 
@@ -338,7 +421,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
 
                           Padding(
                             padding: const EdgeInsets.all(5),
-
                             child: Stack(
                               children: <Widget>[
                                 Row(
@@ -346,15 +428,28 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                                   children: <Widget>[
                                     const SizedBox(),
 
-                                    Column(
-                                      crossAxisAlignment: CrossAxisAlignment.end,
-                                      children: <Widget>[
-                                        Text(_currentTime, style: const TextStyle(fontSize: 11, color: Colors.white54)),
-                                        Text(
-                                          _formatCountdown(_remainingSeconds),
-                                          style: const TextStyle(fontSize: 13, color: Colors.white),
-                                        ),
-                                      ],
+                                    ValueListenableBuilder<int>(
+                                      valueListenable: _remainingSecondsNotifier,
+                                      builder: (BuildContext context, int seconds, Widget? _) {
+                                        return Column(
+                                          crossAxisAlignment: CrossAxisAlignment.end,
+                                          children: <Widget>[
+                                            ValueListenableBuilder<String>(
+                                              valueListenable: _currentTimeNotifier,
+                                              builder: (BuildContext context, String time, Widget? _) {
+                                                return Text(
+                                                  time,
+                                                  style: const TextStyle(fontSize: 11, color: Colors.white54),
+                                                );
+                                              },
+                                            ),
+                                            Text(
+                                              _formatCountdown(seconds),
+                                              style: const TextStyle(fontSize: 13, color: Colors.white),
+                                            ),
+                                          ],
+                                        );
+                                      },
                                     ),
                                   ],
                                 ),
@@ -392,10 +487,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
 
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-
                         children: <Widget>[
-                          const SizedBox.shrink(),
-
                           IconButton(
                             onPressed: () async {
                               final SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -420,12 +512,24 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                             },
                             icon: const Icon(Icons.refresh, color: Colors.greenAccent),
                           ),
+
+                          Row(
+                            children: <Widget>[
+                              IconButton(
+                                onPressed: () => _scrollHorseList(1),
+                                icon: const Icon(Icons.arrow_downward, color: Colors.white70),
+                              ),
+                              IconButton(
+                                onPressed: () => _scrollHorseList(-1),
+                                icon: const Icon(Icons.arrow_upward, color: Colors.white70),
+                              ),
+                            ],
+                          ),
                         ],
                       ),
 
                       if (widget.scheduleDateBashoMap.isNotEmpty) ...<Widget>[
                         Divider(color: Colors.white.withValues(alpha: 0.5)),
-
                         const SizedBox(height: 5),
                       ],
 
@@ -445,31 +549,28 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
 
   ///
   Widget displayRaceMinutesRow() {
-    final Map<String, String> ogtNamesMap = <String, String>{};
-
-    appParamState.configOddsGetTiming.split('|').forEach((String element) {
-      switch (element) {
-        case '24':
-          ogtNamesMap[element] = 'S';
-        case '0':
-          ogtNamesMap[element] = 'E';
-        default:
-          ogtNamesMap[element] = element;
-      }
-    });
-
-    final List<OddsModel> oddsModelList = <OddsModel>[];
-
     final String mapKey = '${appParamState.selectedScheduleDate}_${appParamState.selectedScheduleKaisuuBashoDay}';
 
-    if (widget.raceMap[mapKey] != null) {
-      if (appParamState.selectedRaceNumber > 0) {
-        if (widget.oddsMap[mapKey] != null) {
-          for (final OddsModel element in widget.oddsMap[mapKey]!) {
-            if (element.race == appParamState.selectedRaceNumber) {
-              oddsModelList.add(element);
-            }
-          }
+    final Map<String, String> ogtNamesMap = Map<String, String>.fromEntries(
+      appParamState.configOddsGetTiming
+          .split('|')
+          .map(
+            (String e) => MapEntry<String, String>(
+              e,
+              e == '24'
+                  ? 'S'
+                  : e == '0'
+                  ? 'E'
+                  : e,
+            ),
+          ),
+    );
+
+    final List<OddsModel> oddsModelList = <OddsModel>[];
+    if (widget.raceMap[mapKey] != null && appParamState.selectedRaceNumber > 0) {
+      for (final OddsModel element in widget.oddsMap[mapKey] ?? <OddsModel>[]) {
+        if (element.race == appParamState.selectedRaceNumber) {
+          oddsModelList.add(element);
         }
       }
     }
@@ -480,9 +581,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
     } else if (oddsModelList.isNotEmpty && oddsModelList.every((OddsModel e) => e.minutesBeforeStart == 999)) {
       minTiming = '24';
     } else {
-      final List<OddsModel> validTimingList = oddsModelList.where((OddsModel e) => e.minutesBeforeStart >= 0).toList()
+      final List<OddsModel> validList = oddsModelList.where((OddsModel e) => e.minutesBeforeStart >= 0).toList()
         ..sort((OddsModel a, OddsModel b) => a.minutesBeforeStart.compareTo(b.minutesBeforeStart));
-      minTiming = validTimingList.isNotEmpty ? validTimingList[0].minutesBeforeStart.toString() : '';
+      minTiming = validList.isNotEmpty ? validList.first.minutesBeforeStart.toString() : '';
     }
 
     return Row(
@@ -490,19 +591,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
         return Expanded(
           child: GestureDetector(
             onTap: () {
-              if (appParamState.selectedTiming == e) {
-                appParamNotifier.setSelectedTiming(timing: '');
-              } else {
-                appParamNotifier.setSelectedTiming(timing: e);
-              }
+              appParamNotifier.setSelectedTiming(timing: appParamState.selectedTiming == e ? '' : e);
             },
-
             child: Container(
               margin: const EdgeInsets.all(5),
               padding: const EdgeInsets.all(5),
               decoration: BoxDecoration(
                 border: Border.all(color: Colors.white.withValues(alpha: 0.4)),
-
                 color: (appParamState.selectedTiming == e)
                     ? Colors.greenAccent.withValues(alpha: 0.1)
                     : (appParamState.selectedTiming == '' && e == minTiming)
@@ -520,63 +615,65 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
 
   ///
   Widget displayRaceHorseList() {
-    final List<Widget> list = <Widget>[];
-
-    final List<OddsModel> oddsModelList = <OddsModel>[];
-
     final String mapKey = '${appParamState.selectedScheduleDate}_${appParamState.selectedScheduleKaisuuBashoDay}';
 
+    final List<OddsModel> oddsModelList = <OddsModel>[];
+    final List<NetkeibaOddsModel> netkeibaOddsModelList = <NetkeibaOddsModel>[];
     final Map<int, HorseModel> horseModelMap = <int, HorseModel>{};
 
-    if (widget.raceMap[mapKey] != null) {
-      if (appParamState.selectedRaceNumber > 0) {
-        if (widget.oddsMap[mapKey] != null) {
-          for (final OddsModel element in widget.oddsMap[mapKey]!) {
-            if (element.race == appParamState.selectedRaceNumber) {
-              oddsModelList.add(element);
-            }
-          }
+    if (widget.raceMap[mapKey] != null && appParamState.selectedRaceNumber > 0) {
+      for (final OddsModel e in widget.oddsMap[mapKey] ?? <OddsModel>[]) {
+        if (e.race == appParamState.selectedRaceNumber) {
+          oddsModelList.add(e);
         }
-
-        if (widget.horseMap[mapKey] != null) {
-          for (final HorseModel element in widget.horseMap[mapKey]!) {
-            if (element.race == appParamState.selectedRaceNumber) {
-              horseModelMap[element.num] = element;
-            }
-          }
+      }
+      for (final NetkeibaOddsModel e in widget.netkeibaOddsMap[mapKey] ?? <NetkeibaOddsModel>[]) {
+        if (e.race == appParamState.selectedRaceNumber) {
+          netkeibaOddsModelList.add(e);
+        }
+      }
+      for (final HorseModel e in widget.horseMap[mapKey] ?? <HorseModel>[]) {
+        if (e.race == appParamState.selectedRaceNumber) {
+          horseModelMap[e.num] = e;
         }
       }
     }
 
     oddsModelList.sort((OddsModel a, OddsModel b) {
-      final int numCompare = a.num.compareTo(b.num);
-
-      if (numCompare != 0) {
-        return numCompare;
-      }
-
-      return b.minutesBeforeStart.compareTo(a.minutesBeforeStart);
+      final int cmp = a.num.compareTo(b.num);
+      return cmp != 0 ? cmp : b.minutesBeforeStart.compareTo(a.minutesBeforeStart);
+    });
+    netkeibaOddsModelList.sort((NetkeibaOddsModel a, NetkeibaOddsModel b) {
+      final int cmp = a.num.compareTo(b.num);
+      return cmp != 0 ? cmp : b.minutesBeforeStart.compareTo(a.minutesBeforeStart);
     });
 
-    const List<int> timingOrder = <int>[999, 21, 18, 15, 12, 9, 6, 3, -999];
-
     final Map<int, List<String>> oddsTimelineMap = <int, List<String>>{};
+    for (final OddsModel e in oddsModelList) {
+      oddsTimelineMap.putIfAbsent(e.num, () => List<String>.filled(_timingOrder.length, ''));
+      final int idx = _timingOrder.indexOf(e.minutesBeforeStart);
+      if (idx != -1) {
+        oddsTimelineMap[e.num]![idx] = e.odds;
+      }
+    }
 
-    for (final OddsModel element in oddsModelList) {
-      oddsTimelineMap.putIfAbsent(element.num, () => List<String>.filled(timingOrder.length, ''));
-      final int timingIndex = timingOrder.indexOf(element.minutesBeforeStart);
-      if (timingIndex != -1) {
-        oddsTimelineMap[element.num]![timingIndex] = element.odds;
+    final Map<int, List<String>> netkeibaOddsTimelineMap = <int, List<String>>{};
+    for (final NetkeibaOddsModel e in netkeibaOddsModelList) {
+      netkeibaOddsTimelineMap.putIfAbsent(e.num, () => List<String>.filled(_timingOrder.length, ''));
+      final int idx = _timingOrder.indexOf(e.minutesBeforeStart);
+      if (idx != -1) {
+        netkeibaOddsTimelineMap[e.num]![idx] = e.odds;
       }
     }
 
     int? filterMinutes;
+    final String selectedTiming = appParamState.selectedTiming;
 
-    if (appParamState.selectedTiming.isNotEmpty) {
-      if (appParamState.selectedTiming == '0') {
+    if (selectedTiming.isNotEmpty) {
+      if (selectedTiming == '0') {
         filterMinutes = -999;
       } else {
-        final int parsed = int.parse(appParamState.selectedTiming);
+        final int parsed = int.parse(selectedTiming);
         if (parsed == 24) {
           filterMinutes = oddsModelList.any((OddsModel e) => e.minutesBeforeStart == 24) ? 24 : 999;
         } else {
@@ -590,9 +687,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
     } else {
       final List<int> validValues =
           oddsModelList.map((OddsModel e) => e.minutesBeforeStart).where((int v) => v >= 0).toList()..sort();
-
       filterMinutes = validValues.isNotEmpty ? validValues.first : null;
     }
+
+    final String activeTimingKey = filterMinutes == null
+        ? ''
+        : filterMinutes == 999
+        ? '24'
+        : filterMinutes == -999
+        ? '0'
+        : filterMinutes.toString();
 
     final List<OddsModel> displayList =
         (filterMinutes != null
@@ -600,215 +704,167 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
               : oddsModelList)
           ..sort((OddsModel a, OddsModel b) => (double.tryParse(a.odds) ?? 0).compareTo(double.tryParse(b.odds) ?? 0));
 
-    int i = 1;
-    for (final OddsModel element in displayList) {
-      list.add(
-        Stack(
-          children: <Widget>[
-            Container(
-              height: 120,
-              margin: const EdgeInsets.symmetric(vertical: 10),
-              padding: const EdgeInsets.only(top: 5),
-              decoration: BoxDecoration(
-                border: Border(left: BorderSide(color: Colors.greenAccent.withValues(alpha: 0.1), width: 10)),
+    if (displayList.isEmpty) {
+      return Text(
+        '${_beforeMinutesText(selectedTiming)}オッズデータはありません。',
+        style: const TextStyle(color: Colors.greenAccent, fontSize: 12),
+      );
+    }
+
+    return ListView.builder(
+      controller: _horseListScrollController,
+      itemCount: displayList.length,
+      itemBuilder: (BuildContext context, int index) {
+        final OddsModel element = displayList[index];
+        final int popularity = index + 1;
+        final HorseModel? horse = horseModelMap[element.num];
+        final List<String>? oddsTimeline = oddsTimelineMap[element.num];
+        final List<String>? netkeibaTimeline = netkeibaOddsTimelineMap[element.num];
+
+        return AutoScrollTag(
+          key: ValueKey<int>(index),
+          controller: _horseListScrollController,
+          index: index,
+          child: Stack(
+            children: <Widget>[
+              Container(
+                height: 200,
+                margin: const EdgeInsets.symmetric(vertical: 10),
+                padding: const EdgeInsets.only(top: 5),
+                decoration: BoxDecoration(
+                  border: Border(left: BorderSide(color: Colors.greenAccent.withValues(alpha: 0.1), width: 10)),
+                ),
               ),
-            ),
 
-            Container(
-              margin: const EdgeInsets.symmetric(vertical: 10),
-              padding: const EdgeInsets.only(top: 5),
-              decoration: BoxDecoration(
-                border: Border(bottom: BorderSide(color: Colors.greenAccent.withValues(alpha: 0.2), width: 2)),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: <Widget>[
-                      Opacity(
-                        opacity: 0.4,
-                        child: Container(
-                          margin: const EdgeInsets.only(top: 5, left: 15),
-                          padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 20),
-
-                          decoration: BoxDecoration(
-                            border: Border.all(color: Colors.greenAccent.withValues(alpha: 0.5)),
-                          ),
-                          child: Row(
-                            children: <Widget>[
-                              SizedBox(
-                                width: 20,
-                                child: Text(i.toString(), style: const TextStyle(color: Colors.greenAccent)),
-                              ),
-                              const Text('番人気', style: TextStyle(color: Colors.greenAccent)),
-                            ],
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox.shrink(),
-                    ],
-                  ),
-
-                  const SizedBox(height: 10),
-
-                  DefaultTextStyle(
-                    style: const TextStyle(color: Colors.white),
-                    child: Row(
-                      children: <Widget>[
-                        const SizedBox(width: 20),
-
-                        if (horseModelMap[element.num] != null) ...<Widget>[
-                          Row(
-                            children: <Widget>[
-                              SizedBox(width: 15, child: Text(horseModelMap[element.num]!.waku.toString())),
-                              const Text('枠'),
-                            ],
-                          ),
-                        ],
-
-                        const SizedBox(width: 20),
-
-                        Row(
-                          children: <Widget>[
-                            SizedBox(width: 20, child: Text(element.num.toString())),
-                            const Text('番'),
-                          ],
-                        ),
-
-                        const SizedBox(width: 20),
-
-                        if (horseModelMap[element.num] != null) ...<Widget>[
-                          Expanded(
-                            child: Text(horseModelMap[element.num]!.name, maxLines: 1, overflow: TextOverflow.ellipsis),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-
-                  if (oddsTimelineMap[element.num] != null) ...<Widget>[
-                    const SizedBox(height: 10),
-
+              Container(
+                margin: const EdgeInsets.symmetric(vertical: 10),
+                padding: const EdgeInsets.only(top: 5),
+                decoration: BoxDecoration(
+                  border: Border(bottom: BorderSide(color: Colors.greenAccent.withValues(alpha: 0.2), width: 2)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: oddsTimelineMap[element.num]!.asMap().entries.map((MapEntry<int, String> entry) {
-                        if (entry.value.isEmpty) {
-                          return Container(
-                            width: 30,
-                            height: 30,
-                            margin: const EdgeInsets.only(top: 8),
-                            decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.2)),
-                          );
-                        }
-
-                        const List<String> timingLabels = <String>['S', '21', '18', '15', '12', '9', '6', '3', 'E'];
-
-                        const List<String> timingKeys = <String>['24', '21', '18', '15', '12', '9', '6', '3', '0'];
-
-                        final String entryTimingKey = timingKeys[entry.key];
-
-                        final String activeTimingKey = filterMinutes == null
-                            ? ''
-                            : filterMinutes == 999
-                            ? '24'
-                            : filterMinutes == -999
-                            ? '0'
-                            : filterMinutes.toString();
-
-                        final Color circleColor = (appParamState.selectedTiming == entryTimingKey)
-                            ? Colors.greenAccent
-                            : (appParamState.selectedTiming.isEmpty && entryTimingKey == activeTimingKey)
-                            ? Colors.red
-                            : Colors.white;
-
-                        return Stack(
-                          children: <Widget>[
-                            Container(
-                              width: 30,
-                              height: 30,
-                              decoration: BoxDecoration(color: Colors.greenAccent.withValues(alpha: 0.2)),
-                              margin: const EdgeInsets.only(top: 8),
-                              padding: const EdgeInsets.only(bottom: 5),
-                              child: Align(
-                                alignment: Alignment.bottomCenter,
-                                child: Text(entry.value, style: const TextStyle(fontSize: 10, color: Colors.white)),
-                              ),
+                      children: <Widget>[
+                        Opacity(
+                          opacity: 0.4,
+                          child: Container(
+                            margin: const EdgeInsets.only(top: 5, left: 15),
+                            padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 20),
+                            decoration: BoxDecoration(
+                              border: Border.all(color: Colors.greenAccent.withValues(alpha: 0.5)),
                             ),
-
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            child: Row(
                               children: <Widget>[
-                                Container(
-                                  decoration: BoxDecoration(color: circleColor, shape: BoxShape.circle),
-                                  width: 12,
-                                  height: 12,
-                                  child: Center(
-                                    child: Text(
-                                      timingLabels[entry.key],
-                                      style: TextStyle(
-                                        fontSize: 9,
-
-                                        color: circleColor == Colors.red ? Colors.white : Colors.black,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
+                                SizedBox(
+                                  width: 20,
+                                  child: Text(popularity.toString(), style: const TextStyle(color: Colors.greenAccent)),
                                 ),
+                                const Text('番人気', style: TextStyle(color: Colors.greenAccent)),
+                              ],
+                            ),
+                          ),
+                        ),
 
-                                getUpDownIcon(entry: entry, timeLineMap: oddsTimelineMap[element.num]!.asMap().entries),
+                        const SizedBox.shrink(),
+                      ],
+                    ),
+
+                    const SizedBox(height: 10),
+
+                    DefaultTextStyle(
+                      style: const TextStyle(color: Colors.white),
+                      child: Row(
+                        children: <Widget>[
+                          const SizedBox(width: 20),
+
+                          if (horse != null) ...<Widget>[
+                            Row(
+                              children: <Widget>[
+                                SizedBox(width: 15, child: Text(horse.waku.toString())),
+                                const Text('枠'),
                               ],
                             ),
                           ],
-                        );
-                      }).toList(),
+
+                          const SizedBox(width: 20),
+
+                          Row(
+                            children: <Widget>[
+                              SizedBox(width: 20, child: Text(element.num.toString())),
+                              const Text('番'),
+                            ],
+                          ),
+
+                          const SizedBox(width: 20),
+
+                          if (horse != null) ...<Widget>[
+                            Expanded(child: Text(horse.name, maxLines: 1, overflow: TextOverflow.ellipsis)),
+                          ],
+                        ],
+                      ),
                     ),
+
+                    if (oddsTimeline != null) ...<Widget>[
+                      const SizedBox(height: 10),
+                      _buildSourceLabel('JRA'),
+                      const SizedBox(height: 5),
+                      _buildOddsTimelineRow(
+                        timeline: oddsTimeline,
+                        activeTimingKey: activeTimingKey,
+                        selectedTiming: selectedTiming,
+                      ),
+                    ],
+
+                    if (netkeibaTimeline != null) ...<Widget>[
+                      const SizedBox(height: 10),
+                      _buildSourceLabel('ネットケイバ'),
+                      const SizedBox(height: 5),
+                      _buildOddsTimelineRow(
+                        timeline: netkeibaTimeline,
+                        activeTimingKey: activeTimingKey,
+                        selectedTiming: selectedTiming,
+                      ),
+                    ],
+
+                    const SizedBox(height: 10),
                   ],
-
-                  const SizedBox(height: 10),
-                ],
+                ),
               ),
-            ),
-          ],
-        ),
-      );
+            ],
+          ),
+        );
+      },
+    );
+  }
 
-      i++;
-    }
-
-    if (list.isEmpty) {
-      String beforeMinutesText = '';
-      if (appParamState.selectedTiming != '') {
-        if (appParamState.selectedTiming == '0') {
-          beforeMinutesText = 'レース開始時点の';
-        } else {
-          beforeMinutesText = '${appParamState.selectedTiming}分前の';
-        }
-      }
-
-      list.add(
-        Text('$beforeMinutesTextオッズデータはありません。', style: const TextStyle(color: Colors.greenAccent, fontSize: 12)),
-      );
-    }
-
-    return SingleChildScrollView(child: Column(children: list));
+  ///
+  static Widget _buildSourceLabel(String label) {
+    return Container(
+      margin: const EdgeInsets.only(left: 15),
+      padding: const EdgeInsets.only(left: 5),
+      decoration: BoxDecoration(
+        border: Border(left: BorderSide(color: Colors.greenAccent.withValues(alpha: 0.2), width: 5)),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: <Widget>[
+          Text(label, style: const TextStyle(fontSize: 10, color: Colors.greenAccent)),
+          const SizedBox.shrink(),
+        ],
+      ),
+    );
   }
 
   ///
   Widget getUpDownIcon({required MapEntry<int, String> entry, required Iterable<MapEntry<int, String>> timeLineMap}) {
-    if (entry.key == 0) {
-      return const SizedBox.shrink();
-    }
-
-    final String currentValue = entry.value;
-
-    if (currentValue.isEmpty) {
+    if (entry.key == 0 || entry.value.isEmpty) {
       return const SizedBox.shrink();
     }
 
     final List<MapEntry<int, String>> list = timeLineMap.toList();
-
     String prevValue = '';
     for (int i = entry.key - 1; i >= 0; i--) {
       if (list[i].value.isNotEmpty) {
@@ -821,7 +877,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
       return const SizedBox.shrink();
     }
 
-    final double? current = double.tryParse(currentValue);
+    final double? current = double.tryParse(entry.value);
     final double? prev = double.tryParse(prevValue);
 
     if (current == null || prev == null) {

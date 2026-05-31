@@ -98,6 +98,9 @@ class _MyAppState extends ConsumerState<MyApp> with ControllersMixin<MyApp> {
     horseNotifier.getAllHorseData();
     oddsNotifier.getAllOddsData();
     laravelConfigNotifier.getAllLaravelConfigData();
+    netkeibaOddsNotifier.getAllNetkeibaOddsData();
+    netkeibaRaceNotifier.getAllNetkeibaRaceData();
+    oddsGetTimingNotifier.getAllOddsGetTimingData();
 
     if (widget.reloadDate.isNotEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -145,6 +148,7 @@ class _MyAppState extends ConsumerState<MyApp> with ControllersMixin<MyApp> {
           horseMap: horoState.horseMap,
           oddsMap: oddsState.oddsMap,
           oddsGetTiming: laravelConfigState.odds_get_timing,
+          netkeibaOddsMap: netkeibaOddsState.netkeibaOddsMap,
         ),
       ),
     );
