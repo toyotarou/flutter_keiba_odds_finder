@@ -45,6 +45,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
   final AutoScrollController _horseListScrollController = AutoScrollController();
   int _prevRaceNumber = 0;
   int _currentHorseIndex = 0;
+  int _displayListLength = 0;
 
   Timer? _countdownTimer;
   final ValueNotifier<int> _remainingSecondsNotifier = ValueNotifier<int>(0);
@@ -138,11 +139,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
 
   ///
   void _scrollHorseList(int delta) {
-    final int next = _currentHorseIndex + delta;
-    if (next < 0) {
+    if (!_horseListScrollController.hasClients || _displayListLength == 0) {
       return;
     }
-    setState(() => _currentHorseIndex = next);
+
+    final int next = (_currentHorseIndex + delta).clamp(0, _displayListLength - 1);
+    _currentHorseIndex = next;
     _horseListScrollController.scrollToIndex(next, preferPosition: AutoScrollPosition.begin);
   }
 
@@ -712,11 +714,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
           ..sort((OddsModel a, OddsModel b) => (double.tryParse(a.odds) ?? 0).compareTo(double.tryParse(b.odds) ?? 0));
 
     if (displayList.isEmpty) {
+      _displayListLength = 0;
       return Text(
         '${_beforeMinutesText(selectedTiming)}オッズデータはありません。',
         style: const TextStyle(color: Colors.greenAccent, fontSize: 12),
       );
     }
+
+    _displayListLength = displayList.length;
 
     return ListView.builder(
       controller: _horseListScrollController,
