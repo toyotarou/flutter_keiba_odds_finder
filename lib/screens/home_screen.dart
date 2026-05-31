@@ -657,6 +657,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
       }
     }
 
+    // oddsModelListはnum昇順・minutesBeforeStart降順済みなので
+    // 後から上書きするほど minutesBeforeStart が小さい（＝最新）レコードになる
+    final Map<int, Map<String, String>> fukuOddsMap = <int, Map<String, String>>{};
+    for (final OddsModel e in oddsModelList) {
+      fukuOddsMap[e.num] = <String, String>{'fukuMin': e.fukuMin, 'fukuMax': e.fukuMax};
+    }
+
     final Map<int, List<String>> netkeibaOddsTimelineMap = <int, List<String>>{};
     for (final NetkeibaOddsModel e in netkeibaOddsModelList) {
       netkeibaOddsTimelineMap.putIfAbsent(e.num, () => List<String>.filled(_timingOrder.length, ''));
@@ -805,6 +812,48 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                           ],
                         ],
                       ),
+                    ),
+
+                    const SizedBox(height: 10),
+
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: <Widget>[
+                        const SizedBox.shrink(),
+                        DefaultTextStyle(
+                          style: const TextStyle(fontSize: 12),
+                          child: Row(
+                            children: <Widget>[
+                              Container(
+                                alignment: Alignment.center,
+                                decoration: BoxDecoration(color: Colors.greenAccent.withValues(alpha: 0.1)),
+                                padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 10),
+                                child: const Text('複勝（最終）'),
+                              ),
+                              const SizedBox(width: 5),
+                              Container(
+                                width: 40,
+                                alignment: Alignment.center,
+                                decoration: BoxDecoration(
+                                  border: Border(bottom: BorderSide(color: Colors.greenAccent.withValues(alpha: 0.5))),
+                                ),
+                                padding: const EdgeInsets.only(bottom: 3),
+                                child: Text(fukuOddsMap[element.num]!['fukuMin'] ?? ''),
+                              ),
+                              const SizedBox(child: Text(' / ')),
+                              Container(
+                                width: 40,
+                                alignment: Alignment.center,
+                                decoration: BoxDecoration(
+                                  border: Border(bottom: BorderSide(color: Colors.greenAccent.withValues(alpha: 0.5))),
+                                ),
+                                padding: const EdgeInsets.only(bottom: 3),
+                                child: Text(fukuOddsMap[element.num]!['fukuMax'] ?? ''),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
 
                     if (oddsTimeline != null) ...<Widget>[
