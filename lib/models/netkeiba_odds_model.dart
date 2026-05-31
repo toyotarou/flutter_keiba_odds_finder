@@ -1,7 +1,7 @@
 import '../extensions/extensions.dart';
 
-class OddsModel {
-  OddsModel({
+class NetkeibaOddsModel {
+  NetkeibaOddsModel({
     required this.id,
     required this.date,
     required this.kaisuu,
@@ -15,8 +15,8 @@ class OddsModel {
     required this.minutesBeforeStart,
   });
 
-  factory OddsModel.fromJson(Map<String, dynamic> json) {
-    return OddsModel(
+  factory NetkeibaOddsModel.fromJson(Map<String, dynamic> json) {
+    return NetkeibaOddsModel(
       id: (json['id'] != null) ? json['id'].toString().toInt() : 0,
       date: json['date']?.toString() ?? '',
       kaisuu: json['kaisuu']?.toString() ?? '',
@@ -42,4 +42,20 @@ class OddsModel {
   final String fukuMin;
   final String fukuMax;
   final int minutesBeforeStart;
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'id': id,
+      'date': date,
+      'kaisuu': kaisuu,
+      'basho': basho,
+      'day': day,
+      'race': race,
+      'num': num,
+      'odds': odds,
+      'fuku_min': fukuMin,
+      'fuku_max': fukuMax,
+      'minutes_before_start': minutesBeforeStart,
+    };
+  }
 }
