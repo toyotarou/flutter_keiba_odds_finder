@@ -149,7 +149,7 @@ class _MyAppState extends ConsumerState<MyApp> with ControllersMixin<MyApp> {
         child: HomeScreen(
           scheduleDateBashoMap: scheduleState.scheduleDateBashoMap,
           raceMap: raceState.raceMap,
-          horseMap: horoState.horseMap,
+          horseMap: horseState.horseMap,
           oddsMap: oddsState.oddsMap,
           oddsGetTiming: laravelConfigState.odds_get_timing,
           netkeibaOddsMap: netkeibaOddsState.netkeibaOddsMap,

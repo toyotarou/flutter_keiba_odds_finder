@@ -6,7 +6,7 @@ part of 'odds_get_timing.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$oddsGetTimingHash() => r'085104d1dea9a73d6c08057f1c893282b65fe4bc';
+String _$oddsGetTimingHash() => r'b4f2e49da6894470f405f60d5bf4ba17281d3aa7';
 
 /// See also [OddsGetTiming].
 @ProviderFor(OddsGetTiming)

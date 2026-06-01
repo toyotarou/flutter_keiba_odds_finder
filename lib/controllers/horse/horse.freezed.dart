@@ -19,6 +19,7 @@ mixin _$HorseState {
   List<HorseModel> get horseList => throw _privateConstructorUsedError;
   Map<String, List<HorseModel>> get horseMap =>
       throw _privateConstructorUsedError;
+  HorseDetailModel? get horseDetail => throw _privateConstructorUsedError;
 
   @JsonKey(ignore: true)
   $HorseStateCopyWith<HorseState> get copyWith =>
@@ -32,7 +33,9 @@ abstract class $HorseStateCopyWith<$Res> {
       _$HorseStateCopyWithImpl<$Res, HorseState>;
   @useResult
   $Res call(
-      {List<HorseModel> horseList, Map<String, List<HorseModel>> horseMap});
+      {List<HorseModel> horseList,
+      Map<String, List<HorseModel>> horseMap,
+      HorseDetailModel? horseDetail});
 }
 
 /// @nodoc
@@ -50,6 +53,7 @@ class _$HorseStateCopyWithImpl<$Res, $Val extends HorseState>
   $Res call({
     Object? horseList = null,
     Object? horseMap = null,
+    Object? horseDetail = freezed,
   }) {
     return _then(_value.copyWith(
       horseList: null == horseList
@@ -60,6 +64,10 @@ class _$HorseStateCopyWithImpl<$Res, $Val extends HorseState>
           ? _value.horseMap
           : horseMap // ignore: cast_nullable_to_non_nullable
               as Map<String, List<HorseModel>>,
+      horseDetail: freezed == horseDetail
+          ? _value.horseDetail
+          : horseDetail // ignore: cast_nullable_to_non_nullable
+              as HorseDetailModel?,
     ) as $Val);
   }
 }
@@ -73,7 +81,9 @@ abstract class _$$HorseStateImplCopyWith<$Res>
   @override
   @useResult
   $Res call(
-      {List<HorseModel> horseList, Map<String, List<HorseModel>> horseMap});
+      {List<HorseModel> horseList,
+      Map<String, List<HorseModel>> horseMap,
+      HorseDetailModel? horseDetail});
 }
 
 /// @nodoc
@@ -89,6 +99,7 @@ class __$$HorseStateImplCopyWithImpl<$Res>
   $Res call({
     Object? horseList = null,
     Object? horseMap = null,
+    Object? horseDetail = freezed,
   }) {
     return _then(_$HorseStateImpl(
       horseList: null == horseList
@@ -99,6 +110,10 @@ class __$$HorseStateImplCopyWithImpl<$Res>
           ? _value._horseMap
           : horseMap // ignore: cast_nullable_to_non_nullable
               as Map<String, List<HorseModel>>,
+      horseDetail: freezed == horseDetail
+          ? _value.horseDetail
+          : horseDetail // ignore: cast_nullable_to_non_nullable
+              as HorseDetailModel?,
     ));
   }
 }
@@ -109,7 +124,8 @@ class _$HorseStateImpl implements _HorseState {
   const _$HorseStateImpl(
       {final List<HorseModel> horseList = const <HorseModel>[],
       final Map<String, List<HorseModel>> horseMap =
-          const <String, List<HorseModel>>{}})
+          const <String, List<HorseModel>>{},
+      this.horseDetail})
       : _horseList = horseList,
         _horseMap = horseMap;
 
@@ -132,8 +148,11 @@ class _$HorseStateImpl implements _HorseState {
   }
 
   @override
+  final HorseDetailModel? horseDetail;
+
+  @override
   String toString() {
-    return 'HorseState(horseList: $horseList, horseMap: $horseMap)';
+    return 'HorseState(horseList: $horseList, horseMap: $horseMap, horseDetail: $horseDetail)';
   }
 
   @override
@@ -143,14 +162,17 @@ class _$HorseStateImpl implements _HorseState {
             other is _$HorseStateImpl &&
             const DeepCollectionEquality()
                 .equals(other._horseList, _horseList) &&
-            const DeepCollectionEquality().equals(other._horseMap, _horseMap));
+            const DeepCollectionEquality().equals(other._horseMap, _horseMap) &&
+            (identical(other.horseDetail, horseDetail) ||
+                other.horseDetail == horseDetail));
   }
 
   @override
   int get hashCode => Object.hash(
       runtimeType,
       const DeepCollectionEquality().hash(_horseList),
-      const DeepCollectionEquality().hash(_horseMap));
+      const DeepCollectionEquality().hash(_horseMap),
+      horseDetail);
 
   @JsonKey(ignore: true)
   @override
@@ -162,12 +184,15 @@ class _$HorseStateImpl implements _HorseState {
 abstract class _HorseState implements HorseState {
   const factory _HorseState(
       {final List<HorseModel> horseList,
-      final Map<String, List<HorseModel>> horseMap}) = _$HorseStateImpl;
+      final Map<String, List<HorseModel>> horseMap,
+      final HorseDetailModel? horseDetail}) = _$HorseStateImpl;
 
   @override
   List<HorseModel> get horseList;
   @override
   Map<String, List<HorseModel>> get horseMap;
+  @override
+  HorseDetailModel? get horseDetail;
   @override
   @JsonKey(ignore: true)
   _$$HorseStateImplCopyWith<_$HorseStateImpl> get copyWith =>

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:scroll_to_index/scroll_to_index.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -14,6 +15,7 @@ import '../models/odds_model.dart';
 import '../models/race_model.dart';
 import '../models/schedule_model.dart';
 import '../utility/utility.dart';
+import 'components/horse_detail_display_alert.dart';
 import 'components/horse_odds_ranking_display_alert.dart';
 import 'parts/odds_finder_dialog.dart';
 
@@ -97,7 +99,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
   }
 
   ///
-  void _startCountdown(String startTime) {
+  void _startCountdown(String startTime, String raceDate) {
     _countdownTimer?.cancel();
 
     if (startTime == '--:--') {
@@ -111,7 +113,31 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
     final int minute = int.tryParse(parts[1]) ?? 0;
 
     final DateTime now = DateTime.now();
-    final DateTime raceTime = DateTime(now.year, now.month, now.day, hour, minute);
+    final DateTime today = DateTime(now.year, now.month, now.day);
+
+    // YYYY/MM/DD・YYYY-MM-DD・YYYYMMDD の各形式に対応
+    DateTime? parsedDate;
+    final String cleaned = raceDate.replaceAll('/', '').replaceAll('-', '');
+    if (cleaned.length == 8) {
+      final int? y = int.tryParse(cleaned.substring(0, 4));
+      final int? m = int.tryParse(cleaned.substring(4, 6));
+      final int? d = int.tryParse(cleaned.substring(6, 8));
+      if (y != null && m != null && d != null) {
+        parsedDate = DateTime(y, m, d);
+      }
+    }
+
+    // レース日が今日より前 → 終了済みなので 00:00:00 を表示
+    if (parsedDate != null && parsedDate.isBefore(today)) {
+      _currentTimeNotifier.value = '--:--';
+      _remainingSecondsNotifier.value = 0;
+      return;
+    }
+
+    final DateTime raceTime = parsedDate != null
+        ? DateTime(parsedDate.year, parsedDate.month, parsedDate.day, hour, minute)
+        : DateTime(now.year, now.month, now.day, hour, minute);
+
     final int diff = raceTime.difference(now).inSeconds;
 
     _currentTimeNotifier.value = '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
@@ -266,7 +292,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
       _lastStartTime = startTime;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
-          _startCountdown(startTime);
+          _startCountdown(startTime, appParamState.selectedScheduleDate);
         }
       });
     }
@@ -529,7 +555,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                               if (!kIsWeb) ...<Widget>[
                                 IconButton(
                                   onPressed: () {
-                                    OddsFinderDialog(context: context, widget: HorseOddsRankingDisplayAlert());
+                                    OddsFinderDialog(context: context, widget: const HorseOddsRankingDisplayAlert());
                                   },
                                   icon: Icon(Icons.list, color: Colors.white.withValues(alpha: 0.5)),
                                 ),
@@ -823,45 +849,77 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
 
                     DefaultTextStyle(
                       style: const TextStyle(color: Colors.white),
-                      child: Row(
+                      child: Stack(
                         children: <Widget>[
-                          const SizedBox(width: 20),
-
-                          if (horse != null) ...<Widget>[
-                            Container(
-                              padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
-                              decoration: BoxDecoration(
-                                color: (horseWakuColorMap[horse.waku] != null)
-                                    ? horseWakuColorMap[horse.waku]!.withValues(alpha: 0.2)
-                                    : Colors.yellowAccent.withValues(alpha: 0.2),
-                              ),
-
-                              child: DefaultTextStyle(
-                                style: const TextStyle(fontSize: 12),
-                                child: Row(
-                                  children: <Widget>[
-                                    SizedBox(width: 15, child: Text(horse.waku.toString())),
-                                    const Text('枠'),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ],
-
-                          const SizedBox(width: 20),
-
                           Row(
                             children: <Widget>[
-                              SizedBox(width: 20, child: Text(element.num.toString())),
-                              const Text('番'),
+                              const SizedBox(width: 20),
+
+                              if (horse != null) ...<Widget>[
+                                Container(
+                                  padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
+                                  decoration: BoxDecoration(
+                                    color: (horseWakuColorMap[horse.waku] != null)
+                                        ? horseWakuColorMap[horse.waku]!.withValues(alpha: 0.2)
+                                        : Colors.white.withValues(alpha: 0.2),
+                                  ),
+
+                                  child: DefaultTextStyle(
+                                    style: const TextStyle(fontSize: 12),
+                                    child: Row(
+                                      children: <Widget>[
+                                        SizedBox(width: 15, child: Text(horse.waku.toString())),
+                                        const Text('枠'),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
+
+                              const SizedBox(width: 20),
+
+                              Row(
+                                children: <Widget>[
+                                  SizedBox(width: 20, child: Text(element.num.toString())),
+                                  const Text('番'),
+                                ],
+                              ),
+
+                              const SizedBox(width: 20),
+
+                              if (horse != null) ...<Widget>[
+                                Expanded(child: Text(horse.name, maxLines: 1, overflow: TextOverflow.ellipsis)),
+                              ],
                             ],
                           ),
 
-                          const SizedBox(width: 20),
+                          Positioned(
+                            right: 10,
+                            child: Transform(
+                              alignment: Alignment.center,
+                              transform: Matrix4.identity()..scale(-1.0, 1.0),
+                              child: GestureDetector(
+                                onTap: () {
+                                  String horseId = '';
+                                  if (horse != null) {
+                                    final List<String> exUrl = horse.horseUrl.split('=');
+                                    horseId = exUrl[1];
+                                  }
 
-                          if (horse != null) ...<Widget>[
-                            Expanded(child: Text(horse.name, maxLines: 1, overflow: TextOverflow.ellipsis)),
-                          ],
+                                  if (horseId.isNotEmpty) {
+                                    horseNotifier.fetchHorseDetail(horseId);
+
+                                    OddsFinderDialog(context: context, widget: const HorseDetailDisplayAlert());
+                                  }
+                                },
+                                child: Icon(
+                                  FontAwesomeIcons.horse,
+                                  size: 20,
+                                  color: Colors.greenAccent.withValues(alpha: 0.5),
+                                ),
+                              ),
+                            ),
+                          ),
                         ],
                       ),
                     ),

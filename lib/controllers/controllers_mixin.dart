@@ -34,7 +34,7 @@ mixin ControllersMixin<T extends ConsumerStatefulWidget> on ConsumerState<T> {
   //==========================================//
 
   //==========================================//
-  HorseState get horoState => ref.watch(horseProvider);
+  HorseState get horseState => ref.watch(horseProvider);
 
   Horse get horseNotifier => ref.read(horseProvider.notifier);
 

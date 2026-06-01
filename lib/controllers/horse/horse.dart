@@ -4,6 +4,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../data/http/client.dart';
 import '../../data/http/path.dart';
 import '../../extensions/extensions.dart';
+import '../../models/horse_detail_model.dart';
 import '../../models/horse_model.dart';
 import '../../utility/utility.dart';
 
@@ -17,6 +18,8 @@ class HorseState with _$HorseState {
     @Default(<HorseModel>[]) List<HorseModel> horseList,
 
     @Default(<String, List<HorseModel>>{}) Map<String, List<HorseModel>> horseMap,
+
+    HorseDetailModel? horseDetail,
   }) = _HorseState;
 }
 
@@ -68,4 +71,21 @@ class Horse extends _$Horse {
   }
 
   //============================================== api
+
+  ///
+  Future<void> fetchHorseDetail(String cname) async {
+    final HttpClient client = ref.read(httpClientProvider);
+
+    try {
+      // ignore: always_specify_types
+      await client.get(path: APIPath.getHorseDetail, queryParameters: {'cname': cname}).then((value) {
+        // ignore: avoid_dynamic_calls
+        final HorseDetailModel detail = HorseDetailModel.fromJson(value['data'] as Map<String, dynamic>);
+        state = state.copyWith(horseDetail: detail);
+      });
+    } catch (e) {
+      utility.showError('予期せぬエラーが発生しました');
+      rethrow;
+    }
+  }
 }

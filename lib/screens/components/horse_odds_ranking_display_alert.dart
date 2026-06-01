@@ -25,12 +25,18 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
           child: Padding(
             padding: const EdgeInsets.all(20),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                 const Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: <Widget>[Text('Horse Odds Ranking'), SizedBox.shrink()],
+                  children: <Widget>[Text('順位表'), SizedBox.shrink()],
                 ),
                 Divider(color: Colors.white.withOpacity(0.4), thickness: 5),
+
+                const Text('縦軸：順位、横軸：タイミング、セル内：馬番', style: TextStyle(fontSize: 10)),
+
+                const SizedBox(height: 5),
+
                 Expanded(child: displayHorseOddsRankingList()),
               ],
             ),
@@ -120,7 +126,17 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
           Row(
             children: <Widget>[
               // 左上の空セル（罫線・塗りなし）
-              const SizedBox(width: 40, height: 30),
+              const SizedBox(
+                width: 40,
+                height: 30,
+                child: Stack(
+                  children: <Widget>[
+                    Positioned(bottom: 0, left: 0, child: Text('順位', style: TextStyle(fontSize: 8))),
+                    Positioned(top: 0, right: 0, child: Text('タイミング', style: TextStyle(fontSize: 8))),
+                  ],
+                ),
+              ),
+
               // タイミングラベル（S, 21, ..., E）
               ...timingLabels.map((String label) {
                 return Container(
@@ -135,7 +151,16 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
                 );
               }),
               // 右上の空セル（罫線・塗りなし）
-              const SizedBox(width: 40, height: 30),
+              const SizedBox(
+                width: 40,
+                height: 30,
+                child: Stack(
+                  children: <Widget>[
+                    Positioned(bottom: 0, right: 0, child: Text('順位', style: TextStyle(fontSize: 8))),
+                    Positioned(top: 0, left: 0, child: Text('タイミング', style: TextStyle(fontSize: 8))),
+                  ],
+                ),
+              ),
             ],
           ),
 
