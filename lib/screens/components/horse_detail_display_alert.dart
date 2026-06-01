@@ -59,13 +59,13 @@ class _HorseDetailDisplayAlertState extends ConsumerState<HorseDetailDisplayAler
       const SizedBox(height: 5),
       _buildInfoRow(label: '産地', value: detail.profile.origin),
 
-      const SizedBox(height: 20),
+      const SizedBox(height: 10),
       _buildSectionHeader('血統'),
       const SizedBox(height: 10),
       _buildPedigree(detail.profile),
       const SizedBox(height: 20),
       _buildSectionHeader('出走レース'),
-      const SizedBox(height: 10),
+      const SizedBox(height: 5),
       _buildRaceList(context, detail.races),
     ];
   }
@@ -107,7 +107,6 @@ class _HorseDetailDisplayAlertState extends ConsumerState<HorseDetailDisplayAler
               ),
             ],
           ),
-          Text(detail.profile.nameMeaning),
         ],
       ),
     );
@@ -146,7 +145,14 @@ class _HorseDetailDisplayAlertState extends ConsumerState<HorseDetailDisplayAler
     return Stack(
       children: <Widget>[
         if (layerDispValue != null)
-          Positioned(right: 10, top: 0, bottom: 0, child: Center(child: Text(layerDispValue))),
+          Positioned(
+            right: 10,
+            top: 0,
+            bottom: 0,
+            child: Center(
+              child: Text(layerDispValue, style: const TextStyle(color: Colors.white)),
+            ),
+          ),
 
         Container(
           width: double.infinity,
@@ -212,7 +218,7 @@ class _HorseDetailDisplayAlertState extends ConsumerState<HorseDetailDisplayAler
 
   Widget _buildRaceList(BuildContext context, List<HorseDetailRaceHistoryModel> races) {
     return SizedBox(
-      height: context.screenSize.height / 4,
+      height: context.screenSize.height / 5,
       child: ListView.separated(
         itemCount: races.length,
         separatorBuilder: (_, __) => Divider(color: Colors.white.withValues(alpha: 0.5), height: 5),

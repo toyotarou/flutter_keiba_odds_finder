@@ -307,7 +307,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
           ),
 
           Positioned(
-            top: 70,
+            top: 30,
             left: 20,
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -341,8 +341,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
-                    const SizedBox(height: 40),
-
                     //=====================//
                     Row(
                       children: widget.scheduleDateBashoMap.entries.map((MapEntry<String, List<ScheduleModel>> e) {
@@ -655,7 +653,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                     : Colors.transparent,
               ),
               alignment: Alignment.center,
-              child: Text(ogtNamesMap[e] ?? '', style: const TextStyle(color: Colors.white)),
+              child: Text(ogtNamesMap[e] ?? '', style: const TextStyle(color: Colors.white, fontSize: 8)),
             ),
           ),
         );
