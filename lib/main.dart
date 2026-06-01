@@ -142,7 +142,7 @@ class _MyAppState extends ConsumerState<MyApp> with ControllersMixin<MyApp> {
       ),
 
       themeMode: ThemeMode.dark,
-      title: 'LIFETIME LOG',
+      title: 'HORSE ODDS FINDER',
       debugShowCheckedModeBanner: false,
       home: GestureDetector(
         onTap: () => primaryFocus?.unfocus(),

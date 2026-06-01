@@ -868,7 +868,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                                     style: const TextStyle(fontSize: 12),
                                     child: Row(
                                       children: <Widget>[
-                                        SizedBox(width: 15, child: Text(horse.waku.toString())),
+                                        SizedBox(
+                                          width: 15,
+                                          child: Text(
+                                            horse.waku.toString(),
+                                            style: const TextStyle(color: Colors.white),
+                                          ),
+                                        ),
                                         const Text('枠'),
                                       ],
                                     ),
