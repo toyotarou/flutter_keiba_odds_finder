@@ -565,14 +565,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                                 icon: const Icon(Icons.refresh, color: Colors.greenAccent),
                               ),
 
-                              if (!kIsWeb) ...<Widget>[
-                                IconButton(
-                                  onPressed: () {
-                                    OddsFinderDialog(context: context, widget: const HorseOddsRankingDisplayAlert());
-                                  },
-                                  icon: Icon(Icons.list, color: Colors.white.withValues(alpha: 0.5)),
-                                ),
-                              ],
+                              if (!kIsWeb) ...<Widget>[],
+
+                              IconButton(
+                                onPressed: () =>
+                                    OddsFinderDialog(context: context, widget: const HorseOddsRankingDisplayAlert()),
+                                icon: Icon(Icons.list, color: Colors.white.withValues(alpha: 0.5)),
+                              ),
                             ],
                           ),
 
@@ -653,9 +652,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
       children: appParamState.configOddsGetTiming.split('|').map((String e) {
         return Expanded(
           child: GestureDetector(
-            onTap: () {
-              appParamNotifier.setSelectedTiming(timing: appParamState.selectedTiming == e ? '' : e);
-            },
+            onTap: () => appParamNotifier.setSelectedTiming(timing: appParamState.selectedTiming == e ? '' : e),
             child: Container(
               margin: const EdgeInsets.all(5),
               padding: const EdgeInsets.all(5),
