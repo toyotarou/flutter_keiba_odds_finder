@@ -137,7 +137,7 @@ class _HorseDetailDisplayAlertState extends ConsumerState<HorseDetailDisplayAler
         padding: const EdgeInsets.all(3),
 
         alignment: Alignment.center,
-        child: Text(text),
+        child: Text(text, style: TextStyle(color: Colors.white)),
       ),
     );
   }
@@ -154,7 +154,7 @@ class _HorseDetailDisplayAlertState extends ConsumerState<HorseDetailDisplayAler
             border: Border(bottom: BorderSide(color: Colors.white.withValues(alpha: 0.4))),
           ),
           padding: const EdgeInsets.only(left: 10, top: 3, bottom: 3),
-          child: Text(text),
+          child: Text(text, style: TextStyle(color: Colors.white)),
         ),
       ],
     );
@@ -172,7 +172,7 @@ class _HorseDetailDisplayAlertState extends ConsumerState<HorseDetailDisplayAler
 
   Widget _buildPedigree(HorseDetailProfileModel profile) {
     return DefaultTextStyle(
-      style: const TextStyle(fontSize: 10),
+      style: const TextStyle(fontSize: 10, color: Colors.white),
       child: Column(
         children: <Widget>[
           Row(
