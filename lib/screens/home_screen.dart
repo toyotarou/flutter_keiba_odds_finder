@@ -875,7 +875,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                                             style: const TextStyle(color: Colors.white),
                                           ),
                                         ),
-                                        const Text('枠'),
+                                        const Text('枠', style: TextStyle(color: Colors.white)),
                                       ],
                                     ),
                                   ),
