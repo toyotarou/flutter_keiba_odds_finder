@@ -8,6 +8,7 @@ import 'package:scroll_to_index/scroll_to_index.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../controllers/controllers_mixin.dart';
+import '../extensions/extensions.dart';
 import '../main.dart';
 import '../models/horse_model.dart';
 import '../models/netkeiba_odds_model.dart';
@@ -303,7 +304,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
           Positioned(
             bottom: 0,
             right: 0,
-            child: Opacity(opacity: 0.4, child: Image.asset('assets/images/bg.png', width: 220)),
+            child: Opacity(opacity: 0.3, child: Image.asset('assets/images/bg.png', width: 220)),
           ),
 
           Positioned(
@@ -330,6 +331,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                   child: Text('ODDS FINDER', style: TextStyle(fontSize: 14, color: Colors.green[700])),
                 ),
               ],
+            ),
+          ),
+
+          Opacity(
+            opacity: 0.1,
+            child: SizedBox(
+              width: context.screenSize.width,
+              height: context.screenSize.height,
+              child: Center(
+                child: Transform.scale(
+                  scale: 1.5,
+                  child: Image.asset('assets/images/bg2.png', width: context.screenSize.width),
+                ),
+              ),
             ),
           ),
 
