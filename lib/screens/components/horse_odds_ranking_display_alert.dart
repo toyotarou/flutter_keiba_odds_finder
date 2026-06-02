@@ -37,6 +37,10 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
 
                 const SizedBox(height: 5),
 
+                const Text('赤く塗られたセルは、左のセルと順位が変わっています。', style: TextStyle(fontSize: 10)),
+
+                const SizedBox(height: 10),
+
                 Expanded(child: displayHorseOddsRankingList()),
               ],
             ),
@@ -118,107 +122,150 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
     // ========================================
 
     return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          // ヘッダー行
-          Row(
-            children: <Widget>[
-              // 左上の空セル（罫線・塗りなし）
-              const SizedBox(
-                width: 40,
-                height: 30,
-                child: Stack(
-                  children: <Widget>[
-                    Positioned(bottom: 0, left: 0, child: Text('順位', style: TextStyle(fontSize: 8))),
-                    Positioned(top: 0, right: 0, child: Text('タイミング', style: TextStyle(fontSize: 8))),
-                  ],
-                ),
-              ),
-
-              // タイミングラベル（S, 21, ..., E）
-              ...timingLabels.map((String label) {
-                return Container(
-                  width: 50,
-                  height: 30,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: headerBgColor,
-                    border: Border.all(color: Colors.white24),
-                  ),
-                  child: Text(label, style: const TextStyle(color: Colors.white70, fontSize: 10)),
-                );
-              }),
-              // 右上の空セル（罫線・塗りなし）
-              const SizedBox(
-                width: 40,
-                height: 30,
-                child: Stack(
-                  children: <Widget>[
-                    Positioned(bottom: 0, right: 0, child: Text('順位', style: TextStyle(fontSize: 8))),
-                    Positioned(top: 0, left: 0, child: Text('タイミング', style: TextStyle(fontSize: 8))),
-                  ],
-                ),
-              ),
-            ],
-          ),
-
-          // データ行（順位ごと）
-          ...List<Widget>.generate(horseNum, (int rankIndex) {
-            final int rank = rankIndex + 1;
-            final List<OddsModel?> rowData = displayHorseRankingMap[rank] ?? <OddsModel?>[];
-            return Row(
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            // ヘッダー行
+            Row(
               children: <Widget>[
-                // 左端の順位
-                Container(
+                // 左上の空セル（罫線・塗りなし）
+                const SizedBox(
                   width: 40,
                   height: 30,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: headerBgColor,
-                    border: Border.all(color: Colors.white24),
+                  child: Stack(
+                    children: <Widget>[
+                      Positioned(bottom: 0, left: 0, child: Text('順位', style: TextStyle(fontSize: 8))),
+                      Positioned(top: 0, right: 0, child: Text('タイミング', style: TextStyle(fontSize: 8))),
+                    ],
                   ),
-                  child: Text(rank.toString(), style: const TextStyle(color: Colors.white70, fontSize: 10)),
                 ),
-                // 各タイミングの馬番（右に行くほど新しいタイミング）
-                ...rowData.asMap().entries.map((MapEntry<int, OddsModel?> entry) {
-                  final int colIndex = entry.key;
-                  final OddsModel? e = entry.value;
 
-                  // 一つ前のタイミングと馬番が変わったか判定
-                  final bool isChanged =
-                      colIndex > 0 && e != null && rowData[colIndex - 1] != null && e.num != rowData[colIndex - 1]!.num;
-
+                // タイミングラベル（S, 21, ..., E）
+                ...timingLabels.map((String label) {
                   return Container(
                     width: 50,
                     height: 30,
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
-                      color: isChanged ? changedBgColor : defaultBgColor,
+                      color: headerBgColor,
                       border: Border.all(color: Colors.white24),
                     ),
-                    child: Text(
-                      e != null ? e.num.toString() : '-',
-                      style: const TextStyle(color: Colors.white, fontSize: 10),
-                    ),
+                    child: Text(label, style: const TextStyle(color: Colors.white70, fontSize: 10)),
                   );
                 }),
-                // 右端の順位
-                Container(
+                // 右上の空セル（罫線・塗りなし）
+                const SizedBox(
                   width: 40,
                   height: 30,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: headerBgColor,
-                    border: Border.all(color: Colors.white24),
+                  child: Stack(
+                    children: <Widget>[
+                      Positioned(bottom: 0, right: 0, child: Text('順位', style: TextStyle(fontSize: 8))),
+                      Positioned(top: 0, left: 0, child: Text('タイミング', style: TextStyle(fontSize: 8))),
+                    ],
                   ),
-                  child: Text(rank.toString(), style: const TextStyle(color: Colors.white70, fontSize: 10)),
                 ),
               ],
-            );
-          }),
-        ],
+            ),
+
+            // データ行（順位ごと）
+            ...List<Widget>.generate(horseNum, (int rankIndex) {
+              final int rank = rankIndex + 1;
+              final List<OddsModel?> rowData = displayHorseRankingMap[rank] ?? <OddsModel?>[];
+              return Row(
+                children: <Widget>[
+                  // 左端の順位
+                  Container(
+                    width: 40,
+                    height: 30,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: headerBgColor,
+                      border: Border.all(color: Colors.white24),
+                    ),
+                    child: Text(rank.toString(), style: const TextStyle(color: Colors.white70, fontSize: 10)),
+                  ),
+                  // 各タイミングの馬番（右に行くほど新しいタイミング）
+                  ...rowData.asMap().entries.map((MapEntry<int, OddsModel?> entry) {
+                    final int colIndex = entry.key;
+                    final OddsModel? e = entry.value;
+
+                    // 一つ前のタイミングと馬番が変わったか判定
+                    final bool isChanged =
+                        colIndex > 0 &&
+                        e != null &&
+                        rowData[colIndex - 1] != null &&
+                        e.num != rowData[colIndex - 1]!.num;
+
+                    return Container(
+                      width: 50,
+                      height: 30,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: isChanged ? changedBgColor : defaultBgColor,
+                        border: Border.all(color: Colors.white24),
+                      ),
+                      child: Text(
+                        e != null ? e.num.toString() : '-',
+                        style: const TextStyle(color: Colors.white, fontSize: 10),
+                      ),
+                    );
+                  }),
+                  // 右端の順位
+                  Container(
+                    width: 40,
+                    height: 30,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: headerBgColor,
+                      border: Border.all(color: Colors.white24),
+                    ),
+                    child: Text(rank.toString(), style: const TextStyle(color: Colors.white70, fontSize: 10)),
+                  ),
+                ],
+              );
+            }),
+
+            // フッター行（最下段にもタイミングラベルを表示）
+            Row(
+              children: <Widget>[
+                const SizedBox(
+                  width: 40,
+                  height: 30,
+                  child: Stack(
+                    children: <Widget>[
+                      Positioned(top: 0, left: 0, child: Text('順位', style: TextStyle(fontSize: 8))),
+                      Positioned(bottom: 0, right: 0, child: Text('タイミング', style: TextStyle(fontSize: 8))),
+                    ],
+                  ),
+                ),
+                ...timingLabels.map((String label) {
+                  return Container(
+                    width: 50,
+                    height: 30,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: headerBgColor,
+                      border: Border.all(color: Colors.white24),
+                    ),
+                    child: Text(label, style: const TextStyle(color: Colors.white70, fontSize: 10)),
+                  );
+                }),
+                const SizedBox(
+                  width: 40,
+                  height: 30,
+                  child: Stack(
+                    children: <Widget>[
+                      Positioned(top: 0, right: 0, child: Text('順位', style: TextStyle(fontSize: 8))),
+                      Positioned(bottom: 0, left: 0, child: Text('タイミング', style: TextStyle(fontSize: 8))),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
