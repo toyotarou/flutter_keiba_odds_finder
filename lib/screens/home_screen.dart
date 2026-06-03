@@ -192,16 +192,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
     required List<String> timeline,
     required String activeTimingKey,
     required String selectedTiming,
+    List<String>? fukuMinList,
+    List<String>? fukuMaxList,
   }) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: timeline.asMap().entries.map((MapEntry<int, String> entry) {
         if (entry.value.isEmpty) {
-          return Container(
-            width: 30,
-            height: 30,
-            margin: const EdgeInsets.only(top: 8),
-            decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.2)),
+          return Expanded(
+            child: Container(
+              height: 150,
+              margin: const EdgeInsets.only(top: 8),
+              decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.2)),
+            ),
           );
         }
 
@@ -220,43 +223,122 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
             ? 'E'
             : exOddsGetTiming[entry.key];
 
-        return Stack(
-          children: <Widget>[
-            Container(
-              width: 30,
-              height: 30,
-              decoration: BoxDecoration(color: Colors.greenAccent.withValues(alpha: 0.2)),
-              margin: const EdgeInsets.only(top: 8),
-              padding: const EdgeInsets.only(bottom: 5),
-              child: Align(
-                alignment: Alignment.bottomCenter,
-                child: Text(entry.value, style: const TextStyle(fontSize: 10, color: Colors.white)),
-              ),
-            ),
+        final String fukuMin = fukuMinList?[entry.key] ?? '';
+        final String fukuMax = fukuMaxList?[entry.key] ?? '';
 
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        return Expanded(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 3),
+            child: Stack(
               children: <Widget>[
+                // 背景（固定高さ）
                 Container(
-                  decoration: BoxDecoration(color: circleColor, shape: BoxShape.circle),
-                  width: 12,
-                  height: 12,
-                  child: Center(
-                    child: Text(
-                      circleMinute,
-                      style: TextStyle(
-                        fontSize: 9,
-                        color: circleColor == Colors.red ? Colors.white : Colors.black,
-                        fontWeight: FontWeight.bold,
+                  width: double.infinity,
+                  height: 120,
+                  decoration: BoxDecoration(color: Colors.greenAccent.withValues(alpha: 0.2)),
+                  margin: const EdgeInsets.only(top: 8),
+                ),
+
+                // コンテンツ（高さ制約なし、オーバーフローしない）
+                Padding(
+                  padding: const EdgeInsets.only(top: 35),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      const Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 4),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: <Widget>[
+                            Text('単勝', style: TextStyle(fontSize: 8, color: Colors.white)),
+                            SizedBox.shrink(),
+                          ],
+                        ),
                       ),
-                    ),
+
+                      const SizedBox(height: 5),
+                      Text(
+                        entry.value,
+                        style: const TextStyle(fontSize: 10, color: Colors.white),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+
+                      const SizedBox(height: 10),
+
+                      if (fukuMin.isNotEmpty || fukuMax.isNotEmpty) ...<Widget>[
+                        Stack(
+                          children: <Widget>[
+                            Container(
+                              width: double.infinity,
+                              margin: const EdgeInsets.only(top: 8, right: 3, left: 3),
+                              padding: const EdgeInsets.symmetric(vertical: 5),
+                              decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.2)),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: <Widget>[
+                                  Text(
+                                    fukuMin,
+                                    style: const TextStyle(fontSize: 10, color: Colors.white),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  const SizedBox(height: 1),
+                                  Container(width: 1, height: 5, color: Colors.white),
+                                  const SizedBox(height: 1),
+                                  Text(
+                                    fukuMax,
+                                    style: const TextStyle(fontSize: 10, color: Colors.white),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
+                              ),
+                            ),
+
+                            const Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 4),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: <Widget>[
+                                  Text('複勝', style: TextStyle(fontSize: 8, color: Colors.white)),
+                                  SizedBox.shrink(),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ],
                   ),
                 ),
 
-                getUpDownIcon(entry: entry, timeLineMap: timeline.asMap().entries),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Container(
+                      decoration: BoxDecoration(color: circleColor, shape: BoxShape.circle),
+                      width: 12,
+                      height: 12,
+                      child: Center(
+                        child: Text(
+                          circleMinute,
+                          style: TextStyle(
+                            fontSize: 9,
+                            color: circleColor == Colors.red ? Colors.white : Colors.black,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    getUpDownIcon(entry: entry, timeLineMap: timeline.asMap().entries),
+                  ],
+                ),
               ],
             ),
-          ],
+          ),
         );
       }).toList(),
     );
@@ -350,7 +432,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
 
           SafeArea(
             child: Padding(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(10),
               child: DefaultTextStyle(
                 style: const TextStyle(fontSize: 14),
                 child: Column(
@@ -737,6 +819,30 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
       }
     }
 
+    final Map<int, List<String>> fukuMinTimelineMap = <int, List<String>>{};
+    final Map<int, List<String>> fukuMaxTimelineMap = <int, List<String>>{};
+    for (final OddsModel e in oddsModelList) {
+      fukuMinTimelineMap.putIfAbsent(e.num, () => List<String>.filled(timingParts.length, ''));
+      fukuMaxTimelineMap.putIfAbsent(e.num, () => List<String>.filled(timingParts.length, ''));
+      final int idx = timingOrder.indexOf(e.minutesBeforeStart);
+      if (idx != -1) {
+        fukuMinTimelineMap[e.num]![idx] = e.fukuMin;
+        fukuMaxTimelineMap[e.num]![idx] = e.fukuMax;
+      }
+    }
+
+    final Map<int, List<String>> netkeibaFukuMinTimelineMap = <int, List<String>>{};
+    final Map<int, List<String>> netkeibaFukuMaxTimelineMap = <int, List<String>>{};
+    for (final NetkeibaOddsModel e in netkeibaOddsModelList) {
+      netkeibaFukuMinTimelineMap.putIfAbsent(e.num, () => List<String>.filled(timingParts.length, ''));
+      netkeibaFukuMaxTimelineMap.putIfAbsent(e.num, () => List<String>.filled(timingParts.length, ''));
+      final int idx = timingOrder.indexOf(e.minutesBeforeStart);
+      if (idx != -1) {
+        netkeibaFukuMinTimelineMap[e.num]![idx] = e.fukuMin;
+        netkeibaFukuMaxTimelineMap[e.num]![idx] = e.fukuMax;
+      }
+    }
+
     // oddsModelListはnum昇順・minutesBeforeStart降順済みなので
     // 後から上書きするほど minutesBeforeStart が小さい（＝最新）レコードになる
     final Map<int, Map<String, String>> fukuOddsMap = <int, Map<String, String>>{};
@@ -803,6 +909,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
         final HorseModel? horse = horseModelMap[element.num];
         final List<String>? oddsTimeline = oddsTimelineMap[element.num];
         final List<String>? netkeibaTimeline = netkeibaOddsTimelineMap[element.num];
+        final List<String>? fukuMinTimeline = fukuMinTimelineMap[element.num];
+        final List<String>? fukuMaxTimeline = fukuMaxTimelineMap[element.num];
+        final List<String>? netkeibaFukuMinTimeline = netkeibaFukuMinTimelineMap[element.num];
+        final List<String>? netkeibaFukuMaxTimeline = netkeibaFukuMaxTimelineMap[element.num];
 
         return AutoScrollTag(
           key: ValueKey<int>(index),
@@ -811,7 +921,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
           child: Stack(
             children: <Widget>[
               Container(
-                height: 200,
+                height: 400,
                 margin: const EdgeInsets.symmetric(vertical: 10),
                 padding: const EdgeInsets.only(top: 5),
                 decoration: BoxDecoration(
@@ -940,54 +1050,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                       ),
                     ),
 
-                    const SizedBox(height: 10),
-
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: <Widget>[
-                        const SizedBox.shrink(),
-                        DefaultTextStyle(
-                          style: const TextStyle(fontSize: 12),
-                          child: Row(
-                            children: <Widget>[
-                              Container(
-                                alignment: Alignment.center,
-                                decoration: BoxDecoration(color: Colors.greenAccent.withValues(alpha: 0.1)),
-                                padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 10),
-                                child: const Text('複勝（最終）', style: TextStyle(color: Colors.white)),
-                              ),
-                              const SizedBox(width: 5),
-                              Container(
-                                width: 40,
-                                alignment: Alignment.center,
-                                decoration: BoxDecoration(
-                                  border: Border(bottom: BorderSide(color: Colors.greenAccent.withValues(alpha: 0.5))),
-                                ),
-                                padding: const EdgeInsets.only(bottom: 3),
-                                child: Text(
-                                  fukuOddsMap[element.num]!['fukuMin'] ?? '',
-                                  style: const TextStyle(color: Colors.white),
-                                ),
-                              ),
-                              const SizedBox(child: Text(' / ')),
-                              Container(
-                                width: 40,
-                                alignment: Alignment.center,
-                                decoration: BoxDecoration(
-                                  border: Border(bottom: BorderSide(color: Colors.greenAccent.withValues(alpha: 0.5))),
-                                ),
-                                padding: const EdgeInsets.only(bottom: 3),
-                                child: Text(
-                                  fukuOddsMap[element.num]!['fukuMax'] ?? '',
-                                  style: const TextStyle(color: Colors.white),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-
                     if (oddsTimeline != null) ...<Widget>[
                       const SizedBox(height: 10),
                       _buildSourceLabel('JRA'),
@@ -996,6 +1058,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                         timeline: oddsTimeline,
                         activeTimingKey: activeTimingKey,
                         selectedTiming: selectedTiming,
+                        fukuMinList: fukuMinTimeline,
+                        fukuMaxList: fukuMaxTimeline,
                       ),
                     ],
 
@@ -1007,6 +1071,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                         timeline: netkeibaTimeline,
                         activeTimingKey: activeTimingKey,
                         selectedTiming: selectedTiming,
+                        fukuMinList: netkeibaFukuMinTimeline,
+                        fukuMaxList: netkeibaFukuMaxTimeline,
                       ),
                     ],
 
@@ -1065,12 +1131,24 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
       return const SizedBox.shrink();
     }
 
+    Icon? icon;
+
     if (current > prev) {
-      return const Icon(Icons.arrow_upward, size: 15, color: Colors.redAccent);
+      icon = const Icon(Icons.arrow_upward, size: 15, color: Colors.redAccent);
     } else if (current < prev) {
-      return const Icon(Icons.arrow_downward, size: 15, color: Colors.greenAccent);
+      icon = const Icon(Icons.arrow_downward, size: 15, color: Colors.greenAccent);
     } else {
-      return const Icon(Icons.drag_handle, size: 15, color: Colors.white54);
+      icon = const Icon(Icons.drag_handle, size: 15, color: Colors.white54);
     }
+
+    return Container(
+      decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(3)),
+      child: Column(
+        children: <Widget>[
+          icon,
+          const Text('単', style: TextStyle(fontSize: 8, color: Colors.white)),
+        ],
+      ),
+    );
   }
 }
