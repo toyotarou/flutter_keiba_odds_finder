@@ -378,9 +378,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
     final int selected = appParamState.selectedRaceNumber;
     if (selected > 0 && selected != _prevRaceNumber) {
       _prevRaceNumber = selected;
+      _currentHorseIndex = 0;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
           _raceScrollController.scrollToIndex(selected - 1, preferPosition: AutoScrollPosition.middle);
+          if (_horseListScrollController.hasClients) {
+            _horseListScrollController.jumpTo(0);
+          }
         }
       });
     }
