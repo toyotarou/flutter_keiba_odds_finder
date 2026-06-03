@@ -51,7 +51,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
 
   Timer? _countdownTimer;
   final ValueNotifier<int> _remainingSecondsNotifier = ValueNotifier<int>(0);
-  final ValueNotifier<String> _currentTimeNotifier = ValueNotifier<String>('--:--');
   String _lastStartTime = '';
 
   final Utility _utility = Utility();
@@ -81,7 +80,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
   void dispose() {
     _countdownTimer?.cancel();
     _remainingSecondsNotifier.dispose();
-    _currentTimeNotifier.dispose();
     _raceScrollController.dispose();
     _horseListScrollController.dispose();
     super.dispose();
@@ -104,14 +102,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
     _countdownTimer?.cancel();
 
     if (startTime == '--:--') {
-      _currentTimeNotifier.value = '--:--';
       _remainingSecondsNotifier.value = 0;
       return;
     }
 
     final List<String> parts = startTime.split(':');
     if (parts.length < 2) {
-      _currentTimeNotifier.value = '--:--';
       _remainingSecondsNotifier.value = 0;
       return;
     }
@@ -134,9 +130,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
       }
     }
 
-    // レース日が今日より前 → 終了済みなので --:-- を表示
+    // レース日が今日より前 → 終了済みなので 0 を表示
     if (parsedDate != null && parsedDate.isBefore(today)) {
-      _currentTimeNotifier.value = '--:--';
       _remainingSecondsNotifier.value = 0;
       return;
     }
@@ -147,7 +142,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
 
     final int diff = raceTime.difference(now).inSeconds;
 
-    _currentTimeNotifier.value = '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
     _remainingSecondsNotifier.value = diff > 0 ? diff : 0;
 
     _countdownTimer = Timer.periodic(const Duration(seconds: 1), (Timer timer) {
@@ -491,6 +485,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                                     ? Colors.greenAccent.withValues(alpha: 0.1)
                                     : Colors.black.withValues(alpha: 0.3),
                                 border: Border.all(color: Colors.white.withValues(alpha: 0.4)),
+                                borderRadius: BorderRadius.circular(3),
                               ),
                               alignment: Alignment.center,
                               child: Text(e.key, style: const TextStyle(color: Colors.white)),
@@ -527,6 +522,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                                   color: (appParamState.selectedScheduleKaisuuBashoDayName == label)
                                       ? Colors.greenAccent.withValues(alpha: 0.1)
                                       : Colors.transparent,
+                                  borderRadius: BorderRadius.circular(3),
                                 ),
                                 alignment: Alignment.center,
                                 child: Text(label, style: const TextStyle(color: Colors.white)),
@@ -598,23 +594,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                                     ValueListenableBuilder<int>(
                                       valueListenable: _remainingSecondsNotifier,
                                       builder: (BuildContext context, int seconds, Widget? _) {
-                                        return Column(
-                                          crossAxisAlignment: CrossAxisAlignment.end,
-                                          children: <Widget>[
-                                            ValueListenableBuilder<String>(
-                                              valueListenable: _currentTimeNotifier,
-                                              builder: (BuildContext context, String time, Widget? _) {
-                                                return Text(
-                                                  time,
-                                                  style: const TextStyle(fontSize: 11, color: Colors.white54),
-                                                );
-                                              },
-                                            ),
-                                            Text(
-                                              _formatCountdown(seconds),
-                                              style: const TextStyle(fontSize: 13, color: Colors.white),
-                                            ),
-                                          ],
+                                        return Text(
+                                          _formatCountdown(seconds),
+                                          style: const TextStyle(fontSize: 13, color: Colors.white),
                                         );
                                       },
                                     ),
@@ -780,6 +762,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                     : (appParamState.selectedTiming == '' && e == minTiming)
                     ? Colors.red.withValues(alpha: 0.3)
                     : Colors.transparent,
+                borderRadius: BorderRadius.circular(3),
               ),
               alignment: Alignment.center,
               child: Text(ogtNamesMap[e] ?? '', style: const TextStyle(color: Colors.white, fontSize: 8)),
@@ -1015,7 +998,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                     child: Container(
                       margin: const EdgeInsets.only(top: 5, left: 15),
                       padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 20),
-                      decoration: BoxDecoration(border: Border.all(color: Colors.greenAccent.withValues(alpha: 0.5))),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.greenAccent.withValues(alpha: 0.5)),
+                        borderRadius: BorderRadius.circular(3),
+                      ),
                       child: Row(
                         children: <Widget>[
                           SizedBox(
@@ -1049,6 +1035,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                               color: (horseWakuColorMap[horse.waku] != null)
                                   ? horseWakuColorMap[horse.waku]!.withValues(alpha: 0.2)
                                   : Colors.white.withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(3),
                             ),
                             child: DefaultTextStyle(
                               style: const TextStyle(fontSize: 12),
