@@ -54,7 +54,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
   final ValueNotifier<String> _currentTimeNotifier = ValueNotifier<String>('--:--');
   String _lastStartTime = '';
 
-  Utility utility = Utility();
+  final Utility _utility = Utility();
 
   ///
   @override
@@ -110,6 +110,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
     }
 
     final List<String> parts = startTime.split(':');
+    if (parts.length < 2) {
+      _currentTimeNotifier.value = '--:--';
+      _remainingSecondsNotifier.value = 0;
+      return;
+    }
+
     final int hour = int.tryParse(parts[0]) ?? 0;
     final int minute = int.tryParse(parts[1]) ?? 0;
 
@@ -128,7 +134,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
       }
     }
 
-    // レース日が今日より前 → 終了済みなので 00:00:00 を表示
+    // レース日が今日より前 → 終了済みなので --:-- を表示
     if (parsedDate != null && parsedDate.isBefore(today)) {
       _currentTimeNotifier.value = '--:--';
       _remainingSecondsNotifier.value = 0;
@@ -187,6 +193,27 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
     return '';
   }
 
+  /// タイムラインマップを汎用的に構築するヘルパー
+  static Map<int, List<String>> _buildTimelineMap<T>({
+    required List<T> models,
+    required int Function(T) getNum,
+    required int Function(T) getMinutes,
+    required String Function(T) getValue,
+    required int length,
+    required List<int> timingOrder,
+  }) {
+    final Map<int, List<String>> result = <int, List<String>>{};
+    for (final T model in models) {
+      final int num = getNum(model);
+      result.putIfAbsent(num, () => List<String>.filled(length, ''));
+      final int idx = timingOrder.indexOf(getMinutes(model));
+      if (idx != -1) {
+        result[num]![idx] = getValue(model);
+      }
+    }
+    return result;
+  }
+
   ///
   Widget _buildOddsTimelineRow({
     required List<String> timeline,
@@ -195,6 +222,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
     List<String>? fukuMinList,
     List<String>? fukuMaxList,
   }) {
+    final List<String> timingKeys = widget.oddsGetTiming.split('|');
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: timeline.asMap().entries.map((MapEntry<int, String> entry) {
@@ -208,7 +237,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
           );
         }
 
-        final String entryTimingKey = widget.oddsGetTiming.split('|')[entry.key];
+        final String entryTimingKey = entry.key < timingKeys.length ? timingKeys[entry.key] : '';
 
         final Color circleColor = (selectedTiming == entryTimingKey)
             ? Colors.greenAccent
@@ -216,12 +245,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
             ? Colors.red
             : Colors.white;
 
-        final List<String> exOddsGetTiming = widget.oddsGetTiming.split('|');
         final String circleMinute = entry.key == 0
             ? 'S'
-            : entry.key == exOddsGetTiming.length - 1
+            : entry.key == timingKeys.length - 1
             ? 'E'
-            : exOddsGetTiming[entry.key];
+            : entryTimingKey;
 
         final String fukuMin = fukuMinList?[entry.key] ?? '';
         final String fukuMax = fukuMaxList?[entry.key] ?? '';
@@ -235,7 +263,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                 Container(
                   width: double.infinity,
                   height: 120,
-                  decoration: BoxDecoration(color: Colors.greenAccent.withValues(alpha: 0.2)),
+                  decoration: BoxDecoration(
+                    color: Colors.greenAccent.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(3),
+                  ),
                   margin: const EdgeInsets.only(top: 8),
                 ),
 
@@ -273,7 +304,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                               width: double.infinity,
                               margin: const EdgeInsets.only(top: 8, right: 3, left: 3),
                               padding: const EdgeInsets.symmetric(vertical: 5),
-                              decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.2)),
+                              decoration: BoxDecoration(
+                                color: Colors.black.withValues(alpha: 0.2),
+                                borderRadius: BorderRadius.circular(3),
+                              ),
                               child: Column(
                                 mainAxisSize: MainAxisSize.min,
                                 children: <Widget>[
@@ -368,7 +402,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
         (RaceModel e) => e.race == appParamState.selectedRaceNumber,
       );
       raceName = race.raceName;
-      startTime = race.startTime.substring(0, race.startTime.lastIndexOf(':'));
+      final int colonIdx = race.startTime.lastIndexOf(':');
+      startTime = colonIdx > 0 ? race.startTime.substring(0, colonIdx) : race.startTime;
     }
 
     if (startTime != _lastStartTime) {
@@ -798,57 +833,57 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
       if (timingParts[i] == '0') {
         return -999;
       }
-      return int.parse(timingParts[i]);
+      return int.tryParse(timingParts[i]) ?? 0;
     });
 
-    final Map<int, List<String>> oddsTimelineMap = <int, List<String>>{};
-    for (final OddsModel e in oddsModelList) {
-      oddsTimelineMap.putIfAbsent(e.num, () => List<String>.filled(timingParts.length, ''));
-      final int idx = timingOrder.indexOf(e.minutesBeforeStart);
-      if (idx != -1) {
-        oddsTimelineMap[e.num]![idx] = e.odds;
-      }
-    }
-
-    final Map<int, List<String>> netkeibaOddsTimelineMap = <int, List<String>>{};
-    for (final NetkeibaOddsModel e in netkeibaOddsModelList) {
-      netkeibaOddsTimelineMap.putIfAbsent(e.num, () => List<String>.filled(timingParts.length, ''));
-      final int idx = timingOrder.indexOf(e.minutesBeforeStart);
-      if (idx != -1) {
-        netkeibaOddsTimelineMap[e.num]![idx] = e.odds;
-      }
-    }
-
-    final Map<int, List<String>> fukuMinTimelineMap = <int, List<String>>{};
-    final Map<int, List<String>> fukuMaxTimelineMap = <int, List<String>>{};
-    for (final OddsModel e in oddsModelList) {
-      fukuMinTimelineMap.putIfAbsent(e.num, () => List<String>.filled(timingParts.length, ''));
-      fukuMaxTimelineMap.putIfAbsent(e.num, () => List<String>.filled(timingParts.length, ''));
-      final int idx = timingOrder.indexOf(e.minutesBeforeStart);
-      if (idx != -1) {
-        fukuMinTimelineMap[e.num]![idx] = e.fukuMin;
-        fukuMaxTimelineMap[e.num]![idx] = e.fukuMax;
-      }
-    }
-
-    final Map<int, List<String>> netkeibaFukuMinTimelineMap = <int, List<String>>{};
-    final Map<int, List<String>> netkeibaFukuMaxTimelineMap = <int, List<String>>{};
-    for (final NetkeibaOddsModel e in netkeibaOddsModelList) {
-      netkeibaFukuMinTimelineMap.putIfAbsent(e.num, () => List<String>.filled(timingParts.length, ''));
-      netkeibaFukuMaxTimelineMap.putIfAbsent(e.num, () => List<String>.filled(timingParts.length, ''));
-      final int idx = timingOrder.indexOf(e.minutesBeforeStart);
-      if (idx != -1) {
-        netkeibaFukuMinTimelineMap[e.num]![idx] = e.fukuMin;
-        netkeibaFukuMaxTimelineMap[e.num]![idx] = e.fukuMax;
-      }
-    }
-
-    // oddsModelListはnum昇順・minutesBeforeStart降順済みなので
-    // 後から上書きするほど minutesBeforeStart が小さい（＝最新）レコードになる
-    final Map<int, Map<String, String>> fukuOddsMap = <int, Map<String, String>>{};
-    for (final OddsModel e in oddsModelList) {
-      fukuOddsMap[e.num] = <String, String>{'fukuMin': e.fukuMin, 'fukuMax': e.fukuMax};
-    }
+    final Map<int, List<String>> oddsTimelineMap = _buildTimelineMap<OddsModel>(
+      models: oddsModelList,
+      getNum: (OddsModel e) => e.num,
+      getMinutes: (OddsModel e) => e.minutesBeforeStart,
+      getValue: (OddsModel e) => e.odds,
+      length: timingParts.length,
+      timingOrder: timingOrder,
+    );
+    final Map<int, List<String>> netkeibaOddsTimelineMap = _buildTimelineMap<NetkeibaOddsModel>(
+      models: netkeibaOddsModelList,
+      getNum: (NetkeibaOddsModel e) => e.num,
+      getMinutes: (NetkeibaOddsModel e) => e.minutesBeforeStart,
+      getValue: (NetkeibaOddsModel e) => e.odds,
+      length: timingParts.length,
+      timingOrder: timingOrder,
+    );
+    final Map<int, List<String>> fukuMinTimelineMap = _buildTimelineMap<OddsModel>(
+      models: oddsModelList,
+      getNum: (OddsModel e) => e.num,
+      getMinutes: (OddsModel e) => e.minutesBeforeStart,
+      getValue: (OddsModel e) => e.fukuMin,
+      length: timingParts.length,
+      timingOrder: timingOrder,
+    );
+    final Map<int, List<String>> fukuMaxTimelineMap = _buildTimelineMap<OddsModel>(
+      models: oddsModelList,
+      getNum: (OddsModel e) => e.num,
+      getMinutes: (OddsModel e) => e.minutesBeforeStart,
+      getValue: (OddsModel e) => e.fukuMax,
+      length: timingParts.length,
+      timingOrder: timingOrder,
+    );
+    final Map<int, List<String>> netkeibaFukuMinTimelineMap = _buildTimelineMap<NetkeibaOddsModel>(
+      models: netkeibaOddsModelList,
+      getNum: (NetkeibaOddsModel e) => e.num,
+      getMinutes: (NetkeibaOddsModel e) => e.minutesBeforeStart,
+      getValue: (NetkeibaOddsModel e) => e.fukuMin,
+      length: timingParts.length,
+      timingOrder: timingOrder,
+    );
+    final Map<int, List<String>> netkeibaFukuMaxTimelineMap = _buildTimelineMap<NetkeibaOddsModel>(
+      models: netkeibaOddsModelList,
+      getNum: (NetkeibaOddsModel e) => e.num,
+      getMinutes: (NetkeibaOddsModel e) => e.minutesBeforeStart,
+      getValue: (NetkeibaOddsModel e) => e.fukuMax,
+      length: timingParts.length,
+      timingOrder: timingOrder,
+    );
 
     int? filterMinutes;
     final String selectedTiming = appParamState.selectedTiming;
@@ -857,7 +892,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
       if (selectedTiming == '0') {
         filterMinutes = -999;
       } else {
-        final int parsed = int.parse(selectedTiming);
+        final int parsed = int.tryParse(selectedTiming) ?? 0;
         if (parsed == 24) {
           filterMinutes = oddsModelList.any((OddsModel e) => e.minutesBeforeStart == 24) ? 24 : 999;
         } else {
@@ -898,192 +933,215 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
 
     _displayListLength = displayList.length;
 
-    final Map<int, Color> horseWakuColorMap = utility.getHorseWakuColorMap();
+    final Map<int, Color> horseWakuColorMap = _utility.getHorseWakuColorMap();
 
     return ListView.builder(
       controller: _horseListScrollController,
       itemCount: displayList.length,
       itemBuilder: (BuildContext context, int index) {
         final OddsModel element = displayList[index];
-        final int popularity = index + 1;
-        final HorseModel? horse = horseModelMap[element.num];
-        final List<String>? oddsTimeline = oddsTimelineMap[element.num];
-        final List<String>? netkeibaTimeline = netkeibaOddsTimelineMap[element.num];
-        final List<String>? fukuMinTimeline = fukuMinTimelineMap[element.num];
-        final List<String>? fukuMaxTimeline = fukuMaxTimelineMap[element.num];
-        final List<String>? netkeibaFukuMinTimeline = netkeibaFukuMinTimelineMap[element.num];
-        final List<String>? netkeibaFukuMaxTimeline = netkeibaFukuMaxTimelineMap[element.num];
-
         return AutoScrollTag(
           key: ValueKey<int>(index),
           controller: _horseListScrollController,
           index: index,
-          child: Stack(
+          child: _buildHorseListItem(
+            index: index,
+            element: element,
+            horseModelMap: horseModelMap,
+            horseWakuColorMap: horseWakuColorMap,
+            oddsTimelineMap: oddsTimelineMap,
+            netkeibaOddsTimelineMap: netkeibaOddsTimelineMap,
+            fukuMinTimelineMap: fukuMinTimelineMap,
+            fukuMaxTimelineMap: fukuMaxTimelineMap,
+            netkeibaFukuMinTimelineMap: netkeibaFukuMinTimelineMap,
+            netkeibaFukuMaxTimelineMap: netkeibaFukuMaxTimelineMap,
+            activeTimingKey: activeTimingKey,
+            selectedTiming: selectedTiming,
+          ),
+        );
+      },
+    );
+  }
+
+  ///
+  Widget _buildHorseListItem({
+    required int index,
+    required OddsModel element,
+    required Map<int, HorseModel> horseModelMap,
+    required Map<int, Color> horseWakuColorMap,
+    required Map<int, List<String>> oddsTimelineMap,
+    required Map<int, List<String>> netkeibaOddsTimelineMap,
+    required Map<int, List<String>> fukuMinTimelineMap,
+    required Map<int, List<String>> fukuMaxTimelineMap,
+    required Map<int, List<String>> netkeibaFukuMinTimelineMap,
+    required Map<int, List<String>> netkeibaFukuMaxTimelineMap,
+    required String activeTimingKey,
+    required String selectedTiming,
+  }) {
+    final int popularity = index + 1;
+    final HorseModel? horse = horseModelMap[element.num];
+    final List<String>? oddsTimeline = oddsTimelineMap[element.num];
+    final List<String>? netkeibaTimeline = netkeibaOddsTimelineMap[element.num];
+    final List<String>? fukuMinTimeline = fukuMinTimelineMap[element.num];
+    final List<String>? fukuMaxTimeline = fukuMaxTimelineMap[element.num];
+    final List<String>? netkeibaFukuMinTimeline = netkeibaFukuMinTimelineMap[element.num];
+    final List<String>? netkeibaFukuMaxTimeline = netkeibaFukuMaxTimelineMap[element.num];
+
+    return Stack(
+      children: <Widget>[
+        Container(
+          height: 400,
+          margin: const EdgeInsets.symmetric(vertical: 10),
+          padding: const EdgeInsets.only(top: 5),
+          decoration: BoxDecoration(
+            border: Border(left: BorderSide(color: Colors.greenAccent.withValues(alpha: 0.1), width: 10)),
+          ),
+        ),
+
+        Container(
+          margin: const EdgeInsets.symmetric(vertical: 10),
+          padding: const EdgeInsets.only(top: 5),
+          decoration: BoxDecoration(
+            border: Border(bottom: BorderSide(color: Colors.greenAccent.withValues(alpha: 0.2), width: 2)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              Container(
-                height: 400,
-                margin: const EdgeInsets.symmetric(vertical: 10),
-                padding: const EdgeInsets.only(top: 5),
-                decoration: BoxDecoration(
-                  border: Border(left: BorderSide(color: Colors.greenAccent.withValues(alpha: 0.1), width: 10)),
-                ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: <Widget>[
+                  Opacity(
+                    opacity: 0.4,
+                    child: Container(
+                      margin: const EdgeInsets.only(top: 5, left: 15),
+                      padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 20),
+                      decoration: BoxDecoration(border: Border.all(color: Colors.greenAccent.withValues(alpha: 0.5))),
+                      child: Row(
+                        children: <Widget>[
+                          SizedBox(
+                            width: 20,
+                            child: Text(popularity.toString(), style: const TextStyle(color: Colors.greenAccent)),
+                          ),
+                          const Text('番人気', style: TextStyle(color: Colors.greenAccent)),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox.shrink(),
+                ],
               ),
 
-              Container(
-                margin: const EdgeInsets.symmetric(vertical: 10),
-                padding: const EdgeInsets.only(top: 5),
-                decoration: BoxDecoration(
-                  border: Border(bottom: BorderSide(color: Colors.greenAccent.withValues(alpha: 0.2), width: 2)),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+              const SizedBox(height: 10),
+
+              DefaultTextStyle(
+                style: const TextStyle(color: Colors.white),
+                child: Stack(
                   children: <Widget>[
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: <Widget>[
-                        Opacity(
-                          opacity: 0.4,
-                          child: Container(
-                            margin: const EdgeInsets.only(top: 5, left: 15),
-                            padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 20),
+                        const SizedBox(width: 20),
+
+                        if (horse != null) ...<Widget>[
+                          Container(
+                            padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
                             decoration: BoxDecoration(
-                              border: Border.all(color: Colors.greenAccent.withValues(alpha: 0.5)),
+                              color: (horseWakuColorMap[horse.waku] != null)
+                                  ? horseWakuColorMap[horse.waku]!.withValues(alpha: 0.2)
+                                  : Colors.white.withValues(alpha: 0.2),
                             ),
-                            child: Row(
-                              children: <Widget>[
-                                SizedBox(
-                                  width: 20,
-                                  child: Text(popularity.toString(), style: const TextStyle(color: Colors.greenAccent)),
-                                ),
-                                const Text('番人気', style: TextStyle(color: Colors.greenAccent)),
-                              ],
-                            ),
-                          ),
-                        ),
-
-                        const SizedBox.shrink(),
-                      ],
-                    ),
-
-                    const SizedBox(height: 10),
-
-                    DefaultTextStyle(
-                      style: const TextStyle(color: Colors.white),
-                      child: Stack(
-                        children: <Widget>[
-                          Row(
-                            children: <Widget>[
-                              const SizedBox(width: 20),
-
-                              if (horse != null) ...<Widget>[
-                                Container(
-                                  padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
-                                  decoration: BoxDecoration(
-                                    color: (horseWakuColorMap[horse.waku] != null)
-                                        ? horseWakuColorMap[horse.waku]!.withValues(alpha: 0.2)
-                                        : Colors.white.withValues(alpha: 0.2),
-                                  ),
-
-                                  child: DefaultTextStyle(
-                                    style: const TextStyle(fontSize: 12),
-                                    child: Row(
-                                      children: <Widget>[
-                                        SizedBox(
-                                          width: 15,
-                                          child: Text(
-                                            horse.waku.toString(),
-                                            style: const TextStyle(color: Colors.white),
-                                          ),
-                                        ),
-                                        const Text('枠', style: TextStyle(color: Colors.white)),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ],
-
-                              const SizedBox(width: 20),
-
-                              Row(
+                            child: DefaultTextStyle(
+                              style: const TextStyle(fontSize: 12),
+                              child: Row(
                                 children: <Widget>[
-                                  SizedBox(width: 20, child: Text(element.num.toString())),
-                                  const Text('番'),
+                                  SizedBox(
+                                    width: 15,
+                                    child: Text(horse.waku.toString(), style: const TextStyle(color: Colors.white)),
+                                  ),
+                                  const Text('枠', style: TextStyle(color: Colors.white)),
                                 ],
-                              ),
-
-                              const SizedBox(width: 20),
-
-                              if (horse != null) ...<Widget>[
-                                Expanded(child: Text(horse.name, maxLines: 1, overflow: TextOverflow.ellipsis)),
-                              ],
-                            ],
-                          ),
-
-                          Positioned(
-                            right: 10,
-                            child: Transform(
-                              alignment: Alignment.center,
-                              transform: Matrix4.identity()..scale(-1.0, 1.0),
-                              child: GestureDetector(
-                                onTap: () {
-                                  String horseId = '';
-                                  if (horse != null) {
-                                    final List<String> exUrl = horse.horseUrl.split('=');
-                                    horseId = exUrl[1];
-                                  }
-
-                                  if (horseId.isNotEmpty) {
-                                    horseNotifier.fetchHorseDetail(horseId);
-
-                                    OddsFinderDialog(context: context, widget: const HorseDetailDisplayAlert());
-                                  }
-                                },
-                                child: Icon(
-                                  FontAwesomeIcons.horse,
-                                  size: 20,
-                                  color: Colors.greenAccent.withValues(alpha: 0.5),
-                                ),
                               ),
                             ),
                           ),
                         ],
-                      ),
+
+                        const SizedBox(width: 20),
+
+                        Row(
+                          children: <Widget>[
+                            SizedBox(width: 20, child: Text(element.num.toString())),
+                            const Text('番'),
+                          ],
+                        ),
+
+                        const SizedBox(width: 20),
+
+                        if (horse != null) ...<Widget>[
+                          Expanded(child: Text(horse.name, maxLines: 1, overflow: TextOverflow.ellipsis)),
+                        ],
+                      ],
                     ),
 
-                    if (oddsTimeline != null) ...<Widget>[
-                      const SizedBox(height: 10),
-                      _buildSourceLabel('JRA'),
-                      const SizedBox(height: 5),
-                      _buildOddsTimelineRow(
-                        timeline: oddsTimeline,
-                        activeTimingKey: activeTimingKey,
-                        selectedTiming: selectedTiming,
-                        fukuMinList: fukuMinTimeline,
-                        fukuMaxList: fukuMaxTimeline,
+                    Positioned(
+                      right: 10,
+                      child: Transform(
+                        alignment: Alignment.center,
+                        transform: Matrix4.identity()..scale(-1.0, 1.0),
+                        child: GestureDetector(
+                          onTap: () {
+                            if (horse == null) {
+                              return;
+                            }
+                            final List<String> exUrl = horse.horseUrl.split('=');
+                            final String horseId = exUrl.length > 1 ? exUrl[1] : '';
+                            if (horseId.isNotEmpty) {
+                              horseNotifier.fetchHorseDetail(horseId);
+                              OddsFinderDialog(context: context, widget: const HorseDetailDisplayAlert());
+                            }
+                          },
+                          child: Icon(
+                            FontAwesomeIcons.horse,
+                            size: 20,
+                            color: Colors.greenAccent.withValues(alpha: 0.5),
+                          ),
+                        ),
                       ),
-                    ],
-
-                    if (netkeibaTimeline != null) ...<Widget>[
-                      const SizedBox(height: 10),
-                      _buildSourceLabel('ネットケイバ'),
-                      const SizedBox(height: 5),
-                      _buildOddsTimelineRow(
-                        timeline: netkeibaTimeline,
-                        activeTimingKey: activeTimingKey,
-                        selectedTiming: selectedTiming,
-                        fukuMinList: netkeibaFukuMinTimeline,
-                        fukuMaxList: netkeibaFukuMaxTimeline,
-                      ),
-                    ],
-
-                    const SizedBox(height: 10),
+                    ),
                   ],
                 ),
               ),
+
+              if (oddsTimeline != null) ...<Widget>[
+                const SizedBox(height: 10),
+                _buildSourceLabel('JRA'),
+                const SizedBox(height: 5),
+                _buildOddsTimelineRow(
+                  timeline: oddsTimeline,
+                  activeTimingKey: activeTimingKey,
+                  selectedTiming: selectedTiming,
+                  fukuMinList: fukuMinTimeline,
+                  fukuMaxList: fukuMaxTimeline,
+                ),
+              ],
+
+              if (netkeibaTimeline != null) ...<Widget>[
+                const SizedBox(height: 10),
+                _buildSourceLabel('ネットケイバ'),
+                const SizedBox(height: 5),
+                _buildOddsTimelineRow(
+                  timeline: netkeibaTimeline,
+                  activeTimingKey: activeTimingKey,
+                  selectedTiming: selectedTiming,
+                  fukuMinList: netkeibaFukuMinTimeline,
+                  fukuMaxList: netkeibaFukuMaxTimeline,
+                ),
+              ],
+
+              const SizedBox(height: 10),
             ],
           ),
-        );
-      },
+        ),
+      ],
     );
   }
 
@@ -1131,8 +1189,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
       return const SizedBox.shrink();
     }
 
-    Icon? icon;
-
+    final Icon icon;
     if (current > prev) {
       icon = const Icon(Icons.arrow_upward, size: 15, color: Colors.redAccent);
     } else if (current < prev) {
