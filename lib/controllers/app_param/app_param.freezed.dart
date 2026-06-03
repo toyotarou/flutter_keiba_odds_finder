@@ -36,6 +36,7 @@ mixin _$AppParamState {
       throw _privateConstructorUsedError;
   int get selectedRaceNumber => throw _privateConstructorUsedError;
   String get selectedTiming => throw _privateConstructorUsedError;
+  String get queryUser => throw _privateConstructorUsedError;
 
   @JsonKey(ignore: true)
   $AppParamStateCopyWith<AppParamState> get copyWith =>
@@ -58,7 +59,8 @@ abstract class $AppParamStateCopyWith<$Res> {
       String selectedScheduleKaisuuBashoDay,
       String selectedScheduleKaisuuBashoDayName,
       int selectedRaceNumber,
-      String selectedTiming});
+      String selectedTiming,
+      String queryUser});
 }
 
 /// @nodoc
@@ -84,6 +86,7 @@ class _$AppParamStateCopyWithImpl<$Res, $Val extends AppParamState>
     Object? selectedScheduleKaisuuBashoDayName = null,
     Object? selectedRaceNumber = null,
     Object? selectedTiming = null,
+    Object? queryUser = null,
   }) {
     return _then(_value.copyWith(
       keepScheduleDateBashoMap: null == keepScheduleDateBashoMap
@@ -127,6 +130,10 @@ class _$AppParamStateCopyWithImpl<$Res, $Val extends AppParamState>
           ? _value.selectedTiming
           : selectedTiming // ignore: cast_nullable_to_non_nullable
               as String,
+      queryUser: null == queryUser
+          ? _value.queryUser
+          : queryUser // ignore: cast_nullable_to_non_nullable
+              as String,
     ) as $Val);
   }
 }
@@ -149,7 +156,8 @@ abstract class _$$AppParamStateImplCopyWith<$Res>
       String selectedScheduleKaisuuBashoDay,
       String selectedScheduleKaisuuBashoDayName,
       int selectedRaceNumber,
-      String selectedTiming});
+      String selectedTiming,
+      String queryUser});
 }
 
 /// @nodoc
@@ -173,6 +181,7 @@ class __$$AppParamStateImplCopyWithImpl<$Res>
     Object? selectedScheduleKaisuuBashoDayName = null,
     Object? selectedRaceNumber = null,
     Object? selectedTiming = null,
+    Object? queryUser = null,
   }) {
     return _then(_$AppParamStateImpl(
       keepScheduleDateBashoMap: null == keepScheduleDateBashoMap
@@ -216,6 +225,10 @@ class __$$AppParamStateImplCopyWithImpl<$Res>
           ? _value.selectedTiming
           : selectedTiming // ignore: cast_nullable_to_non_nullable
               as String,
+      queryUser: null == queryUser
+          ? _value.queryUser
+          : queryUser // ignore: cast_nullable_to_non_nullable
+              as String,
     ));
   }
 }
@@ -237,7 +250,8 @@ class _$AppParamStateImpl implements _AppParamState {
       this.selectedScheduleKaisuuBashoDay = '',
       this.selectedScheduleKaisuuBashoDayName = '',
       this.selectedRaceNumber = 0,
-      this.selectedTiming = ''})
+      this.selectedTiming = '',
+      this.queryUser = ''})
       : _keepScheduleDateBashoMap = keepScheduleDateBashoMap,
         _keepRaceMap = keepRaceMap,
         _keepHorseMap = keepHorseMap,
@@ -301,10 +315,13 @@ class _$AppParamStateImpl implements _AppParamState {
   @override
   @JsonKey()
   final String selectedTiming;
+  @override
+  @JsonKey()
+  final String queryUser;
 
   @override
   String toString() {
-    return 'AppParamState(keepScheduleDateBashoMap: $keepScheduleDateBashoMap, keepRaceMap: $keepRaceMap, keepHorseMap: $keepHorseMap, keepOddsMap: $keepOddsMap, configOddsGetTiming: $configOddsGetTiming, selectedScheduleDate: $selectedScheduleDate, selectedScheduleKaisuuBashoDay: $selectedScheduleKaisuuBashoDay, selectedScheduleKaisuuBashoDayName: $selectedScheduleKaisuuBashoDayName, selectedRaceNumber: $selectedRaceNumber, selectedTiming: $selectedTiming)';
+    return 'AppParamState(keepScheduleDateBashoMap: $keepScheduleDateBashoMap, keepRaceMap: $keepRaceMap, keepHorseMap: $keepHorseMap, keepOddsMap: $keepOddsMap, configOddsGetTiming: $configOddsGetTiming, selectedScheduleDate: $selectedScheduleDate, selectedScheduleKaisuuBashoDay: $selectedScheduleKaisuuBashoDay, selectedScheduleKaisuuBashoDayName: $selectedScheduleKaisuuBashoDayName, selectedRaceNumber: $selectedRaceNumber, selectedTiming: $selectedTiming, queryUser: $queryUser)';
   }
 
   @override
@@ -335,7 +352,9 @@ class _$AppParamStateImpl implements _AppParamState {
             (identical(other.selectedRaceNumber, selectedRaceNumber) ||
                 other.selectedRaceNumber == selectedRaceNumber) &&
             (identical(other.selectedTiming, selectedTiming) ||
-                other.selectedTiming == selectedTiming));
+                other.selectedTiming == selectedTiming) &&
+            (identical(other.queryUser, queryUser) ||
+                other.queryUser == queryUser));
   }
 
   @override
@@ -350,7 +369,8 @@ class _$AppParamStateImpl implements _AppParamState {
       selectedScheduleKaisuuBashoDay,
       selectedScheduleKaisuuBashoDayName,
       selectedRaceNumber,
-      selectedTiming);
+      selectedTiming,
+      queryUser);
 
   @JsonKey(ignore: true)
   @override
@@ -370,7 +390,8 @@ abstract class _AppParamState implements AppParamState {
       final String selectedScheduleKaisuuBashoDay,
       final String selectedScheduleKaisuuBashoDayName,
       final int selectedRaceNumber,
-      final String selectedTiming}) = _$AppParamStateImpl;
+      final String selectedTiming,
+      final String queryUser}) = _$AppParamStateImpl;
 
   @override
   Map<String, List<ScheduleModel>> get keepScheduleDateBashoMap;
@@ -396,6 +417,8 @@ abstract class _AppParamState implements AppParamState {
   int get selectedRaceNumber;
   @override
   String get selectedTiming;
+  @override
+  String get queryUser;
   @override
   @JsonKey(ignore: true)
   _$$AppParamStateImplCopyWith<_$AppParamStateImpl> get copyWith =>

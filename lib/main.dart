@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -10,16 +11,25 @@ import 'screens/home_screen.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  String? queryUser;
+
+  if (kIsWeb) {
+    final Uri uri = Uri.base;
+    queryUser = uri.queryParameters['user'];
+  }
+
   await SystemChrome.setPreferredOrientations(<DeviceOrientation>[
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
 
-  runApp(const ProviderScope(child: AppRoot()));
+  runApp(ProviderScope(child: AppRoot(queryUser: queryUser)));
 }
 
 class AppRoot extends StatefulWidget {
-  const AppRoot({super.key});
+  const AppRoot({super.key, this.queryUser});
+
+  final String? queryUser;
 
   @override
   State<AppRoot> createState() => AppRootState();
@@ -55,13 +65,12 @@ class AppRootState extends State<AppRoot> {
   Widget build(BuildContext context) {
     return MyApp(
       key: _appKey,
-      onRestart: () {
-        restartApp();
-      },
+      onRestart: restartApp,
       reloadDate: _reloadDate,
       reloadKbd: _reloadKbd,
       reloadName: _reloadName,
       reloadRace: _reloadRace,
+      queryUser: widget.queryUser,
     );
   }
 }
@@ -74,6 +83,7 @@ class MyApp extends ConsumerStatefulWidget {
     required this.reloadKbd,
     required this.reloadName,
     required this.reloadRace,
+    this.queryUser,
   });
 
   // ignore: unreachable_from_main
@@ -82,6 +92,7 @@ class MyApp extends ConsumerStatefulWidget {
   final String reloadKbd;
   final String reloadName;
   final int reloadRace;
+  final String? queryUser;
 
   @override
   ConsumerState<MyApp> createState() => _MyAppState();
@@ -102,12 +113,12 @@ class _MyAppState extends ConsumerState<MyApp> with ControllersMixin<MyApp> {
     netkeibaRaceNotifier.getAllNetkeibaRaceData();
     oddsGetTimingNotifier.getAllOddsGetTimingData();
 
-    //
-    // ///DDD
-    // print(kIsWeb);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (widget.queryUser != null && widget.queryUser!.isNotEmpty) {
+        appParamNotifier.setQueryUser(user: widget.queryUser!);
+      }
 
-    if (widget.reloadDate.isNotEmpty) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (widget.reloadDate.isNotEmpty) {
         appParamNotifier.setSelectedScheduleDate(date: widget.reloadDate);
         if (widget.reloadKbd.isNotEmpty) {
           appParamNotifier.setSelectedScheduleKaisuuBashoDay(kbd: widget.reloadKbd, name: widget.reloadName);
@@ -115,8 +126,8 @@ class _MyAppState extends ConsumerState<MyApp> with ControllersMixin<MyApp> {
         if (widget.reloadRace > 0) {
           appParamNotifier.setSelectedRaceNumber(num: widget.reloadRace);
         }
-      });
-    }
+      }
+    });
   }
 
   ///

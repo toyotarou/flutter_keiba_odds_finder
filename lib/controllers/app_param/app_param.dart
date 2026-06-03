@@ -35,6 +35,8 @@ class AppParamState with _$AppParamState {
     @Default(0) int selectedRaceNumber,
 
     @Default('') String selectedTiming,
+
+    @Default('') String queryUser,
   }) = _AppParamState;
 }
 
@@ -78,4 +80,7 @@ class AppParam extends _$AppParam {
 
   ///
   void setSelectedTiming({required String timing}) => state = state.copyWith(selectedTiming: timing);
+
+  ///
+  void setQueryUser({required String user}) => state = state.copyWith(queryUser: user);
 }
