@@ -24,6 +24,8 @@ mixin _$AppParamState {
       throw _privateConstructorUsedError;
   Map<String, List<OddsModel>> get keepOddsMap =>
       throw _privateConstructorUsedError;
+  Map<String, List<OddsWideModel>> get keepOddsWideMap =>
+      throw _privateConstructorUsedError;
 
   ///
   String get configOddsGetTiming => throw _privateConstructorUsedError;
@@ -36,6 +38,7 @@ mixin _$AppParamState {
       throw _privateConstructorUsedError;
   int get selectedRaceNumber => throw _privateConstructorUsedError;
   String get selectedTiming => throw _privateConstructorUsedError;
+  String get selectedTiming2 => throw _privateConstructorUsedError;
   String get queryUser => throw _privateConstructorUsedError;
 
   @JsonKey(ignore: true)
@@ -54,12 +57,14 @@ abstract class $AppParamStateCopyWith<$Res> {
       Map<String, List<RaceModel>> keepRaceMap,
       Map<String, List<HorseModel>> keepHorseMap,
       Map<String, List<OddsModel>> keepOddsMap,
+      Map<String, List<OddsWideModel>> keepOddsWideMap,
       String configOddsGetTiming,
       String selectedScheduleDate,
       String selectedScheduleKaisuuBashoDay,
       String selectedScheduleKaisuuBashoDayName,
       int selectedRaceNumber,
       String selectedTiming,
+      String selectedTiming2,
       String queryUser});
 }
 
@@ -80,12 +85,14 @@ class _$AppParamStateCopyWithImpl<$Res, $Val extends AppParamState>
     Object? keepRaceMap = null,
     Object? keepHorseMap = null,
     Object? keepOddsMap = null,
+    Object? keepOddsWideMap = null,
     Object? configOddsGetTiming = null,
     Object? selectedScheduleDate = null,
     Object? selectedScheduleKaisuuBashoDay = null,
     Object? selectedScheduleKaisuuBashoDayName = null,
     Object? selectedRaceNumber = null,
     Object? selectedTiming = null,
+    Object? selectedTiming2 = null,
     Object? queryUser = null,
   }) {
     return _then(_value.copyWith(
@@ -105,6 +112,10 @@ class _$AppParamStateCopyWithImpl<$Res, $Val extends AppParamState>
           ? _value.keepOddsMap
           : keepOddsMap // ignore: cast_nullable_to_non_nullable
               as Map<String, List<OddsModel>>,
+      keepOddsWideMap: null == keepOddsWideMap
+          ? _value.keepOddsWideMap
+          : keepOddsWideMap // ignore: cast_nullable_to_non_nullable
+              as Map<String, List<OddsWideModel>>,
       configOddsGetTiming: null == configOddsGetTiming
           ? _value.configOddsGetTiming
           : configOddsGetTiming // ignore: cast_nullable_to_non_nullable
@@ -129,6 +140,10 @@ class _$AppParamStateCopyWithImpl<$Res, $Val extends AppParamState>
       selectedTiming: null == selectedTiming
           ? _value.selectedTiming
           : selectedTiming // ignore: cast_nullable_to_non_nullable
+              as String,
+      selectedTiming2: null == selectedTiming2
+          ? _value.selectedTiming2
+          : selectedTiming2 // ignore: cast_nullable_to_non_nullable
               as String,
       queryUser: null == queryUser
           ? _value.queryUser
@@ -151,12 +166,14 @@ abstract class _$$AppParamStateImplCopyWith<$Res>
       Map<String, List<RaceModel>> keepRaceMap,
       Map<String, List<HorseModel>> keepHorseMap,
       Map<String, List<OddsModel>> keepOddsMap,
+      Map<String, List<OddsWideModel>> keepOddsWideMap,
       String configOddsGetTiming,
       String selectedScheduleDate,
       String selectedScheduleKaisuuBashoDay,
       String selectedScheduleKaisuuBashoDayName,
       int selectedRaceNumber,
       String selectedTiming,
+      String selectedTiming2,
       String queryUser});
 }
 
@@ -175,12 +192,14 @@ class __$$AppParamStateImplCopyWithImpl<$Res>
     Object? keepRaceMap = null,
     Object? keepHorseMap = null,
     Object? keepOddsMap = null,
+    Object? keepOddsWideMap = null,
     Object? configOddsGetTiming = null,
     Object? selectedScheduleDate = null,
     Object? selectedScheduleKaisuuBashoDay = null,
     Object? selectedScheduleKaisuuBashoDayName = null,
     Object? selectedRaceNumber = null,
     Object? selectedTiming = null,
+    Object? selectedTiming2 = null,
     Object? queryUser = null,
   }) {
     return _then(_$AppParamStateImpl(
@@ -200,6 +219,10 @@ class __$$AppParamStateImplCopyWithImpl<$Res>
           ? _value._keepOddsMap
           : keepOddsMap // ignore: cast_nullable_to_non_nullable
               as Map<String, List<OddsModel>>,
+      keepOddsWideMap: null == keepOddsWideMap
+          ? _value._keepOddsWideMap
+          : keepOddsWideMap // ignore: cast_nullable_to_non_nullable
+              as Map<String, List<OddsWideModel>>,
       configOddsGetTiming: null == configOddsGetTiming
           ? _value.configOddsGetTiming
           : configOddsGetTiming // ignore: cast_nullable_to_non_nullable
@@ -225,6 +248,10 @@ class __$$AppParamStateImplCopyWithImpl<$Res>
           ? _value.selectedTiming
           : selectedTiming // ignore: cast_nullable_to_non_nullable
               as String,
+      selectedTiming2: null == selectedTiming2
+          ? _value.selectedTiming2
+          : selectedTiming2 // ignore: cast_nullable_to_non_nullable
+              as String,
       queryUser: null == queryUser
           ? _value.queryUser
           : queryUser // ignore: cast_nullable_to_non_nullable
@@ -245,17 +272,21 @@ class _$AppParamStateImpl implements _AppParamState {
           const <String, List<HorseModel>>{},
       final Map<String, List<OddsModel>> keepOddsMap =
           const <String, List<OddsModel>>{},
+      final Map<String, List<OddsWideModel>> keepOddsWideMap =
+          const <String, List<OddsWideModel>>{},
       this.configOddsGetTiming = '',
       this.selectedScheduleDate = '',
       this.selectedScheduleKaisuuBashoDay = '',
       this.selectedScheduleKaisuuBashoDayName = '',
       this.selectedRaceNumber = 0,
       this.selectedTiming = '',
+      this.selectedTiming2 = '',
       this.queryUser = ''})
       : _keepScheduleDateBashoMap = keepScheduleDateBashoMap,
         _keepRaceMap = keepRaceMap,
         _keepHorseMap = keepHorseMap,
-        _keepOddsMap = keepOddsMap;
+        _keepOddsMap = keepOddsMap,
+        _keepOddsWideMap = keepOddsWideMap;
 
   final Map<String, List<ScheduleModel>> _keepScheduleDateBashoMap;
   @override
@@ -294,6 +325,15 @@ class _$AppParamStateImpl implements _AppParamState {
     return EqualUnmodifiableMapView(_keepOddsMap);
   }
 
+  final Map<String, List<OddsWideModel>> _keepOddsWideMap;
+  @override
+  @JsonKey()
+  Map<String, List<OddsWideModel>> get keepOddsWideMap {
+    if (_keepOddsWideMap is EqualUnmodifiableMapView) return _keepOddsWideMap;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableMapView(_keepOddsWideMap);
+  }
+
   ///
   @override
   @JsonKey()
@@ -317,11 +357,14 @@ class _$AppParamStateImpl implements _AppParamState {
   final String selectedTiming;
   @override
   @JsonKey()
+  final String selectedTiming2;
+  @override
+  @JsonKey()
   final String queryUser;
 
   @override
   String toString() {
-    return 'AppParamState(keepScheduleDateBashoMap: $keepScheduleDateBashoMap, keepRaceMap: $keepRaceMap, keepHorseMap: $keepHorseMap, keepOddsMap: $keepOddsMap, configOddsGetTiming: $configOddsGetTiming, selectedScheduleDate: $selectedScheduleDate, selectedScheduleKaisuuBashoDay: $selectedScheduleKaisuuBashoDay, selectedScheduleKaisuuBashoDayName: $selectedScheduleKaisuuBashoDayName, selectedRaceNumber: $selectedRaceNumber, selectedTiming: $selectedTiming, queryUser: $queryUser)';
+    return 'AppParamState(keepScheduleDateBashoMap: $keepScheduleDateBashoMap, keepRaceMap: $keepRaceMap, keepHorseMap: $keepHorseMap, keepOddsMap: $keepOddsMap, keepOddsWideMap: $keepOddsWideMap, configOddsGetTiming: $configOddsGetTiming, selectedScheduleDate: $selectedScheduleDate, selectedScheduleKaisuuBashoDay: $selectedScheduleKaisuuBashoDay, selectedScheduleKaisuuBashoDayName: $selectedScheduleKaisuuBashoDayName, selectedRaceNumber: $selectedRaceNumber, selectedTiming: $selectedTiming, selectedTiming2: $selectedTiming2, queryUser: $queryUser)';
   }
 
   @override
@@ -337,6 +380,8 @@ class _$AppParamStateImpl implements _AppParamState {
                 .equals(other._keepHorseMap, _keepHorseMap) &&
             const DeepCollectionEquality()
                 .equals(other._keepOddsMap, _keepOddsMap) &&
+            const DeepCollectionEquality()
+                .equals(other._keepOddsWideMap, _keepOddsWideMap) &&
             (identical(other.configOddsGetTiming, configOddsGetTiming) ||
                 other.configOddsGetTiming == configOddsGetTiming) &&
             (identical(other.selectedScheduleDate, selectedScheduleDate) ||
@@ -353,6 +398,8 @@ class _$AppParamStateImpl implements _AppParamState {
                 other.selectedRaceNumber == selectedRaceNumber) &&
             (identical(other.selectedTiming, selectedTiming) ||
                 other.selectedTiming == selectedTiming) &&
+            (identical(other.selectedTiming2, selectedTiming2) ||
+                other.selectedTiming2 == selectedTiming2) &&
             (identical(other.queryUser, queryUser) ||
                 other.queryUser == queryUser));
   }
@@ -364,12 +411,14 @@ class _$AppParamStateImpl implements _AppParamState {
       const DeepCollectionEquality().hash(_keepRaceMap),
       const DeepCollectionEquality().hash(_keepHorseMap),
       const DeepCollectionEquality().hash(_keepOddsMap),
+      const DeepCollectionEquality().hash(_keepOddsWideMap),
       configOddsGetTiming,
       selectedScheduleDate,
       selectedScheduleKaisuuBashoDay,
       selectedScheduleKaisuuBashoDayName,
       selectedRaceNumber,
       selectedTiming,
+      selectedTiming2,
       queryUser);
 
   @JsonKey(ignore: true)
@@ -385,12 +434,14 @@ abstract class _AppParamState implements AppParamState {
       final Map<String, List<RaceModel>> keepRaceMap,
       final Map<String, List<HorseModel>> keepHorseMap,
       final Map<String, List<OddsModel>> keepOddsMap,
+      final Map<String, List<OddsWideModel>> keepOddsWideMap,
       final String configOddsGetTiming,
       final String selectedScheduleDate,
       final String selectedScheduleKaisuuBashoDay,
       final String selectedScheduleKaisuuBashoDayName,
       final int selectedRaceNumber,
       final String selectedTiming,
+      final String selectedTiming2,
       final String queryUser}) = _$AppParamStateImpl;
 
   @override
@@ -401,6 +452,8 @@ abstract class _AppParamState implements AppParamState {
   Map<String, List<HorseModel>> get keepHorseMap;
   @override
   Map<String, List<OddsModel>> get keepOddsMap;
+  @override
+  Map<String, List<OddsWideModel>> get keepOddsWideMap;
   @override
 
   ///
@@ -417,6 +470,8 @@ abstract class _AppParamState implements AppParamState {
   int get selectedRaceNumber;
   @override
   String get selectedTiming;
+  @override
+  String get selectedTiming2;
   @override
   String get queryUser;
   @override

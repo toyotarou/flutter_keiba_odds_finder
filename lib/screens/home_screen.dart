@@ -13,11 +13,13 @@ import '../main.dart';
 import '../models/horse_model.dart';
 import '../models/netkeiba_odds_model.dart';
 import '../models/odds_model.dart';
+import '../models/odds_wide_model.dart';
 import '../models/race_model.dart';
 import '../models/schedule_model.dart';
 import '../utility/utility.dart';
 import 'components/horse_detail_display_alert.dart';
 import 'components/horse_odds_ranking_display_alert.dart';
+import 'components/horse_odds_wide_display_alert.dart';
 import 'parts/odds_finder_dialog.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
@@ -29,6 +31,7 @@ class HomeScreen extends ConsumerStatefulWidget {
     required this.oddsMap,
     required this.netkeibaOddsMap,
     required this.oddsGetTiming,
+    required this.oddsWideMap,
   });
 
   final Map<String, List<ScheduleModel>> scheduleDateBashoMap;
@@ -37,6 +40,7 @@ class HomeScreen extends ConsumerStatefulWidget {
   final Map<String, List<OddsModel>> oddsMap;
   final Map<String, List<NetkeibaOddsModel>> netkeibaOddsMap;
   final String oddsGetTiming;
+  final Map<String, List<OddsWideModel>> oddsWideMap;
 
   @override
   ConsumerState<HomeScreen> createState() => _HomeScreenState();
@@ -95,6 +99,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
     appParamNotifier.setKeepHorseMap(map: widget.horseMap);
     appParamNotifier.setKeepOddsMap(map: widget.oddsMap);
     appParamNotifier.setConfigOddsGetTiming(oddsGetTiming: widget.oddsGetTiming);
+    appParamNotifier.setKeepOddsWideMap(map: widget.oddsWideMap);
   }
 
   ///
@@ -751,6 +756,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
       minTiming = validList.isNotEmpty ? validList.first.minutesBeforeStart.toString() : '';
     }
 
+    if (appParamState.selectedTiming.isEmpty && minTiming.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        appParamNotifier.setSelectedTiming2(timing2: minTiming);
+      });
+    }
+
     return Row(
       children: appParamState.configOddsGetTiming.split('|').map((String e) {
         return Expanded(
@@ -974,10 +985,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
     final List<String>? netkeibaFukuMinTimeline = netkeibaFukuMinTimelineMap[element.num];
     final List<String>? netkeibaFukuMaxTimeline = netkeibaFukuMaxTimelineMap[element.num];
 
+    double boxHeight = 100.0;
+
+    if (oddsTimeline != null) {
+      boxHeight += 130;
+    }
+
+    if (netkeibaTimeline != null) {
+      boxHeight += 160;
+    }
+
     return Stack(
       children: <Widget>[
         Container(
-          height: 400,
+          height: boxHeight,
           margin: const EdgeInsets.symmetric(vertical: 10),
           padding: const EdgeInsets.only(top: 5),
           decoration: BoxDecoration(
@@ -1018,7 +1039,32 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                     ),
                   ),
 
-                  const SizedBox.shrink(),
+                  GestureDetector(
+                    onTap: () {
+                      final String timing =
+                          <String>[
+                            appParamState.selectedTiming,
+                            appParamState.selectedTiming2,
+                          ].where((String e) => e.isNotEmpty).firstOrNull ??
+                          '';
+
+                      OddsFinderDialog(
+                        context: context,
+                        widget: HorseOddsWideDisplayAlert(timing: timing, horse: horse),
+                      );
+                    },
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.orangeAccent.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 20),
+                      child: const Text(
+                        'WIDE',
+                        style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ),
                 ],
               ),
 

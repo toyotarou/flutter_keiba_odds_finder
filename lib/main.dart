@@ -112,6 +112,7 @@ class _MyAppState extends ConsumerState<MyApp> with ControllersMixin<MyApp> {
     netkeibaOddsNotifier.getAllNetkeibaOddsData();
     netkeibaRaceNotifier.getAllNetkeibaRaceData();
     oddsGetTimingNotifier.getAllOddsGetTimingData();
+    oddsWideNotifier.getAllOddsWideData();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (widget.queryUser != null && widget.queryUser!.isNotEmpty) {
@@ -164,6 +165,7 @@ class _MyAppState extends ConsumerState<MyApp> with ControllersMixin<MyApp> {
           oddsMap: oddsState.oddsMap,
           oddsGetTiming: laravelConfigState.odds_get_timing,
           netkeibaOddsMap: netkeibaOddsState.netkeibaOddsMap,
+          oddsWideMap: oddsWideState.oddsWideMap,
         ),
       ),
     );

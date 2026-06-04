@@ -4,6 +4,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../utility/utility.dart';
 import '../../models/horse_model.dart';
 import '../../models/odds_model.dart';
+import '../../models/odds_wide_model.dart';
 import '../../models/race_model.dart';
 import '../../models/schedule_model.dart';
 
@@ -22,6 +23,8 @@ class AppParamState with _$AppParamState {
 
     @Default(<String, List<OddsModel>>{}) Map<String, List<OddsModel>> keepOddsMap,
 
+    @Default(<String, List<OddsWideModel>>{}) Map<String, List<OddsWideModel>> keepOddsWideMap,
+
     ///
     @Default('') String configOddsGetTiming,
 
@@ -35,6 +38,8 @@ class AppParamState with _$AppParamState {
     @Default(0) int selectedRaceNumber,
 
     @Default('') String selectedTiming,
+
+    @Default('') String selectedTiming2,
 
     @Default('') String queryUser,
   }) = _AppParamState;
@@ -61,6 +66,10 @@ class AppParam extends _$AppParam {
   ///
   void setKeepOddsMap({required Map<String, List<OddsModel>> map}) => state = state.copyWith(keepOddsMap: map);
 
+  ///
+  void setKeepOddsWideMap({required Map<String, List<OddsWideModel>> map}) =>
+      state = state.copyWith(keepOddsWideMap: map);
+
   //////////////
 
   void setConfigOddsGetTiming({required String oddsGetTiming}) =>
@@ -80,6 +89,9 @@ class AppParam extends _$AppParam {
 
   ///
   void setSelectedTiming({required String timing}) => state = state.copyWith(selectedTiming: timing);
+
+  ///
+  void setSelectedTiming2({required String timing2}) => state = state.copyWith(selectedTiming2: timing2);
 
   ///
   void setQueryUser({required String user}) => state = state.copyWith(queryUser: user);
