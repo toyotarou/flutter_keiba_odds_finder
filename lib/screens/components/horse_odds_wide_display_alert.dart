@@ -39,7 +39,7 @@ class _HorseOddsWideDisplayAlertState extends ConsumerState<HorseOddsWideDisplay
       backgroundColor: Colors.transparent,
       body: SafeArea(
         child: DefaultTextStyle(
-          style: const TextStyle(color: Colors.white),
+          style: const TextStyle(color: Colors.white, fontSize: 12),
           child: Padding(
             padding: const EdgeInsets.all(20),
             child: Column(
