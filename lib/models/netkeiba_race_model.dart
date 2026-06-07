@@ -1,5 +1,3 @@
-import '../extensions/extensions.dart';
-
 class NetkeibaRaceModel {
   NetkeibaRaceModel({
     required this.id,
@@ -17,17 +15,17 @@ class NetkeibaRaceModel {
 
   factory NetkeibaRaceModel.fromJson(Map<String, dynamic> json) {
     return NetkeibaRaceModel(
-      id: (json['id'] != null) ? json['id'].toString().toInt() : 0,
-      date: json['date']?.toString() ?? '',
-      kaisuu: json['kaisuu']?.toString() ?? '',
-      basho: json['basho']?.toString() ?? '',
-      bashoName: json['basho_name']?.toString() ?? '',
-      day: (json['day'] != null) ? json['day'].toString().toInt() : 0,
-      raceId: json['race_id']?.toString() ?? '',
-      race: (json['race'] != null) ? json['race'].toString().toInt() : 0,
-      raceName: json['race_name']?.toString() ?? '',
-      startTime: json['start_time']?.toString() ?? '',
-      numHorses: (json['num_horses'] != null) ? json['num_horses'].toString().toInt() : 0,
+      id: (json['id'] as int?) ?? 0,
+      date: (json['date'] as String?) ?? '',
+      kaisuu: (json['kaisuu'] as String?) ?? '',
+      basho: (json['basho'] as String?) ?? '',
+      bashoName: (json['basho_name'] as String?) ?? '',
+      day: int.tryParse((json['day'] as String?) ?? '0') ?? 0,
+      raceId: (json['race_id'] as String?) ?? '',
+      race: (json['race'] as int?) ?? 0,
+      raceName: (json['race_name'] as String?) ?? '',
+      startTime: (json['start_time'] as String?) ?? '',
+      numHorses: (json['num_horses'] as int?) ?? 0,
     );
   }
 

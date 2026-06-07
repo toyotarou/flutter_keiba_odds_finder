@@ -1,5 +1,3 @@
-import '../extensions/extensions.dart';
-
 class OddsModel {
   OddsModel({
     required this.id,
@@ -17,17 +15,17 @@ class OddsModel {
 
   factory OddsModel.fromJson(Map<String, dynamic> json) {
     return OddsModel(
-      id: (json['id'] != null) ? json['id'].toString().toInt() : 0,
-      date: json['date']?.toString() ?? '',
-      kaisuu: json['kaisuu']?.toString() ?? '',
-      basho: json['basho']?.toString() ?? '',
-      day: (json['day'] != null) ? json['day'].toString().toInt() : 0,
-      race: (json['race'] != null) ? json['race'].toString().toInt() : 0,
-      num: (json['num'] != null) ? json['num'].toString().toInt() : 0,
-      odds: json['odds']?.toString() ?? '',
-      fukuMin: json['fuku_min']?.toString() ?? '',
-      fukuMax: json['fuku_max']?.toString() ?? '',
-      minutesBeforeStart: (json['minutes_before_start'] != null) ? json['minutes_before_start'].toString().toInt() : 0,
+      id: (json['id'] as int?) ?? 0,
+      date: (json['date'] as String?) ?? '',
+      kaisuu: (json['kaisuu'] as String?) ?? '',
+      basho: (json['basho'] as String?) ?? '',
+      day: int.tryParse((json['day'] as String?) ?? '0') ?? 0,
+      race: (json['race'] as int?) ?? 0,
+      num: (json['num'] as int?) ?? 0,
+      odds: (json['odds'] as String?) ?? '',
+      fukuMin: (json['fuku_min'] as String?) ?? '',
+      fukuMax: (json['fuku_max'] as String?) ?? '',
+      minutesBeforeStart: (json['minutes_before_start'] as int?) ?? 0,
     );
   }
 

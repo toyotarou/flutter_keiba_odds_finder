@@ -24,7 +24,14 @@ class _HorseOddsWideDisplayAlertState extends ConsumerState<HorseOddsWideDisplay
     final HorseModel? horse = widget.horse;
     final String mapKey = '${appParamState.selectedScheduleDate}_${appParamState.selectedScheduleKaisuuBashoDay}';
     final int timingInt = int.tryParse(widget.timing) ?? 0;
-    final int targetMinutes = timingInt == 0 ? -999 : timingInt;
+    final int targetMinutes;
+    if (widget.timing == '0') {
+      targetMinutes = -999;
+    } else if (timingInt == 24) {
+      targetMinutes = 999;
+    } else {
+      targetMinutes = timingInt;
+    }
     final int race = appParamState.selectedRaceNumber;
 
     final List<OddsModel> sortedTansho =

@@ -1,5 +1,3 @@
-import '../extensions/extensions.dart';
-
 class OddsGetTimingModel {
   OddsGetTimingModel({
     required this.id,
@@ -15,15 +13,15 @@ class OddsGetTimingModel {
 
   factory OddsGetTimingModel.fromJson(Map<String, dynamic> json) {
     return OddsGetTimingModel(
-      id: (json['id'] != null) ? json['id'].toString().toInt() : 0,
-      date: json['date']?.toString() ?? '',
-      kaisuu: json['kaisuu']?.toString() ?? '',
-      basho: json['basho']?.toString() ?? '',
-      day: (json['day'] != null) ? json['day'].toString().toInt() : 0,
-      race: (json['race'] != null) ? json['race'].toString().toInt() : 0,
-      timing: (json['timing'] != null) ? json['timing'].toString().toInt() : 0,
-      getDatetime: json['get_datetime']?.toString() ?? '',
-      oddsFrom: json['odds_from']?.toString() ?? '',
+      id: (json['id'] as int?) ?? 0,
+      date: (json['date'] as String?) ?? '',
+      kaisuu: (json['kaisuu'] as String?) ?? '',
+      basho: (json['basho'] as String?) ?? '',
+      day: int.tryParse((json['day'] as String?) ?? '0') ?? 0,
+      race: (json['race'] as int?) ?? 0,
+      timing: (json['timing'] as int?) ?? 0,
+      getDatetime: (json['get_datetime'] as String?) ?? '',
+      oddsFrom: (json['odds_from'] as String?) ?? '',
     );
   }
 

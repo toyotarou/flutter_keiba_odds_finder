@@ -87,7 +87,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
         oldWidget.raceMap != widget.raceMap ||
         oldWidget.horseMap != widget.horseMap ||
         oldWidget.oddsMap != widget.oddsMap ||
-        oldWidget.oddsGetTiming != widget.oddsGetTiming) {
+        oldWidget.oddsGetTiming != widget.oddsGetTiming ||
+        oldWidget.oddsWideMap != widget.oddsWideMap) {
       WidgetsBinding.instance.addPostFrameCallback((_) => _syncAppParam());
     }
   }

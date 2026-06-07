@@ -1,5 +1,3 @@
-import '../extensions/extensions.dart';
-
 class OddsWideModel {
   OddsWideModel({
     required this.id,
@@ -17,17 +15,17 @@ class OddsWideModel {
 
   factory OddsWideModel.fromJson(Map<String, dynamic> json) {
     return OddsWideModel(
-      id: (json['id'] != null) ? json['id'].toString().toInt() : 0,
-      date: json['date']?.toString() ?? '',
-      kaisuu: json['kaisuu']?.toString() ?? '',
-      basho: json['basho']?.toString() ?? '',
-      day: (json['day'] != null) ? json['day'].toString().toInt() : 0,
-      race: (json['race'] != null) ? json['race'].toString().toInt() : 0,
-      uma1: (json['uma1'] != null) ? json['uma1'].toString().toInt() : 0,
-      uma2: (json['uma2'] != null) ? json['uma2'].toString().toInt() : 0,
-      oddsMin: json['odds_min']?.toString() ?? '',
-      oddsMax: json['odds_max']?.toString() ?? '',
-      minutesBeforeStart: (json['minutes_before_start'] != null) ? json['minutes_before_start'].toString().toInt() : 0,
+      id: (json['id'] as int?) ?? 0,
+      date: (json['date'] as String?) ?? '',
+      kaisuu: (json['kaisuu'] as String?) ?? '',
+      basho: (json['basho'] as String?) ?? '',
+      day: int.tryParse((json['day'] as String?) ?? '0') ?? 0,
+      race: (json['race'] as int?) ?? 0,
+      uma1: (json['uma1'] as int?) ?? 0,
+      uma2: (json['uma2'] as int?) ?? 0,
+      oddsMin: (json['odds_min'] as String?) ?? '',
+      oddsMax: (json['odds_max'] as String?) ?? '',
+      minutesBeforeStart: (json['minutes_before_start'] as int?) ?? 0,
     );
   }
 
