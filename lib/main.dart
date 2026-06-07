@@ -41,6 +41,7 @@ class AppRootState extends State<AppRoot> {
   String _reloadKbd = '';
   String _reloadName = '';
   int _reloadRace = 0;
+  bool _reloadIsRankingDialogOpen = false;
 
   Future<void> restartApp() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -49,11 +50,13 @@ class AppRootState extends State<AppRoot> {
     _reloadKbd = prefs.getString('reload_selected_schedule_kaisuu_basho_day') ?? '';
     _reloadName = prefs.getString('reload_selected_schedule_kaisuu_basho_day_name') ?? '';
     _reloadRace = prefs.getInt('reload_selected_race_number') ?? 0;
+    _reloadIsRankingDialogOpen = prefs.getBool('isRankingDialogOpen') ?? false;
 
     await prefs.remove('reload_selected_schedule_date');
     await prefs.remove('reload_selected_schedule_kaisuu_basho_day');
     await prefs.remove('reload_selected_schedule_kaisuu_basho_day_name');
     await prefs.remove('reload_selected_race_number');
+    await prefs.remove('isRankingDialogOpen');
 
     if (mounted) {
       setState(() => _appKey = UniqueKey());
@@ -70,6 +73,7 @@ class AppRootState extends State<AppRoot> {
       reloadKbd: _reloadKbd,
       reloadName: _reloadName,
       reloadRace: _reloadRace,
+      reloadIsRankingDialogOpen: _reloadIsRankingDialogOpen,
       queryUser: widget.queryUser,
     );
   }
@@ -83,6 +87,7 @@ class MyApp extends ConsumerStatefulWidget {
     required this.reloadKbd,
     required this.reloadName,
     required this.reloadRace,
+    required this.reloadIsRankingDialogOpen,
     this.queryUser,
   });
 
@@ -92,6 +97,7 @@ class MyApp extends ConsumerStatefulWidget {
   final String reloadKbd;
   final String reloadName;
   final int reloadRace;
+  final bool reloadIsRankingDialogOpen;
   final String? queryUser;
 
   @override
@@ -166,6 +172,7 @@ class _MyAppState extends ConsumerState<MyApp> with ControllersMixin<MyApp> {
           oddsGetTiming: laravelConfigState.odds_get_timing,
           netkeibaOddsMap: netkeibaOddsState.netkeibaOddsMap,
           oddsWideMap: oddsWideState.oddsWideMap,
+          isRankingDialogOpen: widget.reloadIsRankingDialogOpen,
         ),
       ),
     );

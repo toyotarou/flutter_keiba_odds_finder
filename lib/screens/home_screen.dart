@@ -32,6 +32,7 @@ class HomeScreen extends ConsumerStatefulWidget {
     required this.netkeibaOddsMap,
     required this.oddsGetTiming,
     required this.oddsWideMap,
+    required this.isRankingDialogOpen,
   });
 
   final Map<String, List<ScheduleModel>> scheduleDateBashoMap;
@@ -41,6 +42,7 @@ class HomeScreen extends ConsumerStatefulWidget {
   final Map<String, List<NetkeibaOddsModel>> netkeibaOddsMap;
   final String oddsGetTiming;
   final Map<String, List<OddsWideModel>> oddsWideMap;
+  final bool isRankingDialogOpen;
 
   @override
   ConsumerState<HomeScreen> createState() => _HomeScreenState();
@@ -64,6 +66,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) => _syncAppParam());
+    if (widget.isRankingDialogOpen) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) {
+          return;
+        }
+        OddsFinderDialog(context: context, widget: const HorseOddsRankingDisplayAlert()).then((_) async {
+          final SharedPreferences prefs = await SharedPreferences.getInstance();
+          await prefs.setBool('isRankingDialogOpen', false);
+        });
+      });
+    }
   }
 
   ///
@@ -1039,34 +1052,34 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                     ),
                   ),
 
-                  if (appParamState.queryUser == 'hidechy') ...<Widget>[
-                    GestureDetector(
-                      onTap: () {
-                        final String timing =
-                            <String>[
-                              appParamState.selectedTiming,
-                              appParamState.selectedTiming2,
-                            ].where((String e) => e.isNotEmpty).firstOrNull ??
-                            '';
+                  if (appParamState.queryUser == 'hidechy') ...<Widget>[] else ...<Widget>[const SizedBox.shrink()],
 
-                        OddsFinderDialog(
-                          context: context,
-                          widget: HorseOddsWideDisplayAlert(timing: timing, horse: horse),
-                        );
-                      },
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Colors.orangeAccent.withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 20),
-                        child: const Text(
-                          'WIDE',
-                          style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
-                        ),
+                  GestureDetector(
+                    onTap: () {
+                      final String timing =
+                          <String>[
+                            appParamState.selectedTiming,
+                            appParamState.selectedTiming2,
+                          ].where((String e) => e.isNotEmpty).firstOrNull ??
+                          '';
+
+                      OddsFinderDialog(
+                        context: context,
+                        widget: HorseOddsWideDisplayAlert(timing: timing, horse: horse),
+                      );
+                    },
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.orangeAccent.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 20),
+                      child: const Text(
+                        'WIDE',
+                        style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
                       ),
                     ),
-                  ] else ...<Widget>[const SizedBox.shrink()],
+                  ),
                 ],
               ),
 

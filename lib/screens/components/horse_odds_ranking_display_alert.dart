@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../controllers/controllers_mixin.dart';
+import '../../main.dart';
 import '../../models/odds_model.dart';
 import '../../models/race_model.dart';
 
@@ -14,6 +16,22 @@ class HorseOddsRankingDisplayAlert extends ConsumerStatefulWidget {
 
 class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingDisplayAlert>
     with ControllersMixin<HorseOddsRankingDisplayAlert> {
+  final TransformationController _controller = TransformationController();
+
+  ///
+  @override
+  void initState() {
+    super.initState();
+    _controller.value = Matrix4.identity()..scale(1.0);
+  }
+
+  ///
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
   ///
   @override
   Widget build(BuildContext context) {
@@ -27,9 +45,32 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                const Row(
+                Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: <Widget>[Text('順位表'), SizedBox.shrink()],
+                  children: <Widget>[
+                    const Text('順位表'),
+                    IconButton(
+                      onPressed: () async {
+                        final SharedPreferences prefs = await SharedPreferences.getInstance();
+                        await prefs.setString('reload_selected_schedule_date', appParamState.selectedScheduleDate);
+                        await prefs.setString(
+                          'reload_selected_schedule_kaisuu_basho_day',
+                          appParamState.selectedScheduleKaisuuBashoDay,
+                        );
+                        await prefs.setString(
+                          'reload_selected_schedule_kaisuu_basho_day_name',
+                          appParamState.selectedScheduleKaisuuBashoDayName,
+                        );
+                        await prefs.setInt('reload_selected_race_number', appParamState.selectedRaceNumber);
+                        await prefs.setBool('isRankingDialogOpen', true);
+                        if (mounted) {
+                          // ignore: use_build_context_synchronously
+                          context.findAncestorStateOfType<AppRootState>()?.restartApp();
+                        }
+                      },
+                      icon: const Icon(Icons.refresh, color: Colors.greenAccent),
+                    ),
+                  ],
                 ),
                 Divider(color: Colors.white.withOpacity(0.4), thickness: 5),
 
@@ -121,151 +162,149 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
     const Color defaultBgColor = Colors.transparent; // 変化なしのセルの背景色
     // ========================================
 
-    return SingleChildScrollView(
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            // ヘッダー行
-            Row(
+    return InteractiveViewer(
+      transformationController: _controller,
+      constrained: false,
+      minScale: 0.1,
+      maxScale: 4.0,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          // ヘッダー行
+          Row(
+            children: <Widget>[
+              // 左上の空セル（罫線・塗りなし）
+              const SizedBox(
+                width: 40,
+                height: 30,
+                child: Stack(
+                  children: <Widget>[
+                    Positioned(bottom: 0, left: 0, child: Text('順位', style: TextStyle(fontSize: 8))),
+                    Positioned(top: 0, right: 0, child: Text('タイミング', style: TextStyle(fontSize: 8))),
+                  ],
+                ),
+              ),
+
+              // タイミングラベル（S, 21, ..., E）
+              ...timingLabels.map((String label) {
+                return Container(
+                  width: 50,
+                  height: 30,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: headerBgColor,
+                    border: Border.all(color: Colors.white24),
+                  ),
+                  child: Text(label, style: const TextStyle(color: Colors.white70, fontSize: 10)),
+                );
+              }),
+              // 右上の空セル（罫線・塗りなし）
+              const SizedBox(
+                width: 40,
+                height: 30,
+                child: Stack(
+                  children: <Widget>[
+                    Positioned(bottom: 0, right: 0, child: Text('順位', style: TextStyle(fontSize: 8))),
+                    Positioned(top: 0, left: 0, child: Text('タイミング', style: TextStyle(fontSize: 8))),
+                  ],
+                ),
+              ),
+            ],
+          ),
+
+          // データ行（順位ごと）
+          ...List<Widget>.generate(horseNum, (int rankIndex) {
+            final int rank = rankIndex + 1;
+            final List<OddsModel?> rowData = displayHorseRankingMap[rank] ?? <OddsModel?>[];
+            return Row(
               children: <Widget>[
-                // 左上の空セル（罫線・塗りなし）
-                const SizedBox(
+                // 左端の順位
+                Container(
                   width: 40,
                   height: 30,
-                  child: Stack(
-                    children: <Widget>[
-                      Positioned(bottom: 0, left: 0, child: Text('順位', style: TextStyle(fontSize: 8))),
-                      Positioned(top: 0, right: 0, child: Text('タイミング', style: TextStyle(fontSize: 8))),
-                    ],
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: headerBgColor,
+                    border: Border.all(color: Colors.white24),
                   ),
+                  child: Text(rank.toString(), style: const TextStyle(color: Colors.white70, fontSize: 10)),
                 ),
+                // 各タイミングの馬番（右に行くほど新しいタイミング）
+                ...rowData.asMap().entries.map((MapEntry<int, OddsModel?> entry) {
+                  final int colIndex = entry.key;
+                  final OddsModel? e = entry.value;
 
-                // タイミングラベル（S, 21, ..., E）
-                ...timingLabels.map((String label) {
+                  // 一つ前のタイミングと馬番が変わったか判定
+                  final bool isChanged =
+                      colIndex > 0 && e != null && rowData[colIndex - 1] != null && e.num != rowData[colIndex - 1]!.num;
+
                   return Container(
                     width: 50,
                     height: 30,
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
-                      color: headerBgColor,
+                      color: isChanged ? changedBgColor : defaultBgColor,
                       border: Border.all(color: Colors.white24),
                     ),
-                    child: Text(label, style: const TextStyle(color: Colors.white70, fontSize: 10)),
+                    child: Text(
+                      e != null ? e.num.toString() : '-',
+                      style: const TextStyle(color: Colors.white, fontSize: 10),
+                    ),
                   );
                 }),
-                // 右上の空セル（罫線・塗りなし）
-                const SizedBox(
+                // 右端の順位
+                Container(
                   width: 40,
                   height: 30,
-                  child: Stack(
-                    children: <Widget>[
-                      Positioned(bottom: 0, right: 0, child: Text('順位', style: TextStyle(fontSize: 8))),
-                      Positioned(top: 0, left: 0, child: Text('タイミング', style: TextStyle(fontSize: 8))),
-                    ],
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: headerBgColor,
+                    border: Border.all(color: Colors.white24),
                   ),
+                  child: Text(rank.toString(), style: const TextStyle(color: Colors.white70, fontSize: 10)),
                 ),
               ],
-            ),
+            );
+          }),
 
-            // データ行（順位ごと）
-            ...List<Widget>.generate(horseNum, (int rankIndex) {
-              final int rank = rankIndex + 1;
-              final List<OddsModel?> rowData = displayHorseRankingMap[rank] ?? <OddsModel?>[];
-              return Row(
-                children: <Widget>[
-                  // 左端の順位
-                  Container(
-                    width: 40,
-                    height: 30,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: headerBgColor,
-                      border: Border.all(color: Colors.white24),
-                    ),
-                    child: Text(rank.toString(), style: const TextStyle(color: Colors.white70, fontSize: 10)),
-                  ),
-                  // 各タイミングの馬番（右に行くほど新しいタイミング）
-                  ...rowData.asMap().entries.map((MapEntry<int, OddsModel?> entry) {
-                    final int colIndex = entry.key;
-                    final OddsModel? e = entry.value;
-
-                    // 一つ前のタイミングと馬番が変わったか判定
-                    final bool isChanged =
-                        colIndex > 0 &&
-                        e != null &&
-                        rowData[colIndex - 1] != null &&
-                        e.num != rowData[colIndex - 1]!.num;
-
-                    return Container(
-                      width: 50,
-                      height: 30,
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        color: isChanged ? changedBgColor : defaultBgColor,
-                        border: Border.all(color: Colors.white24),
-                      ),
-                      child: Text(
-                        e != null ? e.num.toString() : '-',
-                        style: const TextStyle(color: Colors.white, fontSize: 10),
-                      ),
-                    );
-                  }),
-                  // 右端の順位
-                  Container(
-                    width: 40,
-                    height: 30,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: headerBgColor,
-                      border: Border.all(color: Colors.white24),
-                    ),
-                    child: Text(rank.toString(), style: const TextStyle(color: Colors.white70, fontSize: 10)),
-                  ),
-                ],
-              );
-            }),
-
-            // フッター行（最下段にもタイミングラベルを表示）
-            Row(
-              children: <Widget>[
-                const SizedBox(
-                  width: 40,
-                  height: 30,
-                  child: Stack(
-                    children: <Widget>[
-                      Positioned(top: 0, left: 0, child: Text('順位', style: TextStyle(fontSize: 8))),
-                      Positioned(bottom: 0, right: 0, child: Text('タイミング', style: TextStyle(fontSize: 8))),
-                    ],
-                  ),
+          // フッター行（最下段にもタイミングラベルを表示）
+          Row(
+            children: <Widget>[
+              const SizedBox(
+                width: 40,
+                height: 30,
+                child: Stack(
+                  children: <Widget>[
+                    Positioned(top: 0, left: 0, child: Text('順位', style: TextStyle(fontSize: 8))),
+                    Positioned(bottom: 0, right: 0, child: Text('タイミング', style: TextStyle(fontSize: 8))),
+                  ],
                 ),
-                ...timingLabels.map((String label) {
-                  return Container(
-                    width: 50,
-                    height: 30,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: headerBgColor,
-                      border: Border.all(color: Colors.white24),
-                    ),
-                    child: Text(label, style: const TextStyle(color: Colors.white70, fontSize: 10)),
-                  );
-                }),
-                const SizedBox(
-                  width: 40,
+              ),
+              ...timingLabels.map((String label) {
+                return Container(
+                  width: 50,
                   height: 30,
-                  child: Stack(
-                    children: <Widget>[
-                      Positioned(top: 0, right: 0, child: Text('順位', style: TextStyle(fontSize: 8))),
-                      Positioned(bottom: 0, left: 0, child: Text('タイミング', style: TextStyle(fontSize: 8))),
-                    ],
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: headerBgColor,
+                    border: Border.all(color: Colors.white24),
                   ),
+                  child: Text(label, style: const TextStyle(color: Colors.white70, fontSize: 10)),
+                );
+              }),
+              const SizedBox(
+                width: 40,
+                height: 30,
+                child: Stack(
+                  children: <Widget>[
+                    Positioned(top: 0, right: 0, child: Text('順位', style: TextStyle(fontSize: 8))),
+                    Positioned(bottom: 0, left: 0, child: Text('タイミング', style: TextStyle(fontSize: 8))),
+                  ],
                 ),
-              ],
-            ),
-          ],
-        ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
