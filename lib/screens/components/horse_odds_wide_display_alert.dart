@@ -18,20 +18,28 @@ class HorseOddsWideDisplayAlert extends ConsumerStatefulWidget {
 
 class _HorseOddsWideDisplayAlertState extends ConsumerState<HorseOddsWideDisplayAlert>
     with ControllersMixin<HorseOddsWideDisplayAlert> {
+  late String _selectedTiming;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedTiming = widget.timing;
+  }
+
+  int _toTargetMinutes(String timing) {
+    final int timingInt = int.tryParse(timing) ?? 0;
+    if (timing == '0') return -999;
+    if (timingInt == 24) return 999;
+    return timingInt;
+  }
+
   ///
   @override
   Widget build(BuildContext context) {
     final HorseModel? horse = widget.horse;
     final String mapKey = '${appParamState.selectedScheduleDate}_${appParamState.selectedScheduleKaisuuBashoDay}';
-    final int timingInt = int.tryParse(widget.timing) ?? 0;
-    final int targetMinutes;
-    if (widget.timing == '0') {
-      targetMinutes = -999;
-    } else if (timingInt == 24) {
-      targetMinutes = 999;
-    } else {
-      targetMinutes = timingInt;
-    }
+    final int targetMinutes = _toTargetMinutes(_selectedTiming);
+    final int timingInt = int.tryParse(_selectedTiming) ?? 0;
     final int race = appParamState.selectedRaceNumber;
 
     final List<OddsModel> sortedTansho =
@@ -57,6 +65,9 @@ class _HorseOddsWideDisplayAlertState extends ConsumerState<HorseOddsWideDisplay
                   children: <Widget>[const Text('ワイド情報'), Text(timingInt == 0 ? '出走時' : '$timingInt分前')],
                 ),
                 Divider(color: Colors.white.withValues(alpha: 0.4), thickness: 5),
+
+                _displayTimingRow(),
+
                 const SizedBox(height: 10),
                 _displayJikuumaArea(horse: horse, ninkiMap: ninkiMap),
                 const SizedBox(height: 10),
@@ -72,6 +83,44 @@ class _HorseOddsWideDisplayAlertState extends ConsumerState<HorseOddsWideDisplay
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  ///
+  Widget _displayTimingRow() {
+    final List<String> timingParts = appParamState.configOddsGetTiming.split('|');
+
+    return SizedBox(
+      height: 40,
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: timingParts.map((String t) {
+            final bool isSelected = t == _selectedTiming;
+            final String label = t == timingParts.first
+                ? 'S'
+                : t == timingParts.last
+                ? 'E'
+                : t;
+            return GestureDetector(
+              onTap: () => setState(() => _selectedTiming = t),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: CircleAvatar(
+                  backgroundColor: isSelected
+                      ? Colors.greenAccent.withValues(alpha: 0.4)
+                      : Colors.black.withValues(alpha: 0.4),
+                  radius: 16,
+                  child: Text(
+                    label,
+                    style: const TextStyle(fontSize: 9, color: Colors.white, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
+            );
+          }).toList(),
         ),
       ),
     );
@@ -155,6 +204,12 @@ class _HorseOddsWideDisplayAlertState extends ConsumerState<HorseOddsWideDisplay
           return (aiteNum: aiteNum, aiteName: horseNames[aiteNum] ?? '', oddsMin: e.oddsMin, oddsMax: e.oddsMax);
         })
         .toList();
+
+    if (aiteDataList.isEmpty) {
+      return const Center(
+        child: Text('データがありません', style: TextStyle(color: Colors.white54, fontSize: 12)),
+      );
+    }
 
     return SingleChildScrollView(
       child: Column(
