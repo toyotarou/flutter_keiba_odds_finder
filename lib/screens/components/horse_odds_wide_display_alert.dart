@@ -19,17 +19,25 @@ class HorseOddsWideDisplayAlert extends ConsumerStatefulWidget {
 class _HorseOddsWideDisplayAlertState extends ConsumerState<HorseOddsWideDisplayAlert>
     with ControllersMixin<HorseOddsWideDisplayAlert> {
   late String _selectedTiming;
+  String _sortKey = 'num';
+  bool _sortAsc = true;
 
+  ///
   @override
   void initState() {
     super.initState();
     _selectedTiming = widget.timing;
   }
 
+  ///
   int _toTargetMinutes(String timing) {
     final int timingInt = int.tryParse(timing) ?? 0;
-    if (timing == '0') return -999;
-    if (timingInt == 24) return 999;
+    if (timing == '0') {
+      return -999;
+    }
+    if (timingInt == 24) {
+      return 999;
+    }
     return timingInt;
   }
 
@@ -71,6 +79,11 @@ class _HorseOddsWideDisplayAlertState extends ConsumerState<HorseOddsWideDisplay
                 const SizedBox(height: 10),
                 _displayJikuumaArea(horse: horse, ninkiMap: ninkiMap),
                 const SizedBox(height: 10),
+
+                _displaySortRow(),
+
+                Divider(color: Colors.greenAccent.withValues(alpha: 0.4)),
+
                 Expanded(
                   child: _displayWideOddsList(
                     horse: horse,
@@ -84,6 +97,51 @@ class _HorseOddsWideDisplayAlertState extends ConsumerState<HorseOddsWideDisplay
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  ///
+  Widget _displaySortRow() {
+    Widget sortButton({required String key, required String label}) {
+      final bool isActive = _sortKey == key;
+      final IconData icon = isActive ? (_sortAsc ? Icons.arrow_upward : Icons.arrow_downward) : Icons.swap_vert;
+      final Color color = isActive ? Colors.greenAccent : Colors.white38;
+      return GestureDetector(
+        onTap: () => setState(() {
+          if (_sortKey == key) {
+            _sortAsc = !_sortAsc;
+          } else {
+            _sortKey = key;
+            _sortAsc = true;
+          }
+        }),
+        child: Row(
+          children: <Widget>[
+            const SizedBox(width: 2),
+            Text(label, style: TextStyle(color: isActive ? Colors.greenAccent : Colors.white54, fontSize: 11)),
+            const SizedBox(width: 2),
+            Icon(icon, color: color, size: 16),
+          ],
+        ),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: <Widget>[
+          Row(
+            children: <Widget>[
+              sortButton(key: 'num', label: '番号'),
+              const SizedBox(width: 20),
+              sortButton(key: 'ninki', label: '人気'),
+            ],
+          ),
+
+          sortButton(key: 'oddsMin', label: 'オッズ最小'),
+        ],
       ),
     );
   }
@@ -204,6 +262,34 @@ class _HorseOddsWideDisplayAlertState extends ConsumerState<HorseOddsWideDisplay
           return (aiteNum: aiteNum, aiteName: horseNames[aiteNum] ?? '', oddsMin: e.oddsMin, oddsMax: e.oddsMax);
         })
         .toList();
+
+    if (_sortKey == 'num') {
+      aiteDataList.sort((
+        ({String aiteName, int aiteNum, String oddsMax, String oddsMin}) a,
+        ({String aiteName, int aiteNum, String oddsMax, String oddsMin}) b,
+      ) {
+        final int cmp = a.aiteNum.compareTo(b.aiteNum);
+        return _sortAsc ? cmp : -cmp;
+      });
+    } else if (_sortKey == 'ninki') {
+      aiteDataList.sort((
+        ({String aiteName, int aiteNum, String oddsMax, String oddsMin}) a,
+        ({String aiteName, int aiteNum, String oddsMax, String oddsMin}) b,
+      ) {
+        final int cmp = (ninkiMap[a.aiteNum] ?? 0).compareTo(ninkiMap[b.aiteNum] ?? 0);
+        return _sortAsc ? cmp : -cmp;
+      });
+    } else {
+      aiteDataList.sort((
+        ({String aiteName, int aiteNum, String oddsMax, String oddsMin}) a,
+        ({String aiteName, int aiteNum, String oddsMax, String oddsMin}) b,
+      ) {
+        final double aVal = double.tryParse(a.oddsMin) ?? 0;
+        final double bVal = double.tryParse(b.oddsMin) ?? 0;
+        final int cmp = aVal.compareTo(bVal);
+        return _sortAsc ? cmp : -cmp;
+      });
+    }
 
     if (aiteDataList.isEmpty) {
       return const Center(
