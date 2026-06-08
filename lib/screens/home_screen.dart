@@ -137,7 +137,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
     final DateTime now = DateTime.now();
     final DateTime today = DateTime(now.year, now.month, now.day);
 
-    // YYYY/MM/DD・YYYY-MM-DD・YYYYMMDD の各形式に対応
     DateTime? parsedDate;
     final String cleaned = raceDate.replaceAll('/', '').replaceAll('-', '');
     if (cleaned.length == 8) {
@@ -149,7 +148,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
       }
     }
 
-    // レース日が今日より前 → 終了済みなので 0 を表示
     if (parsedDate != null && parsedDate.isBefore(today)) {
       _remainingSecondsNotifier.value = 0;
       return;
@@ -160,7 +158,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
         : DateTime(now.year, now.month, now.day, hour, minute);
 
     final int diff = raceTime.difference(now).inSeconds;
-
     _remainingSecondsNotifier.value = diff > 0 ? diff : 0;
 
     _countdownTimer = Timer.periodic(const Duration(seconds: 1), (Timer timer) {
@@ -189,7 +186,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
     if (!_horseListScrollController.hasClients || _displayListLength == 0) {
       return;
     }
-
     final int next = (_currentHorseIndex + delta).clamp(0, _displayListLength - 1);
     _currentHorseIndex = next;
     _horseListScrollController.scrollToIndex(next, preferPosition: AutoScrollPosition.begin);
@@ -206,7 +202,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
     return '';
   }
 
-  /// タイムラインマップを汎用的に構築するヘルパー
+  ///
   static Map<int, List<String>> _buildTimelineMap<T>({
     required List<T> models,
     required int Function(T) getNum,
@@ -225,6 +221,268 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
       }
     }
     return result;
+  }
+
+  ///
+  List<Widget> _buildBackgroundLayers() {
+    return <Widget>[
+      Positioned(
+        bottom: 0,
+        right: 0,
+        child: Opacity(opacity: 0.3, child: Image.asset('assets/images/bg.png', width: 220)),
+      ),
+      Positioned(
+        top: 30,
+        left: 20,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Opacity(
+              opacity: 0.3,
+              child: Transform.scale(
+                scaleX: 1.0,
+                scaleY: 2.0,
+                alignment: Alignment.centerLeft,
+                child: Image.asset('assets/images/baganryoku_title.png', width: 180),
+              ),
+            ),
+            const SizedBox(width: 20),
+            Transform.scale(
+              scaleX: 1.0,
+              scaleY: 4.0,
+              child: Text('ODDS FINDER', style: TextStyle(fontSize: 14, color: Colors.green[700])),
+            ),
+          ],
+        ),
+      ),
+      Opacity(
+        opacity: 0.1,
+        child: SizedBox(
+          width: context.screenSize.width,
+          height: context.screenSize.height,
+          child: Center(
+            child: Transform.scale(
+              scale: 1.5,
+              child: Image.asset('assets/images/bg2.png', width: context.screenSize.width),
+            ),
+          ),
+        ),
+      ),
+    ];
+  }
+
+  ///
+  Widget _buildDateRow() {
+    return Row(
+      children: widget.scheduleDateBashoMap.entries.map((MapEntry<String, List<ScheduleModel>> e) {
+        return Expanded(
+          child: GestureDetector(
+            onTap: () {
+              appParamNotifier.setSelectedScheduleDate(date: e.key);
+              appParamNotifier.setSelectedScheduleKaisuuBashoDay(kbd: '', name: '');
+              appParamNotifier.setSelectedRaceNumber(num: 0);
+            },
+            child: Container(
+              margin: const EdgeInsets.all(5),
+              padding: const EdgeInsets.all(5),
+              decoration: BoxDecoration(
+                color: (appParamState.selectedScheduleDate == e.key)
+                    ? Colors.greenAccent.withValues(alpha: 0.1)
+                    : Colors.black.withValues(alpha: 0.3),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.4)),
+                borderRadius: BorderRadius.circular(3),
+              ),
+              alignment: Alignment.center,
+              child: Text(e.key, style: const TextStyle(color: Colors.white)),
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  ///
+  Widget _buildVenueRow() {
+    final List<ScheduleModel> venues = widget.scheduleDateBashoMap[appParamState.selectedScheduleDate]!;
+    return Row(
+      children: venues.map((ScheduleModel e) {
+        final String label = '${e.kaisuu}回 ${e.bashoName} ${e.day}日';
+        return Expanded(
+          child: GestureDetector(
+            onTap: () {
+              appParamNotifier.setSelectedScheduleKaisuuBashoDay(kbd: '${e.kaisuu}_${e.basho}_${e.day}', name: label);
+              appParamNotifier.setSelectedRaceNumber(num: 0);
+            },
+            child: Container(
+              margin: const EdgeInsets.all(5),
+              padding: const EdgeInsets.all(5),
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.white.withValues(alpha: 0.4)),
+                color: (appParamState.selectedScheduleKaisuuBashoDayName == label)
+                    ? Colors.greenAccent.withValues(alpha: 0.1)
+                    : Colors.transparent,
+                borderRadius: BorderRadius.circular(3),
+              ),
+              alignment: Alignment.center,
+              child: Text(label, style: const TextStyle(color: Colors.white)),
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  ///
+  Widget _buildRaceNumberRow(String mapKey) {
+    final List<RaceModel> raceModelList = widget.raceMap[mapKey]!;
+    return SingleChildScrollView(
+      controller: _raceScrollController,
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: List<Widget>.generate(raceModelList.length, (int index) {
+          return AutoScrollTag(
+            key: ValueKey<int>(index),
+            controller: _raceScrollController,
+            index: index,
+            child: GestureDetector(
+              onTap: () => appParamNotifier.setSelectedRaceNumber(num: index + 1),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 5),
+                child: CircleAvatar(
+                  backgroundColor: (appParamState.selectedRaceNumber == index + 1)
+                      ? Colors.greenAccent.withValues(alpha: 0.2)
+                      : Colors.black.withValues(alpha: 0.4),
+                  child: Text(
+                    raceModelList[index].race.toString(),
+                    style: const TextStyle(fontSize: 14, color: Colors.white),
+                  ),
+                ),
+              ),
+            ),
+          );
+        }),
+      ),
+    );
+  }
+
+  ///
+  Widget _buildRaceInfoBar(String startTime, String raceName) {
+    return Stack(
+      children: <Widget>[
+        if (!appParamState.isShowUpperBox) ...<Widget>[
+          DefaultTextStyle(
+            style: const TextStyle(fontSize: 10, color: Colors.yellowAccent),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: <Widget>[
+                const SizedBox(width: 10),
+                Text(appParamState.selectedScheduleDate),
+                Text(appParamState.selectedScheduleKaisuuBashoDayName),
+                Text('${appParamState.selectedRaceNumber}レース'),
+                const SizedBox(width: 80),
+              ],
+            ),
+          ),
+        ],
+        Padding(
+          padding: const EdgeInsets.only(top: 10, right: 5, left: 5, bottom: 5),
+          child: Stack(
+            children: <Widget>[
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: <Widget>[
+                  const SizedBox(),
+                  ValueListenableBuilder<int>(
+                    valueListenable: _remainingSecondsNotifier,
+                    builder: (BuildContext context, int seconds, Widget? _) {
+                      return Text(_formatCountdown(seconds), style: const TextStyle(fontSize: 13, color: Colors.white));
+                    },
+                  ),
+                ],
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: <Widget>[
+                  Row(
+                    children: <Widget>[
+                      GestureDetector(
+                        onTap: () {
+                          if (appParamState.selectedRaceNumber > 0) {
+                            appParamNotifier.setIsShowUpperBox(flag: !appParamState.isShowUpperBox);
+                          }
+                        },
+                        child: Icon(
+                          appParamState.isShowUpperBox ? Icons.arrow_circle_up : Icons.arrow_circle_down,
+                          color: (appParamState.selectedRaceNumber > 0) ? Colors.greenAccent : Colors.grey,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Text(
+                        '$startTime　$raceName',
+                        style: (raceName == 'レースを選択してください')
+                            ? const TextStyle(color: Colors.greenAccent, fontSize: 12)
+                            : const TextStyle(fontSize: 14, color: Colors.white),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  ///
+  Widget _buildControlButtons() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: <Widget>[
+        Row(
+          children: <Widget>[
+            IconButton(
+              onPressed: () async {
+                final SharedPreferences prefs = await SharedPreferences.getInstance();
+                await prefs.setString('reload_selected_schedule_date', appParamState.selectedScheduleDate);
+                await prefs.setString(
+                  'reload_selected_schedule_kaisuu_basho_day',
+                  appParamState.selectedScheduleKaisuuBashoDay,
+                );
+                await prefs.setString(
+                  'reload_selected_schedule_kaisuu_basho_day_name',
+                  appParamState.selectedScheduleKaisuuBashoDayName,
+                );
+                await prefs.setInt('reload_selected_race_number', appParamState.selectedRaceNumber);
+                if (mounted) {
+                  // ignore: use_build_context_synchronously
+                  context.findAncestorStateOfType<AppRootState>()?.restartApp();
+                }
+              },
+              icon: const Icon(Icons.refresh, color: Colors.greenAccent),
+            ),
+            if (!kIsWeb) ...<Widget>[],
+            IconButton(
+              onPressed: () => OddsFinderDialog(context: context, widget: const HorseOddsRankingDisplayAlert()),
+              icon: Icon(Icons.list, color: Colors.white.withValues(alpha: 0.5)),
+            ),
+          ],
+        ),
+        Row(
+          children: <Widget>[
+            IconButton(
+              onPressed: () => _scrollHorseList(1),
+              icon: const Icon(Icons.arrow_downward, color: Colors.white70),
+            ),
+            IconButton(
+              onPressed: () => _scrollHorseList(-1),
+              icon: const Icon(Icons.arrow_upward, color: Colors.white70),
+            ),
+          ],
+        ),
+      ],
+    );
   }
 
   ///
@@ -272,7 +530,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
             padding: const EdgeInsets.symmetric(horizontal: 3),
             child: Stack(
               children: <Widget>[
-                // 背景（固定高さ）
                 Container(
                   width: double.infinity,
                   height: 120,
@@ -282,8 +539,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                   ),
                   margin: const EdgeInsets.only(top: 8),
                 ),
-
-                // コンテンツ（高さ制約なし、オーバーフローしない）
                 Padding(
                   padding: const EdgeInsets.only(top: 35),
                   child: Column(
@@ -299,7 +554,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                           ],
                         ),
                       ),
-
                       const SizedBox(height: 5),
                       Text(
                         entry.value,
@@ -307,9 +561,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-
                       const SizedBox(height: 10),
-
                       if (fukuMin.isNotEmpty || fukuMax.isNotEmpty) ...<Widget>[
                         Stack(
                           children: <Widget>[
@@ -342,7 +594,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                                 ],
                               ),
                             ),
-
                             const Padding(
                               padding: EdgeInsets.symmetric(horizontal: 4),
                               child: Row(
@@ -359,7 +610,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                     ],
                   ),
                 ),
-
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -379,7 +629,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                         ),
                       ),
                     ),
-
                     getUpDownIcon(entry: entry, timeLineMap: timeline.asMap().entries),
                   ],
                 ),
@@ -412,7 +661,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
 
     String raceName = 'レースを選択してください';
     String startTime = '--:--';
-    final List<RaceModel> raceModelList = widget.raceMap[mapKey] ?? <RaceModel>[];
 
     if (widget.raceMap[mapKey] != null && appParamState.selectedRaceNumber > 0) {
       final RaceModel race = widget.raceMap[mapKey]!.firstWhere(
@@ -435,53 +683,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
     return Scaffold(
       body: Stack(
         children: <Widget>[
-          Positioned(
-            bottom: 0,
-            right: 0,
-            child: Opacity(opacity: 0.3, child: Image.asset('assets/images/bg.png', width: 220)),
-          ),
-
-          Positioned(
-            top: 30,
-            left: 20,
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Opacity(
-                  opacity: 0.3,
-                  child: Transform.scale(
-                    scaleX: 1.0,
-                    scaleY: 2.0,
-                    alignment: Alignment.centerLeft,
-                    child: Image.asset('assets/images/baganryoku_title.png', width: 180),
-                  ),
-                ),
-
-                const SizedBox(width: 20),
-
-                Transform.scale(
-                  scaleX: 1.0,
-                  scaleY: 4.0,
-                  child: Text('ODDS FINDER', style: TextStyle(fontSize: 14, color: Colors.green[700])),
-                ),
-              ],
-            ),
-          ),
-
-          Opacity(
-            opacity: 0.1,
-            child: SizedBox(
-              width: context.screenSize.width,
-              height: context.screenSize.height,
-              child: Center(
-                child: Transform.scale(
-                  scale: 1.5,
-                  child: Image.asset('assets/images/bg2.png', width: context.screenSize.width),
-                ),
-              ),
-            ),
-          ),
-
+          ..._buildBackgroundLayers(),
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.all(10),
@@ -490,287 +692,42 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
-                    //=====================//
-                    if (appParamState.isShowUpperBox) ...<Widget>[
-                      Row(
-                        children: widget.scheduleDateBashoMap.entries.map((MapEntry<String, List<ScheduleModel>> e) {
-                          return Expanded(
-                            child: GestureDetector(
-                              onTap: () {
-                                appParamNotifier.setSelectedScheduleDate(date: e.key);
-                                appParamNotifier.setSelectedScheduleKaisuuBashoDay(kbd: '', name: '');
-                                appParamNotifier.setSelectedRaceNumber(num: 0);
-                              },
-                              child: Container(
-                                margin: const EdgeInsets.all(5),
-                                padding: const EdgeInsets.all(5),
-                                decoration: BoxDecoration(
-                                  color: (appParamState.selectedScheduleDate == e.key)
-                                      ? Colors.greenAccent.withValues(alpha: 0.1)
-                                      : Colors.black.withValues(alpha: 0.3),
-                                  border: Border.all(color: Colors.white.withValues(alpha: 0.4)),
-                                  borderRadius: BorderRadius.circular(3),
-                                ),
-                                alignment: Alignment.center,
-                                child: Text(e.key, style: const TextStyle(color: Colors.white)),
-                              ),
-                            ),
-                          );
-                        }).toList(),
-                      ),
-
-                      const SizedBox(height: 5),
-                    ],
-
-                    //=====================//
+                    if (appParamState.isShowUpperBox) ...<Widget>[_buildDateRow(), const SizedBox(height: 5)],
                     if (widget.scheduleDateBashoMap[appParamState.selectedScheduleDate] != null) ...<Widget>[
-                      if (appParamState.isShowUpperBox) ...<Widget>[
-                        Row(
-                          children: widget.scheduleDateBashoMap[appParamState.selectedScheduleDate]!.map((
-                            ScheduleModel e,
-                          ) {
-                            final String label = '${e.kaisuu}回 ${e.bashoName} ${e.day}日';
-                            return Expanded(
-                              child: GestureDetector(
-                                onTap: () {
-                                  appParamNotifier.setSelectedScheduleKaisuuBashoDay(
-                                    kbd: '${e.kaisuu}_${e.basho}_${e.day}',
-                                    name: label,
-                                  );
-                                  appParamNotifier.setSelectedRaceNumber(num: 0);
-                                },
-                                child: Container(
-                                  margin: const EdgeInsets.all(5),
-                                  padding: const EdgeInsets.all(5),
-                                  decoration: BoxDecoration(
-                                    border: Border.all(color: Colors.white.withValues(alpha: 0.4)),
-                                    color: (appParamState.selectedScheduleKaisuuBashoDayName == label)
-                                        ? Colors.greenAccent.withValues(alpha: 0.1)
-                                        : Colors.transparent,
-                                    borderRadius: BorderRadius.circular(3),
-                                  ),
-                                  alignment: Alignment.center,
-                                  child: Text(label, style: const TextStyle(color: Colors.white)),
-                                ),
-                              ),
-                            );
-                          }).toList(),
-                        ),
-                      ],
+                      if (appParamState.isShowUpperBox) _buildVenueRow(),
                     ] else ...<Widget>[
-                      if (widget.scheduleDateBashoMap.isNotEmpty) ...<Widget>[
+                      if (widget.scheduleDateBashoMap.isNotEmpty)
                         const Text('日付を選択してください', style: TextStyle(fontSize: 12, color: Colors.greenAccent)),
-                      ],
                     ],
-
-                    //=====================//
                     const SizedBox(height: 5),
-
-                    //=====================//
                     if (widget.raceMap[mapKey] != null) ...<Widget>[
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: <Widget>[
                           if (appParamState.isShowUpperBox) ...<Widget>[
                             const SizedBox(height: 5),
-
-                            SingleChildScrollView(
-                              controller: _raceScrollController,
-                              scrollDirection: Axis.horizontal,
-                              child: Row(
-                                children: List<Widget>.generate(widget.raceMap[mapKey]!.length, (int index) {
-                                  return AutoScrollTag(
-                                    key: ValueKey<int>(index),
-                                    controller: _raceScrollController,
-                                    index: index,
-                                    child: GestureDetector(
-                                      onTap: () => appParamNotifier.setSelectedRaceNumber(num: index + 1),
-                                      child: Padding(
-                                        padding: const EdgeInsets.symmetric(horizontal: 5),
-                                        child: CircleAvatar(
-                                          backgroundColor: (appParamState.selectedRaceNumber == index + 1)
-                                              ? Colors.greenAccent.withValues(alpha: 0.2)
-                                              : Colors.black.withValues(alpha: 0.4),
-                                          child: Text(
-                                            raceModelList[index].race.toString(),
-                                            style: const TextStyle(fontSize: 14, color: Colors.white),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  );
-                                }),
-                              ),
-                            ),
-
+                            _buildRaceNumberRow(mapKey),
                             const SizedBox(height: 5),
-
                             Divider(color: Colors.white.withValues(alpha: 0.5), thickness: 5),
                           ],
-
                           const SizedBox(height: 5),
-
-                          Stack(
-                            children: <Widget>[
-                              if (!appParamState.isShowUpperBox) ...<Widget>[
-                                DefaultTextStyle(
-                                  style: const TextStyle(fontSize: 10, color: Colors.yellowAccent),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: <Widget>[
-                                      const SizedBox(width: 10),
-                                      Text(appParamState.selectedScheduleDate),
-                                      Text(appParamState.selectedScheduleKaisuuBashoDayName),
-                                      Text('${appParamState.selectedRaceNumber}レース'),
-                                      const SizedBox(width: 80),
-                                    ],
-                                  ),
-                                ),
-                              ],
-
-                              Padding(
-                                padding: const EdgeInsets.only(top: 10, right: 5, left: 5, bottom: 5),
-                                child: Stack(
-                                  children: <Widget>[
-                                    Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                      children: <Widget>[
-                                        const SizedBox(),
-
-                                        ValueListenableBuilder<int>(
-                                          valueListenable: _remainingSecondsNotifier,
-                                          builder: (BuildContext context, int seconds, Widget? _) {
-                                            return Text(
-                                              _formatCountdown(seconds),
-                                              style: const TextStyle(fontSize: 13, color: Colors.white),
-                                            );
-                                          },
-                                        ),
-                                      ],
-                                    ),
-
-                                    Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                      children: <Widget>[
-                                        Row(
-                                          children: <Widget>[
-                                            GestureDetector(
-                                              onTap: () {
-                                                if (appParamState.selectedRaceNumber > 0) {
-                                                  appParamNotifier.setIsShowUpperBox(
-                                                    flag: !appParamState.isShowUpperBox,
-                                                  );
-                                                }
-                                              },
-                                              child: Icon(
-                                                (appParamState.isShowUpperBox)
-                                                    ? Icons.arrow_circle_up
-                                                    : Icons.arrow_circle_down,
-
-                                                color: (appParamState.selectedRaceNumber > 0)
-                                                    ? Colors.greenAccent
-                                                    : Colors.grey,
-                                              ),
-                                            ),
-
-                                            const SizedBox(width: 10),
-
-                                            Text(
-                                              '$startTime　$raceName',
-                                              style: (raceName == 'レースを選択してください')
-                                                  ? const TextStyle(color: Colors.greenAccent, fontSize: 12)
-                                                  : const TextStyle(fontSize: 14, color: Colors.white),
-                                            ),
-                                          ],
-                                        ),
-
-                                        const SizedBox(),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
+                          _buildRaceInfoBar(startTime, raceName),
                         ],
                       ),
                     ] else ...<Widget>[
-                      if (widget.scheduleDateBashoMap[appParamState.selectedScheduleDate] != null) ...<Widget>[
+                      if (widget.scheduleDateBashoMap[appParamState.selectedScheduleDate] != null)
                         const Text('会場を選択してください', style: TextStyle(fontSize: 12, color: Colors.greenAccent)),
-                      ],
                     ],
-
-                    //=====================//
                     const SizedBox(height: 5),
-
-                    //=====================//
                     if (appParamState.selectedRaceNumber > 0) ...<Widget>[
                       SizedBox(height: 40, child: displayRaceMinutesRow()),
-
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: <Widget>[
-                          Row(
-                            children: <Widget>[
-                              IconButton(
-                                onPressed: () async {
-                                  final SharedPreferences prefs = await SharedPreferences.getInstance();
-                                  await prefs.setString(
-                                    'reload_selected_schedule_date',
-                                    appParamState.selectedScheduleDate,
-                                  );
-                                  await prefs.setString(
-                                    'reload_selected_schedule_kaisuu_basho_day',
-                                    appParamState.selectedScheduleKaisuuBashoDay,
-                                  );
-                                  await prefs.setString(
-                                    'reload_selected_schedule_kaisuu_basho_day_name',
-                                    appParamState.selectedScheduleKaisuuBashoDayName,
-                                  );
-                                  await prefs.setInt('reload_selected_race_number', appParamState.selectedRaceNumber);
-
-                                  if (mounted) {
-                                    // ignore: use_build_context_synchronously
-                                    context.findAncestorStateOfType<AppRootState>()?.restartApp();
-                                  }
-                                },
-                                icon: const Icon(Icons.refresh, color: Colors.greenAccent),
-                              ),
-
-                              if (!kIsWeb) ...<Widget>[],
-
-                              IconButton(
-                                onPressed: () =>
-                                    OddsFinderDialog(context: context, widget: const HorseOddsRankingDisplayAlert()),
-                                icon: Icon(Icons.list, color: Colors.white.withValues(alpha: 0.5)),
-                              ),
-                            ],
-                          ),
-
-                          Row(
-                            children: <Widget>[
-                              IconButton(
-                                onPressed: () => _scrollHorseList(1),
-                                icon: const Icon(Icons.arrow_downward, color: Colors.white70),
-                              ),
-                              IconButton(
-                                onPressed: () => _scrollHorseList(-1),
-                                icon: const Icon(Icons.arrow_upward, color: Colors.white70),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-
+                      _buildControlButtons(),
                       if (widget.scheduleDateBashoMap.isNotEmpty) ...<Widget>[
                         Divider(color: Colors.white.withValues(alpha: 0.5)),
                         const SizedBox(height: 5),
                       ],
-
                       Expanded(child: displayRaceHorseList()),
                     ],
-
-                    //=====================//
                   ],
                 ),
               ),
@@ -809,16 +766,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
       }
     }
 
-    final String minTiming;
-    if (oddsModelList.any((OddsModel e) => e.minutesBeforeStart == -999)) {
-      minTiming = '0';
-    } else if (oddsModelList.isNotEmpty && oddsModelList.every((OddsModel e) => e.minutesBeforeStart == 999)) {
-      minTiming = '24';
-    } else {
-      final List<OddsModel> validList = oddsModelList.where((OddsModel e) => e.minutesBeforeStart >= 0).toList()
-        ..sort((OddsModel a, OddsModel b) => a.minutesBeforeStart.compareTo(b.minutesBeforeStart));
-      minTiming = validList.isNotEmpty ? validList.first.minutesBeforeStart.toString() : '';
-    }
+    final String minTiming = _resolveMinTiming(oddsModelList);
 
     if (appParamState.selectedTiming.isEmpty && minTiming.isNotEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -850,6 +798,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
         );
       }).toList(),
     );
+  }
+
+  ///
+  static String _resolveMinTiming(List<OddsModel> oddsModelList) {
+    if (oddsModelList.any((OddsModel e) => e.minutesBeforeStart == -999)) {
+      return '0';
+    }
+    if (oddsModelList.isNotEmpty && oddsModelList.every((OddsModel e) => e.minutesBeforeStart == 999)) {
+      return '24';
+    }
+    final List<OddsModel> validList = oddsModelList.where((OddsModel e) => e.minutesBeforeStart >= 0).toList()
+      ..sort((OddsModel a, OddsModel b) => a.minutesBeforeStart.compareTo(b.minutesBeforeStart));
+    return validList.isNotEmpty ? validList.first.minutesBeforeStart.toString() : '';
   }
 
   ///
@@ -888,15 +849,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
     });
 
     final List<String> timingParts = widget.oddsGetTiming.split('|');
-    final List<int> timingOrder = List<int>.generate(timingParts.length, (int i) {
-      if (i == 0) {
-        return 999;
-      }
-      if (timingParts[i] == '0') {
-        return -999;
-      }
-      return int.tryParse(timingParts[i]) ?? 0;
-    });
+    final List<int> timingOrder = _buildTimingOrder(timingParts);
 
     final Map<int, List<String>> oddsTimelineMap = _buildTimelineMap<OddsModel>(
       models: oddsModelList,
@@ -947,37 +900,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
       timingOrder: timingOrder,
     );
 
-    int? filterMinutes;
     final String selectedTiming = appParamState.selectedTiming;
-
-    if (selectedTiming.isNotEmpty) {
-      if (selectedTiming == '0') {
-        filterMinutes = -999;
-      } else {
-        final int parsed = int.tryParse(selectedTiming) ?? 0;
-        if (parsed == 24) {
-          filterMinutes = oddsModelList.any((OddsModel e) => e.minutesBeforeStart == 24) ? 24 : 999;
-        } else {
-          filterMinutes = parsed;
-        }
-      }
-    } else if (oddsModelList.any((OddsModel e) => e.minutesBeforeStart == -999)) {
-      filterMinutes = -999;
-    } else if (oddsModelList.isNotEmpty && oddsModelList.every((OddsModel e) => e.minutesBeforeStart == 999)) {
-      filterMinutes = 999;
-    } else {
-      final List<int> validValues =
-          oddsModelList.map((OddsModel e) => e.minutesBeforeStart).where((int v) => v >= 0).toList()..sort();
-      filterMinutes = validValues.isNotEmpty ? validValues.first : null;
-    }
-
-    final String activeTimingKey = filterMinutes == null
-        ? ''
-        : filterMinutes == 999
-        ? '24'
-        : filterMinutes == -999
-        ? '0'
-        : filterMinutes.toString();
+    final int? filterMinutes = _resolveFilterMinutes(selectedTiming, oddsModelList);
+    final String activeTimingKey = _filterMinutesToTimingKey(filterMinutes);
 
     final List<OddsModel> displayList =
         (filterMinutes != null
@@ -1026,6 +951,56 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
   }
 
   ///
+  static List<int> _buildTimingOrder(List<String> timingParts) {
+    return List<int>.generate(timingParts.length, (int i) {
+      if (i == 0) {
+        return 999;
+      }
+      if (timingParts[i] == '0') {
+        return -999;
+      }
+      return int.tryParse(timingParts[i]) ?? 0;
+    });
+  }
+
+  ///
+  static int? _resolveFilterMinutes(String selectedTiming, List<OddsModel> oddsModelList) {
+    if (selectedTiming.isNotEmpty) {
+      if (selectedTiming == '0') {
+        return -999;
+      }
+      final int parsed = int.tryParse(selectedTiming) ?? 0;
+      if (parsed == 24) {
+        return oddsModelList.any((OddsModel e) => e.minutesBeforeStart == 24) ? 24 : 999;
+      }
+      return parsed;
+    }
+    if (oddsModelList.any((OddsModel e) => e.minutesBeforeStart == -999)) {
+      return -999;
+    }
+    if (oddsModelList.isNotEmpty && oddsModelList.every((OddsModel e) => e.minutesBeforeStart == 999)) {
+      return 999;
+    }
+    final List<int> validValues =
+        oddsModelList.map((OddsModel e) => e.minutesBeforeStart).where((int v) => v >= 0).toList()..sort();
+    return validValues.isNotEmpty ? validValues.first : null;
+  }
+
+  ///
+  static String _filterMinutesToTimingKey(int? filterMinutes) {
+    if (filterMinutes == null) {
+      return '';
+    }
+    if (filterMinutes == 999) {
+      return '24';
+    }
+    if (filterMinutes == -999) {
+      return '0';
+    }
+    return filterMinutes.toString();
+  }
+
+  ///
   Widget _buildHorseListItem({
     required int index,
     required OddsModel element,
@@ -1050,11 +1025,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
     final List<String>? netkeibaFukuMaxTimeline = netkeibaFukuMaxTimelineMap[element.num];
 
     double boxHeight = 100.0;
-
     if (oddsTimeline != null) {
       boxHeight += 130;
     }
-
     if (netkeibaTimeline != null) {
       boxHeight += 160;
     }
@@ -1069,7 +1042,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
             border: Border(left: BorderSide(color: Colors.greenAccent.withValues(alpha: 0.1), width: 10)),
           ),
         ),
-
         Container(
           margin: const EdgeInsets.symmetric(vertical: 10),
           padding: const EdgeInsets.only(top: 5),
@@ -1079,141 +1051,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: <Widget>[
-                  Opacity(
-                    opacity: 0.4,
-                    child: Container(
-                      margin: const EdgeInsets.only(top: 5, left: 15),
-                      padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 20),
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.greenAccent.withValues(alpha: 0.5)),
-                        borderRadius: BorderRadius.circular(3),
-                      ),
-                      child: Row(
-                        children: <Widget>[
-                          SizedBox(
-                            width: 20,
-                            child: Text(popularity.toString(), style: const TextStyle(color: Colors.greenAccent)),
-                          ),
-                          const Text('番人気', style: TextStyle(color: Colors.greenAccent)),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  if (appParamState.queryUser == 'hidechy') ...<Widget>[
-                    GestureDetector(
-                      onTap: () {
-                        final String timing =
-                            <String>[
-                              appParamState.selectedTiming,
-                              appParamState.selectedTiming2,
-                            ].where((String e) => e.isNotEmpty).firstOrNull ??
-                            '';
-
-                        OddsFinderDialog(
-                          context: context,
-                          widget: HorseOddsWideDisplayAlert(timing: timing, horse: horse),
-                        );
-                      },
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Colors.orangeAccent.withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 20),
-                        child: const Text(
-                          'WIDE',
-                          style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                    ),
-                  ] else ...<Widget>[const SizedBox.shrink()],
-                ],
-              ),
-
+              _buildHorseItemHeader(popularity: popularity, horse: horse),
               const SizedBox(height: 10),
-
-              DefaultTextStyle(
-                style: const TextStyle(color: Colors.white),
-                child: Stack(
-                  children: <Widget>[
-                    Row(
-                      children: <Widget>[
-                        const SizedBox(width: 20),
-
-                        if (horse != null) ...<Widget>[
-                          Container(
-                            padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
-                            decoration: BoxDecoration(
-                              color: (horseWakuColorMap[horse.waku] != null)
-                                  ? horseWakuColorMap[horse.waku]!.withValues(alpha: 0.2)
-                                  : Colors.white.withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(3),
-                            ),
-                            child: DefaultTextStyle(
-                              style: const TextStyle(fontSize: 12),
-                              child: Row(
-                                children: <Widget>[
-                                  SizedBox(
-                                    width: 15,
-                                    child: Text(horse.waku.toString(), style: const TextStyle(color: Colors.white)),
-                                  ),
-                                  const Text('枠', style: TextStyle(color: Colors.white)),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
-
-                        const SizedBox(width: 20),
-
-                        Row(
-                          children: <Widget>[
-                            SizedBox(width: 20, child: Text(element.num.toString())),
-                            const Text('番'),
-                          ],
-                        ),
-
-                        const SizedBox(width: 20),
-
-                        if (horse != null) ...<Widget>[
-                          Expanded(child: Text(horse.name, maxLines: 1, overflow: TextOverflow.ellipsis)),
-                        ],
-                      ],
-                    ),
-
-                    Positioned(
-                      right: 10,
-                      child: Transform(
-                        alignment: Alignment.center,
-                        transform: Matrix4.identity()..scale(-1.0, 1.0),
-                        child: GestureDetector(
-                          onTap: () {
-                            if (horse == null) {
-                              return;
-                            }
-                            final List<String> exUrl = horse.horseUrl.split('=');
-                            final String horseId = exUrl.length > 1 ? exUrl[1] : '';
-                            if (horseId.isNotEmpty) {
-                              horseNotifier.fetchHorseDetail(horseId);
-                              OddsFinderDialog(context: context, widget: const HorseDetailDisplayAlert());
-                            }
-                          },
-                          child: Icon(
-                            FontAwesomeIcons.horse,
-                            size: 20,
-                            color: Colors.greenAccent.withValues(alpha: 0.5),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
+              _buildHorseNameRow(element: element, horse: horse, horseWakuColorMap: horseWakuColorMap),
               if (oddsTimeline != null) ...<Widget>[
                 const SizedBox(height: 10),
                 _buildSourceLabel('JRA'),
@@ -1226,7 +1066,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                   fukuMaxList: fukuMaxTimeline,
                 ),
               ],
-
               if (netkeibaTimeline != null) ...<Widget>[
                 const SizedBox(height: 10),
                 _buildSourceLabel('ネットケイバ'),
@@ -1239,12 +1078,142 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                   fukuMaxList: netkeibaFukuMaxTimeline,
                 ),
               ],
-
               const SizedBox(height: 10),
             ],
           ),
         ),
       ],
+    );
+  }
+
+  ///
+  Widget _buildHorseItemHeader({required int popularity, required HorseModel? horse}) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: <Widget>[
+        Opacity(
+          opacity: 0.4,
+          child: Container(
+            margin: const EdgeInsets.only(top: 5, left: 15),
+            padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 20),
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.greenAccent.withValues(alpha: 0.5)),
+              borderRadius: BorderRadius.circular(3),
+            ),
+            child: Row(
+              children: <Widget>[
+                SizedBox(
+                  width: 20,
+                  child: Text(popularity.toString(), style: const TextStyle(color: Colors.greenAccent)),
+                ),
+                const Text('番人気', style: TextStyle(color: Colors.greenAccent)),
+              ],
+            ),
+          ),
+        ),
+        if (appParamState.queryUser == 'hidechy') ...<Widget>[
+          GestureDetector(
+            onTap: () {
+              final String timing =
+                  <String>[
+                    appParamState.selectedTiming,
+                    appParamState.selectedTiming2,
+                  ].where((String e) => e.isNotEmpty).firstOrNull ??
+                  '';
+              OddsFinderDialog(
+                context: context,
+                widget: HorseOddsWideDisplayAlert(timing: timing, horse: horse),
+              );
+            },
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.orangeAccent.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 20),
+              child: const Text(
+                'WIDE',
+                style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ),
+        ] else ...<Widget>[const SizedBox.shrink()],
+      ],
+    );
+  }
+
+  ///
+  Widget _buildHorseNameRow({
+    required OddsModel element,
+    required HorseModel? horse,
+    required Map<int, Color> horseWakuColorMap,
+  }) {
+    return DefaultTextStyle(
+      style: const TextStyle(color: Colors.white),
+      child: Stack(
+        children: <Widget>[
+          Row(
+            children: <Widget>[
+              const SizedBox(width: 20),
+              if (horse != null) ...<Widget>[
+                Container(
+                  padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
+                  decoration: BoxDecoration(
+                    color: (horseWakuColorMap[horse.waku] != null)
+                        ? horseWakuColorMap[horse.waku]!.withValues(alpha: 0.2)
+                        : Colors.white.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(3),
+                  ),
+                  child: DefaultTextStyle(
+                    style: const TextStyle(fontSize: 12),
+                    child: Row(
+                      children: <Widget>[
+                        SizedBox(
+                          width: 15,
+                          child: Text(horse.waku.toString(), style: const TextStyle(color: Colors.white)),
+                        ),
+                        const Text('枠', style: TextStyle(color: Colors.white)),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+              const SizedBox(width: 20),
+              Row(
+                children: <Widget>[
+                  SizedBox(width: 20, child: Text(element.num.toString())),
+                  const Text('番'),
+                ],
+              ),
+              const SizedBox(width: 20),
+              if (horse != null) ...<Widget>[
+                Expanded(child: Text(horse.name, maxLines: 1, overflow: TextOverflow.ellipsis)),
+              ],
+            ],
+          ),
+          Positioned(
+            right: 10,
+            child: Transform(
+              alignment: Alignment.center,
+              transform: Matrix4.identity()..scale(-1.0, 1.0),
+              child: GestureDetector(
+                onTap: () {
+                  if (horse == null) {
+                    return;
+                  }
+                  final List<String> exUrl = horse.horseUrl.split('=');
+                  final String horseId = exUrl.length > 1 ? exUrl[1] : '';
+                  if (horseId.isNotEmpty) {
+                    horseNotifier.fetchHorseDetail(horseId);
+                    OddsFinderDialog(context: context, widget: const HorseDetailDisplayAlert());
+                  }
+                },
+                child: Icon(FontAwesomeIcons.horse, size: 20, color: Colors.greenAccent.withValues(alpha: 0.5)),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
