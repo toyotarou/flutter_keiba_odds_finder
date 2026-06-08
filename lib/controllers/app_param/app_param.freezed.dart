@@ -40,6 +40,7 @@ mixin _$AppParamState {
   String get selectedTiming => throw _privateConstructorUsedError;
   String get selectedTiming2 => throw _privateConstructorUsedError;
   String get queryUser => throw _privateConstructorUsedError;
+  bool get isShowUpperBox => throw _privateConstructorUsedError;
 
   @JsonKey(ignore: true)
   $AppParamStateCopyWith<AppParamState> get copyWith =>
@@ -65,7 +66,8 @@ abstract class $AppParamStateCopyWith<$Res> {
       int selectedRaceNumber,
       String selectedTiming,
       String selectedTiming2,
-      String queryUser});
+      String queryUser,
+      bool isShowUpperBox});
 }
 
 /// @nodoc
@@ -94,6 +96,7 @@ class _$AppParamStateCopyWithImpl<$Res, $Val extends AppParamState>
     Object? selectedTiming = null,
     Object? selectedTiming2 = null,
     Object? queryUser = null,
+    Object? isShowUpperBox = null,
   }) {
     return _then(_value.copyWith(
       keepScheduleDateBashoMap: null == keepScheduleDateBashoMap
@@ -149,6 +152,10 @@ class _$AppParamStateCopyWithImpl<$Res, $Val extends AppParamState>
           ? _value.queryUser
           : queryUser // ignore: cast_nullable_to_non_nullable
               as String,
+      isShowUpperBox: null == isShowUpperBox
+          ? _value.isShowUpperBox
+          : isShowUpperBox // ignore: cast_nullable_to_non_nullable
+              as bool,
     ) as $Val);
   }
 }
@@ -174,7 +181,8 @@ abstract class _$$AppParamStateImplCopyWith<$Res>
       int selectedRaceNumber,
       String selectedTiming,
       String selectedTiming2,
-      String queryUser});
+      String queryUser,
+      bool isShowUpperBox});
 }
 
 /// @nodoc
@@ -201,6 +209,7 @@ class __$$AppParamStateImplCopyWithImpl<$Res>
     Object? selectedTiming = null,
     Object? selectedTiming2 = null,
     Object? queryUser = null,
+    Object? isShowUpperBox = null,
   }) {
     return _then(_$AppParamStateImpl(
       keepScheduleDateBashoMap: null == keepScheduleDateBashoMap
@@ -256,6 +265,10 @@ class __$$AppParamStateImplCopyWithImpl<$Res>
           ? _value.queryUser
           : queryUser // ignore: cast_nullable_to_non_nullable
               as String,
+      isShowUpperBox: null == isShowUpperBox
+          ? _value.isShowUpperBox
+          : isShowUpperBox // ignore: cast_nullable_to_non_nullable
+              as bool,
     ));
   }
 }
@@ -281,7 +294,8 @@ class _$AppParamStateImpl implements _AppParamState {
       this.selectedRaceNumber = 0,
       this.selectedTiming = '',
       this.selectedTiming2 = '',
-      this.queryUser = ''})
+      this.queryUser = '',
+      this.isShowUpperBox = true})
       : _keepScheduleDateBashoMap = keepScheduleDateBashoMap,
         _keepRaceMap = keepRaceMap,
         _keepHorseMap = keepHorseMap,
@@ -361,10 +375,13 @@ class _$AppParamStateImpl implements _AppParamState {
   @override
   @JsonKey()
   final String queryUser;
+  @override
+  @JsonKey()
+  final bool isShowUpperBox;
 
   @override
   String toString() {
-    return 'AppParamState(keepScheduleDateBashoMap: $keepScheduleDateBashoMap, keepRaceMap: $keepRaceMap, keepHorseMap: $keepHorseMap, keepOddsMap: $keepOddsMap, keepOddsWideMap: $keepOddsWideMap, configOddsGetTiming: $configOddsGetTiming, selectedScheduleDate: $selectedScheduleDate, selectedScheduleKaisuuBashoDay: $selectedScheduleKaisuuBashoDay, selectedScheduleKaisuuBashoDayName: $selectedScheduleKaisuuBashoDayName, selectedRaceNumber: $selectedRaceNumber, selectedTiming: $selectedTiming, selectedTiming2: $selectedTiming2, queryUser: $queryUser)';
+    return 'AppParamState(keepScheduleDateBashoMap: $keepScheduleDateBashoMap, keepRaceMap: $keepRaceMap, keepHorseMap: $keepHorseMap, keepOddsMap: $keepOddsMap, keepOddsWideMap: $keepOddsWideMap, configOddsGetTiming: $configOddsGetTiming, selectedScheduleDate: $selectedScheduleDate, selectedScheduleKaisuuBashoDay: $selectedScheduleKaisuuBashoDay, selectedScheduleKaisuuBashoDayName: $selectedScheduleKaisuuBashoDayName, selectedRaceNumber: $selectedRaceNumber, selectedTiming: $selectedTiming, selectedTiming2: $selectedTiming2, queryUser: $queryUser, isShowUpperBox: $isShowUpperBox)';
   }
 
   @override
@@ -401,7 +418,9 @@ class _$AppParamStateImpl implements _AppParamState {
             (identical(other.selectedTiming2, selectedTiming2) ||
                 other.selectedTiming2 == selectedTiming2) &&
             (identical(other.queryUser, queryUser) ||
-                other.queryUser == queryUser));
+                other.queryUser == queryUser) &&
+            (identical(other.isShowUpperBox, isShowUpperBox) ||
+                other.isShowUpperBox == isShowUpperBox));
   }
 
   @override
@@ -419,7 +438,8 @@ class _$AppParamStateImpl implements _AppParamState {
       selectedRaceNumber,
       selectedTiming,
       selectedTiming2,
-      queryUser);
+      queryUser,
+      isShowUpperBox);
 
   @JsonKey(ignore: true)
   @override
@@ -442,7 +462,8 @@ abstract class _AppParamState implements AppParamState {
       final int selectedRaceNumber,
       final String selectedTiming,
       final String selectedTiming2,
-      final String queryUser}) = _$AppParamStateImpl;
+      final String queryUser,
+      final bool isShowUpperBox}) = _$AppParamStateImpl;
 
   @override
   Map<String, List<ScheduleModel>> get keepScheduleDateBashoMap;
@@ -474,6 +495,8 @@ abstract class _AppParamState implements AppParamState {
   String get selectedTiming2;
   @override
   String get queryUser;
+  @override
+  bool get isShowUpperBox;
   @override
   @JsonKey(ignore: true)
   _$$AppParamStateImplCopyWith<_$AppParamStateImpl> get copyWith =>

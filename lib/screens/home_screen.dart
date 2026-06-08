@@ -491,69 +491,72 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
                     //=====================//
-                    Row(
-                      children: widget.scheduleDateBashoMap.entries.map((MapEntry<String, List<ScheduleModel>> e) {
-                        return Expanded(
-                          child: GestureDetector(
-                            onTap: () {
-                              appParamNotifier.setSelectedScheduleDate(date: e.key);
-                              appParamNotifier.setSelectedScheduleKaisuuBashoDay(kbd: '', name: '');
-                              appParamNotifier.setSelectedRaceNumber(num: 0);
-                            },
-                            child: Container(
-                              margin: const EdgeInsets.all(5),
-                              padding: const EdgeInsets.all(5),
-                              decoration: BoxDecoration(
-                                color: (appParamState.selectedScheduleDate == e.key)
-                                    ? Colors.greenAccent.withValues(alpha: 0.1)
-                                    : Colors.black.withValues(alpha: 0.3),
-                                border: Border.all(color: Colors.white.withValues(alpha: 0.4)),
-                                borderRadius: BorderRadius.circular(3),
-                              ),
-                              alignment: Alignment.center,
-                              child: Text(e.key, style: const TextStyle(color: Colors.white)),
-                            ),
-                          ),
-                        );
-                      }).toList(),
-                    ),
-
-                    //=====================//
-                    const SizedBox(height: 5),
-
-                    //=====================//
-                    if (widget.scheduleDateBashoMap[appParamState.selectedScheduleDate] != null) ...<Widget>[
+                    if (appParamState.isShowUpperBox) ...<Widget>[
                       Row(
-                        children: widget.scheduleDateBashoMap[appParamState.selectedScheduleDate]!.map((
-                          ScheduleModel e,
-                        ) {
-                          final String label = '${e.kaisuu}回 ${e.bashoName} ${e.day}日';
+                        children: widget.scheduleDateBashoMap.entries.map((MapEntry<String, List<ScheduleModel>> e) {
                           return Expanded(
                             child: GestureDetector(
                               onTap: () {
-                                appParamNotifier.setSelectedScheduleKaisuuBashoDay(
-                                  kbd: '${e.kaisuu}_${e.basho}_${e.day}',
-                                  name: label,
-                                );
+                                appParamNotifier.setSelectedScheduleDate(date: e.key);
+                                appParamNotifier.setSelectedScheduleKaisuuBashoDay(kbd: '', name: '');
                                 appParamNotifier.setSelectedRaceNumber(num: 0);
                               },
                               child: Container(
                                 margin: const EdgeInsets.all(5),
                                 padding: const EdgeInsets.all(5),
                                 decoration: BoxDecoration(
-                                  border: Border.all(color: Colors.white.withValues(alpha: 0.4)),
-                                  color: (appParamState.selectedScheduleKaisuuBashoDayName == label)
+                                  color: (appParamState.selectedScheduleDate == e.key)
                                       ? Colors.greenAccent.withValues(alpha: 0.1)
-                                      : Colors.transparent,
+                                      : Colors.black.withValues(alpha: 0.3),
+                                  border: Border.all(color: Colors.white.withValues(alpha: 0.4)),
                                   borderRadius: BorderRadius.circular(3),
                                 ),
                                 alignment: Alignment.center,
-                                child: Text(label, style: const TextStyle(color: Colors.white)),
+                                child: Text(e.key, style: const TextStyle(color: Colors.white)),
                               ),
                             ),
                           );
                         }).toList(),
                       ),
+
+                      const SizedBox(height: 5),
+                    ],
+
+                    //=====================//
+                    if (widget.scheduleDateBashoMap[appParamState.selectedScheduleDate] != null) ...<Widget>[
+                      if (appParamState.isShowUpperBox) ...<Widget>[
+                        Row(
+                          children: widget.scheduleDateBashoMap[appParamState.selectedScheduleDate]!.map((
+                            ScheduleModel e,
+                          ) {
+                            final String label = '${e.kaisuu}回 ${e.bashoName} ${e.day}日';
+                            return Expanded(
+                              child: GestureDetector(
+                                onTap: () {
+                                  appParamNotifier.setSelectedScheduleKaisuuBashoDay(
+                                    kbd: '${e.kaisuu}_${e.basho}_${e.day}',
+                                    name: label,
+                                  );
+                                  appParamNotifier.setSelectedRaceNumber(num: 0);
+                                },
+                                child: Container(
+                                  margin: const EdgeInsets.all(5),
+                                  padding: const EdgeInsets.all(5),
+                                  decoration: BoxDecoration(
+                                    border: Border.all(color: Colors.white.withValues(alpha: 0.4)),
+                                    color: (appParamState.selectedScheduleKaisuuBashoDayName == label)
+                                        ? Colors.greenAccent.withValues(alpha: 0.1)
+                                        : Colors.transparent,
+                                    borderRadius: BorderRadius.circular(3),
+                                  ),
+                                  alignment: Alignment.center,
+                                  child: Text(label, style: const TextStyle(color: Colors.white)),
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ],
                     ] else ...<Widget>[
                       if (widget.scheduleDateBashoMap.isNotEmpty) ...<Widget>[
                         const Text('日付を選択してください', style: TextStyle(fontSize: 12, color: Colors.greenAccent)),
@@ -568,79 +571,126 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: <Widget>[
-                          const SizedBox(height: 5),
+                          if (appParamState.isShowUpperBox) ...<Widget>[
+                            const SizedBox(height: 5),
 
-                          SingleChildScrollView(
-                            controller: _raceScrollController,
-                            scrollDirection: Axis.horizontal,
-                            child: Row(
-                              children: List<Widget>.generate(widget.raceMap[mapKey]!.length, (int index) {
-                                return AutoScrollTag(
-                                  key: ValueKey<int>(index),
-                                  controller: _raceScrollController,
-                                  index: index,
-                                  child: GestureDetector(
-                                    onTap: () => appParamNotifier.setSelectedRaceNumber(num: index + 1),
-                                    child: Padding(
-                                      padding: const EdgeInsets.symmetric(horizontal: 5),
-                                      child: CircleAvatar(
-                                        backgroundColor: (appParamState.selectedRaceNumber == index + 1)
-                                            ? Colors.greenAccent.withValues(alpha: 0.2)
-                                            : Colors.black.withValues(alpha: 0.4),
-                                        child: Text(
-                                          raceModelList[index].race.toString(),
-                                          style: const TextStyle(fontSize: 14, color: Colors.white),
+                            SingleChildScrollView(
+                              controller: _raceScrollController,
+                              scrollDirection: Axis.horizontal,
+                              child: Row(
+                                children: List<Widget>.generate(widget.raceMap[mapKey]!.length, (int index) {
+                                  return AutoScrollTag(
+                                    key: ValueKey<int>(index),
+                                    controller: _raceScrollController,
+                                    index: index,
+                                    child: GestureDetector(
+                                      onTap: () => appParamNotifier.setSelectedRaceNumber(num: index + 1),
+                                      child: Padding(
+                                        padding: const EdgeInsets.symmetric(horizontal: 5),
+                                        child: CircleAvatar(
+                                          backgroundColor: (appParamState.selectedRaceNumber == index + 1)
+                                              ? Colors.greenAccent.withValues(alpha: 0.2)
+                                              : Colors.black.withValues(alpha: 0.4),
+                                          child: Text(
+                                            raceModelList[index].race.toString(),
+                                            style: const TextStyle(fontSize: 14, color: Colors.white),
+                                          ),
                                         ),
                                       ),
                                     ),
-                                  ),
-                                );
-                              }),
+                                  );
+                                }),
+                              ),
                             ),
-                          ),
+
+                            const SizedBox(height: 5),
+
+                            Divider(color: Colors.white.withValues(alpha: 0.5), thickness: 5),
+                          ],
 
                           const SizedBox(height: 5),
 
-                          Divider(color: Colors.white.withValues(alpha: 0.5), thickness: 5),
-
-                          const SizedBox(height: 5),
-
-                          Padding(
-                            padding: const EdgeInsets.all(5),
-                            child: Stack(
-                              children: <Widget>[
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: <Widget>[
-                                    const SizedBox(),
-
-                                    ValueListenableBuilder<int>(
-                                      valueListenable: _remainingSecondsNotifier,
-                                      builder: (BuildContext context, int seconds, Widget? _) {
-                                        return Text(
-                                          _formatCountdown(seconds),
-                                          style: const TextStyle(fontSize: 13, color: Colors.white),
-                                        );
-                                      },
-                                    ),
-                                  ],
-                                ),
-
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: <Widget>[
-                                    Text(
-                                      '🚩　$startTime　$raceName',
-                                      style: (raceName == 'レースを選択してください')
-                                          ? const TextStyle(color: Colors.greenAccent, fontSize: 12)
-                                          : const TextStyle(fontSize: 14, color: Colors.white),
-                                    ),
-
-                                    const SizedBox(),
-                                  ],
+                          Stack(
+                            children: <Widget>[
+                              if (!appParamState.isShowUpperBox) ...<Widget>[
+                                DefaultTextStyle(
+                                  style: const TextStyle(fontSize: 10, color: Colors.yellowAccent),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: <Widget>[
+                                      const SizedBox(width: 10),
+                                      Text(appParamState.selectedScheduleDate),
+                                      Text(appParamState.selectedScheduleKaisuuBashoDayName),
+                                      Text('${appParamState.selectedRaceNumber}レース'),
+                                      const SizedBox(width: 80),
+                                    ],
+                                  ),
                                 ),
                               ],
-                            ),
+
+                              Padding(
+                                padding: const EdgeInsets.only(top: 10, right: 5, left: 5, bottom: 5),
+                                child: Stack(
+                                  children: <Widget>[
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: <Widget>[
+                                        const SizedBox(),
+
+                                        ValueListenableBuilder<int>(
+                                          valueListenable: _remainingSecondsNotifier,
+                                          builder: (BuildContext context, int seconds, Widget? _) {
+                                            return Text(
+                                              _formatCountdown(seconds),
+                                              style: const TextStyle(fontSize: 13, color: Colors.white),
+                                            );
+                                          },
+                                        ),
+                                      ],
+                                    ),
+
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: <Widget>[
+                                        Row(
+                                          children: <Widget>[
+                                            GestureDetector(
+                                              onTap: () {
+                                                if (appParamState.selectedRaceNumber > 0) {
+                                                  appParamNotifier.setIsShowUpperBox(
+                                                    flag: !appParamState.isShowUpperBox,
+                                                  );
+                                                }
+                                              },
+                                              child: Icon(
+                                                (appParamState.isShowUpperBox)
+                                                    ? Icons.arrow_circle_up
+                                                    : Icons.arrow_circle_down,
+
+                                                color: (appParamState.selectedRaceNumber > 0)
+                                                    ? Colors.greenAccent
+                                                    : Colors.grey,
+                                              ),
+                                            ),
+
+                                            const SizedBox(width: 10),
+
+                                            Text(
+                                              '$startTime　$raceName',
+                                              style: (raceName == 'レースを選択してください')
+                                                  ? const TextStyle(color: Colors.greenAccent, fontSize: 12)
+                                                  : const TextStyle(fontSize: 14, color: Colors.white),
+                                            ),
+                                          ],
+                                        ),
+
+                                        const SizedBox(),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),

@@ -42,6 +42,8 @@ class AppParamState with _$AppParamState {
     @Default('') String selectedTiming2,
 
     @Default('') String queryUser,
+
+    @Default(true) bool isShowUpperBox,
   }) = _AppParamState;
 }
 
@@ -95,4 +97,7 @@ class AppParam extends _$AppParam {
 
   ///
   void setQueryUser({required String user}) => state = state.copyWith(queryUser: user);
+
+  ///
+  void setIsShowUpperBox({required bool flag}) => state = state.copyWith(isShowUpperBox: flag);
 }
