@@ -17,12 +17,12 @@ class HorseOddsRankingDisplayAlert extends ConsumerStatefulWidget {
 class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingDisplayAlert>
     with ControllersMixin<HorseOddsRankingDisplayAlert> {
   final TransformationController _controller = TransformationController();
+  bool _scaleInitialized = false;
 
   ///
   @override
   void initState() {
     super.initState();
-    _controller.value = Matrix4.identity()..scale(1.0);
   }
 
   ///
@@ -162,11 +162,20 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
     const Color defaultBgColor = Colors.transparent; // 変化なしのセルの背景色
     // ========================================
 
-    return InteractiveViewer(
-      transformationController: _controller,
-      constrained: false,
-      minScale: 0.1,
-      maxScale: 4.0,
+    final double tableWidth = 80 + 50.0 * timingParts.length;
+
+    return LayoutBuilder(
+      builder: (BuildContext ctx, BoxConstraints constraints) {
+        final double fitScale = constraints.maxWidth / tableWidth;
+        if (!_scaleInitialized) {
+          _scaleInitialized = true;
+          _controller.value = Matrix4.identity()..scale(fitScale);
+        }
+        return InteractiveViewer(
+          transformationController: _controller,
+          constrained: false,
+          minScale: fitScale,
+          maxScale: 4.0,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
@@ -306,6 +315,8 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
           ),
         ],
       ),
+        );
+      },
     );
   }
 }
