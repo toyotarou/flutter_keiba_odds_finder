@@ -1103,34 +1103,34 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                     ),
                   ),
 
-                  if (appParamState.queryUser == 'hidechy') ...<Widget>[] else ...<Widget>[const SizedBox.shrink()],
+                  if (appParamState.queryUser == 'hidechy') ...<Widget>[
+                    GestureDetector(
+                      onTap: () {
+                        final String timing =
+                            <String>[
+                              appParamState.selectedTiming,
+                              appParamState.selectedTiming2,
+                            ].where((String e) => e.isNotEmpty).firstOrNull ??
+                            '';
 
-                  GestureDetector(
-                    onTap: () {
-                      final String timing =
-                          <String>[
-                            appParamState.selectedTiming,
-                            appParamState.selectedTiming2,
-                          ].where((String e) => e.isNotEmpty).firstOrNull ??
-                          '';
-
-                      OddsFinderDialog(
-                        context: context,
-                        widget: HorseOddsWideDisplayAlert(timing: timing, horse: horse),
-                      );
-                    },
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.orangeAccent.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 20),
-                      child: const Text(
-                        'WIDE',
-                        style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                        OddsFinderDialog(
+                          context: context,
+                          widget: HorseOddsWideDisplayAlert(timing: timing, horse: horse),
+                        );
+                      },
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.orangeAccent.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 20),
+                        child: const Text(
+                          'WIDE',
+                          style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                        ),
                       ),
                     ),
-                  ),
+                  ] else ...<Widget>[const SizedBox.shrink()],
                 ],
               ),
 
