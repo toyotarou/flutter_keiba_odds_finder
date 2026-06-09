@@ -28,6 +28,8 @@ class AppParamState with _$AppParamState {
 
     @Default(<String, List<SummaryModel>>{}) Map<String, List<SummaryModel>> keepSummaryMap,
 
+    @Default(<String, List<String>>{}) Map<String, List<String>> keepSummaryDateBashoMap,
+
     ///
     @Default('') String configOddsGetTiming,
 
@@ -77,6 +79,10 @@ class AppParam extends _$AppParam {
 
   ///
   void setKeepSummaryMap({required Map<String, List<SummaryModel>> map}) => state = state.copyWith(keepSummaryMap: map);
+
+  ///
+  void setKeepSummaryDateBashoMap({required Map<String, List<String>> map}) =>
+      state = state.copyWith(keepSummaryDateBashoMap: map);
 
   //////////////
 

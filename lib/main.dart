@@ -175,6 +175,7 @@ class _MyAppState extends ConsumerState<MyApp> with ControllersMixin<MyApp> {
           oddsWideMap: oddsWideState.oddsWideMap,
           isRankingDialogOpen: widget.reloadIsRankingDialogOpen,
           summaryMap: summaryState.summaryMap,
+          summaryDateBashoMap: summaryState.summaryDateBashoMap,
         ),
       ),
     );

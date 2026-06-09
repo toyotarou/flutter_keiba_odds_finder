@@ -35,6 +35,7 @@ class HomeScreen extends ConsumerStatefulWidget {
     required this.oddsWideMap,
     required this.isRankingDialogOpen,
     required this.summaryMap,
+    required this.summaryDateBashoMap,
   });
 
   final Map<String, List<ScheduleModel>> scheduleDateBashoMap;
@@ -46,6 +47,7 @@ class HomeScreen extends ConsumerStatefulWidget {
   final Map<String, List<OddsWideModel>> oddsWideMap;
   final bool isRankingDialogOpen;
   final Map<String, List<SummaryModel>> summaryMap;
+  final Map<String, List<String>> summaryDateBashoMap;
 
   @override
   ConsumerState<HomeScreen> createState() => _HomeScreenState();
@@ -63,6 +65,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
   String _lastStartTime = '';
 
   final Utility _utility = Utility();
+
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   ///
   @override
@@ -118,6 +122,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
     appParamNotifier.setConfigOddsGetTiming(oddsGetTiming: widget.oddsGetTiming);
     appParamNotifier.setKeepOddsWideMap(map: widget.oddsWideMap);
     appParamNotifier.setKeepSummaryMap(map: widget.summaryMap);
+    appParamNotifier.setKeepSummaryDateBashoMap(map: widget.summaryDateBashoMap);
   }
 
   ///
@@ -685,9 +690,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
     }
 
     return Scaffold(
+      key: _scaffoldKey,
       body: Stack(
         children: <Widget>[
           ..._buildBackgroundLayers(),
+
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.all(10),
@@ -696,7 +703,24 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
-                    if (appParamState.isShowUpperBox) ...<Widget>[_buildDateRow(), const SizedBox(height: 5)],
+                    if (appParamState.isShowUpperBox) ...<Widget>[
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: <Widget>[
+                          const SizedBox.shrink(),
+                          GestureDetector(
+                            onTap: () {
+                              _scaffoldKey.currentState!.openDrawer();
+                            },
+                            child: const Icon(Icons.list),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 10),
+                      _buildDateRow(),
+                      const SizedBox(height: 5),
+                    ],
                     if (widget.scheduleDateBashoMap[appParamState.selectedScheduleDate] != null) ...<Widget>[
                       if (appParamState.isShowUpperBox) _buildVenueRow(),
                     ] else ...<Widget>[
@@ -738,6 +762,79 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
             ),
           ),
         ],
+      ),
+
+      drawer: _dispDrawer(),
+    );
+  }
+
+  Widget _dispDrawer() {
+    return Drawer(
+      backgroundColor: Colors.blueGrey.withOpacity(0.2),
+      child: Container(
+        padding: const EdgeInsets.only(left: 10),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            const SizedBox(height: 60),
+
+            Expanded(
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: widget.summaryDateBashoMap.entries.map((MapEntry<String, List<String>> e) {
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        Text(e.key, style: const TextStyle(color: Colors.white)),
+
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: e.value.map((String e2) {
+                            final List<SummaryModel> models = widget.summaryMap['${e.key}_$e2'] ?? <SummaryModel>[];
+
+                            final Map<int, String> uniqueRaces = <int, String>{};
+
+                            for (final SummaryModel m in models) {
+                              uniqueRaces.putIfAbsent(m.race, () => m.raceName);
+                            }
+
+                            final List<MapEntry<int, String>> races = uniqueRaces.entries.toList()
+                              ..sort((MapEntry<int, String> a, MapEntry<int, String> b) => a.key.compareTo(b.key));
+
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: <Widget>[
+                                if (models.isNotEmpty) ...<Widget>[
+                                  Text(
+                                    '${models.first.kaisuu}回 ${models.first.bashoName} ${models.first.day}日',
+                                    style: const TextStyle(color: Colors.greenAccent, fontSize: 12),
+                                  ),
+                                ],
+
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: races.map((MapEntry<int, String> r) {
+                                    return Text(
+                                      '${r.key}R  ${r.value}',
+                                      style: const TextStyle(color: Colors.white70, fontSize: 11),
+                                    );
+                                  }).toList(),
+                                ),
+                              ],
+                            );
+                          }).toList(),
+                        ),
+
+                        const SizedBox(height: 30),
+                      ],
+                    );
+                  }).toList(),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
