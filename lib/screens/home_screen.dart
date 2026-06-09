@@ -16,6 +16,7 @@ import '../models/odds_model.dart';
 import '../models/odds_wide_model.dart';
 import '../models/race_model.dart';
 import '../models/schedule_model.dart';
+import '../models/summary_model.dart';
 import '../utility/utility.dart';
 import 'components/horse_detail_display_alert.dart';
 import 'components/horse_odds_ranking_display_alert.dart';
@@ -33,6 +34,7 @@ class HomeScreen extends ConsumerStatefulWidget {
     required this.oddsGetTiming,
     required this.oddsWideMap,
     required this.isRankingDialogOpen,
+    required this.summaryMap,
   });
 
   final Map<String, List<ScheduleModel>> scheduleDateBashoMap;
@@ -43,6 +45,7 @@ class HomeScreen extends ConsumerStatefulWidget {
   final String oddsGetTiming;
   final Map<String, List<OddsWideModel>> oddsWideMap;
   final bool isRankingDialogOpen;
+  final Map<String, List<SummaryModel>> summaryMap;
 
   @override
   ConsumerState<HomeScreen> createState() => _HomeScreenState();
@@ -114,6 +117,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
     appParamNotifier.setKeepOddsMap(map: widget.oddsMap);
     appParamNotifier.setConfigOddsGetTiming(oddsGetTiming: widget.oddsGetTiming);
     appParamNotifier.setKeepOddsWideMap(map: widget.oddsWideMap);
+    appParamNotifier.setKeepSummaryMap(map: widget.summaryMap);
   }
 
   ///

@@ -119,6 +119,7 @@ class _MyAppState extends ConsumerState<MyApp> with ControllersMixin<MyApp> {
     netkeibaRaceNotifier.getAllNetkeibaRaceData();
     oddsGetTimingNotifier.getAllOddsGetTimingData();
     oddsWideNotifier.getAllOddsWideData();
+    summaryNotifier.getAllSummaryData();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (widget.queryUser != null && widget.queryUser!.isNotEmpty) {
@@ -173,6 +174,7 @@ class _MyAppState extends ConsumerState<MyApp> with ControllersMixin<MyApp> {
           netkeibaOddsMap: netkeibaOddsState.netkeibaOddsMap,
           oddsWideMap: oddsWideState.oddsWideMap,
           isRankingDialogOpen: widget.reloadIsRankingDialogOpen,
+          summaryMap: summaryState.summaryMap,
         ),
       ),
     );

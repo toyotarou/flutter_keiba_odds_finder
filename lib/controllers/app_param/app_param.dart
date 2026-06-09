@@ -7,6 +7,7 @@ import '../../models/odds_model.dart';
 import '../../models/odds_wide_model.dart';
 import '../../models/race_model.dart';
 import '../../models/schedule_model.dart';
+import '../../models/summary_model.dart';
 
 part 'app_param.freezed.dart';
 
@@ -24,6 +25,8 @@ class AppParamState with _$AppParamState {
     @Default(<String, List<OddsModel>>{}) Map<String, List<OddsModel>> keepOddsMap,
 
     @Default(<String, List<OddsWideModel>>{}) Map<String, List<OddsWideModel>> keepOddsWideMap,
+
+    @Default(<String, List<SummaryModel>>{}) Map<String, List<SummaryModel>> keepSummaryMap,
 
     ///
     @Default('') String configOddsGetTiming,
@@ -71,6 +74,9 @@ class AppParam extends _$AppParam {
   ///
   void setKeepOddsWideMap({required Map<String, List<OddsWideModel>> map}) =>
       state = state.copyWith(keepOddsWideMap: map);
+
+  ///
+  void setKeepSummaryMap({required Map<String, List<SummaryModel>> map}) => state = state.copyWith(keepSummaryMap: map);
 
   //////////////
 

@@ -10,6 +10,7 @@ import 'odds_get_timing/odds_get_timing.dart';
 import 'odds_wide/odds_wide.dart';
 import 'race/race.dart';
 import 'schedule/schedule.dart';
+import 'summary/summary.dart';
 
 mixin ControllersMixin<T extends ConsumerStatefulWidget> on ConsumerState<T> {
   //==========================================//
@@ -84,6 +85,14 @@ mixin ControllersMixin<T extends ConsumerStatefulWidget> on ConsumerState<T> {
   OddsWideState get oddsWideState => ref.watch(oddsWideProvider);
 
   OddsWide get oddsWideNotifier => ref.read(oddsWideProvider.notifier);
+
+  //==========================================//
+
+  //==========================================//
+
+  SummaryState get summaryState => ref.watch(summaryProvider);
+
+  Summary get summaryNotifier => ref.read(summaryProvider.notifier);
 
   //==========================================//
 }
