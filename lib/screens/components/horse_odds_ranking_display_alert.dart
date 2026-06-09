@@ -9,7 +9,11 @@ import '../../models/race_model.dart';
 
 // 色定数（変更する場合はここを編集）
 const Color _headerBgColor = Color(0xFF1B3A2A);
-const Color _changedBgColor = Color(0xFF3A1B1B);
+
+const Color _changedBgColor1 = Color(0xFF1B3A5A);
+const Color _changedBgColor2 = Color(0xFF4A3D10);
+const Color _changedBgColor3 = Color(0xFF5A1A1A);
+const Color _changedBgColorDown = Color(0xFF3A3A3A);
 const Color _defaultBgColor = Colors.transparent;
 
 class HorseOddsRankingDisplayAlert extends ConsumerStatefulWidget {
@@ -48,7 +52,7 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
                 Divider(color: Colors.white.withOpacity(0.4), thickness: 5),
                 const Text('縦軸：順位、横軸：タイミング、セル内：馬番', style: TextStyle(fontSize: 10)),
                 const SizedBox(height: 5),
-                const Text('赤く塗られたセルは、左のセルと順位が変わっています。', style: TextStyle(fontSize: 10)),
+                const Text('水色=1上昇、黄色=2上昇、赤=3以上上昇、灰色=下降（Sとの比較）', style: TextStyle(fontSize: 10)),
                 const SizedBox(height: 5),
                 const Text('表をダブルタップすると、初期の全体表示に戻ります。', style: TextStyle(fontSize: 10)),
                 const SizedBox(height: 10),
@@ -177,13 +181,26 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
   }
 
   ///
-  static Widget _buildDataCell(OddsModel? model, bool isChanged) {
+  static Widget _buildDataCell(OddsModel? model, int changeLevel) {
+    final Color bgColor;
+    switch (changeLevel) {
+      case 1:
+        bgColor = _changedBgColor1;
+      case 2:
+        bgColor = _changedBgColor2;
+      case 3:
+        bgColor = _changedBgColor3;
+      case -1:
+        bgColor = _changedBgColorDown;
+      default:
+        bgColor = _defaultBgColor;
+    }
     return Container(
       width: 50,
       height: 30,
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: isChanged ? _changedBgColor : _defaultBgColor,
+        color: bgColor,
         border: Border.all(color: Colors.white24),
       ),
       child: Text(
@@ -241,17 +258,28 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
   }
 
   ///
-  static Widget _buildRankingDataRow(int rank, List<OddsModel?> rowData) {
+  static Widget _buildRankingDataRow(int rank, List<OddsModel?> rowData, Map<int, int> horseNumToStartRank) {
     return Row(
       children: <Widget>[
         _buildRankCell(rank),
         ...rowData.asMap().entries.map((MapEntry<int, OddsModel?> entry) {
-          final bool isChanged =
-              entry.key > 0 &&
-              entry.value != null &&
-              rowData[entry.key - 1] != null &&
-              entry.value!.num != rowData[entry.key - 1]!.num;
-          return _buildDataCell(entry.value, isChanged);
+          int changeLevel = 0;
+          if (entry.key > 0 && entry.value != null) {
+            final int? startRank = horseNumToStartRank[entry.value!.num];
+            if (startRank != null) {
+              final int rankUp = startRank - rank; // 正の値 = 順位が上がった
+              if (rankUp >= 3) {
+                changeLevel = 3;
+              } else if (rankUp == 2) {
+                changeLevel = 2;
+              } else if (rankUp == 1) {
+                changeLevel = 1;
+              } else if (rankUp < 0) {
+                changeLevel = -1;
+              }
+            }
+          }
+          return _buildDataCell(entry.value, changeLevel);
         }),
         _buildRankCell(rank),
       ],
@@ -282,6 +310,15 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
     final Map<int, List<OddsModel?>> rankingMap = _computeRankingMap(horseNum, timingOrder, oddsTimingMap);
     final List<String> timingLabels = _buildTimingLabels(timingParts);
 
+    // S時点（index=0）の各馬の順位を逆引きできるマップを構築
+    final Map<int, int> horseNumToStartRank = <int, int>{};
+    for (int r = 1; r <= horseNum; r++) {
+      final List<OddsModel?> rowData = rankingMap[r] ?? <OddsModel?>[];
+      if (rowData.isNotEmpty && rowData[0] != null) {
+        horseNumToStartRank[rowData[0]!.num] = r;
+      }
+    }
+
     final double tableWidth = 80 + 50.0 * timingParts.length;
 
     return LayoutBuilder(
@@ -303,7 +340,7 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
                 _buildTimingHeaderFooterRow(timingLabels, isTop: true),
                 ...List<Widget>.generate(horseNum, (int rankIndex) {
                   final int rank = rankIndex + 1;
-                  return _buildRankingDataRow(rank, rankingMap[rank] ?? <OddsModel?>[]);
+                  return _buildRankingDataRow(rank, rankingMap[rank] ?? <OddsModel?>[], horseNumToStartRank);
                 }),
                 _buildTimingHeaderFooterRow(timingLabels, isTop: false),
               ],
