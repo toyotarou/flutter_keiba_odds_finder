@@ -17,7 +17,6 @@ const Color _headerBgColor = Color(0xFF1B3A2A);
 const Color _changedBgColor1 = Color(0xFF1B3A5A);
 const Color _changedBgColor2 = Color(0xFF4A3D10);
 const Color _changedBgColor3 = Color(0xFF5A1A1A);
-const Color _changedBgColorDown = Color(0xFF3A3A3A);
 const Color _defaultBgColor = Colors.transparent;
 
 const List<int> _kSummaryTimingMinutes = <int>[24, 21, 18, 15, 12, 9, 6, 3, 0];
@@ -36,10 +35,28 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
     with ControllersMixin<HorseOddsRankingDisplayAlert> {
   final TransformationController _controller = TransformationController();
   double? _fitScale;
+  bool _isZoomed = false;
+
+  ///
+  @override
+  void initState() {
+    super.initState();
+    _controller.addListener(_onTransformChanged);
+  }
+
+  ///
+  void _onTransformChanged() {
+    final double currentScale = _controller.value.getMaxScaleOnAxis();
+    final bool zoomed = _fitScale != null && currentScale > _fitScale! + 0.01;
+    if (zoomed != _isZoomed) {
+      setState(() => _isZoomed = zoomed);
+    }
+  }
 
   ///
   @override
   void dispose() {
+    _controller.removeListener(_onTransformChanged);
     _controller.dispose();
     super.dispose();
   }
@@ -47,7 +64,6 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
   ///
   @override
   Widget build(BuildContext context) {
-    final String title = widget.mode == RankingMode.summary ? 'サマリー順位表' : '順位表';
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: SafeArea(
@@ -58,14 +74,23 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                _buildTitleRow(title),
+                _buildHeader(),
                 Divider(color: Colors.white.withValues(alpha: 0.4), thickness: 5),
-                const Text('縦軸：順位、横軸：タイミング、セル内：馬番', style: TextStyle(fontSize: 10)),
-                const SizedBox(height: 5),
-                const Text('水色=1上昇、黄色=2上昇、赤=3以上上昇、灰色=下降（Sとの比較）', style: TextStyle(fontSize: 10)),
-                const SizedBox(height: 5),
-                const Text('表をダブルタップすると、初期の全体表示に戻ります。', style: TextStyle(fontSize: 10)),
-                const SizedBox(height: 10),
+
+                if (!_isZoomed) ...<Widget>[
+                  const Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text('縦軸：順位、横軸：タイミング、セル内：馬番', style: TextStyle(fontSize: 10)),
+                      SizedBox(height: 5),
+                      Text('青=1上昇、黄=2上昇、赤=3以上上昇（開始時点との比較）', style: TextStyle(fontSize: 10)),
+                      SizedBox(height: 5),
+                      Text('表をダブルタップすると、初期の全体表示に戻ります。', style: TextStyle(fontSize: 10)),
+                      SizedBox(height: 10),
+                    ],
+                  ),
+                ],
+
                 Expanded(child: _displayRankingList()),
               ],
             ),
@@ -76,39 +101,84 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
   }
 
   ///
-  Widget _buildTitleRow(String title) {
-    if (widget.mode == RankingMode.live) {
-      return Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: <Widget>[
-          Text(title),
-          IconButton(
-            onPressed: () async {
-              final SharedPreferences prefs = await SharedPreferences.getInstance();
-              await prefs.setString('reload_selected_schedule_date', appParamState.selectedScheduleDate);
-              await prefs.setString(
-                'reload_selected_schedule_kaisuu_basho_day',
-                appParamState.selectedScheduleKaisuuBashoDay,
-              );
-              await prefs.setString(
-                'reload_selected_schedule_kaisuu_basho_day_name',
-                appParamState.selectedScheduleKaisuuBashoDayName,
-              );
-              await prefs.setInt('reload_selected_race_number', appParamState.selectedRaceNumber);
-              await prefs.setBool('isRankingDialogOpen', true);
-              if (mounted) {
-                // ignore: use_build_context_synchronously
-                context.findAncestorStateOfType<AppRootState>()?.restartApp();
-              }
-            },
-            icon: const Icon(Icons.refresh, color: Colors.greenAccent),
+  Widget _buildHeader() {
+    final bool isSummary = widget.mode == RankingMode.summary;
+
+    final String date;
+    final String kaisuuBashoDay;
+    final String race;
+    final String raceName;
+    if (isSummary) {
+      final List<SummaryModel> list = summaryState.oneRaceSummaryList;
+      if (list.isNotEmpty) {
+        final SummaryModel s = list.first;
+        date = s.date;
+        kaisuuBashoDay = '${s.kaisuu}回${s.bashoName}${s.day}日';
+        race = '${s.race}R';
+        raceName = s.raceName;
+      } else {
+        date = '';
+        kaisuuBashoDay = '';
+        race = '';
+        raceName = '';
+      }
+    } else {
+      date = appParamState.selectedScheduleDate;
+      kaisuuBashoDay = appParamState.selectedScheduleKaisuuBashoDayName;
+      race = '${appParamState.selectedRaceNumber}R';
+      final String mapKey = '${appParamState.selectedScheduleDate}_${appParamState.selectedScheduleKaisuuBashoDay}';
+      raceName =
+          (appParamState.keepRaceMap[mapKey] ?? <RaceModel>[])
+              .where((RaceModel e) => e.race == appParamState.selectedRaceNumber)
+              .firstOrNull
+              ?.raceName ??
+          '';
+    }
+
+    return Stack(
+      children: <Widget>[
+        DefaultTextStyle(
+          style: const TextStyle(color: Colors.greenAccent, fontSize: 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              if (date.isNotEmpty) Text('$date　$kaisuuBashoDay　$race'),
+              if (raceName.isNotEmpty) Text(raceName),
+            ],
+          ),
+        ),
+
+        if (!isSummary) ...<Widget>[
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: <Widget>[
+              const SizedBox.shrink(),
+
+              GestureDetector(
+                onTap: () async {
+                  final SharedPreferences prefs = await SharedPreferences.getInstance();
+                  await prefs.setString('reload_selected_schedule_date', appParamState.selectedScheduleDate);
+                  await prefs.setString(
+                    'reload_selected_schedule_kaisuu_basho_day',
+                    appParamState.selectedScheduleKaisuuBashoDay,
+                  );
+                  await prefs.setString(
+                    'reload_selected_schedule_kaisuu_basho_day_name',
+                    appParamState.selectedScheduleKaisuuBashoDayName,
+                  );
+                  await prefs.setInt('reload_selected_race_number', appParamState.selectedRaceNumber);
+                  await prefs.setBool('isRankingDialogOpen', true);
+                  if (mounted) {
+                    // ignore: use_build_context_synchronously
+                    context.findAncestorStateOfType<AppRootState>()?.restartApp();
+                  }
+                },
+                child: const Icon(Icons.refresh, color: Colors.greenAccent),
+              ),
+            ],
           ),
         ],
-      );
-    }
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: <Widget>[Text(title), const SizedBox.shrink()],
+      ],
     );
   }
 
@@ -290,8 +360,6 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
         bgColor = _changedBgColor2;
       case 3:
         bgColor = _changedBgColor3;
-      case -1:
-        bgColor = _changedBgColorDown;
       default:
         bgColor = _defaultBgColor;
     }
@@ -354,8 +422,6 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
                 changeLevel = 2;
               } else if (rankUp == 1) {
                 changeLevel = 1;
-              } else if (rankUp < 0) {
-                changeLevel = -1;
               }
             }
           }
@@ -384,7 +450,7 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
           : const SizedBox.shrink();
     }
 
-    final String cornerLabel = widget.mode == RankingMode.summary ? '分前' : 'タイミング';
+    const String cornerLabel = '分前';
     final double tableWidth = 80 + 50.0 * timingLabels.length;
 
     return LayoutBuilder(

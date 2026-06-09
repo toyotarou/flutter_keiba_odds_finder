@@ -49,6 +49,8 @@ class AppParamState with _$AppParamState {
     @Default('') String queryUser,
 
     @Default(true) bool isShowUpperBox,
+
+    @Default('') String selectedDrawerRace,
   }) = _AppParamState;
 }
 
@@ -112,4 +114,7 @@ class AppParam extends _$AppParam {
 
   ///
   void setIsShowUpperBox({required bool flag}) => state = state.copyWith(isShowUpperBox: flag);
+
+  ///
+  void setSelectedDrawerRace({required String race}) => state = state.copyWith(selectedDrawerRace: race);
 }

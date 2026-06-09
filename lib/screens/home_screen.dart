@@ -709,7 +709,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                         children: <Widget>[
                           const SizedBox.shrink(),
                           GestureDetector(
-                            onTap: () => _scaffoldKey.currentState!.openDrawer(),
+                            onTap: () {
+                              appParamNotifier.setSelectedDrawerRace(race: '');
+
+                              _scaffoldKey.currentState!.openDrawer();
+                            },
                             child: const Icon(Icons.list, color: Colors.greenAccent),
                           ),
                         ],
@@ -858,6 +862,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
 
                                               GestureDetector(
                                                 onTap: () {
+                                                  appParamNotifier.setSelectedDrawerRace(
+                                                    race:
+                                                        '${e.key}_${models.first.kaisuu}_${models.first.basho}_${models.first.day}_${r.key}',
+                                                  );
+
                                                   summaryNotifier.fetchRaceSummary(
                                                     date: e.key,
                                                     kaisuu: models.first.kaisuu,
@@ -875,7 +884,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                                                 },
                                                 child: Icon(
                                                   Icons.calendar_view_month,
-                                                  color: Colors.greenAccent.withValues(alpha: 0.4),
+                                                  color:
+                                                      ('${e.key}_${models.first.kaisuu}_${models.first.basho}_${models.first.day}_${r.key}' ==
+                                                          appParamState.selectedDrawerRace)
+                                                      ? Colors.yellowAccent.withValues(alpha: 0.4)
+                                                      : Colors.greenAccent.withValues(alpha: 0.4),
                                                 ),
                                               ),
                                             ],
