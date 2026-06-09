@@ -709,10 +709,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                         children: <Widget>[
                           const SizedBox.shrink(),
                           GestureDetector(
-                            onTap: () {
-                              _scaffoldKey.currentState!.openDrawer();
-                            },
-                            child: const Icon(Icons.list),
+                            onTap: () => _scaffoldKey.currentState!.openDrawer(),
+                            child: const Icon(Icons.list, color: Colors.greenAccent),
                           ),
                         ],
                       ),
@@ -768,6 +766,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
     );
   }
 
+  ///
   Widget _dispDrawer() {
     return Drawer(
       backgroundColor: Colors.blueGrey.withOpacity(0.2),
@@ -786,7 +785,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
-                        Text(e.key, style: const TextStyle(color: Colors.white)),
+                        Container(
+                          width: context.screenSize.width,
+                          padding: const EdgeInsets.all(5),
+                          margin: const EdgeInsets.only(top: 10),
+
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: <Color>[Colors.greenAccent.withOpacity(0.3), Colors.transparent],
+                              stops: const <double>[0.7, 1],
+                            ),
+                          ),
+
+                          child: Text(e.key, style: const TextStyle(color: Colors.white)),
+                        ),
 
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -802,24 +814,61 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                             final List<MapEntry<int, String>> races = uniqueRaces.entries.toList()
                               ..sort((MapEntry<int, String> a, MapEntry<int, String> b) => a.key.compareTo(b.key));
 
-                            return Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: <Widget>[
-                                if (models.isNotEmpty) ...<Widget>[
-                                  Text(
-                                    '${models.first.kaisuu}回 ${models.first.bashoName} ${models.first.day}日',
-                                    style: const TextStyle(color: Colors.greenAccent, fontSize: 12),
-                                  ),
-                                ],
+                            if (models.isEmpty) {
+                              return const SizedBox.shrink();
+                            }
 
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: races.map((MapEntry<int, String> r) {
-                                    return Text(
-                                      '${r.key}R  ${r.value}',
-                                      style: const TextStyle(color: Colors.white70, fontSize: 11),
-                                    );
-                                  }).toList(),
+                            return ExpansionTile(
+                              iconColor: Colors.greenAccent,
+                              collapsedIconColor: Colors.white70,
+
+                              title: Text(
+                                '${models.first.kaisuu}回 ${models.first.bashoName} ${models.first.day}日',
+                                style: const TextStyle(color: Colors.greenAccent, fontSize: 12),
+                              ),
+
+                              children: <Widget>[
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 20),
+
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: races.map((MapEntry<int, String> r) {
+                                      return DefaultTextStyle(
+                                        style: const TextStyle(color: Colors.white70, fontSize: 11),
+
+                                        child: Container(
+                                          decoration: BoxDecoration(
+                                            border: Border(bottom: BorderSide(color: Colors.white.withOpacity(0.3))),
+                                          ),
+
+                                          padding: const EdgeInsets.symmetric(vertical: 5),
+
+                                          child: Row(
+                                            children: <Widget>[
+                                              Container(
+                                                width: 20,
+                                                alignment: Alignment.topRight,
+                                                child: Text('${r.key}R'),
+                                              ),
+                                              const SizedBox(width: 20),
+                                              Expanded(
+                                                child: Text(r.value, maxLines: 1, overflow: TextOverflow.ellipsis),
+                                              ),
+
+                                              GestureDetector(
+                                                onTap: () {},
+                                                child: Icon(
+                                                  Icons.calendar_view_month,
+                                                  color: Colors.greenAccent.withValues(alpha: 0.4),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      );
+                                    }).toList(),
+                                  ),
                                 ),
                               ],
                             );
