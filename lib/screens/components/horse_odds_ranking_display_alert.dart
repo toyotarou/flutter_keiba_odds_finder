@@ -6,18 +6,27 @@ import '../../controllers/controllers_mixin.dart';
 import '../../main.dart';
 import '../../models/odds_model.dart';
 import '../../models/race_model.dart';
+import '../../models/summary_model.dart';
 
-// 色定数（変更する場合はここを編集）
+enum RankingMode { live, summary }
+
+// rank(1始まり) → タイミングごとの馬番リスト
+typedef RankingGrid = Map<int, List<int?>>;
+
 const Color _headerBgColor = Color(0xFF1B3A2A);
-
 const Color _changedBgColor1 = Color(0xFF1B3A5A);
 const Color _changedBgColor2 = Color(0xFF4A3D10);
 const Color _changedBgColor3 = Color(0xFF5A1A1A);
 const Color _changedBgColorDown = Color(0xFF3A3A3A);
 const Color _defaultBgColor = Colors.transparent;
 
+const List<int> _kSummaryTimingMinutes = <int>[24, 21, 18, 15, 12, 9, 6, 3, 0];
+const List<String> _kSummaryTimingLabels = <String>['S', '21', '18', '15', '12', '9', '6', '3', 'E'];
+
 class HorseOddsRankingDisplayAlert extends ConsumerStatefulWidget {
-  const HorseOddsRankingDisplayAlert({super.key});
+  const HorseOddsRankingDisplayAlert({super.key, this.mode = RankingMode.live});
+
+  final RankingMode mode;
 
   @override
   ConsumerState<HorseOddsRankingDisplayAlert> createState() => _HorseOddsRankingDisplayAlertState();
@@ -38,6 +47,7 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
   ///
   @override
   Widget build(BuildContext context) {
+    final String title = widget.mode == RankingMode.summary ? 'サマリー順位表' : '順位表';
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: SafeArea(
@@ -48,15 +58,15 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                _buildTitleRow(),
-                Divider(color: Colors.white.withOpacity(0.4), thickness: 5),
+                _buildTitleRow(title),
+                Divider(color: Colors.white.withValues(alpha: 0.4), thickness: 5),
                 const Text('縦軸：順位、横軸：タイミング、セル内：馬番', style: TextStyle(fontSize: 10)),
                 const SizedBox(height: 5),
                 const Text('水色=1上昇、黄色=2上昇、赤=3以上上昇、灰色=下降（Sとの比較）', style: TextStyle(fontSize: 10)),
                 const SizedBox(height: 5),
                 const Text('表をダブルタップすると、初期の全体表示に戻ります。', style: TextStyle(fontSize: 10)),
                 const SizedBox(height: 10),
-                Expanded(child: displayHorseOddsRankingList()),
+                Expanded(child: _displayRankingList()),
               ],
             ),
           ),
@@ -66,33 +76,39 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
   }
 
   ///
-  Widget _buildTitleRow() {
+  Widget _buildTitleRow(String title) {
+    if (widget.mode == RankingMode.live) {
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: <Widget>[
+          Text(title),
+          IconButton(
+            onPressed: () async {
+              final SharedPreferences prefs = await SharedPreferences.getInstance();
+              await prefs.setString('reload_selected_schedule_date', appParamState.selectedScheduleDate);
+              await prefs.setString(
+                'reload_selected_schedule_kaisuu_basho_day',
+                appParamState.selectedScheduleKaisuuBashoDay,
+              );
+              await prefs.setString(
+                'reload_selected_schedule_kaisuu_basho_day_name',
+                appParamState.selectedScheduleKaisuuBashoDayName,
+              );
+              await prefs.setInt('reload_selected_race_number', appParamState.selectedRaceNumber);
+              await prefs.setBool('isRankingDialogOpen', true);
+              if (mounted) {
+                // ignore: use_build_context_synchronously
+                context.findAncestorStateOfType<AppRootState>()?.restartApp();
+              }
+            },
+            icon: const Icon(Icons.refresh, color: Colors.greenAccent),
+          ),
+        ],
+      );
+    }
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: <Widget>[
-        const Text('順位表'),
-        IconButton(
-          onPressed: () async {
-            final SharedPreferences prefs = await SharedPreferences.getInstance();
-            await prefs.setString('reload_selected_schedule_date', appParamState.selectedScheduleDate);
-            await prefs.setString(
-              'reload_selected_schedule_kaisuu_basho_day',
-              appParamState.selectedScheduleKaisuuBashoDay,
-            );
-            await prefs.setString(
-              'reload_selected_schedule_kaisuu_basho_day_name',
-              appParamState.selectedScheduleKaisuuBashoDayName,
-            );
-            await prefs.setInt('reload_selected_race_number', appParamState.selectedRaceNumber);
-            await prefs.setBool('isRankingDialogOpen', true);
-            if (mounted) {
-              // ignore: use_build_context_synchronously
-              context.findAncestorStateOfType<AppRootState>()?.restartApp();
-            }
-          },
-          icon: const Icon(Icons.refresh, color: Colors.greenAccent),
-        ),
-      ],
+      children: <Widget>[Text(title), const SizedBox.shrink()],
     );
   }
 
@@ -110,10 +126,10 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
   }
 
   ///
-  static Map<int, List<OddsModel>> _computeOddsTimingMap(List<OddsModel> oddsModelList, List<int> timingOrder) {
+  static Map<int, List<OddsModel>> _computeOddsTimingMap(List<OddsModel> list, List<int> timingOrder) {
     return Map<int, List<OddsModel>>.fromEntries(
       timingOrder.map((int timing) {
-        final List<OddsModel> sorted = oddsModelList.where((OddsModel e) => e.minutesBeforeStart == timing).toList()
+        final List<OddsModel> sorted = list.where((OddsModel e) => e.minutesBeforeStart == timing).toList()
           ..sort((OddsModel a, OddsModel b) => (double.tryParse(a.odds) ?? 0).compareTo(double.tryParse(b.odds) ?? 0));
         return MapEntry<int, List<OddsModel>>(timing, sorted);
       }),
@@ -121,27 +137,35 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
   }
 
   ///
-  static Map<int, List<OddsModel?>> _computeRankingMap(
-    int horseNum,
-    List<int> timingOrder,
-    Map<int, List<OddsModel>> oddsTimingMap,
-  ) {
-    return Map<int, List<OddsModel?>>.fromEntries(
-      List<MapEntry<int, List<OddsModel?>>>.generate(horseNum, (int rankIndex) {
-        return MapEntry<int, List<OddsModel?>>(
-          rankIndex + 1,
-          timingOrder.map((int timing) {
-            final List<OddsModel> list = oddsTimingMap[timing] ?? <OddsModel>[];
-            return rankIndex < list.length ? list[rankIndex] : null;
-          }).toList(),
-        );
-      }),
-    );
-  }
+  ({RankingGrid grid, List<String> timingLabels, int horseNum, Map<int, int> horseToStartRank}) _buildFromOddsModel() {
+    final String mapKey = '${appParamState.selectedScheduleDate}_${appParamState.selectedScheduleKaisuuBashoDay}';
+    final bool hasData = appParamState.keepRaceMap[mapKey] != null && appParamState.selectedRaceNumber > 0;
 
-  ///
-  static List<String> _buildTimingLabels(List<String> timingParts) {
-    return List<String>.generate(timingParts.length, (int i) {
+    final int horseNum = hasData
+        ? appParamState.keepRaceMap[mapKey]!
+              .firstWhere((RaceModel e) => e.race == appParamState.selectedRaceNumber)
+              .numHorses
+        : 0;
+
+    final List<OddsModel> oddsModelList = hasData
+        ? (appParamState.keepOddsMap[mapKey] ?? <OddsModel>[])
+              .where((OddsModel e) => e.race == appParamState.selectedRaceNumber)
+              .toList()
+        : <OddsModel>[];
+
+    final List<String> timingParts = appParamState.configOddsGetTiming.split('|');
+    final List<int> timingOrder = _computeTimingOrder(timingParts);
+    final Map<int, List<OddsModel>> oddsTimingMap = _computeOddsTimingMap(oddsModelList, timingOrder);
+
+    final RankingGrid grid = <int, List<int?>>{
+      for (int r = 1; r <= horseNum; r++)
+        r: timingOrder.map((int timing) {
+          final List<OddsModel> slot = oddsTimingMap[timing] ?? <OddsModel>[];
+          return r - 1 < slot.length ? slot[r - 1].num : null;
+        }).toList(),
+    };
+
+    final List<String> timingLabels = List<String>.generate(timingParts.length, (int i) {
       if (i == 0) {
         return 'S';
       }
@@ -150,6 +174,82 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
       }
       return timingParts[i];
     });
+
+    final Map<int, int> horseToStartRank = <int, int>{};
+    for (int r = 1; r <= horseNum; r++) {
+      final int? num = grid[r]?.firstOrNull;
+      if (num != null) {
+        horseToStartRank[num] = r;
+      }
+    }
+
+    return (grid: grid, timingLabels: timingLabels, horseNum: horseNum, horseToStartRank: horseToStartRank);
+  }
+
+  ///
+  static String _oddsAt(SummaryModel m, int minutes) {
+    switch (minutes) {
+      case 24:
+        return m.oddsTanBefore24;
+      case 21:
+        return m.oddsTanBefore21;
+      case 18:
+        return m.oddsTanBefore18;
+      case 15:
+        return m.oddsTanBefore15;
+      case 12:
+        return m.oddsTanBefore12;
+      case 9:
+        return m.oddsTanBefore9;
+      case 6:
+        return m.oddsTanBefore6;
+      case 3:
+        return m.oddsTanBefore3;
+      case 0:
+        return m.oddsTanBefore0;
+      default:
+        return '';
+    }
+  }
+
+  ///
+  static List<SummaryModel> _sortSummaryByOdds(List<SummaryModel> horses, int minutes) {
+    return horses.where((SummaryModel e) {
+      final String odds = _oddsAt(e, minutes);
+      return odds.isNotEmpty && odds != '0' && double.tryParse(odds) != null;
+    }).toList()..sort(
+      (SummaryModel a, SummaryModel b) =>
+          double.parse(_oddsAt(a, minutes)).compareTo(double.parse(_oddsAt(b, minutes))),
+    );
+  }
+
+  ///
+  ({RankingGrid grid, List<String> timingLabels, int horseNum, Map<int, int> horseToStartRank})
+  _buildFromSummaryModel() {
+    final List<SummaryModel> horses = summaryState.oneRaceSummaryList;
+    final int horseNum = horses.length;
+
+    final List<List<SummaryModel>> perTiming = _kSummaryTimingMinutes
+        .map((int m) => _sortSummaryByOdds(horses, m))
+        .toList();
+
+    final RankingGrid grid = <int, List<int?>>{
+      for (int rank = 1; rank <= horseNum; rank++)
+        rank: _kSummaryTimingMinutes.asMap().entries.map((MapEntry<int, int> e) {
+          final List<SummaryModel> sorted = perTiming[e.key];
+          return rank - 1 < sorted.length ? sorted[rank - 1].num : null;
+        }).toList(),
+    };
+
+    final Map<int, int> horseToStartRank = <int, int>{};
+    for (int r = 1; r <= horseNum; r++) {
+      final int? num = grid[r]?.firstOrNull;
+      if (num != null) {
+        horseToStartRank[num] = r;
+      }
+    }
+
+    return (grid: grid, timingLabels: _kSummaryTimingLabels, horseNum: horseNum, horseToStartRank: horseToStartRank);
   }
 
   ///
@@ -181,7 +281,7 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
   }
 
   ///
-  static Widget _buildDataCell(OddsModel? model, int changeLevel) {
+  static Widget _buildDataCell(int? num, int changeLevel) {
     final Color bgColor;
     switch (changeLevel) {
       case 1:
@@ -203,71 +303,51 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
         color: bgColor,
         border: Border.all(color: Colors.white24),
       ),
-      child: Text(
-        model != null ? model.num.toString() : '-',
-        style: const TextStyle(color: Colors.white, fontSize: 10),
-      ),
+      child: Text(num != null ? num.toString() : '-', style: const TextStyle(color: Colors.white, fontSize: 10)),
     );
   }
 
   ///
-  static Widget _buildTimingHeaderFooterRow(List<String> timingLabels, {required bool isTop}) {
-    final Widget leftCorner = SizedBox(
-      width: 40,
-      height: 30,
-      child: Stack(
-        children: <Widget>[
-          Positioned(
-            bottom: isTop ? 0 : null,
-            top: isTop ? null : 0,
-            left: 0,
-            child: const Text('順位', style: TextStyle(fontSize: 8)),
-          ),
-          Positioned(
-            top: isTop ? 0 : null,
-            bottom: isTop ? null : 0,
-            right: 0,
-            child: const Text('タイミング', style: TextStyle(fontSize: 8)),
-          ),
-        ],
-      ),
-    );
+  static Widget _buildHeaderFooterRow(List<String> labels, {required bool isTop, required String cornerLabel}) {
+    Widget corner({required bool isRight}) {
+      return SizedBox(
+        width: 40,
+        height: 30,
+        child: Stack(
+          children: <Widget>[
+            Positioned(
+              bottom: isTop ? 0 : null,
+              top: isTop ? null : 0,
+              left: isRight ? null : 0,
+              right: isRight ? 0 : null,
+              child: const Text('順位', style: TextStyle(fontSize: 8)),
+            ),
+            Positioned(
+              top: isTop ? 0 : null,
+              bottom: isTop ? null : 0,
+              left: isRight ? 0 : null,
+              right: isRight ? null : 0,
+              child: Text(cornerLabel, style: const TextStyle(fontSize: 8)),
+            ),
+          ],
+        ),
+      );
+    }
 
-    final Widget rightCorner = SizedBox(
-      width: 40,
-      height: 30,
-      child: Stack(
-        children: <Widget>[
-          Positioned(
-            bottom: isTop ? 0 : null,
-            top: isTop ? null : 0,
-            right: 0,
-            child: const Text('順位', style: TextStyle(fontSize: 8)),
-          ),
-          Positioned(
-            top: isTop ? 0 : null,
-            bottom: isTop ? null : 0,
-            left: 0,
-            child: const Text('タイミング', style: TextStyle(fontSize: 8)),
-          ),
-        ],
-      ),
-    );
-
-    return Row(children: <Widget>[leftCorner, ...timingLabels.map(_buildTimingLabelCell), rightCorner]);
+    return Row(children: <Widget>[corner(isRight: false), ...labels.map(_buildTimingLabelCell), corner(isRight: true)]);
   }
 
   ///
-  static Widget _buildRankingDataRow(int rank, List<OddsModel?> rowData, Map<int, int> horseNumToStartRank) {
+  static Widget _buildRankingRow(int rank, List<int?> rowData, Map<int, int> horseToStartRank) {
     return Row(
       children: <Widget>[
         _buildRankCell(rank),
-        ...rowData.asMap().entries.map((MapEntry<int, OddsModel?> entry) {
+        ...rowData.asMap().entries.map((MapEntry<int, int?> entry) {
           int changeLevel = 0;
           if (entry.key > 0 && entry.value != null) {
-            final int? startRank = horseNumToStartRank[entry.value!.num];
+            final int? startRank = horseToStartRank[entry.value!];
             if (startRank != null) {
-              final int rankUp = startRank - rank; // 正の値 = 順位が上がった
+              final int rankUp = startRank - rank;
               if (rankUp >= 3) {
                 changeLevel = 3;
               } else if (rankUp == 2) {
@@ -287,39 +367,25 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
   }
 
   ///
-  Widget displayHorseOddsRankingList() {
-    final String mapKey = '${appParamState.selectedScheduleDate}_${appParamState.selectedScheduleKaisuuBashoDay}';
+  Widget _displayRankingList() {
+    final (
+      :RankingGrid grid,
+      :List<String> timingLabels,
+      :int horseNum,
+      :Map<int, int> horseToStartRank,
+    ) = switch (widget.mode) {
+      RankingMode.live => _buildFromOddsModel(),
+      RankingMode.summary => _buildFromSummaryModel(),
+    };
 
-    final bool hasData = appParamState.keepRaceMap[mapKey] != null && appParamState.selectedRaceNumber > 0;
-
-    final int horseNum = hasData
-        ? appParamState.keepRaceMap[mapKey]!
-              .firstWhere((RaceModel e) => e.race == appParamState.selectedRaceNumber)
-              .numHorses
-        : 0;
-
-    final List<OddsModel> oddsModelList = hasData
-        ? (appParamState.keepOddsMap[mapKey] ?? <OddsModel>[])
-              .where((OddsModel e) => e.race == appParamState.selectedRaceNumber)
-              .toList()
-        : <OddsModel>[];
-
-    final List<String> timingParts = appParamState.configOddsGetTiming.split('|');
-    final List<int> timingOrder = _computeTimingOrder(timingParts);
-    final Map<int, List<OddsModel>> oddsTimingMap = _computeOddsTimingMap(oddsModelList, timingOrder);
-    final Map<int, List<OddsModel?>> rankingMap = _computeRankingMap(horseNum, timingOrder, oddsTimingMap);
-    final List<String> timingLabels = _buildTimingLabels(timingParts);
-
-    // S時点（index=0）の各馬の順位を逆引きできるマップを構築
-    final Map<int, int> horseNumToStartRank = <int, int>{};
-    for (int r = 1; r <= horseNum; r++) {
-      final List<OddsModel?> rowData = rankingMap[r] ?? <OddsModel?>[];
-      if (rowData.isNotEmpty && rowData[0] != null) {
-        horseNumToStartRank[rowData[0]!.num] = r;
-      }
+    if (horseNum == 0) {
+      return widget.mode == RankingMode.summary
+          ? const Center(child: CircularProgressIndicator(color: Colors.greenAccent))
+          : const SizedBox.shrink();
     }
 
-    final double tableWidth = 80 + 50.0 * timingParts.length;
+    final String cornerLabel = widget.mode == RankingMode.summary ? '分前' : 'タイミング';
+    final double tableWidth = 80 + 50.0 * timingLabels.length;
 
     return LayoutBuilder(
       builder: (BuildContext ctx, BoxConstraints constraints) {
@@ -337,12 +403,12 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                _buildTimingHeaderFooterRow(timingLabels, isTop: true),
-                ...List<Widget>.generate(horseNum, (int rankIndex) {
-                  final int rank = rankIndex + 1;
-                  return _buildRankingDataRow(rank, rankingMap[rank] ?? <OddsModel?>[], horseNumToStartRank);
+                _buildHeaderFooterRow(timingLabels, isTop: true, cornerLabel: cornerLabel),
+                ...List<Widget>.generate(horseNum, (int i) {
+                  final int rank = i + 1;
+                  return _buildRankingRow(rank, grid[rank] ?? <int?>[], horseToStartRank);
                 }),
-                _buildTimingHeaderFooterRow(timingLabels, isTop: false),
+                _buildHeaderFooterRow(timingLabels, isTop: false, cornerLabel: cornerLabel),
               ],
             ),
           ),

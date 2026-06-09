@@ -21,6 +21,8 @@ mixin _$SummaryState {
       throw _privateConstructorUsedError;
   Map<String, List<String>> get summaryDateBashoMap =>
       throw _privateConstructorUsedError;
+  List<SummaryModel> get oneRaceSummaryList =>
+      throw _privateConstructorUsedError;
 
   @JsonKey(ignore: true)
   $SummaryStateCopyWith<SummaryState> get copyWith =>
@@ -36,7 +38,8 @@ abstract class $SummaryStateCopyWith<$Res> {
   $Res call(
       {List<SummaryModel> summaryList,
       Map<String, List<SummaryModel>> summaryMap,
-      Map<String, List<String>> summaryDateBashoMap});
+      Map<String, List<String>> summaryDateBashoMap,
+      List<SummaryModel> oneRaceSummaryList});
 }
 
 /// @nodoc
@@ -55,6 +58,7 @@ class _$SummaryStateCopyWithImpl<$Res, $Val extends SummaryState>
     Object? summaryList = null,
     Object? summaryMap = null,
     Object? summaryDateBashoMap = null,
+    Object? oneRaceSummaryList = null,
   }) {
     return _then(_value.copyWith(
       summaryList: null == summaryList
@@ -69,6 +73,10 @@ class _$SummaryStateCopyWithImpl<$Res, $Val extends SummaryState>
           ? _value.summaryDateBashoMap
           : summaryDateBashoMap // ignore: cast_nullable_to_non_nullable
               as Map<String, List<String>>,
+      oneRaceSummaryList: null == oneRaceSummaryList
+          ? _value.oneRaceSummaryList
+          : oneRaceSummaryList // ignore: cast_nullable_to_non_nullable
+              as List<SummaryModel>,
     ) as $Val);
   }
 }
@@ -84,7 +92,8 @@ abstract class _$$SummaryStateImplCopyWith<$Res>
   $Res call(
       {List<SummaryModel> summaryList,
       Map<String, List<SummaryModel>> summaryMap,
-      Map<String, List<String>> summaryDateBashoMap});
+      Map<String, List<String>> summaryDateBashoMap,
+      List<SummaryModel> oneRaceSummaryList});
 }
 
 /// @nodoc
@@ -101,6 +110,7 @@ class __$$SummaryStateImplCopyWithImpl<$Res>
     Object? summaryList = null,
     Object? summaryMap = null,
     Object? summaryDateBashoMap = null,
+    Object? oneRaceSummaryList = null,
   }) {
     return _then(_$SummaryStateImpl(
       summaryList: null == summaryList
@@ -115,6 +125,10 @@ class __$$SummaryStateImplCopyWithImpl<$Res>
           ? _value._summaryDateBashoMap
           : summaryDateBashoMap // ignore: cast_nullable_to_non_nullable
               as Map<String, List<String>>,
+      oneRaceSummaryList: null == oneRaceSummaryList
+          ? _value._oneRaceSummaryList
+          : oneRaceSummaryList // ignore: cast_nullable_to_non_nullable
+              as List<SummaryModel>,
     ));
   }
 }
@@ -127,10 +141,12 @@ class _$SummaryStateImpl implements _SummaryState {
       final Map<String, List<SummaryModel>> summaryMap =
           const <String, List<SummaryModel>>{},
       final Map<String, List<String>> summaryDateBashoMap =
-          const <String, List<String>>{}})
+          const <String, List<String>>{},
+      final List<SummaryModel> oneRaceSummaryList = const <SummaryModel>[]})
       : _summaryList = summaryList,
         _summaryMap = summaryMap,
-        _summaryDateBashoMap = summaryDateBashoMap;
+        _summaryDateBashoMap = summaryDateBashoMap,
+        _oneRaceSummaryList = oneRaceSummaryList;
 
   final List<SummaryModel> _summaryList;
   @override
@@ -160,9 +176,19 @@ class _$SummaryStateImpl implements _SummaryState {
     return EqualUnmodifiableMapView(_summaryDateBashoMap);
   }
 
+  final List<SummaryModel> _oneRaceSummaryList;
+  @override
+  @JsonKey()
+  List<SummaryModel> get oneRaceSummaryList {
+    if (_oneRaceSummaryList is EqualUnmodifiableListView)
+      return _oneRaceSummaryList;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableListView(_oneRaceSummaryList);
+  }
+
   @override
   String toString() {
-    return 'SummaryState(summaryList: $summaryList, summaryMap: $summaryMap, summaryDateBashoMap: $summaryDateBashoMap)';
+    return 'SummaryState(summaryList: $summaryList, summaryMap: $summaryMap, summaryDateBashoMap: $summaryDateBashoMap, oneRaceSummaryList: $oneRaceSummaryList)';
   }
 
   @override
@@ -175,7 +201,9 @@ class _$SummaryStateImpl implements _SummaryState {
             const DeepCollectionEquality()
                 .equals(other._summaryMap, _summaryMap) &&
             const DeepCollectionEquality()
-                .equals(other._summaryDateBashoMap, _summaryDateBashoMap));
+                .equals(other._summaryDateBashoMap, _summaryDateBashoMap) &&
+            const DeepCollectionEquality()
+                .equals(other._oneRaceSummaryList, _oneRaceSummaryList));
   }
 
   @override
@@ -183,7 +211,8 @@ class _$SummaryStateImpl implements _SummaryState {
       runtimeType,
       const DeepCollectionEquality().hash(_summaryList),
       const DeepCollectionEquality().hash(_summaryMap),
-      const DeepCollectionEquality().hash(_summaryDateBashoMap));
+      const DeepCollectionEquality().hash(_summaryDateBashoMap),
+      const DeepCollectionEquality().hash(_oneRaceSummaryList));
 
   @JsonKey(ignore: true)
   @override
@@ -194,10 +223,10 @@ class _$SummaryStateImpl implements _SummaryState {
 
 abstract class _SummaryState implements SummaryState {
   const factory _SummaryState(
-          {final List<SummaryModel> summaryList,
-          final Map<String, List<SummaryModel>> summaryMap,
-          final Map<String, List<String>> summaryDateBashoMap}) =
-      _$SummaryStateImpl;
+      {final List<SummaryModel> summaryList,
+      final Map<String, List<SummaryModel>> summaryMap,
+      final Map<String, List<String>> summaryDateBashoMap,
+      final List<SummaryModel> oneRaceSummaryList}) = _$SummaryStateImpl;
 
   @override
   List<SummaryModel> get summaryList;
@@ -205,6 +234,8 @@ abstract class _SummaryState implements SummaryState {
   Map<String, List<SummaryModel>> get summaryMap;
   @override
   Map<String, List<String>> get summaryDateBashoMap;
+  @override
+  List<SummaryModel> get oneRaceSummaryList;
   @override
   @JsonKey(ignore: true)
   _$$SummaryStateImplCopyWith<_$SummaryStateImpl> get copyWith =>

@@ -6,7 +6,7 @@ part of 'horse.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$horseHash() => r'd8ba68ce4e624829a89433fb3d0711fc524e1aa0';
+String _$horseHash() => r'c20a40cce5a0672d50499d51312cc5df5f6f7816';
 
 /// See also [Horse].
 @ProviderFor(Horse)

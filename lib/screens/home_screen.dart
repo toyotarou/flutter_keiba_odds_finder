@@ -857,7 +857,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                                               ),
 
                                               GestureDetector(
-                                                onTap: () {},
+                                                onTap: () {
+                                                  summaryNotifier.fetchRaceSummary(
+                                                    date: e.key,
+                                                    kaisuu: models.first.kaisuu,
+                                                    basho: models.first.basho,
+                                                    day: models.first.day,
+                                                    race: r.key,
+                                                  );
+
+                                                  OddsFinderDialog(
+                                                    context: context,
+                                                    widget: const HorseOddsRankingDisplayAlert(
+                                                      mode: RankingMode.summary,
+                                                    ),
+                                                  );
+                                                },
                                                 child: Icon(
                                                   Icons.calendar_view_month,
                                                   color: Colors.greenAccent.withValues(alpha: 0.4),

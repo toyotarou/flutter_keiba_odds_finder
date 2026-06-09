@@ -17,6 +17,7 @@ class SummaryState with _$SummaryState {
     @Default(<SummaryModel>[]) List<SummaryModel> summaryList,
     @Default(<String, List<SummaryModel>>{}) Map<String, List<SummaryModel>> summaryMap,
     @Default(<String, List<String>>{}) Map<String, List<String>> summaryDateBashoMap,
+    @Default(<SummaryModel>[]) List<SummaryModel> oneRaceSummaryList,
   }) = _SummaryState;
 }
 
@@ -79,4 +80,43 @@ class Summary extends _$Summary {
   }
 
   //============================================== api
+
+  ///
+  Future<void> fetchRaceSummary({
+    required String date,
+    required String kaisuu,
+    required String basho,
+    required int day,
+    required int race,
+  }) async {
+    final HttpClient client = ref.read(httpClientProvider);
+
+    try {
+      final Map<String, dynamic> queryParameters = <String, dynamic>{
+        'date': date,
+        'kaisuu': kaisuu,
+        'basho': basho,
+        'day': day.toString(),
+        'race': race.toString(),
+      };
+
+      final List<SummaryModel> list = <SummaryModel>[];
+
+      // ignore: always_specify_types
+      await client.get(path: APIPath.getHorseOddsFinderSummaryOneRace, queryParameters: queryParameters).then((value) {
+        // ignore: avoid_dynamic_calls
+        for (int i = 0; i < value['data'].length.toString().toInt(); i++) {
+          // ignore: avoid_dynamic_calls
+          final SummaryModel val = SummaryModel.fromJson(value['data'][i] as Map<String, dynamic>);
+
+          list.add(val);
+        }
+      });
+
+      state = state.copyWith(oneRaceSummaryList: list);
+    } catch (e) {
+      utility.showError('予期せぬエラーが発生しました');
+      rethrow;
+    }
+  }
 }
