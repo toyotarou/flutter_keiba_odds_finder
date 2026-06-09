@@ -73,12 +73,12 @@ class Horse extends _$Horse {
   //============================================== api
 
   ///
-  Future<void> fetchHorseDetail(String cname) async {
+  Future<void> fetchHorseDetail({required String horseId}) async {
     final HttpClient client = ref.read(httpClientProvider);
 
     try {
       // ignore: always_specify_types
-      await client.get(path: APIPath.getHorseDetail, queryParameters: {'cname': cname}).then((value) {
+      await client.get(path: APIPath.getHorseDetail, queryParameters: {'cname': horseId}).then((value) {
         // ignore: avoid_dynamic_calls
         final HorseDetailModel detail = HorseDetailModel.fromJson(value['data'] as Map<String, dynamic>);
         state = state.copyWith(horseDetail: detail);

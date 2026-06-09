@@ -1354,7 +1354,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                   final List<String> exUrl = horse.horseUrl.split('=');
                   final String horseId = exUrl.length > 1 ? exUrl[1] : '';
                   if (horseId.isNotEmpty) {
-                    horseNotifier.fetchHorseDetail(horseId);
+                    horseNotifier.fetchHorseDetail(horseId: horseId);
                     OddsFinderDialog(context: context, widget: const HorseDetailDisplayAlert());
                   }
                 },
