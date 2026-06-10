@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../controllers/controllers_mixin.dart';
 import '../../extensions/extensions.dart';
 import '../../models/horse_detail_model.dart';
+import '../parts/odds_finder_dialog.dart';
+import 'horse_odds_record_display_alert.dart';
 
 class HorseDetailDisplayAlert extends ConsumerStatefulWidget {
   const HorseDetailDisplayAlert({super.key});
@@ -14,6 +16,7 @@ class HorseDetailDisplayAlert extends ConsumerStatefulWidget {
 
 class _HorseDetailDisplayAlertState extends ConsumerState<HorseDetailDisplayAlert>
     with ControllersMixin<HorseDetailDisplayAlert> {
+  ///
   @override
   Widget build(BuildContext context) {
     final HorseDetailModel? detail = horseState.horseDetail;
@@ -28,12 +31,6 @@ class _HorseDetailDisplayAlertState extends ConsumerState<HorseDetailDisplayAler
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                const Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: <Widget>[Text('詳細情報'), SizedBox.shrink()],
-                ),
-                Divider(color: Colors.white.withValues(alpha: 0.4), thickness: 5),
-
                 if (detail != null)
                   ..._buildContent(context, detail)
                 else
@@ -46,6 +43,7 @@ class _HorseDetailDisplayAlertState extends ConsumerState<HorseDetailDisplayAler
     );
   }
 
+  ///
   List<Widget> _buildContent(BuildContext context, HorseDetailModel detail) {
     return <Widget>[
       _buildBasicInfo(detail),
@@ -64,14 +62,13 @@ class _HorseDetailDisplayAlertState extends ConsumerState<HorseDetailDisplayAler
       const SizedBox(height: 10),
       _buildPedigree(detail.profile),
       const SizedBox(height: 20),
-      _buildSectionHeader('出走レース'),
+      _buildRaceRecordHeader(title: '出走レース', detail: detail),
       const SizedBox(height: 5),
       _buildRaceList(context, detail.races),
     ];
   }
 
-  // ── 基本情報（馬名・属性） ────────────────────────────────────────
-
+  ///
   Widget _buildBasicInfo(HorseDetailModel detail) {
     return DefaultTextStyle(
       style: const TextStyle(color: Colors.white, fontSize: 12),
@@ -112,8 +109,7 @@ class _HorseDetailDisplayAlertState extends ConsumerState<HorseDetailDisplayAler
     );
   }
 
-  // ── ラベル+値 の横並び行 ─────────────────────────────────────────
-
+  ///
   Widget _buildInfoRow({required String label, required String value, String? layerDispValue}) {
     return DefaultTextStyle(
       style: const TextStyle(fontSize: 12),
@@ -129,6 +125,7 @@ class _HorseDetailDisplayAlertState extends ConsumerState<HorseDetailDisplayAler
     );
   }
 
+  ///
   Widget _labelCell(String text) {
     return Expanded(
       child: Container(
@@ -141,6 +138,7 @@ class _HorseDetailDisplayAlertState extends ConsumerState<HorseDetailDisplayAler
     );
   }
 
+  ///
   Widget _valueCell({required String text, String? layerDispValue}) {
     return Stack(
       children: <Widget>[
@@ -166,16 +164,41 @@ class _HorseDetailDisplayAlertState extends ConsumerState<HorseDetailDisplayAler
     );
   }
 
+  ///
   Widget _buildSectionHeader(String title) {
     return Container(
       decoration: BoxDecoration(color: Colors.greenAccent.withValues(alpha: 0.2)),
-      alignment: Alignment.center,
-      child: Text(title),
+      padding: const EdgeInsets.only(left: 10),
+      child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: <Widget>[Text(title), const SizedBox.shrink()]),
     );
   }
 
-  // ── 血統 ──────────────────────────────────────────────────────────
+  ///
+  Widget _buildRaceRecordHeader({required String title, required HorseDetailModel detail}) {
+    return Row(
+      children: <Widget>[
+        Expanded(
+          child: Container(
+            decoration: BoxDecoration(color: Colors.greenAccent.withValues(alpha: 0.2)),
+            padding: const EdgeInsets.only(left: 10),
+            child: Text(title),
+          ),
+        ),
+        const SizedBox(width: 30),
+        GestureDetector(
+          onTap: () {
+            OddsFinderDialog(
+              context: context,
+              widget: HorseOddsRecordDisplayAlert(horseName: detail.horseName),
+            );
+          },
+          child: const Icon(Icons.list, color: Colors.greenAccent),
+        ),
+      ],
+    );
+  }
 
+  ///
   Widget _buildPedigree(HorseDetailProfileModel profile) {
     return DefaultTextStyle(
       style: const TextStyle(fontSize: 10, color: Colors.white),
@@ -214,11 +237,9 @@ class _HorseDetailDisplayAlertState extends ConsumerState<HorseDetailDisplayAler
     );
   }
 
-  // ── 出走レース一覧 ────────────────────────────────────────────────
-
+  ///
   Widget _buildRaceList(BuildContext context, List<HorseDetailRaceHistoryModel> races) {
-    return SizedBox(
-      height: context.screenSize.height / 5,
+    return Expanded(
       child: ListView.separated(
         itemCount: races.length,
         separatorBuilder: (_, __) => Divider(color: Colors.white.withValues(alpha: 0.5), height: 5),
@@ -227,6 +248,7 @@ class _HorseDetailDisplayAlertState extends ConsumerState<HorseDetailDisplayAler
     );
   }
 
+  ///
   Widget _buildRaceItem(HorseDetailRaceHistoryModel e) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),

@@ -22,6 +22,7 @@ import 'components/horse_detail_display_alert.dart';
 import 'components/horse_odds_ranking_display_alert.dart';
 import 'components/horse_odds_wide_display_alert.dart';
 import 'parts/odds_finder_dialog.dart';
+import 'parts/odds_up_down_icon.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({
@@ -638,7 +639,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                         ),
                       ),
                     ),
-                    getUpDownIcon(entry: entry, timeLineMap: timeline.asMap().entries),
+                    OddsUpDownIcon(
+                      current: entry.value,
+                      prev: () {
+                        for (int i = entry.key - 1; i >= 0; i--) {
+                          if (timeline[i].isNotEmpty) {
+                            return timeline[i];
+                          }
+                        }
+                        return null;
+                      }(),
+                      label: '単',
+                    ),
                   ],
                 ),
               ],
@@ -1408,52 +1420,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
         children: <Widget>[
           Text(label, style: const TextStyle(fontSize: 10, color: Colors.greenAccent)),
           const SizedBox.shrink(),
-        ],
-      ),
-    );
-  }
-
-  ///
-  Widget getUpDownIcon({required MapEntry<int, String> entry, required Iterable<MapEntry<int, String>> timeLineMap}) {
-    if (entry.key == 0 || entry.value.isEmpty) {
-      return const SizedBox.shrink();
-    }
-
-    final List<MapEntry<int, String>> list = timeLineMap.toList();
-    String prevValue = '';
-    for (int i = entry.key - 1; i >= 0; i--) {
-      if (list[i].value.isNotEmpty) {
-        prevValue = list[i].value;
-        break;
-      }
-    }
-
-    if (prevValue.isEmpty) {
-      return const SizedBox.shrink();
-    }
-
-    final double? current = double.tryParse(entry.value);
-    final double? prev = double.tryParse(prevValue);
-
-    if (current == null || prev == null) {
-      return const SizedBox.shrink();
-    }
-
-    final Icon icon;
-    if (current > prev) {
-      icon = const Icon(Icons.arrow_upward, size: 15, color: Colors.redAccent);
-    } else if (current < prev) {
-      icon = const Icon(Icons.arrow_downward, size: 15, color: Colors.greenAccent);
-    } else {
-      icon = const Icon(Icons.drag_handle, size: 15, color: Colors.white54);
-    }
-
-    return Container(
-      decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(3)),
-      child: Column(
-        children: <Widget>[
-          icon,
-          const Text('単', style: TextStyle(fontSize: 8, color: Colors.white)),
         ],
       ),
     );
