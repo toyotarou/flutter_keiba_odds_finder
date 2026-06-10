@@ -3,10 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../controllers/controllers_mixin.dart';
+import '../../extensions/extensions.dart';
 import '../../main.dart';
 import '../../models/odds_model.dart';
 import '../../models/race_model.dart';
 import '../../models/summary_model.dart';
+import '../parts/odds_finder_dialog.dart';
+import 'horse_race_result_display_alert.dart';
 
 enum RankingMode { live, summary }
 
@@ -148,12 +151,28 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
           ),
         ),
 
-        if (!isSummary) ...<Widget>[
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: <Widget>[
-              const SizedBox.shrink(),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: <Widget>[
+            const SizedBox.shrink(),
 
+            if (isSummary) ...<Widget>[
+              GestureDetector(
+                onTap: () {
+                  final Map<int, int> popularityRank = _computeLatestPopularityRank(summaryState.oneRaceSummaryList);
+                  OddsFinderDialog(
+                    context: context,
+                    widget: HorseRaceResultDisplayAlert(numToPopularityRank: popularityRank),
+
+                    paddingLeft: context.screenSize.width * 0.1,
+                    paddingTop: context.screenSize.height * 0.45,
+                    paddingBottom: context.screenSize.height * 0.05,
+                    clearBarrierColor: true,
+                  );
+                },
+                child: const Icon(Icons.flag, color: Colors.greenAccent),
+              ),
+            ] else ...<Widget>[
               GestureDetector(
                 onTap: () async {
                   final SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -176,8 +195,8 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
                 child: const Icon(Icons.refresh, color: Colors.greenAccent),
               ),
             ],
-          ),
-        ],
+          ],
+        ),
       ],
     );
   }
@@ -280,6 +299,17 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
       default:
         return '';
     }
+  }
+
+  ///
+  static Map<int, int> _computeLatestPopularityRank(List<SummaryModel> horses) {
+    for (final int minutes in _kSummaryTimingMinutes.reversed) {
+      final List<SummaryModel> sorted = _sortSummaryByOdds(horses, minutes);
+      if (sorted.isNotEmpty) {
+        return <int, int>{for (int i = 0; i < sorted.length; i++) sorted[i].num: i + 1};
+      }
+    }
+    return <int, int>{};
   }
 
   ///
