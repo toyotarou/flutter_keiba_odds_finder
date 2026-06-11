@@ -23,7 +23,7 @@ class OddsUpDownIcon extends StatelessWidget {
     if (cur > pre) {
       icon = const Icon(Icons.arrow_upward, size: 15, color: Colors.redAccent);
     } else if (cur < pre) {
-      icon = const Icon(Icons.arrow_downward, size: 15, color: Colors.greenAccent);
+      icon = Icon(Icons.arrow_downward, size: 15, color: Colors.green[500]);
     } else {
       icon = const Icon(Icons.drag_handle, size: 15, color: Colors.white54);
     }

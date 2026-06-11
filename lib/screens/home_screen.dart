@@ -237,46 +237,45 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
   List<Widget> _buildBackgroundLayers() {
     return <Widget>[
       Positioned(
-        bottom: 0,
-        right: 0,
-        child: Opacity(opacity: 0.3, child: Image.asset('assets/images/bg.png', width: 220)),
-      ),
-      Positioned(
-        top: 30,
+        top: 40,
         left: 20,
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Opacity(
-              opacity: 0.3,
-              child: Transform.scale(
-                scaleX: 1.0,
-                scaleY: 2.0,
-                alignment: Alignment.centerLeft,
-                child: Image.asset('assets/images/baganryoku_title.png', width: 180),
-              ),
+        child: Opacity(opacity: 0.6, child: SizedBox(width: 130, child: Image.asset('assets/images/bg2.png'))),
+      ),
+
+      Positioned(
+        top: 70,
+        left: 0,
+        right: 0,
+        child: Center(
+          child: Transform.scale(
+            scaleX: 1.0,
+            scaleY: 4.0,
+            child: Text(
+              'ODDS FINDER',
+              style: TextStyle(fontSize: 14, color: const Color(0xFFFFD700).withValues(alpha: 0.5)),
             ),
-            const SizedBox(width: 20),
-            Transform.scale(
-              scaleX: 1.0,
-              scaleY: 4.0,
-              child: Text('ODDS FINDER', style: TextStyle(fontSize: 14, color: Colors.green[700])),
-            ),
-          ],
+          ),
         ),
       ),
+
       Opacity(
-        opacity: 0.1,
+        opacity: 0.3,
         child: SizedBox(
           width: context.screenSize.width,
           height: context.screenSize.height,
           child: Center(
             child: Transform.scale(
               scale: 1.5,
-              child: Image.asset('assets/images/bg2.png', width: context.screenSize.width),
+              child: Image.asset('assets/images/bg3.png', width: context.screenSize.width),
             ),
           ),
         ),
+      ),
+
+      Positioned(
+        bottom: 0,
+        right: 0,
+        child: Opacity(opacity: 0.4, child: Image.asset('assets/images/bg.png', width: 220)),
       ),
     ];
   }
@@ -359,12 +358,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 5),
                 child: CircleAvatar(
-                  backgroundColor: (appParamState.selectedRaceNumber == index + 1)
-                      ? Colors.greenAccent.withValues(alpha: 0.2)
-                      : Colors.black.withValues(alpha: 0.4),
-                  child: Text(
-                    raceModelList[index].race.toString(),
-                    style: const TextStyle(fontSize: 14, color: Colors.white),
+                  radius: 21,
+                  backgroundColor: Colors.white.withValues(alpha: 0.4),
+                  child: CircleAvatar(
+                    backgroundColor: (appParamState.selectedRaceNumber == index + 1) ? Colors.green[900] : Colors.black,
+                    child: Text(
+                      raceModelList[index].race.toString(),
+                      style: const TextStyle(fontSize: 14, color: Colors.white),
+                    ),
                   ),
                 ),
               ),
@@ -421,9 +422,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                             appParamNotifier.setIsShowUpperBox(flag: !appParamState.isShowUpperBox);
                           }
                         },
+
                         child: Icon(
                           appParamState.isShowUpperBox ? Icons.arrow_circle_up : Icons.arrow_circle_down,
-                          color: (appParamState.selectedRaceNumber > 0) ? Colors.greenAccent : Colors.grey,
+                          color: (appParamState.selectedRaceNumber > 0) ? Colors.green[500] : Colors.grey,
                         ),
                       ),
                       const SizedBox(width: 10),
@@ -470,7 +472,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                   context.findAncestorStateOfType<AppRootState>()?.restartApp();
                 }
               },
-              icon: const Icon(Icons.refresh, color: Colors.greenAccent),
+
+              icon: Icon(Icons.refresh, color: Colors.green[500]),
             ),
             if (!kIsWeb) ...<Widget>[],
             IconButton(
@@ -703,6 +706,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
 
     return Scaffold(
       key: _scaffoldKey,
+      backgroundColor: Colors.black,
+
       body: Stack(
         children: <Widget>[
           ..._buildBackgroundLayers(),
@@ -726,7 +731,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
 
                               _scaffoldKey.currentState!.openDrawer();
                             },
-                            child: const Icon(Icons.list, color: Colors.greenAccent),
+                            child: Icon(Icons.list, color: Colors.green[500]),
                           ),
                         ],
                       ),
@@ -1398,7 +1403,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                     OddsFinderDialog(context: context, widget: const HorseDetailDisplayAlert());
                   }
                 },
-                child: Icon(FontAwesomeIcons.horse, size: 20, color: Colors.greenAccent.withValues(alpha: 0.5)),
+                child: Icon(FontAwesomeIcons.horse, size: 20, color: Colors.green[500]),
               ),
             ),
           ),
@@ -1413,12 +1418,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
       margin: const EdgeInsets.only(left: 15),
       padding: const EdgeInsets.only(left: 5),
       decoration: BoxDecoration(
-        border: Border(left: BorderSide(color: Colors.greenAccent.withValues(alpha: 0.2), width: 5)),
+        border: Border(left: BorderSide(color: Colors.green[500]!, width: 5)),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: <Widget>[
-          Text(label, style: const TextStyle(fontSize: 10, color: Colors.greenAccent)),
+          Text(label, style: TextStyle(fontSize: 10, color: Colors.green[500])),
           const SizedBox.shrink(),
         ],
       ),
