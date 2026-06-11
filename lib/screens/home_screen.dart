@@ -1286,26 +1286,24 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: <Widget>[
-        Opacity(
-          opacity: 0.4,
-          child: Container(
-            margin: const EdgeInsets.only(top: 5, left: 15),
-            padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 20),
-            decoration: BoxDecoration(
-              border: Border.all(color: Colors.greenAccent.withValues(alpha: 0.5)),
-              borderRadius: BorderRadius.circular(3),
-            ),
-            child: Row(
-              children: <Widget>[
-                SizedBox(
-                  width: 20,
-                  child: Text(popularity.toString(), style: const TextStyle(color: Colors.greenAccent)),
-                ),
-                const Text('番人気', style: TextStyle(color: Colors.greenAccent)),
-              ],
-            ),
+        Container(
+          margin: const EdgeInsets.only(top: 5, left: 15),
+          padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 20),
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.greenAccent.withValues(alpha: 0.5)),
+            borderRadius: BorderRadius.circular(3),
+          ),
+          child: Row(
+            children: <Widget>[
+              SizedBox(
+                width: 20,
+                child: Text(popularity.toString(), style: TextStyle(color: Colors.green[500])),
+              ),
+              Text('番人気', style: TextStyle(color: Colors.green[500])),
+            ],
           ),
         ),
+
         if (appParamState.queryUser == 'hidechy') ...<Widget>[
           GestureDetector(
             onTap: () {

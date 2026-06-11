@@ -170,7 +170,7 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
                     clearBarrierColor: true,
                   );
                 },
-                child: const Icon(Icons.flag, color: Colors.greenAccent),
+                child: Icon(Icons.flag, color: Colors.green[500]),
               ),
             ] else ...<Widget>[
               GestureDetector(
