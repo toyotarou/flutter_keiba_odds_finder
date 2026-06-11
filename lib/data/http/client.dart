@@ -12,7 +12,7 @@ final Provider<HttpClient> httpClientProvider = Provider<HttpClient>(
   (ProviderRef<HttpClient> ref) => HttpClient(),
 );
 
-////////////////////
+///////////////////////////////////////////////////////////////////
 class HttpClient {
   HttpClient() {
     _client = Client();
@@ -20,24 +20,34 @@ class HttpClient {
 
   late Client _client;
 
+  /// GETリクエストを送信し、レスポンスをJSONとして返す
   Future<dynamic> get({required APIPath path, Map<String, dynamic>? queryParameters}) async {
-    final Uri uri = Uri.http(Environment.apiEndPoint, '${Environment.apiBasePath}/${path.value}', queryParameters);
+    final Uri uri = Uri.https(Environment.apiEndPoint, '/${Environment.apiBasePath}/${path.value}', queryParameters);
 
-    final Response response = await _client.get(uri, headers: await _headers);
-
-    final String bodyString = utf8.decode(response.bodyBytes);
-
+    // ネットワークエラー
+    final Response response;
     try {
-      if (bodyString.isEmpty) {
-        throw Exception();
-      }
+      response = await _client.get(uri, headers: await _headers);
+    } catch (e) {
+      throw Exception('network error: $e  [url=$uri]');
+    }
 
+    // HTTPエラー
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception('http ${response.statusCode} [url=$uri]');
+    }
+
+    // JSONパースエラー
+    final String bodyString = utf8.decode(response.bodyBytes);
+    try {
+      if (bodyString.isEmpty) throw Exception();
       return jsonDecode(bodyString);
     } on Exception catch (_) {
       throw Exception('json parse error');
     }
   }
 
+  /// リクエストヘッダー
   Future<Map<String, String>> get _headers async {
     return <String, String>{'content-type': 'application/json'};
   }
@@ -47,7 +57,9 @@ class HttpClient {
 class Environment {
   Environment._();
 
-  static String get apiEndPoint => '49.212.166.123';
+  /// APIのエンドポイント（本番サーバー）
+  static String get apiEndPoint => 'baganriki.com';
 
+  /// APIのベースパス
   static String get apiBasePath => 'api';
 }
