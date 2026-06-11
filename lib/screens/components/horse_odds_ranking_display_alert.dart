@@ -80,19 +80,17 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
                 _buildHeader(),
                 Divider(color: Colors.white.withValues(alpha: 0.4), thickness: 5),
 
-                if (!_isZoomed) ...<Widget>[
-                  const Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Text('縦軸：順位、横軸：タイミング、セル内：馬番', style: TextStyle(fontSize: 10)),
-                      SizedBox(height: 5),
-                      Text('青=1上昇、黄=2上昇、赤=3以上上昇（開始時点との比較）', style: TextStyle(fontSize: 10)),
-                      SizedBox(height: 5),
-                      Text('表をダブルタップすると、初期の全体表示に戻ります。', style: TextStyle(fontSize: 10)),
-                      SizedBox(height: 10),
-                    ],
-                  ),
-                ],
+                const Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text('縦軸：順位、横軸：タイミング、セル内：馬番', style: TextStyle(fontSize: 10)),
+                    SizedBox(height: 5),
+                    Text('青=1上昇、黄=2上昇、赤=3以上上昇（開始時点との比較）', style: TextStyle(fontSize: 10)),
+                    SizedBox(height: 5),
+                    Text('表をダブルタップすると、初期の全体表示に戻ります。', style: TextStyle(fontSize: 10)),
+                    SizedBox(height: 10),
+                  ],
+                ),
 
                 Expanded(child: _displayRankingList()),
               ],
