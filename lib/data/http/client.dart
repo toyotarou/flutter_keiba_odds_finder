@@ -40,7 +40,9 @@ class HttpClient {
     // JSONパースエラー
     final String bodyString = utf8.decode(response.bodyBytes);
     try {
-      if (bodyString.isEmpty) throw Exception();
+      if (bodyString.isEmpty) {
+        throw Exception();
+      }
       return jsonDecode(bodyString);
     } on Exception catch (_) {
       throw Exception('json parse error');
