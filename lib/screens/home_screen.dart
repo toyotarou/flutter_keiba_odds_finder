@@ -79,6 +79,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
         if (!mounted) {
           return;
         }
+
+        appParamNotifier.setIsShowUpperBox2(flag: true);
+
         OddsFinderDialog(context: context, widget: const HorseOddsRankingDisplayAlert()).then((_) async {
           final SharedPreferences prefs = await SharedPreferences.getInstance();
           await prefs.setBool('isRankingDialogOpen', false);
@@ -477,7 +480,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
             ),
             if (!kIsWeb) ...<Widget>[],
             IconButton(
-              onPressed: () => OddsFinderDialog(context: context, widget: const HorseOddsRankingDisplayAlert()),
+              onPressed: () {
+                appParamNotifier.setIsShowUpperBox2(flag: true);
+
+                OddsFinderDialog(context: context, widget: const HorseOddsRankingDisplayAlert());
+              },
               icon: Icon(Icons.list, color: Colors.white.withValues(alpha: 0.5)),
             ),
           ],
@@ -891,6 +898,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                                                     day: models.first.day,
                                                     race: r.key,
                                                   );
+
+                                                  appParamNotifier.setIsShowUpperBox2(flag: true);
 
                                                   OddsFinderDialog(
                                                     context: context,
