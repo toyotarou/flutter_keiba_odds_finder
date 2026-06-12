@@ -242,7 +242,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
       Positioned(
         top: 40,
         left: 20,
-        child: Opacity(opacity: 0.6, child: SizedBox(width: 130, child: Image.asset('assets/images/bg2.png'))),
+        child: Opacity(opacity: 0.6, child: SizedBox(width: 130, child: Image.asset('assets/images/gold_title.png'))),
       ),
 
       Positioned(
