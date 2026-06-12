@@ -20,6 +20,7 @@ const Color _headerBgColor = Color(0xFF1B3A2A);
 const Color _changedBgColor1 = Color(0xFF1B3A5A);
 const Color _changedBgColor2 = Color(0xFF4A3D10);
 const Color _changedBgColor3 = Color(0xFF5A1A1A);
+const Color _droppedBgColor = Color(0xFF3A3A3A);
 const Color _defaultBgColor = Colors.transparent;
 
 const List<int> _kSummaryTimingMinutes = <int>[24, 21, 18, 15, 12, 9, 6, 3, 0];
@@ -107,7 +108,7 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
                     children: <Widget>[
                       Text('縦軸：順位、横軸：タイミング、セル内：馬番', style: TextStyle(fontSize: 10)),
                       SizedBox(height: 5),
-                      Text('青=1上昇、黄=2上昇、赤=3以上上昇（開始時点との比較）', style: TextStyle(fontSize: 10)),
+                      Text('青=1上昇、黄=2上昇、赤=3以上上昇、灰=下落（開始時点との比較）', style: TextStyle(fontSize: 10)),
                       SizedBox(height: 5),
                       Text('表をダブルタップすると、初期の全体表示に戻ります。', style: TextStyle(fontSize: 10)),
                       SizedBox(height: 10),
@@ -405,6 +406,8 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
   static Widget _buildDataCell(int? num, int changeLevel) {
     final Color bgColor;
     switch (changeLevel) {
+      case -1:
+        bgColor = _droppedBgColor;
       case 1:
         bgColor = _changedBgColor1;
       case 2:
@@ -473,6 +476,8 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
                 changeLevel = 2;
               } else if (rankUp == 1) {
                 changeLevel = 1;
+              } else if (rankUp < 0) {
+                changeLevel = -1;
               }
             }
           }

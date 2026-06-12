@@ -3,7 +3,7 @@
     <uses-permission android:name="android.permission.INTERNET" />
 
     <application
-        android:label="keiba_odds_finder"
+        android:label="馬眼力 Odds Finder"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
