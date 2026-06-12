@@ -78,19 +78,42 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                 _buildHeader(),
-                Divider(color: Colors.white.withValues(alpha: 0.4), thickness: 5),
 
-                const Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                Stack(
                   children: <Widget>[
-                    Text('縦軸：順位、横軸：タイミング、セル内：馬番', style: TextStyle(fontSize: 10)),
-                    SizedBox(height: 5),
-                    Text('青=1上昇、黄=2上昇、赤=3以上上昇（開始時点との比較）', style: TextStyle(fontSize: 10)),
-                    SizedBox(height: 5),
-                    Text('表をダブルタップすると、初期の全体表示に戻ります。', style: TextStyle(fontSize: 10)),
-                    SizedBox(height: 10),
+                    Divider(color: Colors.white.withValues(alpha: 0.4), thickness: 5),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: <Widget>[
+                        const SizedBox(),
+                        GestureDetector(
+                          onTap: () {
+                            appParamNotifier.setIsShowUpperBox2(flag: !appParamState.isShowUpperBox2);
+                          },
+                          child: Icon(
+                            appParamState.isShowUpperBox2 ? Icons.arrow_circle_up : Icons.arrow_circle_down,
+
+                            color: Colors.green[500],
+                          ),
+                        ),
+                      ],
+                    ),
                   ],
                 ),
+
+                if (appParamState.isShowUpperBox2) ...<Widget>[
+                  const Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text('縦軸：順位、横軸：タイミング、セル内：馬番', style: TextStyle(fontSize: 10)),
+                      SizedBox(height: 5),
+                      Text('青=1上昇、黄=2上昇、赤=3以上上昇（開始時点との比較）', style: TextStyle(fontSize: 10)),
+                      SizedBox(height: 5),
+                      Text('表をダブルタップすると、初期の全体表示に戻ります。', style: TextStyle(fontSize: 10)),
+                      SizedBox(height: 10),
+                    ],
+                  ),
+                ],
 
                 Expanded(child: _displayRankingList()),
               ],

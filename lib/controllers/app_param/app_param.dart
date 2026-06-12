@@ -50,6 +50,8 @@ class AppParamState with _$AppParamState {
 
     @Default(true) bool isShowUpperBox,
 
+    @Default(true) bool isShowUpperBox2,
+
     @Default('') String selectedDrawerRace,
   }) = _AppParamState;
 }
@@ -114,6 +116,9 @@ class AppParam extends _$AppParam {
 
   ///
   void setIsShowUpperBox({required bool flag}) => state = state.copyWith(isShowUpperBox: flag);
+
+  ///
+  void setIsShowUpperBox2({required bool flag}) => state = state.copyWith(isShowUpperBox2: flag);
 
   ///
   void setSelectedDrawerRace({required String race}) => state = state.copyWith(selectedDrawerRace: race);
