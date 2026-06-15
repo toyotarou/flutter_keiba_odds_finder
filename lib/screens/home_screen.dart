@@ -408,9 +408,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                   const SizedBox(),
                   ValueListenableBuilder<int>(
                     valueListenable: _remainingSecondsNotifier,
-                    builder: (BuildContext context, int seconds, Widget? _) {
-                      return Text(_formatCountdown(seconds), style: const TextStyle(fontSize: 13, color: Colors.white));
-                    },
+                    builder: (BuildContext context, int seconds, Widget? _) =>
+                        Text(_formatCountdown(seconds), style: const TextStyle(fontSize: 13, color: Colors.white)),
                   ),
                 ],
               ),
@@ -483,7 +482,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
           padding: const EdgeInsets.all(5),
           decoration: BoxDecoration(color: Colors.green[900]!.withValues(alpha: 0.4)),
           child: DefaultTextStyle(
-            style: const TextStyle(fontSize: 10),
+            style: const TextStyle(fontSize: 10, color: Colors.white),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[

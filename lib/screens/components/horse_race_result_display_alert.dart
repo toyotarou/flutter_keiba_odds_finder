@@ -67,26 +67,29 @@ class _HorseRaceResultDisplayAlertState extends ConsumerState<HorseRaceResultDis
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            Row(
-              children: <Widget>[
-                CircleAvatar(
-                  radius: 10,
-                  backgroundColor: switch (rank) {
-                    1 => const Color(0xFFFFD700).withValues(alpha: 0.5),
-                    2 => const Color(0xFFC0C0C0).withValues(alpha: 0.5),
-                    3 => const Color(0xFFCD7F32).withValues(alpha: 0.5),
-                    _ => Colors.grey,
-                  },
-                  child: Text(
-                    '$rank',
-                    style: const TextStyle(fontSize: 10, color: Colors.white, fontWeight: FontWeight.bold),
+            DefaultTextStyle(
+              style: const TextStyle(color: Colors.white, fontSize: 12),
+              child: Row(
+                children: <Widget>[
+                  CircleAvatar(
+                    radius: 10,
+                    backgroundColor: switch (rank) {
+                      1 => const Color(0xFFFFD700).withValues(alpha: 0.5),
+                      2 => const Color(0xFFC0C0C0).withValues(alpha: 0.5),
+                      3 => const Color(0xFFCD7F32).withValues(alpha: 0.5),
+                      _ => Colors.grey,
+                    },
+                    child: Text(
+                      '$rank',
+                      style: const TextStyle(fontSize: 10, color: Colors.white, fontWeight: FontWeight.bold),
+                    ),
                   ),
-                ),
-                const SizedBox(width: 10),
-                Container(width: 40, alignment: Alignment.center, child: Text(num)),
-                const SizedBox(width: 10),
-                Expanded(child: Text(horseName, maxLines: 1, overflow: TextOverflow.ellipsis)),
-              ],
+                  const SizedBox(width: 10),
+                  Container(width: 40, alignment: Alignment.center, child: Text(num)),
+                  const SizedBox(width: 10),
+                  Expanded(child: Text(horseName, maxLines: 1, overflow: TextOverflow.ellipsis)),
+                ],
+              ),
             ),
             const SizedBox(height: 2),
             DefaultTextStyle(
@@ -103,9 +106,7 @@ class _HorseRaceResultDisplayAlertState extends ConsumerState<HorseRaceResultDis
   }
 
   ///
-  static Widget _buildResultList(List<Widget> rows) {
-    return SingleChildScrollView(child: Column(children: rows));
-  }
+  static Widget _buildResultList(List<Widget> rows) => SingleChildScrollView(child: Column(children: rows));
 
   ///
   static String _latestOddsFrom(SummaryModel m) {
