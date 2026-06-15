@@ -1,5 +1,3 @@
-import '../extensions/extensions.dart';
-
 class SummaryModel {
   SummaryModel({
     required this.id,
@@ -27,27 +25,27 @@ class SummaryModel {
 
   factory SummaryModel.fromJson(Map<String, dynamic> json) {
     return SummaryModel(
-      id: (json['id'] != null) ? json['id'].toString().toInt() : 0,
-      horseName: json['horse_name']?.toString() ?? '',
-      date: json['date']?.toString() ?? '',
-      kaisuu: json['kaisuu']?.toString() ?? '',
-      basho: json['basho']?.toString() ?? '',
-      bashoName: json['basho_name']?.toString() ?? '',
-      day: (json['day'] != null) ? json['day'].toString().toInt() : 0,
-      race: (json['race'] != null) ? json['race'].toString().toInt() : 0,
-      raceName: json['race_name']?.toString() ?? '',
-      waku: (json['waku'] != null) ? json['waku'].toString().toInt() : 0,
-      num: (json['num'] != null) ? json['num'].toString().toInt() : 0,
-      oddsTanBefore24: json['odds_tan_before_24']?.toString() ?? '',
-      oddsTanBefore21: json['odds_tan_before_21']?.toString() ?? '',
-      oddsTanBefore18: json['odds_tan_before_18']?.toString() ?? '',
-      oddsTanBefore15: json['odds_tan_before_15']?.toString() ?? '',
-      oddsTanBefore12: json['odds_tan_before_12']?.toString() ?? '',
-      oddsTanBefore9: json['odds_tan_before_9']?.toString() ?? '',
-      oddsTanBefore6: json['odds_tan_before_6']?.toString() ?? '',
-      oddsTanBefore3: json['odds_tan_before_3']?.toString() ?? '',
-      oddsTanBefore0: json['odds_tan_before_0']?.toString() ?? '',
-      result: (json['result'] != null) ? json['result'].toString().toInt() : 0,
+      id: (json['id'] as int?) ?? 0,
+      horseName: (json['horse_name'] as String?) ?? '',
+      date: (json['date'] as String?) ?? '',
+      kaisuu: (json['kaisuu'] as String?) ?? '',
+      basho: (json['basho'] as String?) ?? '',
+      bashoName: (json['basho_name'] as String?) ?? '',
+      day: int.tryParse((json['day'] as String?) ?? '0') ?? 0,
+      race: (json['race'] as int?) ?? 0,
+      raceName: (json['race_name'] as String?) ?? '',
+      waku: (json['waku'] as int?) ?? 0,
+      num: (json['num'] as int?) ?? 0,
+      oddsTanBefore24: (json['odds_tan_before_24'] as String?) ?? '',
+      oddsTanBefore21: (json['odds_tan_before_21'] as String?) ?? '',
+      oddsTanBefore18: (json['odds_tan_before_18'] as String?) ?? '',
+      oddsTanBefore15: (json['odds_tan_before_15'] as String?) ?? '',
+      oddsTanBefore12: (json['odds_tan_before_12'] as String?) ?? '',
+      oddsTanBefore9: (json['odds_tan_before_9'] as String?) ?? '',
+      oddsTanBefore6: (json['odds_tan_before_6'] as String?) ?? '',
+      oddsTanBefore3: (json['odds_tan_before_3'] as String?) ?? '',
+      oddsTanBefore0: (json['odds_tan_before_0'] as String?) ?? '',
+      result: (json['result'] as int?) ?? 0,
     );
   }
 

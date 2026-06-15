@@ -7,24 +7,37 @@ import '../../extensions/extensions.dart';
 import '../../main.dart';
 import '../../models/odds_model.dart';
 import '../../models/race_model.dart';
+import '../../models/race_result_model.dart';
 import '../../models/summary_model.dart';
 import '../parts/odds_finder_dialog.dart';
 import 'horse_race_result_display_alert.dart';
 
 enum RankingMode { live, summary }
 
-// rank(1始まり) → タイミングごとの馬番リスト
 typedef RankingGrid = Map<int, List<int?>>;
+typedef _GridData = ({RankingGrid grid, List<String> timingLabels, int horseNum, Map<int, int> horseToStartRank});
 
 const Color _headerBgColor = Color(0xFF1B3A2A);
 const Color _changedBgColor1 = Color(0xFF1B3A5A);
 const Color _changedBgColor2 = Color(0xFF4A3D10);
 const Color _changedBgColor3 = Color(0xFF5A1A1A);
-const Color _droppedBgColor = Color(0xFF3A3A3A);
+const Color _droppedBgColor = Color(0xFF4A1A6A);
 const Color _defaultBgColor = Colors.transparent;
 
 const List<int> _kSummaryTimingMinutes = <int>[24, 21, 18, 15, 12, 9, 6, 3, 0];
 const List<String> _kSummaryTimingLabels = <String>['S', '21', '18', '15', '12', '9', '6', '3', 'E'];
+
+final Map<int, String Function(SummaryModel)> _kOddsGetters = <int, String Function(SummaryModel)>{
+  24: (SummaryModel m) => m.oddsTanBefore24,
+  21: (SummaryModel m) => m.oddsTanBefore21,
+  18: (SummaryModel m) => m.oddsTanBefore18,
+  15: (SummaryModel m) => m.oddsTanBefore15,
+  12: (SummaryModel m) => m.oddsTanBefore12,
+  9: (SummaryModel m) => m.oddsTanBefore9,
+  6: (SummaryModel m) => m.oddsTanBefore6,
+  3: (SummaryModel m) => m.oddsTanBefore3,
+  0: (SummaryModel m) => m.oddsTanBefore0,
+};
 
 class HorseOddsRankingDisplayAlert extends ConsumerStatefulWidget {
   const HorseOddsRankingDisplayAlert({super.key, this.mode = RankingMode.live});
@@ -49,6 +62,14 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
   }
 
   ///
+  @override
+  void dispose() {
+    _controller.removeListener(_onTransformChanged);
+    _controller.dispose();
+    super.dispose();
+  }
+
+  ///
   void _onTransformChanged() {
     final double currentScale = _controller.value.getMaxScaleOnAxis();
     final bool zoomed = _fitScale != null && currentScale > _fitScale! + 0.01;
@@ -58,11 +79,11 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
   }
 
   ///
-  @override
-  void dispose() {
-    _controller.removeListener(_onTransformChanged);
-    _controller.dispose();
-    super.dispose();
+  bool get _hasRaceResult {
+    final String mapKey = '${appParamState.selectedScheduleDate}_${appParamState.selectedScheduleKaisuuBashoDay}';
+    return (raceResultState.raceResultMap[mapKey] ?? <RaceResultModel>[]).any(
+      (RaceResultModel e) => e.race == appParamState.selectedRaceNumber,
+    );
   }
 
   ///
@@ -79,7 +100,6 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                 _buildHeader(),
-
                 Stack(
                   children: <Widget>[
                     Divider(color: Colors.white.withValues(alpha: 0.4), thickness: 5),
@@ -88,12 +108,9 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
                       children: <Widget>[
                         const SizedBox(),
                         GestureDetector(
-                          onTap: () {
-                            appParamNotifier.setIsShowUpperBox2(flag: !appParamState.isShowUpperBox2);
-                          },
+                          onTap: () => appParamNotifier.setIsShowUpperBox2(flag: !appParamState.isShowUpperBox2),
                           child: Icon(
                             appParamState.isShowUpperBox2 ? Icons.arrow_circle_up : Icons.arrow_circle_down,
-
                             color: Colors.green[500],
                           ),
                         ),
@@ -101,21 +118,19 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
                     ),
                   ],
                 ),
-
                 if (appParamState.isShowUpperBox2) ...<Widget>[
                   const Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
                       Text('縦軸：順位、横軸：タイミング、セル内：馬番', style: TextStyle(fontSize: 10)),
                       SizedBox(height: 5),
-                      Text('青=1上昇、黄=2上昇、赤=3以上上昇、灰=下落（開始時点との比較）', style: TextStyle(fontSize: 10)),
+                      Text('青=1上昇、黄=2上昇、赤=3以上上昇、紫=下落（開始時点との比較）', style: TextStyle(fontSize: 10)),
                       SizedBox(height: 5),
                       Text('表をダブルタップすると、初期の全体表示に戻ります。', style: TextStyle(fontSize: 10)),
                       SizedBox(height: 10),
                     ],
                   ),
                 ],
-
                 Expanded(child: _displayRankingList()),
               ],
             ),
@@ -127,12 +142,25 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
 
   ///
   Widget _buildHeader() {
-    final bool isSummary = widget.mode == RankingMode.summary;
+    return Stack(
+      children: <Widget>[
+        _buildHeaderText(),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: <Widget>[const SizedBox.shrink(), _buildHeaderActions()],
+        ),
+      ],
+    );
+  }
 
+  ///
+  Widget _buildHeaderText() {
+    final bool isSummary = widget.mode == RankingMode.summary;
     final String date;
     final String kaisuuBashoDay;
     final String race;
     final String raceName;
+
     if (isSummary) {
       final List<SummaryModel> list = summaryState.oneRaceSummaryList;
       if (list.isNotEmpty) {
@@ -142,10 +170,7 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
         race = '${s.race}R';
         raceName = s.raceName;
       } else {
-        date = '';
-        kaisuuBashoDay = '';
-        race = '';
-        raceName = '';
+        date = kaisuuBashoDay = race = raceName = '';
       }
     } else {
       date = appParamState.selectedScheduleDate;
@@ -160,67 +185,101 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
           '';
     }
 
-    return Stack(
+    return DefaultTextStyle(
+      style: const TextStyle(color: Colors.greenAccent, fontSize: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          if (date.isNotEmpty) Text('$date　$kaisuuBashoDay　$race'),
+          if (raceName.isNotEmpty) Text(raceName),
+        ],
+      ),
+    );
+  }
+
+  ///
+  Widget _buildHeaderActions() {
+    if (widget.mode == RankingMode.summary) {
+      return GestureDetector(
+        onTap: () {
+          final Map<int, int> popularityRank = _computeLatestPopularityRank(summaryState.oneRaceSummaryList);
+          OddsFinderDialog(
+            context: context,
+            widget: HorseRaceResultDisplayAlert(from: ResultDisplayFrom.summary, numToPopularityRank: popularityRank),
+            paddingLeft: context.screenSize.width * 0.1,
+            paddingTop: context.screenSize.height * 0.45,
+            paddingBottom: context.screenSize.height * 0.05,
+            clearBarrierColor: true,
+          );
+        },
+        child: Icon(Icons.flag, color: Colors.green[500]),
+      );
+    }
+
+    return Row(
       children: <Widget>[
-        DefaultTextStyle(
-          style: const TextStyle(color: Colors.greenAccent, fontSize: 12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              if (date.isNotEmpty) Text('$date　$kaisuuBashoDay　$race'),
-              if (raceName.isNotEmpty) Text(raceName),
-            ],
+        if (_hasRaceResult) ...<Widget>[
+          GestureDetector(
+            onTap: () => OddsFinderDialog(
+              context: context,
+              widget: const HorseRaceResultDisplayAlert(from: ResultDisplayFrom.raceResult),
+              paddingLeft: context.screenSize.width * 0.1,
+              paddingTop: context.screenSize.height * 0.45,
+              paddingBottom: context.screenSize.height * 0.05,
+              clearBarrierColor: true,
+            ),
+            child: const Icon(Icons.flag, color: Colors.greenAccent),
           ),
-        ),
-
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: <Widget>[
-            const SizedBox.shrink(),
-
-            if (isSummary) ...<Widget>[
-              GestureDetector(
-                onTap: () {
-                  final Map<int, int> popularityRank = _computeLatestPopularityRank(summaryState.oneRaceSummaryList);
-                  OddsFinderDialog(
-                    context: context,
-                    widget: HorseRaceResultDisplayAlert(numToPopularityRank: popularityRank),
-
-                    paddingLeft: context.screenSize.width * 0.1,
-                    paddingTop: context.screenSize.height * 0.45,
-                    paddingBottom: context.screenSize.height * 0.05,
-                    clearBarrierColor: true,
-                  );
-                },
-                child: Icon(Icons.flag, color: Colors.green[500]),
-              ),
-            ] else ...<Widget>[
-              GestureDetector(
-                onTap: () async {
-                  final SharedPreferences prefs = await SharedPreferences.getInstance();
-                  await prefs.setString('reload_selected_schedule_date', appParamState.selectedScheduleDate);
-                  await prefs.setString(
-                    'reload_selected_schedule_kaisuu_basho_day',
-                    appParamState.selectedScheduleKaisuuBashoDay,
-                  );
-                  await prefs.setString(
-                    'reload_selected_schedule_kaisuu_basho_day_name',
-                    appParamState.selectedScheduleKaisuuBashoDayName,
-                  );
-                  await prefs.setInt('reload_selected_race_number', appParamState.selectedRaceNumber);
-                  await prefs.setBool('isRankingDialogOpen', true);
-                  if (mounted) {
-                    // ignore: use_build_context_synchronously
-                    context.findAncestorStateOfType<AppRootState>()?.restartApp();
-                  }
-                },
-                child: const Icon(Icons.refresh, color: Colors.greenAccent),
-              ),
-            ],
-          ],
+          const SizedBox(width: 20),
+        ],
+        GestureDetector(
+          onTap: () async {
+            final SharedPreferences prefs = await SharedPreferences.getInstance();
+            await prefs.setString('reload_selected_schedule_date', appParamState.selectedScheduleDate);
+            await prefs.setString(
+              'reload_selected_schedule_kaisuu_basho_day',
+              appParamState.selectedScheduleKaisuuBashoDay,
+            );
+            await prefs.setString(
+              'reload_selected_schedule_kaisuu_basho_day_name',
+              appParamState.selectedScheduleKaisuuBashoDayName,
+            );
+            await prefs.setInt('reload_selected_race_number', appParamState.selectedRaceNumber);
+            await prefs.setBool('isRankingDialogOpen', true);
+            if (mounted) {
+              // ignore: use_build_context_synchronously
+              context.findAncestorStateOfType<AppRootState>()?.restartApp();
+            }
+          },
+          child: const Icon(Icons.refresh, color: Colors.greenAccent),
         ),
       ],
     );
+  }
+
+  ///
+  static String _oddsAt(SummaryModel m, int minutes) => (_kOddsGetters[minutes] ?? (SummaryModel _) => '')(m);
+
+  ///
+  static List<SummaryModel> _sortSummaryByOdds(List<SummaryModel> horses, int minutes) {
+    return horses.where((SummaryModel e) {
+      final String odds = _oddsAt(e, minutes);
+      return odds.isNotEmpty && odds != '0' && double.tryParse(odds) != null;
+    }).toList()..sort(
+      (SummaryModel a, SummaryModel b) =>
+          double.parse(_oddsAt(a, minutes)).compareTo(double.parse(_oddsAt(b, minutes))),
+    );
+  }
+
+  ///
+  static Map<int, int> _computeLatestPopularityRank(List<SummaryModel> horses) {
+    for (final int minutes in _kSummaryTimingMinutes.reversed) {
+      final List<SummaryModel> sorted = _sortSummaryByOdds(horses, minutes);
+      if (sorted.isNotEmpty) {
+        return <int, int>{for (int i = 0; i < sorted.length; i++) sorted[i].num: i + 1};
+      }
+    }
+    return <int, int>{};
   }
 
   ///
@@ -248,7 +307,15 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
   }
 
   ///
-  ({RankingGrid grid, List<String> timingLabels, int horseNum, Map<int, int> horseToStartRank}) _buildFromOddsModel() {
+  static Map<int, int> _buildHorseToStartRank(RankingGrid grid, int horseNum) {
+    return <int, int>{
+      for (int r = 1; r <= horseNum; r++)
+        if (grid[r]?.firstOrNull case final int num) num: r,
+    };
+  }
+
+  ///
+  _GridData _buildFromOddsModel() {
     final String mapKey = '${appParamState.selectedScheduleDate}_${appParamState.selectedScheduleKaisuuBashoDay}';
     final bool hasData = appParamState.keepRaceMap[mapKey] != null && appParamState.selectedRaceNumber > 0;
 
@@ -286,68 +353,16 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
       return timingParts[i];
     });
 
-    final Map<int, int> horseToStartRank = <int, int>{};
-    for (int r = 1; r <= horseNum; r++) {
-      final int? num = grid[r]?.firstOrNull;
-      if (num != null) {
-        horseToStartRank[num] = r;
-      }
-    }
-
-    return (grid: grid, timingLabels: timingLabels, horseNum: horseNum, horseToStartRank: horseToStartRank);
-  }
-
-  ///
-  static String _oddsAt(SummaryModel m, int minutes) {
-    switch (minutes) {
-      case 24:
-        return m.oddsTanBefore24;
-      case 21:
-        return m.oddsTanBefore21;
-      case 18:
-        return m.oddsTanBefore18;
-      case 15:
-        return m.oddsTanBefore15;
-      case 12:
-        return m.oddsTanBefore12;
-      case 9:
-        return m.oddsTanBefore9;
-      case 6:
-        return m.oddsTanBefore6;
-      case 3:
-        return m.oddsTanBefore3;
-      case 0:
-        return m.oddsTanBefore0;
-      default:
-        return '';
-    }
-  }
-
-  ///
-  static Map<int, int> _computeLatestPopularityRank(List<SummaryModel> horses) {
-    for (final int minutes in _kSummaryTimingMinutes.reversed) {
-      final List<SummaryModel> sorted = _sortSummaryByOdds(horses, minutes);
-      if (sorted.isNotEmpty) {
-        return <int, int>{for (int i = 0; i < sorted.length; i++) sorted[i].num: i + 1};
-      }
-    }
-    return <int, int>{};
-  }
-
-  ///
-  static List<SummaryModel> _sortSummaryByOdds(List<SummaryModel> horses, int minutes) {
-    return horses.where((SummaryModel e) {
-      final String odds = _oddsAt(e, minutes);
-      return odds.isNotEmpty && odds != '0' && double.tryParse(odds) != null;
-    }).toList()..sort(
-      (SummaryModel a, SummaryModel b) =>
-          double.parse(_oddsAt(a, minutes)).compareTo(double.parse(_oddsAt(b, minutes))),
+    return (
+      grid: grid,
+      timingLabels: timingLabels,
+      horseNum: horseNum,
+      horseToStartRank: _buildHorseToStartRank(grid, horseNum),
     );
   }
 
   ///
-  ({RankingGrid grid, List<String> timingLabels, int horseNum, Map<int, int> horseToStartRank})
-  _buildFromSummaryModel() {
+  _GridData _buildFromSummaryModel() {
     final List<SummaryModel> horses = summaryState.oneRaceSummaryList;
     final int horseNum = horses.length;
 
@@ -363,15 +378,12 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
         }).toList(),
     };
 
-    final Map<int, int> horseToStartRank = <int, int>{};
-    for (int r = 1; r <= horseNum; r++) {
-      final int? num = grid[r]?.firstOrNull;
-      if (num != null) {
-        horseToStartRank[num] = r;
-      }
-    }
-
-    return (grid: grid, timingLabels: _kSummaryTimingLabels, horseNum: horseNum, horseToStartRank: horseToStartRank);
+    return (
+      grid: grid,
+      timingLabels: _kSummaryTimingLabels,
+      horseNum: horseNum,
+      horseToStartRank: _buildHorseToStartRank(grid, horseNum),
+    );
   }
 
   ///
@@ -404,19 +416,13 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
 
   ///
   static Widget _buildDataCell(int? num, int changeLevel) {
-    final Color bgColor;
-    switch (changeLevel) {
-      case -1:
-        bgColor = _droppedBgColor;
-      case 1:
-        bgColor = _changedBgColor1;
-      case 2:
-        bgColor = _changedBgColor2;
-      case 3:
-        bgColor = _changedBgColor3;
-      default:
-        bgColor = _defaultBgColor;
-    }
+    final Color bgColor = switch (changeLevel) {
+      -1 => _droppedBgColor,
+      1 => _changedBgColor1,
+      2 => _changedBgColor2,
+      3 => _changedBgColor3,
+      _ => _defaultBgColor,
+    };
     return Container(
       width: 50,
       height: 30,
@@ -470,15 +476,13 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
             final int? startRank = horseToStartRank[entry.value!];
             if (startRank != null) {
               final int rankUp = startRank - rank;
-              if (rankUp >= 3) {
-                changeLevel = 3;
-              } else if (rankUp == 2) {
-                changeLevel = 2;
-              } else if (rankUp == 1) {
-                changeLevel = 1;
-              } else if (rankUp < 0) {
-                changeLevel = -1;
-              }
+              changeLevel = switch (rankUp) {
+                >= 3 => 3,
+                2 => 2,
+                1 => 1,
+                < 0 => -1,
+                _ => 0,
+              };
             }
           }
           return _buildDataCell(entry.value, changeLevel);
@@ -490,24 +494,19 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
 
   ///
   Widget _displayRankingList() {
-    final (
-      :RankingGrid grid,
-      :List<String> timingLabels,
-      :int horseNum,
-      :Map<int, int> horseToStartRank,
-    ) = switch (widget.mode) {
+    final _GridData data = switch (widget.mode) {
       RankingMode.live => _buildFromOddsModel(),
       RankingMode.summary => _buildFromSummaryModel(),
     };
 
-    if (horseNum == 0) {
+    if (data.horseNum == 0) {
       return widget.mode == RankingMode.summary
           ? const Center(child: CircularProgressIndicator(color: Colors.greenAccent))
           : const SizedBox.shrink();
     }
 
     const String cornerLabel = '分前';
-    final double tableWidth = 80 + 50.0 * timingLabels.length;
+    final double tableWidth = 80 + 50.0 * data.timingLabels.length;
 
     return LayoutBuilder(
       builder: (BuildContext ctx, BoxConstraints constraints) {
@@ -525,12 +524,12 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                _buildHeaderFooterRow(timingLabels, isTop: true, cornerLabel: cornerLabel),
-                ...List<Widget>.generate(horseNum, (int i) {
+                _buildHeaderFooterRow(data.timingLabels, isTop: true, cornerLabel: cornerLabel),
+                ...List<Widget>.generate(data.horseNum, (int i) {
                   final int rank = i + 1;
-                  return _buildRankingRow(rank, grid[rank] ?? <int?>[], horseToStartRank);
+                  return _buildRankingRow(rank, data.grid[rank] ?? <int?>[], data.horseToStartRank);
                 }),
-                _buildHeaderFooterRow(timingLabels, isTop: false, cornerLabel: cornerLabel),
+                _buildHeaderFooterRow(data.timingLabels, isTop: false, cornerLabel: cornerLabel),
               ],
             ),
           ),

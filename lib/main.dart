@@ -120,6 +120,7 @@ class _MyAppState extends ConsumerState<MyApp> with ControllersMixin<MyApp> {
     oddsGetTimingNotifier.getAllOddsGetTimingData();
     oddsWideNotifier.getAllOddsWideData();
     summaryNotifier.getAllSummaryData();
+    raceResultNotifier.getAllRaceResultData();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (widget.queryUser != null && widget.queryUser!.isNotEmpty) {
@@ -176,6 +177,7 @@ class _MyAppState extends ConsumerState<MyApp> with ControllersMixin<MyApp> {
           isRankingDialogOpen: widget.reloadIsRankingDialogOpen,
           summaryMap: summaryState.summaryMap,
           summaryDateBashoMap: summaryState.summaryDateBashoMap,
+          raceResultMap: raceResultState.raceResultMap,
         ),
       ),
     );

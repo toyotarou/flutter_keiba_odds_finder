@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -15,6 +14,7 @@ import '../models/netkeiba_odds_model.dart';
 import '../models/odds_model.dart';
 import '../models/odds_wide_model.dart';
 import '../models/race_model.dart';
+import '../models/race_result_model.dart';
 import '../models/schedule_model.dart';
 import '../models/summary_model.dart';
 import '../utility/utility.dart';
@@ -37,6 +37,7 @@ class HomeScreen extends ConsumerStatefulWidget {
     required this.isRankingDialogOpen,
     required this.summaryMap,
     required this.summaryDateBashoMap,
+    required this.raceResultMap,
   });
 
   final Map<String, List<ScheduleModel>> scheduleDateBashoMap;
@@ -49,6 +50,7 @@ class HomeScreen extends ConsumerStatefulWidget {
   final bool isRankingDialogOpen;
   final Map<String, List<SummaryModel>> summaryMap;
   final Map<String, List<String>> summaryDateBashoMap;
+  final Map<String, List<RaceResultModel>> raceResultMap;
 
   @override
   ConsumerState<HomeScreen> createState() => _HomeScreenState();
@@ -68,6 +70,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
   final Utility _utility = Utility();
 
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
+  String get _mapKey => '${appParamState.selectedScheduleDate}_${appParamState.selectedScheduleKaisuuBashoDay}';
 
   ///
   @override
@@ -205,15 +209,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
   }
 
   ///
-  static String _beforeMinutesText(String selectedTiming) {
-    if (selectedTiming == '0') {
-      return 'レース開始時点の';
-    }
-    if (selectedTiming.isNotEmpty) {
-      return '$selectedTiming分前の';
-    }
-    return '';
-  }
+  static String _beforeMinutesText(String selectedTiming) => switch (selectedTiming) {
+    '0' => 'レース開始時点の',
+    '' => '',
+    _ => '$selectedTiming分前の',
+  };
 
   ///
   static Map<int, List<String>> _buildTimelineMap<T>({
@@ -451,6 +451,108 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
   }
 
   ///
+  Widget _buildRaceResultBox() {
+    final Map<int, RaceResultModel> raceResultByRank = Map<int, RaceResultModel>.fromEntries(
+      (widget.raceResultMap[_mapKey] ?? <RaceResultModel>[])
+          .where((RaceResultModel e) => e.race == appParamState.selectedRaceNumber)
+          .map((RaceResultModel e) => MapEntry<int, RaceResultModel>(e.result, e)),
+    );
+
+    if (raceResultByRank.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    final List<OddsModel> eRecordOdds =
+        (widget.oddsMap[_mapKey] ?? <OddsModel>[])
+            .where((OddsModel o) => o.race == appParamState.selectedRaceNumber && o.minutesBeforeStart == -999)
+            .toList()
+          ..sort((OddsModel a, OddsModel b) => (double.tryParse(a.odds) ?? 0).compareTo(double.tryParse(b.odds) ?? 0));
+
+    final Map<int, int> numToPopularityMap = <int, int>{
+      for (int i = 0; i < eRecordOdds.length; i++) eRecordOdds[i].num: i + 1,
+    };
+
+    final Map<int, String> numToOddsMap = <int, String>{for (final OddsModel o in eRecordOdds) o.num: o.odds};
+
+    return Row(
+      children: <Widget>[
+        const Spacer(),
+        Container(
+          width: context.screenSize.width * 0.7,
+          margin: const EdgeInsets.only(bottom: 5),
+          padding: const EdgeInsets.all(5),
+          decoration: BoxDecoration(color: Colors.green[900]!.withValues(alpha: 0.4)),
+          child: DefaultTextStyle(
+            style: const TextStyle(fontSize: 10),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Container(
+                  decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.1)),
+                  width: double.infinity,
+                  alignment: Alignment.center,
+                  child: const Text('レース結果'),
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <int>[1, 2, 3].map((int e) {
+                    final RaceResultModel? horse = raceResultByRank[e];
+                    return Container(
+                      decoration: BoxDecoration(
+                        border: Border(bottom: BorderSide(color: Colors.white.withValues(alpha: 0.3))),
+                      ),
+                      child: Row(
+                        children: <Widget>[
+                          Container(
+                            width: 40,
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              color: switch (e) {
+                                1 => const Color(0xFFFFD700).withValues(alpha: 0.5),
+                                2 => const Color(0xFFC0C0C0).withValues(alpha: 0.5),
+                                3 => const Color(0xFFCD7F32).withValues(alpha: 0.5),
+                                _ => Colors.grey.withValues(alpha: 0.3),
+                              },
+                            ),
+                            child: Text(e.toString()),
+                          ),
+                          Container(
+                            width: 40,
+                            alignment: Alignment.center,
+                            child: Text(horse != null ? horse.num.toString() : ''),
+                          ),
+                          Expanded(
+                            child: Text(
+                              horse != null ? horse.horseName : '',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          Container(
+                            width: 40,
+                            alignment: Alignment.center,
+                            child: Text(horse != null ? numToOddsMap[horse.num] ?? '' : ''),
+                          ),
+                          Container(
+                            width: 50,
+                            alignment: Alignment.center,
+                            child: Text(horse != null ? '${numToPopularityMap[horse.num] ?? '-'}番人気' : ''),
+                          ),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const Spacer(),
+      ],
+    );
+  }
+
+  ///
   Widget _buildControlButtons() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -478,7 +580,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
 
               icon: Icon(Icons.refresh, color: Colors.green[500]),
             ),
-            if (!kIsWeb) ...<Widget>[],
             IconButton(
               onPressed: () {
                 appParamNotifier.setIsShowUpperBox2(flag: true);
@@ -688,13 +789,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
       });
     }
 
-    final String mapKey = '${appParamState.selectedScheduleDate}_${appParamState.selectedScheduleKaisuuBashoDay}';
-
     String raceName = 'レースを選択してください';
     String startTime = '--:--';
 
-    if (widget.raceMap[mapKey] != null && appParamState.selectedRaceNumber > 0) {
-      final RaceModel race = widget.raceMap[mapKey]!.firstWhere(
+    if (widget.raceMap[_mapKey] != null && appParamState.selectedRaceNumber > 0) {
+      final RaceModel race = widget.raceMap[_mapKey]!.firstWhere(
         (RaceModel e) => e.race == appParamState.selectedRaceNumber,
       );
       raceName = race.raceName;
@@ -754,13 +853,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                         const Text('日付を選択してください', style: TextStyle(fontSize: 12, color: Colors.greenAccent)),
                     ],
                     const SizedBox(height: 5),
-                    if (widget.raceMap[mapKey] != null) ...<Widget>[
+                    if (widget.raceMap[_mapKey] != null) ...<Widget>[
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: <Widget>[
                           if (appParamState.isShowUpperBox) ...<Widget>[
                             const SizedBox(height: 5),
-                            _buildRaceNumberRow(mapKey),
+                            _buildRaceNumberRow(_mapKey),
                             const SizedBox(height: 5),
                             Divider(color: Colors.white.withValues(alpha: 0.5), thickness: 5),
                           ],
@@ -776,6 +875,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                     if (appParamState.selectedRaceNumber > 0) ...<Widget>[
                       SizedBox(height: 40, child: displayRaceMinutesRow()),
                       _buildControlButtons(),
+
+                      _buildRaceResultBox(),
+
                       if (widget.scheduleDateBashoMap.isNotEmpty) ...<Widget>[
                         Divider(color: Colors.white.withValues(alpha: 0.5)),
                         const SizedBox(height: 5),
@@ -791,6 +893,64 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
       ),
 
       drawer: _dispDrawer(),
+    );
+  }
+
+  ///
+  Widget _buildDrawerRaceRow({
+    required String date,
+    required List<SummaryModel> models,
+    required MapEntry<int, String> r,
+  }) {
+    return DefaultTextStyle(
+      style: const TextStyle(color: Colors.white70, fontSize: 11),
+
+      child: Container(
+        decoration: BoxDecoration(
+          border: Border(bottom: BorderSide(color: Colors.white.withOpacity(0.3))),
+        ),
+
+        padding: const EdgeInsets.symmetric(vertical: 5),
+
+        child: Row(
+          children: <Widget>[
+            Container(width: 20, alignment: Alignment.topRight, child: Text('${r.key}R')),
+            const SizedBox(width: 20),
+            Expanded(child: Text(r.value, maxLines: 1, overflow: TextOverflow.ellipsis)),
+
+            GestureDetector(
+              onTap: () {
+                appParamNotifier.setSelectedDrawerRace(
+                  race: '${date}_${models.first.kaisuu}_${models.first.basho}_${models.first.day}_${r.key}',
+                );
+
+                summaryNotifier.fetchRaceSummary(
+                  date: date,
+                  kaisuu: models.first.kaisuu,
+                  basho: models.first.basho,
+                  day: models.first.day,
+                  race: r.key,
+                );
+
+                appParamNotifier.setIsShowUpperBox2(flag: true);
+
+                OddsFinderDialog(
+                  context: context,
+                  widget: const HorseOddsRankingDisplayAlert(mode: RankingMode.summary),
+                );
+              },
+              child: Icon(
+                Icons.calendar_view_month,
+                color:
+                    ('${date}_${models.first.kaisuu}_${models.first.basho}_${models.first.day}_${r.key}' ==
+                        appParamState.selectedDrawerRace)
+                    ? Colors.yellowAccent.withValues(alpha: 0.4)
+                    : Colors.greenAccent.withValues(alpha: 0.4),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -861,67 +1021,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
 
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: races.map((MapEntry<int, String> r) {
-                                      return DefaultTextStyle(
-                                        style: const TextStyle(color: Colors.white70, fontSize: 11),
-
-                                        child: Container(
-                                          decoration: BoxDecoration(
-                                            border: Border(bottom: BorderSide(color: Colors.white.withOpacity(0.3))),
-                                          ),
-
-                                          padding: const EdgeInsets.symmetric(vertical: 5),
-
-                                          child: Row(
-                                            children: <Widget>[
-                                              Container(
-                                                width: 20,
-                                                alignment: Alignment.topRight,
-                                                child: Text('${r.key}R'),
-                                              ),
-                                              const SizedBox(width: 20),
-                                              Expanded(
-                                                child: Text(r.value, maxLines: 1, overflow: TextOverflow.ellipsis),
-                                              ),
-
-                                              GestureDetector(
-                                                onTap: () {
-                                                  appParamNotifier.setSelectedDrawerRace(
-                                                    race:
-                                                        '${e.key}_${models.first.kaisuu}_${models.first.basho}_${models.first.day}_${r.key}',
-                                                  );
-
-                                                  summaryNotifier.fetchRaceSummary(
-                                                    date: e.key,
-                                                    kaisuu: models.first.kaisuu,
-                                                    basho: models.first.basho,
-                                                    day: models.first.day,
-                                                    race: r.key,
-                                                  );
-
-                                                  appParamNotifier.setIsShowUpperBox2(flag: true);
-
-                                                  OddsFinderDialog(
-                                                    context: context,
-                                                    widget: const HorseOddsRankingDisplayAlert(
-                                                      mode: RankingMode.summary,
-                                                    ),
-                                                  );
-                                                },
-                                                child: Icon(
-                                                  Icons.calendar_view_month,
-                                                  color:
-                                                      ('${e.key}_${models.first.kaisuu}_${models.first.basho}_${models.first.day}_${r.key}' ==
-                                                          appParamState.selectedDrawerRace)
-                                                      ? Colors.yellowAccent.withValues(alpha: 0.4)
-                                                      : Colors.greenAccent.withValues(alpha: 0.4),
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      );
-                                    }).toList(),
+                                    children: races
+                                        .map(
+                                          (MapEntry<int, String> r) =>
+                                              _buildDrawerRaceRow(date: e.key, models: models, r: r),
+                                        )
+                                        .toList(),
                                   ),
                                 ),
                               ],
@@ -944,8 +1049,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
 
   ///
   Widget displayRaceMinutesRow() {
-    final String mapKey = '${appParamState.selectedScheduleDate}_${appParamState.selectedScheduleKaisuuBashoDay}';
-
     final Map<String, String> ogtNamesMap = Map<String, String>.fromEntries(
       appParamState.configOddsGetTiming
           .split('|')
@@ -962,12 +1065,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
     );
 
     final List<OddsModel> oddsModelList = <OddsModel>[];
-    if (widget.raceMap[mapKey] != null && appParamState.selectedRaceNumber > 0) {
-      for (final OddsModel element in widget.oddsMap[mapKey] ?? <OddsModel>[]) {
-        if (element.race == appParamState.selectedRaceNumber) {
-          oddsModelList.add(element);
-        }
-      }
+    if (widget.raceMap[_mapKey] != null && appParamState.selectedRaceNumber > 0) {
+      oddsModelList.addAll(
+        (widget.oddsMap[_mapKey] ?? <OddsModel>[]).where((OddsModel e) => e.race == appParamState.selectedRaceNumber),
+      );
     }
 
     final String minTiming = _resolveMinTiming(oddsModelList);
@@ -1019,27 +1120,23 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
 
   ///
   Widget displayRaceHorseList() {
-    final String mapKey = '${appParamState.selectedScheduleDate}_${appParamState.selectedScheduleKaisuuBashoDay}';
-
     final List<OddsModel> oddsModelList = <OddsModel>[];
     final List<NetkeibaOddsModel> netkeibaOddsModelList = <NetkeibaOddsModel>[];
     final Map<int, HorseModel> horseModelMap = <int, HorseModel>{};
 
-    if (widget.raceMap[mapKey] != null && appParamState.selectedRaceNumber > 0) {
-      for (final OddsModel e in widget.oddsMap[mapKey] ?? <OddsModel>[]) {
-        if (e.race == appParamState.selectedRaceNumber) {
-          oddsModelList.add(e);
-        }
-      }
-      for (final NetkeibaOddsModel e in widget.netkeibaOddsMap[mapKey] ?? <NetkeibaOddsModel>[]) {
-        if (e.race == appParamState.selectedRaceNumber) {
-          netkeibaOddsModelList.add(e);
-        }
-      }
-      for (final HorseModel e in widget.horseMap[mapKey] ?? <HorseModel>[]) {
-        if (e.race == appParamState.selectedRaceNumber) {
-          horseModelMap[e.num] = e;
-        }
+    if (widget.raceMap[_mapKey] != null && appParamState.selectedRaceNumber > 0) {
+      oddsModelList.addAll(
+        (widget.oddsMap[_mapKey] ?? <OddsModel>[]).where((OddsModel e) => e.race == appParamState.selectedRaceNumber),
+      );
+      netkeibaOddsModelList.addAll(
+        (widget.netkeibaOddsMap[_mapKey] ?? <NetkeibaOddsModel>[]).where(
+          (NetkeibaOddsModel e) => e.race == appParamState.selectedRaceNumber,
+        ),
+      );
+      for (final HorseModel e in (widget.horseMap[_mapKey] ?? <HorseModel>[]).where(
+        (HorseModel e) => e.race == appParamState.selectedRaceNumber,
+      )) {
+        horseModelMap[e.num] = e;
       }
     }
 
@@ -1156,15 +1253,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
 
   ///
   static List<int> _buildTimingOrder(List<String> timingParts) {
-    return List<int>.generate(timingParts.length, (int i) {
-      if (i == 0) {
-        return 999;
-      }
-      if (timingParts[i] == '0') {
-        return -999;
-      }
-      return int.tryParse(timingParts[i]) ?? 0;
-    });
+    return List<int>.generate(
+      timingParts.length,
+      (int i) => switch (i) {
+        0 => 999,
+        _ when timingParts[i] == '0' => -999,
+        _ => int.tryParse(timingParts[i]) ?? 0,
+      },
+    );
   }
 
   ///
@@ -1191,18 +1287,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
   }
 
   ///
-  static String _filterMinutesToTimingKey(int? filterMinutes) {
-    if (filterMinutes == null) {
-      return '';
-    }
-    if (filterMinutes == 999) {
-      return '24';
-    }
-    if (filterMinutes == -999) {
-      return '0';
-    }
-    return filterMinutes.toString();
-  }
+  static String _filterMinutesToTimingKey(int? filterMinutes) => switch (filterMinutes) {
+    null => '',
+    999 => '24',
+    -999 => '0',
+    _ => filterMinutes.toString(),
+  };
 
   ///
   Widget _buildHorseListItem({
