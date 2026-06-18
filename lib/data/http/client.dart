@@ -60,7 +60,8 @@ class HttpClient {
       throw Exception('network error: $e  [url=$uri]');
     }
 
-    if (response.statusCode < 200 || response.statusCode >= 300) {
+    // 5xx はサーバー障害として例外。4xx はAPIレベルのエラーなのでボディをそのまま返す。
+    if (response.statusCode >= 500) {
       throw Exception('http ${response.statusCode} [url=$uri]');
     }
 

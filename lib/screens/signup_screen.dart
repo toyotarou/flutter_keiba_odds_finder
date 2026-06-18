@@ -16,8 +16,9 @@ class SignupScreen extends ConsumerStatefulWidget {
 
 class _SignupScreenState extends ConsumerState<SignupScreen> {
   final TextEditingController _userIdController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final List<FocusNode> _focusNodes = List<FocusNode>.generate(2, (_) => FocusNode());
+  final List<FocusNode> _focusNodes = List<FocusNode>.generate(3, (_) => FocusNode());
   bool _passwordObscure = true;
   bool _isLoading = false;
 
@@ -25,6 +26,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
   @override
   void dispose() {
     _userIdController.dispose();
+    _emailController.dispose();
     _passwordController.dispose();
     for (final FocusNode node in _focusNodes) {
       node.dispose();
@@ -110,6 +112,23 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                 ),
                 const SizedBox(height: 20),
                 TextField(
+                  controller: _emailController,
+                  keyboardType: TextInputType.emailAddress,
+                  decoration: const InputDecoration(
+                    isDense: true,
+                    contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                    hintText: 'メールアドレス',
+                    filled: true,
+                    border: OutlineInputBorder(),
+                    focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.white54)),
+                  ),
+                  style: const TextStyle(fontSize: 13, color: Colors.white),
+                  onTapOutside: (PointerDownEvent event) => FocusManager.instance.primaryFocus?.unfocus(),
+                  focusNode: _focusNodes[1],
+                  onTap: () => context.showKeyboard(_focusNodes[1]),
+                ),
+                const SizedBox(height: 20),
+                TextField(
                   controller: _passwordController,
                   obscureText: _passwordObscure,
                   decoration: InputDecoration(
@@ -126,8 +145,8 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                   ),
                   style: const TextStyle(fontSize: 13, color: Colors.white),
                   onTapOutside: (PointerDownEvent event) => FocusManager.instance.primaryFocus?.unfocus(),
-                  focusNode: _focusNodes[1],
-                  onTap: () => context.showKeyboard(_focusNodes[1]),
+                  focusNode: _focusNodes[2],
+                  onTap: () => context.showKeyboard(_focusNodes[2]),
                 ),
                 const SizedBox(height: 20),
                 if (_isLoading)
@@ -150,10 +169,16 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
   ///
   Future<void> _signup() async {
     final String userId = _userIdController.text.trim();
+    final String email = _emailController.text.trim();
     final String password = _passwordController.text.trim();
 
-    if (userId.isEmpty || password.isEmpty) {
-      _showError('ユーザーIDとパスワードを入力してください。');
+    if (userId.isEmpty || email.isEmpty || password.isEmpty) {
+      _showError('すべての項目を入力してください。');
+      return;
+    }
+
+    if (!email.contains('@')) {
+      _showError('正しいメールアドレスを入力してください。');
       return;
     }
 
@@ -162,15 +187,41 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
     try {
       final HttpClient client = ref.read(httpClientProvider);
       final Map<String, dynamic> data =
-          (await client.post(path: APIPath.signup, body: <String, String>{'user_id': userId, 'password': password}))
-              as Map<String, dynamic>;
+          (await client.post(
+            path: APIPath.signup,
+            body: <String, String>{'user_id': userId, 'email': email, 'password': password},
+          )) as Map<String, dynamic>;
 
       if (data['success'] == true) {
         if (mounted) {
-          Navigator.pop(context, <String, String>{'user_id': userId, 'password': password});
+          await showDialog<void>(
+            context: context,
+            builder: (_) => AlertDialog(
+              backgroundColor: Colors.black.withOpacity(0.85),
+              title: const Text('確認メールを送信しました', style: TextStyle(color: Colors.white, fontSize: 14)),
+              content: const Text(
+                'メール内のリンクをクリックして認証を完了してから、ログインしてください。',
+                style: TextStyle(color: Colors.white70, fontSize: 12),
+              ),
+              actions: <Widget>[
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('OK', style: TextStyle(color: Colors.greenAccent)),
+                ),
+              ],
+            ),
+          );
+          if (mounted) {
+            Navigator.pop(context);
+          }
         }
       } else {
-        _showError('登録できませんでした。すでに使われているユーザーIDかもしれません。');
+        final String msg = (data['message'] as String?) ?? '';
+        if (msg.contains('email') || msg.contains('メールアドレス')) {
+          _showError('すでに登録済みのメールアドレスです。');
+        } else {
+          _showError('登録できませんでした。すでに使われているユーザーIDかもしれません。');
+        }
       }
     } catch (_) {
       _showError('登録に失敗しました。通信環境を確認してください。');

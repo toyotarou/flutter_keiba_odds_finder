@@ -69,7 +69,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
                         ElevatedButton(
                           onPressed: () {
-                            _userIdController.text = 'hidechy';
+                            _userIdController.text = 'toyohide';
                             _passwordController.text = 'hidechy4819';
                           },
                           child: const Text('toyoda'),
@@ -213,6 +213,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         if (mounted) {
           widget.onLoginSuccess();
         }
+      } else if (data['message'] == 'unverified') {
+        _showError('メールアドレスの確認が完了していません。\n届いたメール内のリンクをクリックしてください。');
       } else {
         _showError('ユーザーIDまたはパスワードが正しくありません。');
       }
