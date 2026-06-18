@@ -49,9 +49,35 @@ class HttpClient {
     }
   }
 
+  /// POSTリクエストを送信し、レスポンスをJSONとして返す
+  Future<dynamic> post({required APIPath path, required Map<String, dynamic> body}) async {
+    final Uri uri = Uri.https(Environment.apiEndPoint, '/${Environment.apiBasePath}/${path.value}');
+
+    final Response response;
+    try {
+      response = await _client.post(uri, headers: await _headers, body: jsonEncode(body));
+    } catch (e) {
+      throw Exception('network error: $e  [url=$uri]');
+    }
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception('http ${response.statusCode} [url=$uri]');
+    }
+
+    final String bodyString = utf8.decode(response.bodyBytes);
+    try {
+      if (bodyString.isEmpty) {
+        throw Exception();
+      }
+      return jsonDecode(bodyString);
+    } on Exception catch (_) {
+      throw Exception('json parse error');
+    }
+  }
+
   /// リクエストヘッダー
   Future<Map<String, String>> get _headers async {
-    return <String, String>{'content-type': 'application/json'};
+    return <String, String>{'content-type': 'application/json', 'Accept': 'application/json'};
   }
 }
 

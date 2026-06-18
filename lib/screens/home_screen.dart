@@ -38,6 +38,7 @@ class HomeScreen extends ConsumerStatefulWidget {
     required this.summaryMap,
     required this.summaryDateBashoMap,
     required this.raceResultMap,
+    required this.onLogout,
   });
 
   final Map<String, List<ScheduleModel>> scheduleDateBashoMap;
@@ -51,6 +52,7 @@ class HomeScreen extends ConsumerStatefulWidget {
   final Map<String, List<SummaryModel>> summaryMap;
   final Map<String, List<String>> summaryDateBashoMap;
   final Map<String, List<RaceResultModel>> raceResultMap;
+  final VoidCallback onLogout;
 
   @override
   ConsumerState<HomeScreen> createState() => _HomeScreenState();
@@ -77,6 +79,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
   @override
   void initState() {
     super.initState();
+
+    scheduleNotifier.getAllScheduleData();
+    raceNotifier.getAllRaceData();
+    horseNotifier.getAllHorseData();
+    oddsNotifier.getAllOddsData();
+    laravelConfigNotifier.getAllLaravelConfigData();
+    netkeibaOddsNotifier.getAllNetkeibaOddsData();
+    netkeibaRaceNotifier.getAllNetkeibaRaceData();
+    oddsGetTimingNotifier.getAllOddsGetTimingData();
+    oddsWideNotifier.getAllOddsWideData();
+    summaryNotifier.getAllSummaryData();
+    raceResultNotifier.getAllRaceResultData();
+
     WidgetsBinding.instance.addPostFrameCallback((_) => _syncAppParam());
     if (widget.isRankingDialogOpen) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -116,6 +131,34 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
     _raceScrollController.dispose();
     _horseListScrollController.dispose();
     super.dispose();
+  }
+
+  ///
+  Future<void> _confirmLogout() async {
+    final bool? confirmed = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: Colors.black.withValues(alpha: 0.2),
+        content: const Text('ログアウトします。よろしいですか？', style: TextStyle(color: Colors.white, fontSize: 12)),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('いいえ', style: TextStyle(color: Colors.white54, fontSize: 12)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('はい', style: TextStyle(color: Colors.greenAccent, fontSize: 12)),
+          ),
+        ],
+      ),
+    );
+
+    if ((confirmed ?? false) && mounted) {
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('isLoggedIn', false);
+      await prefs.remove('loggedInUserId');
+      widget.onLogout();
+    }
   }
 
   ///
@@ -830,13 +873,27 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: <Widget>[
                           const SizedBox.shrink(),
-                          GestureDetector(
-                            onTap: () {
-                              appParamNotifier.setSelectedDrawerRace(race: '');
 
-                              _scaffoldKey.currentState!.openDrawer();
-                            },
-                            child: Icon(Icons.list, color: Colors.green[500]),
+                          Row(
+                            children: <Widget>[
+                              GestureDetector(
+                                onTap: () {
+                                  appParamNotifier.setSelectedDrawerRace(race: '');
+
+                                  _scaffoldKey.currentState!.openDrawer();
+                                },
+                                child: Icon(Icons.list, color: Colors.green[500]),
+                              ),
+
+                              const SizedBox(width: 20),
+
+                              GestureDetector(
+                                onTap: _confirmLogout,
+                                child: const Icon(Icons.logout, color: Colors.white54),
+                              ),
+
+                              const SizedBox(width: 10),
+                            ],
                           ),
                         ],
                       ),

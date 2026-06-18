@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'controllers/controllers_mixin.dart';
 import 'screens/home_screen.dart';
+import 'screens/login_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -18,18 +19,26 @@ Future<void> main() async {
     queryUser = uri.queryParameters['user'];
   }
 
+  final SharedPreferences prefs = await SharedPreferences.getInstance();
+  final bool isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
+
   await SystemChrome.setPreferredOrientations(<DeviceOrientation>[
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
 
-  runApp(ProviderScope(child: AppRoot(queryUser: queryUser)));
+  runApp(
+    ProviderScope(
+      child: AppRoot(queryUser: queryUser, isLoggedIn: isLoggedIn),
+    ),
+  );
 }
 
 class AppRoot extends StatefulWidget {
-  const AppRoot({super.key, this.queryUser});
+  const AppRoot({super.key, this.queryUser, required this.isLoggedIn});
 
   final String? queryUser;
+  final bool isLoggedIn;
 
   @override
   State<AppRoot> createState() => AppRootState();
@@ -75,6 +84,7 @@ class AppRootState extends State<AppRoot> {
       reloadRace: _reloadRace,
       reloadIsRankingDialogOpen: _reloadIsRankingDialogOpen,
       queryUser: widget.queryUser,
+      isLoggedIn: widget.isLoggedIn,
     );
   }
 }
@@ -89,6 +99,7 @@ class MyApp extends ConsumerStatefulWidget {
     required this.reloadRace,
     required this.reloadIsRankingDialogOpen,
     this.queryUser,
+    required this.isLoggedIn,
   });
 
   // ignore: unreachable_from_main
@@ -99,28 +110,21 @@ class MyApp extends ConsumerStatefulWidget {
   final int reloadRace;
   final bool reloadIsRankingDialogOpen;
   final String? queryUser;
+  final bool isLoggedIn;
 
   @override
   ConsumerState<MyApp> createState() => _MyAppState();
 }
 
 class _MyAppState extends ConsumerState<MyApp> with ControllersMixin<MyApp> {
+  late bool _isLoggedIn;
+
   ///
   @override
   void initState() {
     super.initState();
 
-    scheduleNotifier.getAllScheduleData();
-    raceNotifier.getAllRaceData();
-    horseNotifier.getAllHorseData();
-    oddsNotifier.getAllOddsData();
-    laravelConfigNotifier.getAllLaravelConfigData();
-    netkeibaOddsNotifier.getAllNetkeibaOddsData();
-    netkeibaRaceNotifier.getAllNetkeibaRaceData();
-    oddsGetTimingNotifier.getAllOddsGetTimingData();
-    oddsWideNotifier.getAllOddsWideData();
-    summaryNotifier.getAllSummaryData();
-    raceResultNotifier.getAllRaceResultData();
+    _isLoggedIn = widget.isLoggedIn;
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (widget.queryUser != null && widget.queryUser!.isNotEmpty) {
@@ -166,19 +170,22 @@ class _MyAppState extends ConsumerState<MyApp> with ControllersMixin<MyApp> {
       debugShowCheckedModeBanner: false,
       home: GestureDetector(
         onTap: () => primaryFocus?.unfocus(),
-        child: HomeScreen(
-          scheduleDateBashoMap: scheduleState.scheduleDateBashoMap,
-          raceMap: raceState.raceMap,
-          horseMap: horseState.horseMap,
-          oddsMap: oddsState.oddsMap,
-          oddsGetTiming: laravelConfigState.odds_get_timing,
-          netkeibaOddsMap: netkeibaOddsState.netkeibaOddsMap,
-          oddsWideMap: oddsWideState.oddsWideMap,
-          isRankingDialogOpen: widget.reloadIsRankingDialogOpen,
-          summaryMap: summaryState.summaryMap,
-          summaryDateBashoMap: summaryState.summaryDateBashoMap,
-          raceResultMap: raceResultState.raceResultMap,
-        ),
+        child: _isLoggedIn
+            ? HomeScreen(
+                scheduleDateBashoMap: scheduleState.scheduleDateBashoMap,
+                raceMap: raceState.raceMap,
+                horseMap: horseState.horseMap,
+                oddsMap: oddsState.oddsMap,
+                oddsGetTiming: laravelConfigState.odds_get_timing,
+                netkeibaOddsMap: netkeibaOddsState.netkeibaOddsMap,
+                oddsWideMap: oddsWideState.oddsWideMap,
+                isRankingDialogOpen: widget.reloadIsRankingDialogOpen,
+                summaryMap: summaryState.summaryMap,
+                summaryDateBashoMap: summaryState.summaryDateBashoMap,
+                raceResultMap: raceResultState.raceResultMap,
+                onLogout: () => setState(() => _isLoggedIn = false),
+              )
+            : LoginScreen(onLoginSuccess: () => setState(() => _isLoggedIn = true)),
       ),
     );
   }
