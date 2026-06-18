@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'app_param/app_param.dart';
 import 'horse/horse.dart';
 import 'laravel_config/laravel_config.dart';
+import 'login_user/login_user.dart';
 import 'netkeiba_odds/netkeiba_odds.dart';
 import 'netkeiba_race/netkeiba_race.dart';
 import 'odds/odds.dart';
@@ -102,6 +103,14 @@ mixin ControllersMixin<T extends ConsumerStatefulWidget> on ConsumerState<T> {
   RaceResultState get raceResultState => ref.watch(raceResultProvider);
 
   RaceResult get raceResultNotifier => ref.read(raceResultProvider.notifier);
+
+  //==========================================//
+
+  //==========================================//
+
+  LoginUserState get loginUserState => ref.watch(loginUserProvider);
+
+  LoginUser get loginUserNotifier => ref.read(loginUserProvider.notifier);
 
   //==========================================//
 }

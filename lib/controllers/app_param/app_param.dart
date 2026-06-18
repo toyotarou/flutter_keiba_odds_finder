@@ -3,6 +3,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../utility/utility.dart';
 import '../../models/horse_model.dart';
+import '../../models/login_user_model.dart';
 import '../../models/odds_model.dart';
 import '../../models/odds_wide_model.dart';
 import '../../models/race_model.dart';
@@ -29,6 +30,8 @@ class AppParamState with _$AppParamState {
     @Default(<String, List<SummaryModel>>{}) Map<String, List<SummaryModel>> keepSummaryMap,
 
     @Default(<String, List<String>>{}) Map<String, List<String>> keepSummaryDateBashoMap,
+
+    @Default(<String, List<LoginUserModel>>{}) Map<String, List<LoginUserModel>> keepLoginUserMap,
 
     ///
     @Default('') String configOddsGetTiming,
@@ -87,6 +90,10 @@ class AppParam extends _$AppParam {
   ///
   void setKeepSummaryDateBashoMap({required Map<String, List<String>> map}) =>
       state = state.copyWith(keepSummaryDateBashoMap: map);
+
+  ///
+  void setKeepLoginUserMap({required Map<String, List<LoginUserModel>> map}) =>
+      state = state.copyWith(keepLoginUserMap: map);
 
   //////////////
 

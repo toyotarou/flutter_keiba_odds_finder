@@ -10,6 +10,7 @@ import '../controllers/controllers_mixin.dart';
 import '../extensions/extensions.dart';
 import '../main.dart';
 import '../models/horse_model.dart';
+import '../models/login_user_model.dart';
 import '../models/netkeiba_odds_model.dart';
 import '../models/odds_model.dart';
 import '../models/odds_wide_model.dart';
@@ -38,6 +39,7 @@ class HomeScreen extends ConsumerStatefulWidget {
     required this.summaryMap,
     required this.summaryDateBashoMap,
     required this.raceResultMap,
+    required this.loginUserMap,
     required this.loggedInUserId,
     required this.onLogout,
   });
@@ -53,6 +55,7 @@ class HomeScreen extends ConsumerStatefulWidget {
   final Map<String, List<SummaryModel>> summaryMap;
   final Map<String, List<String>> summaryDateBashoMap;
   final Map<String, List<RaceResultModel>> raceResultMap;
+  final Map<String, List<LoginUserModel>> loginUserMap;
   final String loggedInUserId;
   final VoidCallback onLogout;
 
@@ -93,6 +96,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
     oddsWideNotifier.getAllOddsWideData();
     summaryNotifier.getAllSummaryData();
     raceResultNotifier.getAllRaceResultData();
+    loginUserNotifier.getAllLoginUserData();
 
     WidgetsBinding.instance.addPostFrameCallback((_) => _syncAppParam());
     if (widget.isRankingDialogOpen) {
@@ -175,6 +179,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
     appParamNotifier.setKeepOddsWideMap(map: widget.oddsWideMap);
     appParamNotifier.setKeepSummaryMap(map: widget.summaryMap);
     appParamNotifier.setKeepSummaryDateBashoMap(map: widget.summaryDateBashoMap);
+    appParamNotifier.setKeepLoginUserMap(map: widget.loginUserMap);
   }
 
   ///

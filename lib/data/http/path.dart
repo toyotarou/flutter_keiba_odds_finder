@@ -14,6 +14,7 @@ enum APIPath {
   getHorseOddsFinderRaceOneResult,
   signup,
   signin,
+  getHorseOddsFinderLoginUsers,
 }
 
 extension APIPathExtension on APIPath {
@@ -63,6 +64,9 @@ extension APIPathExtension on APIPath {
 
       case APIPath.signin:
         return 'signin';
+
+      case APIPath.getHorseOddsFinderLoginUsers:
+        return 'getHorseOddsFinderLoginUsers';
     }
   }
 }
