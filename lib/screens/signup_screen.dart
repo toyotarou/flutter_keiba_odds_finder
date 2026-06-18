@@ -37,31 +37,34 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
-      body: SafeArea(
-        child: Stack(
-          children: <Widget>[
-            Image.asset('assets/images/gold_title.png'),
-            Column(
-              children: <Widget>[
-                SizedBox(height: context.screenSize.height * 0.38),
-                _buildInputCard(),
-              ],
-            ),
-            Positioned(
-              bottom: 70,
-              left: 20,
-              right: 20,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: <Widget>[
-                  TextButton(
-                    onPressed: _isLoading ? null : () => Navigator.pop(context),
-                    child: const Text('LOGIN', style: TextStyle(color: Colors.white70)),
-                  ),
-                ],
+      body: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => FocusScope.of(context).unfocus(),
+        child: SafeArea(
+          child: Stack(
+            children: <Widget>[
+              Image.asset('assets/images/gold_title.png'),
+              SingleChildScrollView(
+                child: Column(
+                  children: <Widget>[
+                    SizedBox(height: context.screenSize.height * 0.38),
+                    _buildInputCard(),
+                    const SizedBox(height: 20),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: <Widget>[
+                        TextButton(
+                          onPressed: _isLoading ? null : () => Navigator.pop(context),
+                          child: const Text('LOGIN', style: TextStyle(color: Colors.white70)),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -186,9 +189,9 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
     showDialog<void>(
       context: context,
       builder: (_) => AlertDialog(
-        backgroundColor: Colors.grey[900],
-        title: const Text('エラー', style: TextStyle(color: Colors.white)),
-        content: Text(message, style: const TextStyle(color: Colors.white70)),
+        backgroundColor: Colors.black.withValues(alpha: 0.2),
+        title: const Text('エラー', style: TextStyle(color: Colors.white, fontSize: 14)),
+        content: Text(message, style: const TextStyle(color: Colors.white70, fontSize: 12)),
         actions: <Widget>[
           TextButton(
             onPressed: () => Navigator.pop(context),

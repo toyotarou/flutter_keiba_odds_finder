@@ -41,51 +41,57 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
-      body: SafeArea(
-        child: Stack(
-          children: <Widget>[
-            Image.asset('assets/images/gold_title.png'),
-
-            Column(
-              children: <Widget>[
-                SizedBox(height: context.screenSize.height * 0.38),
-
-                _buildInputCard(),
-
-                const SizedBox(height: 20),
-
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      body: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => FocusScope.of(context).unfocus(),
+        child: SafeArea(
+          child: Stack(
+            children: <Widget>[
+              Image.asset('assets/images/gold_title.png'),
+              SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
-                    ElevatedButton(
-                      onPressed: () {
-                        _userIdController.text = 'testuser';
-                        _passwordController.text = 'password123';
-                      },
-                      child: const Text('dummy'),
-                    ),
+                    SizedBox(height: context.screenSize.height * 0.38),
+                    _buildInputCard(),
+                    const SizedBox(height: 20),
+                    Row(
+                      children: <Widget>[
+                        ElevatedButton(
+                          onPressed: () {
+                            _userIdController.text = 'testuser';
+                            _passwordController.text = 'password123';
+                          },
+                          child: const Text('testuser'),
+                        ),
 
-                    const SizedBox.shrink(),
+                        const SizedBox(width: 10),
+
+                        ElevatedButton(
+                          onPressed: () {
+                            _userIdController.text = 'hidechy';
+                            _passwordController.text = 'hidechy4819';
+                          },
+                          child: const Text('toyoda'),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: <Widget>[
+                        TextButton(
+                          onPressed: _isLoading ? null : _goToSignup,
+                          child: const Text('SIGN UP', style: TextStyle(color: Colors.white70)),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
                   ],
                 ),
-              ],
-            ),
-
-            Positioned(
-              bottom: 70,
-              left: 20,
-              right: 20,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: <Widget>[
-                  TextButton(
-                    onPressed: _isLoading ? null : _goToSignup,
-                    child: const Text('SIGN UP', style: TextStyle(color: Colors.white70)),
-                  ),
-                ],
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -227,9 +233,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     showDialog<void>(
       context: context,
       builder: (_) => AlertDialog(
-        backgroundColor: Colors.grey[900],
-        title: const Text('エラー', style: TextStyle(color: Colors.white)),
-        content: Text(message, style: const TextStyle(color: Colors.white70)),
+        backgroundColor: Colors.black.withValues(alpha: 0.2),
+        title: const Text('エラー', style: TextStyle(color: Colors.white, fontSize: 14)),
+        content: Text(message, style: const TextStyle(color: Colors.white70, fontSize: 12)),
         actions: <Widget>[
           TextButton(
             onPressed: () => Navigator.pop(context),

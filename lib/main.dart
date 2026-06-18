@@ -51,9 +51,18 @@ class AppRootState extends State<AppRoot> {
   String _reloadName = '';
   int _reloadRace = 0;
   bool _reloadIsRankingDialogOpen = false;
+  late bool _isLoggedIn;
+
+  @override
+  void initState() {
+    super.initState();
+    _isLoggedIn = widget.isLoggedIn;
+  }
 
   Future<void> restartApp() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
+
+    _isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
 
     _reloadDate = prefs.getString('reload_selected_schedule_date') ?? '';
     _reloadKbd = prefs.getString('reload_selected_schedule_kaisuu_basho_day') ?? '';
@@ -84,7 +93,7 @@ class AppRootState extends State<AppRoot> {
       reloadRace: _reloadRace,
       reloadIsRankingDialogOpen: _reloadIsRankingDialogOpen,
       queryUser: widget.queryUser,
-      isLoggedIn: widget.isLoggedIn,
+      isLoggedIn: _isLoggedIn,
     );
   }
 }

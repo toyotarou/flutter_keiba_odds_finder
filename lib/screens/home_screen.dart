@@ -523,7 +523,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
           width: context.screenSize.width * 0.7,
           margin: const EdgeInsets.only(bottom: 5),
           padding: const EdgeInsets.all(5),
-          decoration: BoxDecoration(color: Colors.green[900]!.withValues(alpha: 0.4)),
+          decoration: BoxDecoration(
+            color: Colors.green[900]!.withValues(alpha: 0.4),
+            border: Border.all(color: Colors.yellowAccent.withValues(alpha: 0.4)),
+          ),
           child: DefaultTextStyle(
             style: const TextStyle(fontSize: 10, color: Colors.white),
             child: Column(
