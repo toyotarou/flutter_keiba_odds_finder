@@ -12,7 +12,7 @@ import 'signup_screen.dart';
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key, required this.onLoginSuccess});
 
-  final VoidCallback onLoginSuccess;
+  final void Function(String userId) onLoginSuccess;
 
   @override
   ConsumerState<LoginScreen> createState() => _LoginScreenState();
@@ -206,12 +206,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               as Map<String, dynamic>;
 
       if (data['success'] == true) {
+        final String loggedInUserId = data['user_id'] as String;
         final SharedPreferences prefs = await SharedPreferences.getInstance();
-        await prefs.setBool('isLoggedIn', true);
-        await prefs.setString('loggedInUserId', data['user_id'] as String);
+        await prefs.setString('loggedInUserId', loggedInUserId);
 
         if (mounted) {
-          widget.onLoginSuccess();
+          widget.onLoginSuccess(loggedInUserId);
         }
       } else if (data['message'] == 'unverified') {
         _showError('メールアドレスの確認が完了していません。\n届いたメール内のリンクをクリックしてください。');

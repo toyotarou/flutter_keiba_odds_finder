@@ -38,6 +38,7 @@ class HomeScreen extends ConsumerStatefulWidget {
     required this.summaryMap,
     required this.summaryDateBashoMap,
     required this.raceResultMap,
+    required this.loggedInUserId,
     required this.onLogout,
   });
 
@@ -52,6 +53,7 @@ class HomeScreen extends ConsumerStatefulWidget {
   final Map<String, List<SummaryModel>> summaryMap;
   final Map<String, List<String>> summaryDateBashoMap;
   final Map<String, List<RaceResultModel>> raceResultMap;
+  final String loggedInUserId;
   final VoidCallback onLogout;
 
   @override
@@ -155,8 +157,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
 
     if ((confirmed ?? false) && mounted) {
       final SharedPreferences prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('isLoggedIn', false);
-      await prefs.remove('loggedInUserId');
+      await prefs.setString('loggedInUserId', '');
       widget.onLogout();
     }
   }
@@ -879,6 +880,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
 
                           Row(
                             children: <Widget>[
+                              Text(widget.loggedInUserId, style: const TextStyle(color: Colors.white70, fontSize: 12)),
+                              const SizedBox(width: 10),
+
                               GestureDetector(
                                 onTap: () {
                                   appParamNotifier.setSelectedDrawerRace(race: '');

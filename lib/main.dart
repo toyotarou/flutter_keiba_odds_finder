@@ -20,7 +20,7 @@ Future<void> main() async {
   }
 
   final SharedPreferences prefs = await SharedPreferences.getInstance();
-  final bool isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
+  final String loggedInUserId = (prefs.getString('loggedInUserId') ?? '').trim();
 
   await SystemChrome.setPreferredOrientations(<DeviceOrientation>[
     DeviceOrientation.portraitUp,
@@ -29,16 +29,16 @@ Future<void> main() async {
 
   runApp(
     ProviderScope(
-      child: AppRoot(queryUser: queryUser, isLoggedIn: isLoggedIn),
+      child: AppRoot(queryUser: queryUser, loggedInUserId: loggedInUserId),
     ),
   );
 }
 
 class AppRoot extends StatefulWidget {
-  const AppRoot({super.key, this.queryUser, required this.isLoggedIn});
+  const AppRoot({super.key, this.queryUser, required this.loggedInUserId});
 
   final String? queryUser;
-  final bool isLoggedIn;
+  final String loggedInUserId;
 
   @override
   State<AppRoot> createState() => AppRootState();
@@ -51,18 +51,18 @@ class AppRootState extends State<AppRoot> {
   String _reloadName = '';
   int _reloadRace = 0;
   bool _reloadIsRankingDialogOpen = false;
-  late bool _isLoggedIn;
+  late String _loggedInUserId;
 
   @override
   void initState() {
     super.initState();
-    _isLoggedIn = widget.isLoggedIn;
+    _loggedInUserId = widget.loggedInUserId;
   }
 
   Future<void> restartApp() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
 
-    _isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
+    _loggedInUserId = (prefs.getString('loggedInUserId') ?? '').trim();
 
     _reloadDate = prefs.getString('reload_selected_schedule_date') ?? '';
     _reloadKbd = prefs.getString('reload_selected_schedule_kaisuu_basho_day') ?? '';
@@ -93,7 +93,7 @@ class AppRootState extends State<AppRoot> {
       reloadRace: _reloadRace,
       reloadIsRankingDialogOpen: _reloadIsRankingDialogOpen,
       queryUser: widget.queryUser,
-      isLoggedIn: _isLoggedIn,
+      loggedInUserId: _loggedInUserId,
     );
   }
 }
@@ -108,7 +108,7 @@ class MyApp extends ConsumerStatefulWidget {
     required this.reloadRace,
     required this.reloadIsRankingDialogOpen,
     this.queryUser,
-    required this.isLoggedIn,
+    required this.loggedInUserId,
   });
 
   // ignore: unreachable_from_main
@@ -119,21 +119,21 @@ class MyApp extends ConsumerStatefulWidget {
   final int reloadRace;
   final bool reloadIsRankingDialogOpen;
   final String? queryUser;
-  final bool isLoggedIn;
+  final String loggedInUserId;
 
   @override
   ConsumerState<MyApp> createState() => _MyAppState();
 }
 
 class _MyAppState extends ConsumerState<MyApp> with ControllersMixin<MyApp> {
-  late bool _isLoggedIn;
+  late String _loggedInUserId;
 
   ///
   @override
   void initState() {
     super.initState();
 
-    _isLoggedIn = widget.isLoggedIn;
+    _loggedInUserId = widget.loggedInUserId;
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (widget.queryUser != null && widget.queryUser!.isNotEmpty) {
@@ -179,7 +179,7 @@ class _MyAppState extends ConsumerState<MyApp> with ControllersMixin<MyApp> {
       debugShowCheckedModeBanner: false,
       home: GestureDetector(
         onTap: () => primaryFocus?.unfocus(),
-        child: _isLoggedIn
+        child: _loggedInUserId.isNotEmpty
             ? HomeScreen(
                 scheduleDateBashoMap: scheduleState.scheduleDateBashoMap,
                 raceMap: raceState.raceMap,
@@ -192,9 +192,10 @@ class _MyAppState extends ConsumerState<MyApp> with ControllersMixin<MyApp> {
                 summaryMap: summaryState.summaryMap,
                 summaryDateBashoMap: summaryState.summaryDateBashoMap,
                 raceResultMap: raceResultState.raceResultMap,
-                onLogout: () => setState(() => _isLoggedIn = false),
+                loggedInUserId: _loggedInUserId,
+                onLogout: () => setState(() => _loggedInUserId = ''),
               )
-            : LoginScreen(onLoginSuccess: () => setState(() => _isLoggedIn = true)),
+            : LoginScreen(onLoginSuccess: (String userId) => setState(() => _loggedInUserId = userId)),
       ),
     );
   }
