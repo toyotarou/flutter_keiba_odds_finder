@@ -68,4 +68,26 @@ class LoginUser extends _$LoginUser {
   }
 
   //============================================== api
+
+  ///
+  Future<void> changeAdmin({required int id, required int isAdmin}) async {
+    final HttpClient client = ref.read(httpClientProvider);
+
+    try {
+      await client.post(path: APIPath.changeAdmin, body: <String, dynamic>{'id': id, 'is_admin': isAdmin});
+    } catch (e) {
+      utility.showError('予期せぬエラーが発生しました');
+    }
+  }
+
+  ///
+  Future<void> changeDelete({required int id, required int isDelete}) async {
+    final HttpClient client = ref.read(httpClientProvider);
+
+    try {
+      await client.post(path: APIPath.changeDelete, body: <String, dynamic>{'id': id, 'is_delete': isDelete});
+    } catch (e) {
+      utility.showError('予期せぬエラーが発生しました');
+    }
+  }
 }
