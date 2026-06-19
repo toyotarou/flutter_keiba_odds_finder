@@ -23,6 +23,7 @@ import 'components/horse_detail_display_alert.dart';
 import 'components/horse_odds_ranking_display_alert.dart';
 import 'components/horse_odds_wide_display_alert.dart';
 import 'components/login_user_list_display_alert.dart';
+import 'parts/error_confirm_dialog.dart';
 import 'parts/odds_finder_dialog.dart';
 import 'parts/odds_up_down_icon.dart';
 
@@ -141,30 +142,27 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
   }
 
   ///
-  Future<void> _confirmLogout() async {
-    final bool? confirmed = await showDialog<bool>(
+  void _confirmLogout() {
+    errorConfirmDialog(
       context: context,
-      builder: (_) => AlertDialog(
-        backgroundColor: Colors.black.withValues(alpha: 0.2),
-        content: const Text('ログアウトします。よろしいですか？', style: TextStyle(color: Colors.white, fontSize: 12)),
-        actions: <Widget>[
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('いいえ', style: TextStyle(color: Colors.white54, fontSize: 12)),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('はい', style: TextStyle(color: Colors.greenAccent, fontSize: 12)),
-          ),
-        ],
-      ),
+      title: '確認',
+      content: 'ログアウトします。よろしいですか？',
+      actions: <Widget>[
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('いいえ', style: TextStyle(color: Colors.white54, fontSize: 12)),
+        ),
+        TextButton(
+          onPressed: () async {
+            Navigator.pop(context);
+            final SharedPreferences prefs = await SharedPreferences.getInstance();
+            await prefs.setString('loggedInUserId', '');
+            widget.onLogout();
+          },
+          child: const Text('はい', style: TextStyle(color: Colors.greenAccent, fontSize: 12)),
+        ),
+      ],
     );
-
-    if ((confirmed ?? false) && mounted) {
-      final SharedPreferences prefs = await SharedPreferences.getInstance();
-      await prefs.setString('loggedInUserId', '');
-      widget.onLogout();
-    }
   }
 
   ///
@@ -889,8 +887,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                               if (appParamState.keepLoginUserMap[widget.loggedInUserId] != null &&
                                   appParamState.keepLoginUserMap[widget.loggedInUserId]!.isAdmin == 1) ...<Widget>[
                                 GestureDetector(
-                                  onTap: () =>
-                                      OddsFinderDialog(context: context, widget: const LoginUserListDisplayAlert()),
+                                  onTap: () => OddsFinderDialog(
+                                    context: context,
+                                    widget: LoginUserListDisplayAlert(loggedInUserId: widget.loggedInUserId),
+                                  ),
 
                                   child: Icon(Icons.person, color: Colors.white.withValues(alpha: 0.5)),
                                 ),

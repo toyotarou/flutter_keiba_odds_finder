@@ -5,7 +5,9 @@ import '../../controllers/controllers_mixin.dart';
 import '../../models/login_user_model.dart';
 
 class LoginUserListDisplayAlert extends ConsumerStatefulWidget {
-  const LoginUserListDisplayAlert({super.key});
+  const LoginUserListDisplayAlert({super.key, required this.loggedInUserId});
+
+  final String loggedInUserId;
 
   @override
   ConsumerState<LoginUserListDisplayAlert> createState() => _LoginUserListDisplayAlertState();

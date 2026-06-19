@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../data/http/client.dart';
 import '../data/http/path.dart';
 import '../extensions/extensions.dart';
+import 'parts/error_confirm_dialog.dart';
 import 'signup_screen.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -193,7 +194,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final String password = _passwordController.text.trim();
 
     if (userId.isEmpty || password.isEmpty) {
-      _showError('ユーザーIDとパスワードを入力してください。');
+      errorConfirmDialog(context: context, title: 'エラー', content: 'ユーザーIDとパスワードを入力してください。');
       return;
     }
 
@@ -214,37 +215,25 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           widget.onLoginSuccess(loggedInUserId);
         }
       } else if (data['message'] == 'unverified') {
-        _showError('メールアドレスの確認が完了していません。\n届いたメール内のリンクをクリックしてください。');
+        if (!mounted) {
+          return;
+        }
+        errorConfirmDialog(context: context, title: 'エラー', content: 'メールアドレスの確認が完了していません。\n届いたメール内のリンクをクリックしてください。');
       } else {
-        _showError('ユーザーIDまたはパスワードが正しくありません。');
+        if (!mounted) {
+          return;
+        }
+        errorConfirmDialog(context: context, title: 'エラー', content: 'ユーザーIDまたはパスワードが正しくありません。');
       }
     } catch (_) {
-      _showError('ログインに失敗しました。通信環境を確認してください。');
+      if (!mounted) {
+        return;
+      }
+      errorConfirmDialog(context: context, title: 'エラー', content: 'ログインに失敗しました。通信環境を確認してください。');
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
       }
     }
-  }
-
-  ///
-  void _showError(String message) {
-    if (!mounted) {
-      return;
-    }
-    showDialog<void>(
-      context: context,
-      builder: (_) => AlertDialog(
-        backgroundColor: Colors.black.withValues(alpha: 0.2),
-        title: const Text('エラー', style: TextStyle(color: Colors.white, fontSize: 14)),
-        content: Text(message, style: const TextStyle(color: Colors.white70, fontSize: 12)),
-        actions: <Widget>[
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('OK', style: TextStyle(color: Colors.greenAccent)),
-          ),
-        ],
-      ),
-    );
   }
 }

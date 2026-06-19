@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/http/client.dart';
 import '../data/http/path.dart';
 import '../extensions/extensions.dart';
+import 'parts/error_confirm_dialog.dart';
 
 class SignupScreen extends ConsumerStatefulWidget {
   const SignupScreen({super.key});
@@ -173,12 +174,12 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
     final String password = _passwordController.text.trim();
 
     if (userId.isEmpty || email.isEmpty || password.isEmpty) {
-      _showError('すべての項目を入力してください。');
+      errorConfirmDialog(context: context, title: 'エラー', content: 'すべての項目を入力してください。');
       return;
     }
 
     if (!email.contains('@')) {
-      _showError('正しいメールアドレスを入力してください。');
+      errorConfirmDialog(context: context, title: 'エラー', content: '正しいメールアドレスを入力してください。');
       return;
     }
 
@@ -188,68 +189,56 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
       final HttpClient client = ref.read(httpClientProvider);
       final Map<String, dynamic> data =
           (await client.post(
-            path: APIPath.signup,
-            body: <String, String>{'user_id': userId, 'email': email, 'password': password},
-          )) as Map<String, dynamic>;
+                path: APIPath.signup,
+                body: <String, String>{'user_id': userId, 'email': email, 'password': password},
+              ))
+              as Map<String, dynamic>;
 
       if (data['success'] == true) {
         if (mounted) {
           await showDialog<void>(
             context: context,
-            builder: (_) => AlertDialog(
-              backgroundColor: Colors.black.withOpacity(0.85),
-              title: const Text('確認メールを送信しました', style: TextStyle(color: Colors.white, fontSize: 14)),
-              content: const Text(
-                'メール内のリンクをクリックして認証を完了してから、ログインしてください。',
-                style: TextStyle(color: Colors.white70, fontSize: 12),
-              ),
-              actions: <Widget>[
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('OK', style: TextStyle(color: Colors.greenAccent)),
+            builder: (_) {
+              return AlertDialog(
+                backgroundColor: Colors.black.withOpacity(0.85),
+                title: const Text('確認メールを送信しました', style: TextStyle(color: Colors.white, fontSize: 14)),
+                content: const Text(
+                  'メール内のリンクをクリックして認証を完了してから、ログインしてください。',
+                  style: TextStyle(color: Colors.white70, fontSize: 12),
                 ),
-              ],
-            ),
+                actions: <Widget>[
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('OK', style: TextStyle(color: Colors.greenAccent)),
+                  ),
+                ],
+              );
+            },
           );
           if (mounted) {
             Navigator.pop(context);
           }
         }
       } else {
+        if (!mounted) {
+          return;
+        }
         final String msg = (data['message'] as String?) ?? '';
         if (msg.contains('email') || msg.contains('メールアドレス')) {
-          _showError('すでに登録済みのメールアドレスです。');
+          errorConfirmDialog(context: context, title: 'エラー', content: 'すでに登録済みのメールアドレスです。');
         } else {
-          _showError('登録できませんでした。すでに使われているユーザーIDかもしれません。');
+          errorConfirmDialog(context: context, title: 'エラー', content: '登録できませんでした。すでに使われているユーザーIDかもしれません。');
         }
       }
     } catch (_) {
-      _showError('登録に失敗しました。通信環境を確認してください。');
+      if (!mounted) {
+        return;
+      }
+      errorConfirmDialog(context: context, title: 'エラー', content: '登録に失敗しました。通信環境を確認してください。');
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
       }
     }
-  }
-
-  ///
-  void _showError(String message) {
-    if (!mounted) {
-      return;
-    }
-    showDialog<void>(
-      context: context,
-      builder: (_) => AlertDialog(
-        backgroundColor: Colors.black.withValues(alpha: 0.2),
-        title: const Text('エラー', style: TextStyle(color: Colors.white, fontSize: 14)),
-        content: Text(message, style: const TextStyle(color: Colors.white70, fontSize: 12)),
-        actions: <Widget>[
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('OK', style: TextStyle(color: Colors.greenAccent)),
-          ),
-        ],
-      ),
-    );
   }
 }
