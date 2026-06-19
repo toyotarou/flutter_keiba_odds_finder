@@ -22,6 +22,7 @@ import '../utility/utility.dart';
 import 'components/horse_detail_display_alert.dart';
 import 'components/horse_odds_ranking_display_alert.dart';
 import 'components/horse_odds_wide_display_alert.dart';
+import 'components/login_user_list_display_alert.dart';
 import 'parts/odds_finder_dialog.dart';
 import 'parts/odds_up_down_icon.dart';
 
@@ -55,7 +56,7 @@ class HomeScreen extends ConsumerStatefulWidget {
   final Map<String, List<SummaryModel>> summaryMap;
   final Map<String, List<String>> summaryDateBashoMap;
   final Map<String, List<RaceResultModel>> raceResultMap;
-  final Map<String, List<LoginUserModel>> loginUserMap;
+  final Map<String, LoginUserModel> loginUserMap;
   final String loggedInUserId;
   final VoidCallback onLogout;
 
@@ -885,8 +886,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
 
                           Row(
                             children: <Widget>[
-                              Text(widget.loggedInUserId, style: const TextStyle(color: Colors.white70, fontSize: 12)),
-                              const SizedBox(width: 10),
+                              if (appParamState.keepLoginUserMap[widget.loggedInUserId] != null &&
+                                  appParamState.keepLoginUserMap[widget.loggedInUserId]!.isAdmin == 1) ...<Widget>[
+                                GestureDetector(
+                                  onTap: () =>
+                                      OddsFinderDialog(context: context, widget: const LoginUserListDisplayAlert()),
+
+                                  child: Icon(Icons.person, color: Colors.white.withValues(alpha: 0.5)),
+                                ),
+                              ],
+
+                              const SizedBox(width: 20),
 
                               GestureDetector(
                                 onTap: () {
@@ -901,7 +911,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
 
                               GestureDetector(
                                 onTap: _confirmLogout,
-                                child: const Icon(Icons.logout, color: Colors.white54),
+                                child: Icon(Icons.logout, color: Colors.white.withValues(alpha: 0.5)),
                               ),
 
                               const SizedBox(width: 10),

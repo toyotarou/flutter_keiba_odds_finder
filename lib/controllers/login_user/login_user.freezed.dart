@@ -17,7 +17,7 @@ final _privateConstructorUsedError = UnsupportedError(
 /// @nodoc
 mixin _$LoginUserState {
   List<LoginUserModel> get loginUserList => throw _privateConstructorUsedError;
-  Map<String, List<LoginUserModel>> get loginUserMap =>
+  Map<String, LoginUserModel> get loginUserMap =>
       throw _privateConstructorUsedError;
 
   @JsonKey(ignore: true)
@@ -33,7 +33,7 @@ abstract class $LoginUserStateCopyWith<$Res> {
   @useResult
   $Res call(
       {List<LoginUserModel> loginUserList,
-      Map<String, List<LoginUserModel>> loginUserMap});
+      Map<String, LoginUserModel> loginUserMap});
 }
 
 /// @nodoc
@@ -60,7 +60,7 @@ class _$LoginUserStateCopyWithImpl<$Res, $Val extends LoginUserState>
       loginUserMap: null == loginUserMap
           ? _value.loginUserMap
           : loginUserMap // ignore: cast_nullable_to_non_nullable
-              as Map<String, List<LoginUserModel>>,
+              as Map<String, LoginUserModel>,
     ) as $Val);
   }
 }
@@ -75,7 +75,7 @@ abstract class _$$LoginUserStateImplCopyWith<$Res>
   @useResult
   $Res call(
       {List<LoginUserModel> loginUserList,
-      Map<String, List<LoginUserModel>> loginUserMap});
+      Map<String, LoginUserModel> loginUserMap});
 }
 
 /// @nodoc
@@ -100,7 +100,7 @@ class __$$LoginUserStateImplCopyWithImpl<$Res>
       loginUserMap: null == loginUserMap
           ? _value._loginUserMap
           : loginUserMap // ignore: cast_nullable_to_non_nullable
-              as Map<String, List<LoginUserModel>>,
+              as Map<String, LoginUserModel>,
     ));
   }
 }
@@ -110,8 +110,8 @@ class __$$LoginUserStateImplCopyWithImpl<$Res>
 class _$LoginUserStateImpl implements _LoginUserState {
   const _$LoginUserStateImpl(
       {final List<LoginUserModel> loginUserList = const <LoginUserModel>[],
-      final Map<String, List<LoginUserModel>> loginUserMap =
-          const <String, List<LoginUserModel>>{}})
+      final Map<String, LoginUserModel> loginUserMap =
+          const <String, LoginUserModel>{}})
       : _loginUserList = loginUserList,
         _loginUserMap = loginUserMap;
 
@@ -124,10 +124,10 @@ class _$LoginUserStateImpl implements _LoginUserState {
     return EqualUnmodifiableListView(_loginUserList);
   }
 
-  final Map<String, List<LoginUserModel>> _loginUserMap;
+  final Map<String, LoginUserModel> _loginUserMap;
   @override
   @JsonKey()
-  Map<String, List<LoginUserModel>> get loginUserMap {
+  Map<String, LoginUserModel> get loginUserMap {
     if (_loginUserMap is EqualUnmodifiableMapView) return _loginUserMap;
     // ignore: implicit_dynamic_type
     return EqualUnmodifiableMapView(_loginUserMap);
@@ -165,14 +165,13 @@ class _$LoginUserStateImpl implements _LoginUserState {
 
 abstract class _LoginUserState implements LoginUserState {
   const factory _LoginUserState(
-          {final List<LoginUserModel> loginUserList,
-          final Map<String, List<LoginUserModel>> loginUserMap}) =
-      _$LoginUserStateImpl;
+      {final List<LoginUserModel> loginUserList,
+      final Map<String, LoginUserModel> loginUserMap}) = _$LoginUserStateImpl;
 
   @override
   List<LoginUserModel> get loginUserList;
   @override
-  Map<String, List<LoginUserModel>> get loginUserMap;
+  Map<String, LoginUserModel> get loginUserMap;
   @override
   @JsonKey(ignore: true)
   _$$LoginUserStateImplCopyWith<_$LoginUserStateImpl> get copyWith =>

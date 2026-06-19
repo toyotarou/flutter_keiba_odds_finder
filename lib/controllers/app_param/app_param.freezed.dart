@@ -30,7 +30,7 @@ mixin _$AppParamState {
       throw _privateConstructorUsedError;
   Map<String, List<String>> get keepSummaryDateBashoMap =>
       throw _privateConstructorUsedError;
-  Map<String, List<LoginUserModel>> get keepLoginUserMap =>
+  Map<String, LoginUserModel> get keepLoginUserMap =>
       throw _privateConstructorUsedError;
 
   ///
@@ -69,7 +69,7 @@ abstract class $AppParamStateCopyWith<$Res> {
       Map<String, List<OddsWideModel>> keepOddsWideMap,
       Map<String, List<SummaryModel>> keepSummaryMap,
       Map<String, List<String>> keepSummaryDateBashoMap,
-      Map<String, List<LoginUserModel>> keepLoginUserMap,
+      Map<String, LoginUserModel> keepLoginUserMap,
       String configOddsGetTiming,
       String selectedScheduleDate,
       String selectedScheduleKaisuuBashoDay,
@@ -148,7 +148,7 @@ class _$AppParamStateCopyWithImpl<$Res, $Val extends AppParamState>
       keepLoginUserMap: null == keepLoginUserMap
           ? _value.keepLoginUserMap
           : keepLoginUserMap // ignore: cast_nullable_to_non_nullable
-              as Map<String, List<LoginUserModel>>,
+              as Map<String, LoginUserModel>,
       configOddsGetTiming: null == configOddsGetTiming
           ? _value.configOddsGetTiming
           : configOddsGetTiming // ignore: cast_nullable_to_non_nullable
@@ -214,7 +214,7 @@ abstract class _$$AppParamStateImplCopyWith<$Res>
       Map<String, List<OddsWideModel>> keepOddsWideMap,
       Map<String, List<SummaryModel>> keepSummaryMap,
       Map<String, List<String>> keepSummaryDateBashoMap,
-      Map<String, List<LoginUserModel>> keepLoginUserMap,
+      Map<String, LoginUserModel> keepLoginUserMap,
       String configOddsGetTiming,
       String selectedScheduleDate,
       String selectedScheduleKaisuuBashoDay,
@@ -291,7 +291,7 @@ class __$$AppParamStateImplCopyWithImpl<$Res>
       keepLoginUserMap: null == keepLoginUserMap
           ? _value._keepLoginUserMap
           : keepLoginUserMap // ignore: cast_nullable_to_non_nullable
-              as Map<String, List<LoginUserModel>>,
+              as Map<String, LoginUserModel>,
       configOddsGetTiming: null == configOddsGetTiming
           ? _value.configOddsGetTiming
           : configOddsGetTiming // ignore: cast_nullable_to_non_nullable
@@ -359,8 +359,8 @@ class _$AppParamStateImpl implements _AppParamState {
           const <String, List<SummaryModel>>{},
       final Map<String, List<String>> keepSummaryDateBashoMap =
           const <String, List<String>>{},
-      final Map<String, List<LoginUserModel>> keepLoginUserMap =
-          const <String, List<LoginUserModel>>{},
+      final Map<String, LoginUserModel> keepLoginUserMap =
+          const <String, LoginUserModel>{},
       this.configOddsGetTiming = '',
       this.selectedScheduleDate = '',
       this.selectedScheduleKaisuuBashoDay = '',
@@ -446,10 +446,10 @@ class _$AppParamStateImpl implements _AppParamState {
     return EqualUnmodifiableMapView(_keepSummaryDateBashoMap);
   }
 
-  final Map<String, List<LoginUserModel>> _keepLoginUserMap;
+  final Map<String, LoginUserModel> _keepLoginUserMap;
   @override
   @JsonKey()
-  Map<String, List<LoginUserModel>> get keepLoginUserMap {
+  Map<String, LoginUserModel> get keepLoginUserMap {
     if (_keepLoginUserMap is EqualUnmodifiableMapView) return _keepLoginUserMap;
     // ignore: implicit_dynamic_type
     return EqualUnmodifiableMapView(_keepLoginUserMap);
@@ -586,7 +586,7 @@ abstract class _AppParamState implements AppParamState {
       final Map<String, List<OddsWideModel>> keepOddsWideMap,
       final Map<String, List<SummaryModel>> keepSummaryMap,
       final Map<String, List<String>> keepSummaryDateBashoMap,
-      final Map<String, List<LoginUserModel>> keepLoginUserMap,
+      final Map<String, LoginUserModel> keepLoginUserMap,
       final String configOddsGetTiming,
       final String selectedScheduleDate,
       final String selectedScheduleKaisuuBashoDay,
@@ -614,7 +614,7 @@ abstract class _AppParamState implements AppParamState {
   @override
   Map<String, List<String>> get keepSummaryDateBashoMap;
   @override
-  Map<String, List<LoginUserModel>> get keepLoginUserMap;
+  Map<String, LoginUserModel> get keepLoginUserMap;
   @override
 
   ///

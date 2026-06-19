@@ -31,7 +31,7 @@ class AppParamState with _$AppParamState {
 
     @Default(<String, List<String>>{}) Map<String, List<String>> keepSummaryDateBashoMap,
 
-    @Default(<String, List<LoginUserModel>>{}) Map<String, List<LoginUserModel>> keepLoginUserMap,
+    @Default(<String, LoginUserModel>{}) Map<String, LoginUserModel> keepLoginUserMap,
 
     ///
     @Default('') String configOddsGetTiming,
@@ -92,8 +92,7 @@ class AppParam extends _$AppParam {
       state = state.copyWith(keepSummaryDateBashoMap: map);
 
   ///
-  void setKeepLoginUserMap({required Map<String, List<LoginUserModel>> map}) =>
-      state = state.copyWith(keepLoginUserMap: map);
+  void setKeepLoginUserMap({required Map<String, LoginUserModel> map}) => state = state.copyWith(keepLoginUserMap: map);
 
   //////////////
 

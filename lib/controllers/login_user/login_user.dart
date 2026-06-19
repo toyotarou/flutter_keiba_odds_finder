@@ -15,7 +15,7 @@ part 'login_user.g.dart';
 class LoginUserState with _$LoginUserState {
   const factory LoginUserState({
     @Default(<LoginUserModel>[]) List<LoginUserModel> loginUserList,
-    @Default(<String, List<LoginUserModel>>{}) Map<String, List<LoginUserModel>> loginUserMap,
+    @Default(<String, LoginUserModel>{}) Map<String, LoginUserModel> loginUserMap,
   }) = _LoginUserState;
 }
 
@@ -36,7 +36,7 @@ class LoginUser extends _$LoginUser {
     try {
       final List<LoginUserModel> list = <LoginUserModel>[];
 
-      final Map<String, List<LoginUserModel>> map = <String, List<LoginUserModel>>{};
+      final Map<String, LoginUserModel> map = <String, LoginUserModel>{};
 
       // ignore: always_specify_types
       await client.get(path: APIPath.getHorseOddsFinderLoginUsers).then((value) {
@@ -47,7 +47,7 @@ class LoginUser extends _$LoginUser {
 
           list.add(val);
 
-          (map[val.userId] ??= <LoginUserModel>[]).add(val);
+          map[val.userId] = val;
         }
       });
 
