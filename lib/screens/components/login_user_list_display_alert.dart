@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../controllers/controllers_mixin.dart';
 import '../../models/login_user_model.dart';
+import '../parts/error_confirm_dialog.dart';
 
 class LoginUserListDisplayAlert extends ConsumerStatefulWidget {
   const LoginUserListDisplayAlert({super.key, required this.loggedInUserId});
@@ -28,9 +29,8 @@ class _LoginUserListDisplayAlertState extends ConsumerState<LoginUserListDisplay
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                const Text('ログインユーザーリスト'),
+                const Text('利用者リスト'),
                 Divider(color: Colors.white.withValues(alpha: 0.4), thickness: 5),
-
                 Expanded(child: displayLoginUserList()),
               ],
             ),
@@ -78,6 +78,11 @@ class _LoginUserListDisplayAlertState extends ConsumerState<LoginUserListDisplay
                       children: <Widget>[
                         GestureDetector(
                           onTap: () async {
+                            if (value.userId == widget.loggedInUserId) {
+                              errorConfirmDialog(context: context, title: 'エラー', content: 'ご自身の管理権限を変更することはできません');
+                              return;
+                            }
+
                             final int newIsAdmin = value.isAdmin == 1 ? 0 : 1;
 
                             await loginUserNotifier.changeAdmin(id: value.id, isAdmin: newIsAdmin);
@@ -110,6 +115,11 @@ class _LoginUserListDisplayAlertState extends ConsumerState<LoginUserListDisplay
 
                         GestureDetector(
                           onTap: () async {
+                            if (value.userId == widget.loggedInUserId) {
+                              errorConfirmDialog(context: context, title: 'エラー', content: 'ご自身の有効/無効を切り替えることはできません');
+                              return;
+                            }
+
                             final int newIsDelete = value.isDelete == 1 ? 0 : 1;
 
                             await loginUserNotifier.changeDelete(id: value.id, isDelete: newIsDelete);
