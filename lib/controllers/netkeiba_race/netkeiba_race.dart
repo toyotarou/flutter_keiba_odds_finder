@@ -60,7 +60,7 @@ class NetkeibaRace extends _$NetkeibaRace {
   }
 
   ///
-  Future<void> getAllNetkeibaRaceData() async {
+  Future<void> get__AllNetkeibaRaceData() async {
     try {
       final NetkeibaRaceState newState = await fetchAllNetkeibaRaceData();
 

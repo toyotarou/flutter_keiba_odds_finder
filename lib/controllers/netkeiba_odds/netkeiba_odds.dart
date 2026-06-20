@@ -60,7 +60,7 @@ class NetkeibaOdds extends _$NetkeibaOdds {
   }
 
   ///
-  Future<void> getAllNetkeibaOddsData() async {
+  Future<void> get__AllNetkeibaOddsData() async {
     try {
       final NetkeibaOddsState newState = await fetchAllNetkeibaOddsData();
 
