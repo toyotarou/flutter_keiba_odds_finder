@@ -4,8 +4,8 @@ import 'app_param/app_param.dart';
 import 'horse/horse.dart';
 import 'laravel_config/laravel_config.dart';
 import 'login_user/login_user.dart';
-import 'netkeiba_odds/netkeiba_odds.dart';
-import 'netkeiba_race/netkeiba_race.dart';
+// import 'netkeiba_odds/netkeiba_odds.dart';
+// import 'netkeiba_race/netkeiba_race.dart';
 import 'odds/odds.dart';
 import 'odds_get_timing/odds_get_timing.dart';
 import 'odds_wide/odds_wide.dart';
@@ -59,21 +59,21 @@ mixin ControllersMixin<T extends ConsumerStatefulWidget> on ConsumerState<T> {
 
   //==========================================//
 
-  //==========================================//
-
-  NetkeibaOddsState get netkeibaOddsState => ref.watch(netkeibaOddsProvider);
-
-  NetkeibaOdds get netkeibaOddsNotifier => ref.read(netkeibaOddsProvider.notifier);
-
-  //==========================================//
-
-  //==========================================//
-
-  NetkeibaRaceState get netkeibaRaceState => ref.watch(netkeibaRaceProvider);
-
-  NetkeibaRace get netkeibaRaceNotifier => ref.read(netkeibaRaceProvider.notifier);
-
-  //==========================================//
+  // //==========================================//
+  //
+  // NetkeibaOddsState get netkeibaOddsState => ref.watch(netkeibaOddsProvider);
+  //
+  // NetkeibaOdds get netkeibaOddsNotifier => ref.read(netkeibaOddsProvider.notifier);
+  //
+  // //==========================================//
+  //
+  // //==========================================//
+  //
+  // NetkeibaRaceState get netkeibaRaceState => ref.watch(netkeibaRaceProvider);
+  //
+  // NetkeibaRace get netkeibaRaceNotifier => ref.read(netkeibaRaceProvider.notifier);
+  //
+  // //==========================================//
 
   //==========================================//
 
