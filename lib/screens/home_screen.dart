@@ -22,7 +22,10 @@ import '../models/summary_model.dart';
 import '../utility/utility.dart';
 import 'components/horse_detail_display_alert.dart';
 import 'components/horse_odds_ranking_display_alert.dart';
-import 'components/horse_odds_wide_display_alert.dart';
+
+// 一応残しておく
+// import 'components/horse_odds_wide_display_alert.dart';
+
 import 'components/login_user_list_display_alert.dart';
 import 'parts/error_confirm_dialog.dart';
 import 'parts/odds_finder_dialog.dart';
@@ -1369,6 +1372,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
 
     final Map<int, Color> horseWakuColorMap = _utility.getHorseWakuColorMap();
 
+    final List<MapEntry<int, double>> fukuSortable =
+        displayList
+            .where((OddsModel o) => double.tryParse(o.fukuMin) != null)
+            .map((OddsModel o) => MapEntry<int, double>(o.num, double.parse(o.fukuMin)))
+            .toList()
+          ..sort((MapEntry<int, double> a, MapEntry<int, double> b) => a.value.compareTo(b.value));
+    final Map<int, int> fukuRankMap = <int, int>{
+      for (int i = 0; i < fukuSortable.length; i++) fukuSortable[i].key: i + 1,
+    };
+
     return ListView.builder(
       controller: _horseListScrollController,
       itemCount: displayList.length,
@@ -1392,6 +1405,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
             activeTimingKey: activeTimingKey,
             selectedTiming: selectedTiming,
             nextOddsTimeline: index + 1 < displayList.length ? oddsTimelineMap[displayList[index + 1].num] : null,
+            fukuRank: fukuRankMap[element.num],
           ),
         );
       },
@@ -1456,6 +1470,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
     required String activeTimingKey,
     required String selectedTiming,
     List<String>? nextOddsTimeline,
+    int? fukuRank,
   }) {
     final int popularity = index + 1;
     final HorseModel? horse = horseModelMap[element.num];
@@ -1493,7 +1508,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              _buildHorseItemHeader(popularity: popularity, horse: horse),
+              _buildHorseItemHeader(popularity: popularity, horse: horse, fukuRank: fukuRank),
               const SizedBox(height: 10),
               _buildHorseNameRow(element: element, horse: horse, horseWakuColorMap: horseWakuColorMap),
               if (oddsTimeline != null) ...<Widget>[
@@ -1517,55 +1532,96 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
   }
 
   ///
-  Widget _buildHorseItemHeader({required int popularity, required HorseModel? horse}) {
+  Widget _buildHorseItemHeader({required int popularity, required HorseModel? horse, int? fukuRank}) {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: <Widget>[
-        Container(
-          margin: const EdgeInsets.only(top: 5, left: 15),
-          padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 20),
-          decoration: BoxDecoration(
-            border: Border.all(color: Colors.greenAccent.withValues(alpha: 0.5)),
-            borderRadius: BorderRadius.circular(3),
-          ),
-          child: Row(
-            children: <Widget>[
-              SizedBox(
-                width: 20,
-                child: Text(popularity.toString(), style: TextStyle(color: Colors.green[500])),
-              ),
-              Text('番人気', style: TextStyle(color: Colors.green[500])),
-            ],
-          ),
-        ),
-
-        if (appParamState.queryUser == 'hidechy') ...<Widget>[
-          GestureDetector(
-            onTap: () {
-              final String timing =
-                  <String>[
-                    appParamState.selectedTiming,
-                    appParamState.selectedTiming2,
-                  ].where((String e) => e.isNotEmpty).firstOrNull ??
-                  '';
-              OddsFinderDialog(
-                context: context,
-                widget: HorseOddsWideDisplayAlert(timing: timing, horse: horse),
-              );
-            },
-            child: Container(
+        Stack(
+          children: <Widget>[
+            Container(
+              margin: const EdgeInsets.only(top: 10, left: 15),
+              padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
               decoration: BoxDecoration(
-                color: Colors.orangeAccent.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: Colors.greenAccent.withValues(alpha: 0.5)),
+                borderRadius: BorderRadius.circular(3),
               ),
-              padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 20),
-              child: const Text(
-                'WIDE',
-                style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+              child: Row(
+                children: <Widget>[
+                  SizedBox(
+                    width: 20,
+                    child: Text(popularity.toString(), style: TextStyle(color: Colors.green[500])),
+                  ),
+                  Text('番人気', style: TextStyle(color: Colors.green[500])),
+                ],
               ),
             ),
+
+            Positioned(
+              left: 15,
+              child: Text('単勝', style: TextStyle(fontSize: 10, color: Colors.green[500])),
+            ),
+          ],
+        ),
+
+        if (fukuRank != null) ...<Widget>[
+          Stack(
+            children: <Widget>[
+              Container(
+                margin: const EdgeInsets.only(top: 10, left: 15),
+                padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.blueAccent.withValues(alpha: 0.5)),
+                  borderRadius: BorderRadius.circular(3),
+                ),
+                child: Row(
+                  children: <Widget>[
+                    const SizedBox(width: 6),
+                    SizedBox(
+                      width: 20,
+                      child: Text(fukuRank.toString(), style: const TextStyle(color: Colors.blue)),
+                    ),
+                    const Text('番人気', style: TextStyle(color: Colors.blue)),
+                  ],
+                ),
+              ),
+
+              const Positioned(
+                left: 15,
+                child: Text('複勝', style: TextStyle(fontSize: 10, color: Colors.blue)),
+              ),
+            ],
           ),
-        ] else ...<Widget>[const SizedBox.shrink()],
+        ],
+
+        /*
+        ///////////////// 一応残しておく
+        // if (appParamState.queryUser == 'hidechy') ...<Widget>[
+        //   GestureDetector(
+        //     onTap: () {
+        //       final String timing =
+        //           <String>[
+        //             appParamState.selectedTiming,
+        //             appParamState.selectedTiming2,
+        //           ].where((String e) => e.isNotEmpty).firstOrNull ??
+        //           '';
+        //       OddsFinderDialog(
+        //         context: context,
+        //         widget: HorseOddsWideDisplayAlert(timing: timing, horse: horse),
+        //       );
+        //     },
+        //     child: Container(
+        //       decoration: BoxDecoration(
+        //         color: Colors.orangeAccent.withValues(alpha: 0.2),
+        //         borderRadius: BorderRadius.circular(10),
+        //       ),
+        //       padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 20),
+        //       child: const Text(
+        //         'WIDE',
+        //         style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+        //       ),
+        //     ),
+        //   ),
+        // ] else ...<Widget>[const SizedBox.shrink()],
+*/
       ],
     );
   }
