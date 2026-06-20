@@ -665,162 +665,228 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
     required String selectedTiming,
     List<String>? fukuMinList,
     List<String>? fukuMaxList,
+    List<String>? nextTimeline,
   }) {
     final List<String> timingKeys = widget.oddsGetTiming.split('|');
 
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: timeline.asMap().entries.map((MapEntry<int, String> entry) {
-        if (entry.value.isEmpty) {
-          return Expanded(
-            child: Container(
-              height: 150,
-              margin: const EdgeInsets.only(top: 8),
-              decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.2)),
-            ),
-          );
-        }
+    return Stack(
+      children: <Widget>[
+        const Positioned(
+          top: 145,
+          left: 0,
+          child: Text('オッズ断層数値', style: TextStyle(fontSize: 10, color: Color(0xFFFBB6CE))),
+        ),
 
-        final String entryTimingKey = entry.key < timingKeys.length ? timingKeys[entry.key] : '';
-
-        final Color circleColor = (selectedTiming == entryTimingKey)
-            ? Colors.greenAccent
-            : (selectedTiming.isEmpty && entryTimingKey == activeTimingKey)
-            ? Colors.red
-            : Colors.white;
-
-        final String circleMinute = entry.key == 0
-            ? 'S'
-            : entry.key == timingKeys.length - 1
-            ? 'E'
-            : entryTimingKey;
-
-        final String fukuMin = fukuMinList?[entry.key] ?? '';
-        final String fukuMax = fukuMaxList?[entry.key] ?? '';
-
-        return Expanded(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 3),
-            child: Stack(
-              children: <Widget>[
-                Container(
-                  width: double.infinity,
-                  height: 120,
-                  decoration: BoxDecoration(
-                    color: Colors.greenAccent.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(3),
-                  ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: timeline.asMap().entries.map((MapEntry<int, String> entry) {
+            if (entry.value.isEmpty) {
+              return Expanded(
+                child: Container(
+                  height: 150,
                   margin: const EdgeInsets.only(top: 8),
+                  decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.2)),
                 ),
-                Padding(
-                  padding: const EdgeInsets.only(top: 35),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: <Widget>[
-                      const Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 4),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: <Widget>[
-                            Text('単勝', style: TextStyle(fontSize: 8, color: Colors.white)),
-                            SizedBox.shrink(),
-                          ],
+              );
+            }
+
+            final String entryTimingKey = entry.key < timingKeys.length ? timingKeys[entry.key] : '';
+
+            final Color circleColor = (selectedTiming == entryTimingKey)
+                ? Colors.greenAccent
+                : (selectedTiming.isEmpty && entryTimingKey == activeTimingKey)
+                ? Colors.red
+                : Colors.white;
+
+            final String circleMinute = entry.key == 0
+                ? 'S'
+                : entry.key == timingKeys.length - 1
+                ? 'E'
+                : entryTimingKey;
+
+            final String fukuMin = fukuMinList?[entry.key] ?? '';
+            final String fukuMax = fukuMaxList?[entry.key] ?? '';
+
+            return Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 3),
+                child: Column(
+                  children: <Widget>[
+                    Stack(
+                      children: <Widget>[
+                        Container(
+                          width: double.infinity,
+                          height: 120,
+                          decoration: BoxDecoration(
+                            color: Colors.greenAccent.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(3),
+                          ),
+                          margin: const EdgeInsets.only(top: 8),
                         ),
-                      ),
-                      const SizedBox(height: 5),
-                      Text(
-                        entry.value,
-                        style: const TextStyle(fontSize: 10, color: Colors.white),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 10),
-                      if (fukuMin.isNotEmpty || fukuMax.isNotEmpty) ...<Widget>[
-                        Stack(
+                        Padding(
+                          padding: const EdgeInsets.only(top: 35),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: <Widget>[
+                              const Padding(
+                                padding: EdgeInsets.symmetric(horizontal: 4),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: <Widget>[
+                                    Text('単勝', style: TextStyle(fontSize: 8, color: Colors.white)),
+                                    SizedBox.shrink(),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 5),
+                              Text(
+                                entry.value,
+                                style: const TextStyle(fontSize: 10, color: Colors.white),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 10),
+                              if (fukuMin.isNotEmpty || fukuMax.isNotEmpty) ...<Widget>[
+                                Stack(
+                                  children: <Widget>[
+                                    Container(
+                                      width: double.infinity,
+                                      margin: const EdgeInsets.only(top: 8, right: 3, left: 3),
+                                      padding: const EdgeInsets.symmetric(vertical: 5),
+                                      decoration: BoxDecoration(
+                                        color: Colors.black.withValues(alpha: 0.2),
+                                        borderRadius: BorderRadius.circular(3),
+                                      ),
+                                      child: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: <Widget>[
+                                          Text(
+                                            fukuMin,
+                                            style: const TextStyle(fontSize: 10, color: Colors.white),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                          const SizedBox(height: 1),
+                                          Container(width: 1, height: 5, color: Colors.white),
+                                          const SizedBox(height: 1),
+                                          Text(
+                                            fukuMax,
+                                            style: const TextStyle(fontSize: 10, color: Colors.white),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    const Padding(
+                                      padding: EdgeInsets.symmetric(horizontal: 4),
+                                      child: Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        children: <Widget>[
+                                          Text('複勝', style: TextStyle(fontSize: 8, color: Colors.white)),
+                                          SizedBox.shrink(),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: <Widget>[
                             Container(
-                              width: double.infinity,
-                              margin: const EdgeInsets.only(top: 8, right: 3, left: 3),
-                              padding: const EdgeInsets.symmetric(vertical: 5),
-                              decoration: BoxDecoration(
-                                color: Colors.black.withValues(alpha: 0.2),
-                                borderRadius: BorderRadius.circular(3),
-                              ),
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: <Widget>[
-                                  Text(
-                                    fukuMin,
-                                    style: const TextStyle(fontSize: 10, color: Colors.white),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
+                              decoration: BoxDecoration(color: circleColor, shape: BoxShape.circle),
+                              width: 12,
+                              height: 12,
+                              child: Center(
+                                child: Text(
+                                  circleMinute,
+                                  style: TextStyle(
+                                    fontSize: 9,
+                                    color: circleColor == Colors.red ? Colors.white : Colors.black,
+                                    fontWeight: FontWeight.bold,
                                   ),
-                                  const SizedBox(height: 1),
-                                  Container(width: 1, height: 5, color: Colors.white),
-                                  const SizedBox(height: 1),
-                                  Text(
-                                    fukuMax,
-                                    style: const TextStyle(fontSize: 10, color: Colors.white),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ],
+                                ),
                               ),
                             ),
-                            const Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 4),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: <Widget>[
-                                  Text('複勝', style: TextStyle(fontSize: 8, color: Colors.white)),
-                                  SizedBox.shrink(),
-                                ],
-                              ),
+                            OddsUpDownIcon(
+                              current: entry.value,
+                              prev: () {
+                                for (int i = entry.key - 1; i >= 0; i--) {
+                                  if (timeline[i].isNotEmpty) {
+                                    return timeline[i];
+                                  }
+                                }
+                                return null;
+                              }(),
+                              label: '単',
                             ),
                           ],
                         ),
                       ],
-                    ],
-                  ),
-                ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Container(
-                      decoration: BoxDecoration(color: circleColor, shape: BoxShape.circle),
-                      width: 12,
-                      height: 12,
-                      child: Center(
-                        child: Text(
-                          circleMinute,
-                          style: TextStyle(
-                            fontSize: 9,
-                            color: circleColor == Colors.red ? Colors.white : Colors.black,
-                            fontWeight: FontWeight.bold,
-                          ),
+                    ),
+
+                    if (nextTimeline != null) ...<Widget>[
+                      const SizedBox(height: 40),
+
+                      Container(
+                        width: double.infinity,
+
+                        height: 50,
+                        decoration: BoxDecoration(
+                          border: Border.all(color: const Color(0xFFFBB6CE).withValues(alpha: 0.4)),
+                          borderRadius: BorderRadius.circular(3),
+                        ),
+
+                        child: Column(
+                          children: <Widget>[
+                            const Spacer(),
+
+                            Text(
+                              () {
+                                final double? next = double.tryParse(nextTimeline[entry.key]);
+                                final double? current = double.tryParse(entry.value);
+                                if (next == null || current == null || current == 0) {
+                                  return '';
+                                }
+                                return (next / current).toStringAsFixed(2);
+                              }(),
+
+                              style: TextStyle(
+                                fontSize: 10,
+
+                                color: () {
+                                  final double? next = double.tryParse(nextTimeline[entry.key]);
+                                  final double? current = double.tryParse(entry.value);
+                                  if (next == null || current == null || current == 0) {
+                                    return Colors.white;
+                                  }
+
+                                  return (next / current) >= 2.0
+                                      ? const Color(0xFFFBB6CE)
+                                      : Colors.white.withValues(alpha: 0.5);
+                                }(),
+                              ),
+                            ),
+
+                            const Spacer(),
+                          ],
                         ),
                       ),
-                    ),
-                    OddsUpDownIcon(
-                      current: entry.value,
-                      prev: () {
-                        for (int i = entry.key - 1; i >= 0; i--) {
-                          if (timeline[i].isNotEmpty) {
-                            return timeline[i];
-                          }
-                        }
-                        return null;
-                      }(),
-                      label: '単',
-                    ),
+
+                      //                      const SizedBox(height: 10),
+                    ],
                   ],
                 ),
-              ],
-            ),
-          ),
-        );
-      }).toList(),
+              ),
+            );
+          }).toList(),
+        ),
+      ],
     );
   }
 
@@ -1325,6 +1391,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
             // netkeibaFukuMaxTimelineMap: netkeibaFukuMaxTimelineMap,
             activeTimingKey: activeTimingKey,
             selectedTiming: selectedTiming,
+            nextOddsTimeline: index + 1 < displayList.length ? oddsTimelineMap[displayList[index + 1].num] : null,
           ),
         );
       },
@@ -1388,6 +1455,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
     // required Map<int, List<String>> netkeibaFukuMaxTimelineMap,
     required String activeTimingKey,
     required String selectedTiming,
+    List<String>? nextOddsTimeline,
   }) {
     final int popularity = index + 1;
     final HorseModel? horse = horseModelMap[element.num];
@@ -1419,9 +1487,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
         Container(
           margin: const EdgeInsets.symmetric(vertical: 10),
           padding: const EdgeInsets.only(top: 5),
-          decoration: BoxDecoration(
-            border: Border(bottom: BorderSide(color: Colors.greenAccent.withValues(alpha: 0.2), width: 2)),
-          ),
+          // decoration: BoxDecoration(
+          //   border: Border(bottom: BorderSide(color: Colors.greenAccent.withValues(alpha: 0.2), width: 2)),
+          // ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
@@ -1429,29 +1497,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
               const SizedBox(height: 10),
               _buildHorseNameRow(element: element, horse: horse, horseWakuColorMap: horseWakuColorMap),
               if (oddsTimeline != null) ...<Widget>[
-                const SizedBox(height: 10),
-                _buildSourceLabel('JRA'),
-                const SizedBox(height: 5),
+                const SizedBox(height: 20),
+
                 _buildOddsTimelineRow(
                   timeline: oddsTimeline,
                   activeTimingKey: activeTimingKey,
                   selectedTiming: selectedTiming,
                   fukuMinList: fukuMinTimeline,
                   fukuMaxList: fukuMaxTimeline,
+                  nextTimeline: nextOddsTimeline,
                 ),
               ],
-              // if (netkeibaTimeline != null) ...<Widget>[
-              //   const SizedBox(height: 10),
-              //   _buildSourceLabel('ネットケイバ'),
-              //   const SizedBox(height: 5),
-              //   _buildOddsTimelineRow(
-              //     timeline: netkeibaTimeline,
-              //     activeTimingKey: activeTimingKey,
-              //     selectedTiming: selectedTiming,
-              //     fukuMinList: netkeibaFukuMinTimeline,
-              //     fukuMaxList: netkeibaFukuMaxTimeline,
-              //   ),
-              // ],
               const SizedBox(height: 10),
             ],
           ),
@@ -1584,24 +1640,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
               ),
             ),
           ),
-        ],
-      ),
-    );
-  }
-
-  ///
-  static Widget _buildSourceLabel(String label) {
-    return Container(
-      margin: const EdgeInsets.only(left: 15),
-      padding: const EdgeInsets.only(left: 5),
-      decoration: BoxDecoration(
-        border: Border(left: BorderSide(color: Colors.green[500]!, width: 5)),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: <Widget>[
-          Text(label, style: TextStyle(fontSize: 10, color: Colors.green[500])),
-          const SizedBox.shrink(),
         ],
       ),
     );
