@@ -15,6 +15,7 @@ import '../models/login_user_model.dart';
 // import '../models/netkeiba_odds_model.dart';
 import '../models/odds_model.dart';
 import '../models/odds_wide_model.dart';
+import '../models/push_notifier_user_model.dart';
 import '../models/race_model.dart';
 import '../models/race_result_model.dart';
 import '../models/schedule_model.dart';
@@ -27,6 +28,7 @@ import 'components/horse_odds_ranking_display_alert.dart';
 // import 'components/horse_odds_wide_display_alert.dart';
 
 import 'components/login_user_list_display_alert.dart';
+import 'components/push_notifier_user_list_display_alert.dart';
 import 'parts/error_confirm_dialog.dart';
 import 'parts/odds_finder_dialog.dart';
 import 'parts/odds_up_down_icon.dart';
@@ -48,6 +50,7 @@ class HomeScreen extends ConsumerStatefulWidget {
     required this.loginUserMap,
     required this.loggedInUserId,
     required this.onLogout,
+    required this.pushNotifierUserList,
   });
 
   final Map<String, List<ScheduleModel>> scheduleDateBashoMap;
@@ -63,6 +66,8 @@ class HomeScreen extends ConsumerStatefulWidget {
   final Map<String, List<String>> summaryDateBashoMap;
   final Map<String, List<RaceResultModel>> raceResultMap;
   final Map<String, LoginUserModel> loginUserMap;
+  final List<PushNotifierUserModel> pushNotifierUserList;
+
   final String loggedInUserId;
   final VoidCallback onLogout;
 
@@ -104,6 +109,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
     summaryNotifier.getAllSummaryData();
     raceResultNotifier.getAllRaceResultData();
     loginUserNotifier.getAllLoginUserData();
+    pushNotifierUserNotifier.getAllPushNotifierUserData();
 
     WidgetsBinding.instance.addPostFrameCallback((_) => _syncAppParam());
     if (widget.isRankingDialogOpen) {
@@ -184,6 +190,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
     appParamNotifier.setKeepSummaryMap(map: widget.summaryMap);
     appParamNotifier.setKeepSummaryDateBashoMap(map: widget.summaryDateBashoMap);
     appParamNotifier.setKeepLoginUserMap(map: widget.loginUserMap);
+    appParamNotifier.setKeepPushNotifierUserList(list: widget.pushNotifierUserList);
   }
 
   ///
@@ -957,6 +964,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                             children: <Widget>[
                               if (appParamState.keepLoginUserMap[widget.loggedInUserId] != null &&
                                   appParamState.keepLoginUserMap[widget.loggedInUserId]!.isAdmin == 1) ...<Widget>[
+                                GestureDetector(
+                                  onTap: () => OddsFinderDialog(
+                                    context: context,
+                                    widget: PushNotifierUserListDisplayAlert(loggedInUserId: widget.loggedInUserId),
+                                  ),
+                                  child: Icon(Icons.send, color: Colors.white.withValues(alpha: 0.5)),
+                                ),
+
+                                const SizedBox(width: 20),
+
                                 GestureDetector(
                                   onTap: () => OddsFinderDialog(
                                     context: context,

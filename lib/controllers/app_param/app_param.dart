@@ -6,6 +6,7 @@ import '../../models/horse_model.dart';
 import '../../models/login_user_model.dart';
 import '../../models/odds_model.dart';
 import '../../models/odds_wide_model.dart';
+import '../../models/push_notifier_user_model.dart';
 import '../../models/race_model.dart';
 import '../../models/schedule_model.dart';
 import '../../models/summary_model.dart';
@@ -32,6 +33,8 @@ class AppParamState with _$AppParamState {
     @Default(<String, List<String>>{}) Map<String, List<String>> keepSummaryDateBashoMap,
 
     @Default(<String, LoginUserModel>{}) Map<String, LoginUserModel> keepLoginUserMap,
+
+    @Default(<PushNotifierUserModel>[]) List<PushNotifierUserModel> keepPushNotifierUserList,
 
     ///
     @Default('') String configOddsGetTiming,
@@ -93,6 +96,10 @@ class AppParam extends _$AppParam {
 
   ///
   void setKeepLoginUserMap({required Map<String, LoginUserModel> map}) => state = state.copyWith(keepLoginUserMap: map);
+
+  ///
+  void setKeepPushNotifierUserList({required List<PushNotifierUserModel> list}) =>
+      state = state.copyWith(keepPushNotifierUserList: list);
 
   //////////////
 

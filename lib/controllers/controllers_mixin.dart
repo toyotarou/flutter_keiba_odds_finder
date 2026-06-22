@@ -4,11 +4,13 @@ import 'app_param/app_param.dart';
 import 'horse/horse.dart';
 import 'laravel_config/laravel_config.dart';
 import 'login_user/login_user.dart';
+
 // import 'netkeiba_odds/netkeiba_odds.dart';
 // import 'netkeiba_race/netkeiba_race.dart';
 import 'odds/odds.dart';
 import 'odds_get_timing/odds_get_timing.dart';
 import 'odds_wide/odds_wide.dart';
+import 'push_notifier_user/push_notifier_user.dart';
 import 'race/race.dart';
 import 'race_result/race_result.dart';
 import 'schedule/schedule.dart';
@@ -111,6 +113,13 @@ mixin ControllersMixin<T extends ConsumerStatefulWidget> on ConsumerState<T> {
   LoginUserState get loginUserState => ref.watch(loginUserProvider);
 
   LoginUser get loginUserNotifier => ref.read(loginUserProvider.notifier);
+
+  //==========================================//
+
+  //==========================================//
+  PushNotifierUserState get pushNotifierUserState => ref.watch(pushNotifierUserProvider);
+
+  PushNotifierUser get pushNotifierUserNotifier => ref.read(pushNotifierUserProvider.notifier);
 
   //==========================================//
 }

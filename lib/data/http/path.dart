@@ -18,6 +18,8 @@ enum APIPath {
   changeAdmin,
   changeDelete,
   saveFcmToken,
+  getHorseOddsFinderPushSubscriptions,
+  changePushNotifierUserDelete,
 }
 
 extension APIPathExtension on APIPath {
@@ -79,6 +81,11 @@ extension APIPathExtension on APIPath {
 
       case APIPath.saveFcmToken:
         return 'fcm-token';
+      case APIPath.getHorseOddsFinderPushSubscriptions:
+        return 'getHorseOddsFinderPushSubscriptions';
+
+      case APIPath.changePushNotifierUserDelete:
+        return 'changePushNotifierUserDelete';
     }
   }
 }

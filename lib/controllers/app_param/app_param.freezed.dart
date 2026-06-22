@@ -32,6 +32,8 @@ mixin _$AppParamState {
       throw _privateConstructorUsedError;
   Map<String, LoginUserModel> get keepLoginUserMap =>
       throw _privateConstructorUsedError;
+  List<PushNotifierUserModel> get keepPushNotifierUserList =>
+      throw _privateConstructorUsedError;
 
   ///
   String get configOddsGetTiming => throw _privateConstructorUsedError;
@@ -70,6 +72,7 @@ abstract class $AppParamStateCopyWith<$Res> {
       Map<String, List<SummaryModel>> keepSummaryMap,
       Map<String, List<String>> keepSummaryDateBashoMap,
       Map<String, LoginUserModel> keepLoginUserMap,
+      List<PushNotifierUserModel> keepPushNotifierUserList,
       String configOddsGetTiming,
       String selectedScheduleDate,
       String selectedScheduleKaisuuBashoDay,
@@ -104,6 +107,7 @@ class _$AppParamStateCopyWithImpl<$Res, $Val extends AppParamState>
     Object? keepSummaryMap = null,
     Object? keepSummaryDateBashoMap = null,
     Object? keepLoginUserMap = null,
+    Object? keepPushNotifierUserList = null,
     Object? configOddsGetTiming = null,
     Object? selectedScheduleDate = null,
     Object? selectedScheduleKaisuuBashoDay = null,
@@ -149,6 +153,10 @@ class _$AppParamStateCopyWithImpl<$Res, $Val extends AppParamState>
           ? _value.keepLoginUserMap
           : keepLoginUserMap // ignore: cast_nullable_to_non_nullable
               as Map<String, LoginUserModel>,
+      keepPushNotifierUserList: null == keepPushNotifierUserList
+          ? _value.keepPushNotifierUserList
+          : keepPushNotifierUserList // ignore: cast_nullable_to_non_nullable
+              as List<PushNotifierUserModel>,
       configOddsGetTiming: null == configOddsGetTiming
           ? _value.configOddsGetTiming
           : configOddsGetTiming // ignore: cast_nullable_to_non_nullable
@@ -215,6 +223,7 @@ abstract class _$$AppParamStateImplCopyWith<$Res>
       Map<String, List<SummaryModel>> keepSummaryMap,
       Map<String, List<String>> keepSummaryDateBashoMap,
       Map<String, LoginUserModel> keepLoginUserMap,
+      List<PushNotifierUserModel> keepPushNotifierUserList,
       String configOddsGetTiming,
       String selectedScheduleDate,
       String selectedScheduleKaisuuBashoDay,
@@ -247,6 +256,7 @@ class __$$AppParamStateImplCopyWithImpl<$Res>
     Object? keepSummaryMap = null,
     Object? keepSummaryDateBashoMap = null,
     Object? keepLoginUserMap = null,
+    Object? keepPushNotifierUserList = null,
     Object? configOddsGetTiming = null,
     Object? selectedScheduleDate = null,
     Object? selectedScheduleKaisuuBashoDay = null,
@@ -292,6 +302,10 @@ class __$$AppParamStateImplCopyWithImpl<$Res>
           ? _value._keepLoginUserMap
           : keepLoginUserMap // ignore: cast_nullable_to_non_nullable
               as Map<String, LoginUserModel>,
+      keepPushNotifierUserList: null == keepPushNotifierUserList
+          ? _value._keepPushNotifierUserList
+          : keepPushNotifierUserList // ignore: cast_nullable_to_non_nullable
+              as List<PushNotifierUserModel>,
       configOddsGetTiming: null == configOddsGetTiming
           ? _value.configOddsGetTiming
           : configOddsGetTiming // ignore: cast_nullable_to_non_nullable
@@ -361,6 +375,8 @@ class _$AppParamStateImpl implements _AppParamState {
           const <String, List<String>>{},
       final Map<String, LoginUserModel> keepLoginUserMap =
           const <String, LoginUserModel>{},
+      final List<PushNotifierUserModel> keepPushNotifierUserList =
+          const <PushNotifierUserModel>[],
       this.configOddsGetTiming = '',
       this.selectedScheduleDate = '',
       this.selectedScheduleKaisuuBashoDay = '',
@@ -379,7 +395,8 @@ class _$AppParamStateImpl implements _AppParamState {
         _keepOddsWideMap = keepOddsWideMap,
         _keepSummaryMap = keepSummaryMap,
         _keepSummaryDateBashoMap = keepSummaryDateBashoMap,
-        _keepLoginUserMap = keepLoginUserMap;
+        _keepLoginUserMap = keepLoginUserMap,
+        _keepPushNotifierUserList = keepPushNotifierUserList;
 
   final Map<String, List<ScheduleModel>> _keepScheduleDateBashoMap;
   @override
@@ -455,6 +472,16 @@ class _$AppParamStateImpl implements _AppParamState {
     return EqualUnmodifiableMapView(_keepLoginUserMap);
   }
 
+  final List<PushNotifierUserModel> _keepPushNotifierUserList;
+  @override
+  @JsonKey()
+  List<PushNotifierUserModel> get keepPushNotifierUserList {
+    if (_keepPushNotifierUserList is EqualUnmodifiableListView)
+      return _keepPushNotifierUserList;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableListView(_keepPushNotifierUserList);
+  }
+
   ///
   @override
   @JsonKey()
@@ -494,7 +521,7 @@ class _$AppParamStateImpl implements _AppParamState {
 
   @override
   String toString() {
-    return 'AppParamState(keepScheduleDateBashoMap: $keepScheduleDateBashoMap, keepRaceMap: $keepRaceMap, keepHorseMap: $keepHorseMap, keepOddsMap: $keepOddsMap, keepOddsWideMap: $keepOddsWideMap, keepSummaryMap: $keepSummaryMap, keepSummaryDateBashoMap: $keepSummaryDateBashoMap, keepLoginUserMap: $keepLoginUserMap, configOddsGetTiming: $configOddsGetTiming, selectedScheduleDate: $selectedScheduleDate, selectedScheduleKaisuuBashoDay: $selectedScheduleKaisuuBashoDay, selectedScheduleKaisuuBashoDayName: $selectedScheduleKaisuuBashoDayName, selectedRaceNumber: $selectedRaceNumber, selectedTiming: $selectedTiming, selectedTiming2: $selectedTiming2, queryUser: $queryUser, isShowUpperBox: $isShowUpperBox, isShowUpperBox2: $isShowUpperBox2, selectedDrawerRace: $selectedDrawerRace)';
+    return 'AppParamState(keepScheduleDateBashoMap: $keepScheduleDateBashoMap, keepRaceMap: $keepRaceMap, keepHorseMap: $keepHorseMap, keepOddsMap: $keepOddsMap, keepOddsWideMap: $keepOddsWideMap, keepSummaryMap: $keepSummaryMap, keepSummaryDateBashoMap: $keepSummaryDateBashoMap, keepLoginUserMap: $keepLoginUserMap, keepPushNotifierUserList: $keepPushNotifierUserList, configOddsGetTiming: $configOddsGetTiming, selectedScheduleDate: $selectedScheduleDate, selectedScheduleKaisuuBashoDay: $selectedScheduleKaisuuBashoDay, selectedScheduleKaisuuBashoDayName: $selectedScheduleKaisuuBashoDayName, selectedRaceNumber: $selectedRaceNumber, selectedTiming: $selectedTiming, selectedTiming2: $selectedTiming2, queryUser: $queryUser, isShowUpperBox: $isShowUpperBox, isShowUpperBox2: $isShowUpperBox2, selectedDrawerRace: $selectedDrawerRace)';
   }
 
   @override
@@ -518,6 +545,8 @@ class _$AppParamStateImpl implements _AppParamState {
                 other._keepSummaryDateBashoMap, _keepSummaryDateBashoMap) &&
             const DeepCollectionEquality()
                 .equals(other._keepLoginUserMap, _keepLoginUserMap) &&
+            const DeepCollectionEquality().equals(
+                other._keepPushNotifierUserList, _keepPushNotifierUserList) &&
             (identical(other.configOddsGetTiming, configOddsGetTiming) ||
                 other.configOddsGetTiming == configOddsGetTiming) &&
             (identical(other.selectedScheduleDate, selectedScheduleDate) ||
@@ -557,6 +586,7 @@ class _$AppParamStateImpl implements _AppParamState {
         const DeepCollectionEquality().hash(_keepSummaryMap),
         const DeepCollectionEquality().hash(_keepSummaryDateBashoMap),
         const DeepCollectionEquality().hash(_keepLoginUserMap),
+        const DeepCollectionEquality().hash(_keepPushNotifierUserList),
         configOddsGetTiming,
         selectedScheduleDate,
         selectedScheduleKaisuuBashoDay,
@@ -587,6 +617,7 @@ abstract class _AppParamState implements AppParamState {
       final Map<String, List<SummaryModel>> keepSummaryMap,
       final Map<String, List<String>> keepSummaryDateBashoMap,
       final Map<String, LoginUserModel> keepLoginUserMap,
+      final List<PushNotifierUserModel> keepPushNotifierUserList,
       final String configOddsGetTiming,
       final String selectedScheduleDate,
       final String selectedScheduleKaisuuBashoDay,
@@ -615,6 +646,8 @@ abstract class _AppParamState implements AppParamState {
   Map<String, List<String>> get keepSummaryDateBashoMap;
   @override
   Map<String, LoginUserModel> get keepLoginUserMap;
+  @override
+  List<PushNotifierUserModel> get keepPushNotifierUserList;
   @override
 
   ///
