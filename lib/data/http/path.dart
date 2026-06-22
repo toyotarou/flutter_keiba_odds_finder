@@ -17,6 +17,7 @@ enum APIPath {
   getHorseOddsFinderLoginUsers,
   changeAdmin,
   changeDelete,
+  saveFcmToken,
 }
 
 extension APIPathExtension on APIPath {
@@ -75,6 +76,9 @@ extension APIPathExtension on APIPath {
 
       case APIPath.changeDelete:
         return 'changeDelete';
+
+      case APIPath.saveFcmToken:
+        return 'fcm-token';
     }
   }
 }

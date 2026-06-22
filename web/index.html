@@ -1,33 +1,12 @@
 <!DOCTYPE html><html><head>
-  <!--
-    If you are serving your web app in a path other than the root, change the
-    href value below to reflect the base path you are serving from.
-
-    The path provided below has to start and end with a slash "/" in order for
-    it to work correctly.
-
-    For more details:
-    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
-
-    This is a placeholder for base href that will be replaced by the value of
-    the `--base-href` argument provided to `flutter build`.
-  -->
   <base href="$FLUTTER_BASE_HREF">
-
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="A new Flutter project.">
-
-  <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <meta name="apple-mobile-web-app-title" content="馬眼力OddsFinder">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
-
-  <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png">
-
   <title>馬眼力OddsFinder</title>
   <link rel="manifest" href="manifest.json">
   <style>
@@ -47,67 +26,67 @@
       #landscape-warning { display: flex; }
     }
   </style>
-  
-  
   <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport">
   <style id="splash-screen-style">
-    html {
-      height: 100%
-    }
-
-    body {
-      margin: 0;
-      min-height: 100%;
-      background-color: #000000;
-          background-size: 100% 100%;
-    }
-
-    .center {
-      margin: 0;
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      -ms-transform: translate(-50%, -50%);
-      transform: translate(-50%, -50%);
-    }
-
-    .contain {
-      display:block;
-      width:100%; height:100%;
-      object-fit: contain;
-    }
-
-    .stretch {
-      display:block;
-      width:100%; height:100%;
-    }
-
-    .cover {
-      display:block;
-      width:100%; height:100%;
-      object-fit: cover;
-    }
-
-    .bottom {
-      position: absolute;
-      bottom: 0;
-      left: 50%;
-      -ms-transform: translate(-50%, 0);
-      transform: translate(-50%, 0);
-    }
-
-    .bottomLeft {
-      position: absolute;
-      bottom: 0;
-      left: 0;
-    }
-
-    .bottomRight {
-      position: absolute;
-      bottom: 0;
-      right: 0;
-    }
+    html { height: 100% }
+    body { margin: 0; min-height: 100%; background-color: #000000; background-size: 100% 100%; }
+    .center { margin: 0; position: absolute; top: 50%; left: 50%; -ms-transform: translate(-50%, -50%); transform: translate(-50%, -50%); }
+    .contain { display:block; width:100%; height:100%; object-fit: contain; }
+    .stretch { display:block; width:100%; height:100%; }
+    .cover { display:block; width:100%; height:100%; object-fit: cover; }
+    .bottom { position: absolute; bottom: 0; left: 50%; -ms-transform: translate(-50%, 0); transform: translate(-50%, 0); }
+    .bottomLeft { position: absolute; bottom: 0; left: 0; }
+    .bottomRight { position: absolute; bottom: 0; right: 0; }
   </style>
+
+  <script>
+    window.subscribeWebPush = async function(vapidPublicKey) {
+      try {
+        const permission = await Notification.requestPermission();
+        console.log('[WebPush] permission:', permission);
+        if (permission !== 'granted') return null;
+
+        // push-sw.js を登録してそのregistrationを直接使う
+        const registration = await navigator.serviceWorker.register(
+          '/horse_odds_finder/push-sw.js',
+          { scope: '/horse_odds_finder/' }
+        );
+        console.log('[WebPush] registration state:', registration.active?.state);
+
+        // 既存のSubscriptionを解除
+        const existing = await registration.pushManager.getSubscription();
+        if (existing) {
+          console.log('[WebPush] 既存subscription解除中...');
+          await existing.unsubscribe();
+        }
+
+        // 新しいSubscriptionを取得
+        const applicationServerKey = urlBase64ToUint8Array(vapidPublicKey);
+        const subscription = await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: applicationServerKey,
+        });
+
+        console.log('[WebPush] subscription取得成功:', subscription.endpoint);
+        return JSON.stringify(subscription);
+      } catch (e) {
+        console.error('[WebPush] error:', e);
+        return null;
+      }
+    };
+
+    function urlBase64ToUint8Array(base64String) {
+      const padding = '='.repeat((4 - base64String.length % 4) % 4);
+      const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+      const rawData = window.atob(base64);
+      const outputArray = new Uint8Array(rawData.length);
+      for (let i = 0; i < rawData.length; ++i) {
+        outputArray[i] = rawData.charCodeAt(i);
+      }
+      return outputArray;
+    }
+  </script>
+
   <script id="splash-screen-script">
     function removeSplashFromWeb() {
       document.getElementById("splash")?.remove();
@@ -118,21 +97,15 @@
 </head>
 <body>
   <picture id="splash">
-      <source srcset="splash/img/light-1x.png 1x, splash/img/light-2x.png 2x, splash/img/light-3x.png 3x, splash/img/light-4x.png 4x" media="(prefers-color-scheme: light)">
-      <source srcset="splash/img/dark-1x.png 1x, splash/img/dark-2x.png 2x, splash/img/dark-3x.png 3x, splash/img/dark-4x.png 4x" media="(prefers-color-scheme: dark)">
-      <img class="center" aria-hidden="true" src="splash/img/light-1x.png" alt="">
+    <source srcset="splash/img/light-1x.png 1x, splash/img/light-2x.png 2x, splash/img/light-3x.png 3x, splash/img/light-4x.png 4x" media="(prefers-color-scheme: light)">
+    <source srcset="splash/img/dark-1x.png 1x, splash/img/dark-2x.png 2x, splash/img/dark-3x.png 3x, splash/img/dark-4x.png 4x" media="(prefers-color-scheme: dark)">
+    <img class="center" aria-hidden="true" src="splash/img/light-1x.png" alt="">
   </picture>
-  
-  <div id="landscape-warning">
-    📱 縦画面にしてください
-  </div>
+  <div id="landscape-warning">📱 縦画面にしてください</div>
   <script>
-    // Android Chrome など対応ブラウザでは orientation を portrait にロック
     if (screen.orientation && screen.orientation.lock) {
       screen.orientation.lock('portrait').catch(function() {});
     }
   </script>
   <script src="flutter_bootstrap.js" async=""></script>
-
-
 </body></html>

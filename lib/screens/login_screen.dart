@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
@@ -7,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../data/http/client.dart';
 import '../data/http/path.dart';
 import '../extensions/extensions.dart';
+import '../services/fcm_service.dart';
 import 'parts/error_confirm_dialog.dart';
 import 'signup_screen.dart';
 
@@ -210,6 +212,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         final String loggedInUserId = data['user_id'] as String;
         final SharedPreferences prefs = await SharedPreferences.getInstance();
         await prefs.setString('loggedInUserId', loggedInUserId);
+
+        unawaited(FcmService.registerToken(userId: loggedInUserId));
 
         if (mounted) {
           widget.onLoginSuccess(loggedInUserId);
