@@ -60,6 +60,20 @@
           return JSON.stringify(existing);
         }
 
+        // 新規登録の場合はSWがactiveになるまで待つ（installingのままsubscribeするとエラーになる）
+        if (!registration.active) {
+          await new Promise(resolve => {
+            const sw = registration.installing || registration.waiting;
+            if (!sw) { resolve(); return; }
+            sw.addEventListener('statechange', function handler() {
+              if (sw.state === 'activated') {
+                sw.removeEventListener('statechange', handler);
+                resolve();
+              }
+            });
+          });
+        }
+
         // 既存がない場合のみ新規登録
         const applicationServerKey = urlBase64ToUint8Array(vapidPublicKey);
         const subscription = await registration.pushManager.subscribe({

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -8,6 +10,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'controllers/controllers_mixin.dart';
 import 'screens/home_screen.dart';
 import 'screens/login_screen.dart';
+import 'services/fcm_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -21,6 +24,12 @@ Future<void> main() async {
 
   final SharedPreferences prefs = await SharedPreferences.getInstance();
   final String loggedInUserId = (prefs.getString('loggedInUserId') ?? '').trim();
+
+  // 既にログイン済みの場合、起動時にpush subscriptionを再登録する
+  // （DBから削除された場合でも自動復旧する）
+  if (loggedInUserId.isNotEmpty) {
+    unawaited(FcmService.registerToken(userId: loggedInUserId));
+  }
 
   await SystemChrome.setPreferredOrientations(<DeviceOrientation>[
     DeviceOrientation.portraitUp,
