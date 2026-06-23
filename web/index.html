@@ -53,14 +53,14 @@
         );
         console.log('[WebPush] registration state:', registration.active?.state);
 
-        // 既存のSubscriptionを解除
+        // 既存のSubscriptionがあればそのまま返す（毎回解除すると再登録失敗時にDBが無効になる）
         const existing = await registration.pushManager.getSubscription();
         if (existing) {
-          console.log('[WebPush] 既存subscription解除中...');
-          await existing.unsubscribe();
+          console.log('[WebPush] 既存subscription再利用:', existing.endpoint);
+          return JSON.stringify(existing);
         }
 
-        // 新しいSubscriptionを取得
+        // 既存がない場合のみ新規登録
         const applicationServerKey = urlBase64ToUint8Array(vapidPublicKey);
         const subscription = await registration.pushManager.subscribe({
           userVisibleOnly: true,
