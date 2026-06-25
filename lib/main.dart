@@ -17,9 +17,24 @@ Future<void> main() async {
 
   String? queryUser;
 
+  // push通知のディープリンク用パラメータ（URLのクエリから取得）
+  // Laravel側(ImportKeibaOdds)が付与する date / kbd / name / race を読み取り、
+  // リロード復元と同じ仕組みで該当レースの選択状態を復元する。
+  String deepLinkDate = '';
+  String deepLinkKbd = '';
+  String deepLinkName = '';
+  int deepLinkRace = 0;
+  bool deepLinkRanking = false;
+
   if (kIsWeb) {
     final Uri uri = Uri.base;
     queryUser = uri.queryParameters['user'];
+
+    deepLinkDate = uri.queryParameters['date'] ?? '';
+    deepLinkKbd = uri.queryParameters['kbd'] ?? '';
+    deepLinkName = uri.queryParameters['name'] ?? '';
+    deepLinkRace = int.tryParse(uri.queryParameters['race'] ?? '') ?? 0;
+    deepLinkRanking = uri.queryParameters['ranking'] == '1';
   }
 
   final SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -38,16 +53,40 @@ Future<void> main() async {
 
   runApp(
     ProviderScope(
-      child: AppRoot(queryUser: queryUser, loggedInUserId: loggedInUserId),
+      child: AppRoot(
+        queryUser: queryUser,
+        loggedInUserId: loggedInUserId,
+        deepLinkDate: deepLinkDate,
+        deepLinkKbd: deepLinkKbd,
+        deepLinkName: deepLinkName,
+        deepLinkRace: deepLinkRace,
+        deepLinkRanking: deepLinkRanking,
+      ),
     ),
   );
 }
 
 class AppRoot extends StatefulWidget {
-  const AppRoot({super.key, this.queryUser, required this.loggedInUserId});
+  const AppRoot({
+    super.key,
+    this.queryUser,
+    required this.loggedInUserId,
+    this.deepLinkDate = '',
+    this.deepLinkKbd = '',
+    this.deepLinkName = '',
+    this.deepLinkRace = 0,
+    this.deepLinkRanking = false,
+  });
 
   final String? queryUser;
   final String loggedInUserId;
+
+  // push通知のディープリンク用パラメータ
+  final String deepLinkDate;
+  final String deepLinkKbd;
+  final String deepLinkName;
+  final int deepLinkRace;
+  final bool deepLinkRanking;
 
   @override
   State<AppRoot> createState() => AppRootState();
@@ -66,6 +105,17 @@ class AppRootState extends State<AppRoot> {
   void initState() {
     super.initState();
     _loggedInUserId = widget.loggedInUserId;
+
+    // push通知のディープリンクで開かれた場合、reload用フィールドに初期値として渡す。
+    // これにより MyApp.initState の既存のreload復元ロジックがそのまま使われ、
+    // 該当レースの 日付 / 会場 / レース番号 が自動選択される。
+    if (widget.deepLinkDate.isNotEmpty) {
+      _reloadDate = widget.deepLinkDate;
+      _reloadKbd = widget.deepLinkKbd;
+      _reloadName = widget.deepLinkName;
+      _reloadRace = widget.deepLinkRace;
+      _reloadIsRankingDialogOpen = widget.deepLinkRanking;
+    }
   }
 
   Future<void> restartApp() async {
