@@ -29,7 +29,7 @@ class _LoginUserListDisplayAlertState extends ConsumerState<LoginUserListDisplay
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                const Text('利用者リスト'),
+                const Text('利用者リスト', style: TextStyle(fontSize: 12)),
                 Divider(color: Colors.white.withValues(alpha: 0.4), thickness: 5),
                 Expanded(child: displayLoginUserList()),
               ],

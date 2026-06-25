@@ -29,7 +29,7 @@ class _PushNotifierUserListDisplayAlertState extends ConsumerState<PushNotifierU
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                const Text('プッシュ通知ユーザーリスト'),
+                const Text('プッシュ通知ユーザーリスト', style: TextStyle(fontSize: 12)),
                 Divider(color: Colors.white.withValues(alpha: 0.4), thickness: 5),
                 Expanded(child: displayPushNotifierUserList()),
               ],

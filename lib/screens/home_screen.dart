@@ -21,14 +21,13 @@ import '../models/race_result_model.dart';
 import '../models/schedule_model.dart';
 import '../models/summary_model.dart';
 import '../utility/utility.dart';
+import 'components/admin_menu_alert.dart';
 import 'components/horse_detail_display_alert.dart';
 import 'components/horse_odds_ranking_display_alert.dart';
 
 // 一応残しておく
 // import 'components/horse_odds_wide_display_alert.dart';
 
-import 'components/login_user_list_display_alert.dart';
-import 'components/push_notifier_user_list_display_alert.dart';
 import 'parts/error_confirm_dialog.dart';
 import 'parts/odds_finder_dialog.dart';
 import 'parts/odds_up_down_icon.dart';
@@ -964,23 +963,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                             children: <Widget>[
                               if (appParamState.keepLoginUserMap[widget.loggedInUserId] != null &&
                                   appParamState.keepLoginUserMap[widget.loggedInUserId]!.isAdmin == 1) ...<Widget>[
-                                GestureDetector(
-                                  onTap: () => OddsFinderDialog(
-                                    context: context,
-                                    widget: PushNotifierUserListDisplayAlert(loggedInUserId: widget.loggedInUserId),
-                                  ),
-                                  child: Icon(Icons.send, color: Colors.white.withValues(alpha: 0.5)),
-                                ),
-
-                                const SizedBox(width: 20),
-
-                                GestureDetector(
-                                  onTap: () => OddsFinderDialog(
-                                    context: context,
-                                    widget: LoginUserListDisplayAlert(loggedInUserId: widget.loggedInUserId),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
+                                  decoration: BoxDecoration(
+                                    color: Colors.green[900],
+                                    borderRadius: BorderRadius.circular(5),
                                   ),
 
-                                  child: Icon(Icons.person, color: Colors.white.withValues(alpha: 0.5)),
+                                  child: GestureDetector(
+                                    onTap: () {
+                                      OddsFinderDialog(
+                                        context: context,
+                                        widget: AdminMenuAlert(loggedInUserId: widget.loggedInUserId),
+                                      );
+                                    },
+                                    child: const Text('管理', style: TextStyle(color: Colors.white)),
+                                  ),
                                 ),
                               ],
 
