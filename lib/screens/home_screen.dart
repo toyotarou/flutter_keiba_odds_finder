@@ -470,38 +470,49 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: <Widget>[
                   const SizedBox(),
-                  ValueListenableBuilder<int>(
-                    valueListenable: _remainingSecondsNotifier,
-                    builder: (BuildContext context, int seconds, Widget? _) =>
-                        Text(_formatCountdown(seconds), style: const TextStyle(fontSize: 13, color: Colors.white)),
+                  Column(
+                    children: <Widget>[
+                      Text('$startTime 出走', style: const TextStyle(fontSize: 12, color: Colors.greenAccent)),
+                      ValueListenableBuilder<int>(
+                        valueListenable: _remainingSecondsNotifier,
+                        builder: (BuildContext context, int seconds, Widget? _) =>
+                            Text(_formatCountdown(seconds), style: const TextStyle(fontSize: 13, color: Colors.white)),
+                      ),
+                    ],
                   ),
                 ],
               ),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: <Widget>[
-                  Row(
-                    children: <Widget>[
-                      GestureDetector(
-                        onTap: () {
-                          if (appParamState.selectedRaceNumber > 0) {
-                            appParamNotifier.setIsShowUpperBox(flag: !appParamState.isShowUpperBox);
-                          }
-                        },
+                  Expanded(
+                    child: Row(
+                      children: <Widget>[
+                        GestureDetector(
+                          onTap: () {
+                            if (appParamState.selectedRaceNumber > 0) {
+                              appParamNotifier.setIsShowUpperBox(flag: !appParamState.isShowUpperBox);
+                            }
+                          },
 
-                        child: Icon(
-                          appParamState.isShowUpperBox ? Icons.arrow_circle_up : Icons.arrow_circle_down,
-                          color: (appParamState.selectedRaceNumber > 0) ? Colors.green[500] : Colors.grey,
+                          child: Icon(
+                            appParamState.isShowUpperBox ? Icons.arrow_circle_up : Icons.arrow_circle_down,
+                            color: (appParamState.selectedRaceNumber > 0) ? Colors.green[500] : Colors.grey,
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 10),
-                      Text(
-                        '$startTime　$raceName',
-                        style: (raceName == 'レースを選択してください')
-                            ? const TextStyle(color: Colors.greenAccent, fontSize: 12)
-                            : const TextStyle(fontSize: 14, color: Colors.white),
-                      ),
-                    ],
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            raceName,
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
+                            style: (raceName == 'レースを選択してください')
+                                ? const TextStyle(color: Colors.greenAccent, fontSize: 12)
+                                : const TextStyle(fontSize: 14, color: Colors.white),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                   const SizedBox(),
                 ],
