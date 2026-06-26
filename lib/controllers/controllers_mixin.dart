@@ -10,9 +10,11 @@ import 'login_user/login_user.dart';
 import 'odds/odds.dart';
 import 'odds_get_timing/odds_get_timing.dart';
 import 'odds_wide/odds_wide.dart';
+import 'popularity_rank_odds_average/popularity_rank_odds_average.dart';
 import 'push_notifier_user/push_notifier_user.dart';
 import 'race/race.dart';
 import 'race_result/race_result.dart';
+import 'race_result_history/race_result_history.dart';
 import 'schedule/schedule.dart';
 import 'summary/summary.dart';
 
@@ -120,6 +122,21 @@ mixin ControllersMixin<T extends ConsumerStatefulWidget> on ConsumerState<T> {
   PushNotifierUserState get pushNotifierUserState => ref.watch(pushNotifierUserProvider);
 
   PushNotifierUser get pushNotifierUserNotifier => ref.read(pushNotifierUserProvider.notifier);
+
+  //==========================================//
+
+  //==========================================//
+  RaceResultHistoryState get raceResultHistoryState => ref.watch(raceResultHistoryProvider);
+
+  RaceResultHistory get raceResultHistoryNotifier => ref.read(raceResultHistoryProvider.notifier);
+
+  //==========================================//
+
+  //==========================================//
+  PopularityRankOddsAverageState get popularityRankOddsAverageState => ref.watch(popularityRankOddsAverageProvider);
+
+  PopularityRankOddsAverage get popularityRankOddsAverageNotifier =>
+      ref.read(popularityRankOddsAverageProvider.notifier);
 
   //==========================================//
 }

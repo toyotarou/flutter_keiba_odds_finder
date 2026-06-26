@@ -15,6 +15,7 @@ import '../models/login_user_model.dart';
 // import '../models/netkeiba_odds_model.dart';
 import '../models/odds_model.dart';
 import '../models/odds_wide_model.dart';
+import '../models/popularity_rank_odds_average_model.dart';
 import '../models/push_notifier_user_model.dart';
 import '../models/race_model.dart';
 import '../models/race_result_model.dart';
@@ -50,6 +51,7 @@ class HomeScreen extends ConsumerStatefulWidget {
     required this.loggedInUserId,
     required this.onLogout,
     required this.pushNotifierUserList,
+    required this.popularityRankOddsAverageMap,
   });
 
   final Map<String, List<ScheduleModel>> scheduleDateBashoMap;
@@ -66,6 +68,7 @@ class HomeScreen extends ConsumerStatefulWidget {
   final Map<String, List<RaceResultModel>> raceResultMap;
   final Map<String, LoginUserModel> loginUserMap;
   final List<PushNotifierUserModel> pushNotifierUserList;
+  final Map<int, List<PopularityRankOddsAverageModel>> popularityRankOddsAverageMap;
 
   final String loggedInUserId;
   final VoidCallback onLogout;
@@ -109,6 +112,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
     raceResultNotifier.getAllRaceResultData();
     loginUserNotifier.getAllLoginUserData();
     pushNotifierUserNotifier.getAllPushNotifierUserData();
+    popularityRankOddsAverageNotifier.getAllPopularityRankOddsAverageData();
 
     WidgetsBinding.instance.addPostFrameCallback((_) => _syncAppParam());
     if (widget.isRankingDialogOpen) {
@@ -190,6 +194,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
     appParamNotifier.setKeepSummaryDateBashoMap(map: widget.summaryDateBashoMap);
     appParamNotifier.setKeepLoginUserMap(map: widget.loginUserMap);
     appParamNotifier.setKeepPushNotifierUserList(list: widget.pushNotifierUserList);
+    appParamNotifier.setKeepPopularityRankOddsAverageMap(map: widget.popularityRankOddsAverageMap);
   }
 
   ///

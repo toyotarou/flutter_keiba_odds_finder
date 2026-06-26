@@ -20,6 +20,8 @@ enum APIPath {
   saveFcmToken,
   getHorseOddsFinderPushSubscriptions,
   changePushNotifierUserDelete,
+  getHorseOddsFinderRaceResultHistory,
+  getHorseOddsFinderPopularityRankAverage,
 }
 
 extension APIPathExtension on APIPath {
@@ -86,6 +88,12 @@ extension APIPathExtension on APIPath {
 
       case APIPath.changePushNotifierUserDelete:
         return 'changePushNotifierUserDelete';
+
+      case APIPath.getHorseOddsFinderRaceResultHistory:
+        return 'getHorseOddsFinderRaceResultHistory';
+
+      case APIPath.getHorseOddsFinderPopularityRankAverage:
+        return 'getHorseOddsFinderPopularityRankAverage';
     }
   }
 }
