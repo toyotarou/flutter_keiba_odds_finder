@@ -29,7 +29,6 @@ import 'components/horse_odds_ranking_display_alert.dart';
 // 一応残しておく
 // import 'components/horse_odds_wide_display_alert.dart';
 
-import 'components/popularity_rank_odds_average_alert.dart';
 import 'parts/error_confirm_dialog.dart';
 import 'parts/odds_finder_dialog.dart';
 import 'parts/odds_up_down_icon.dart';

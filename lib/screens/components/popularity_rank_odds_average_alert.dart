@@ -89,7 +89,7 @@ class _PopularityRankOddsAverageAlertState extends ConsumerState<PopularityRankO
                   ],
                 ),
 
-                SizedBox(height: 30),
+                const SizedBox(height: 30),
 
                 Expanded(child: displayPopularityRankOddsList()),
               ],
