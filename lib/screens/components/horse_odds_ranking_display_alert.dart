@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../controllers/app_param/app_param.dart';
 import '../../controllers/controllers_mixin.dart';
 import '../../extensions/extensions.dart';
 import '../../main.dart';
@@ -52,7 +53,6 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
     with ControllersMixin<HorseOddsRankingDisplayAlert> {
   final TransformationController _controller = TransformationController();
   double? _fitScale;
-  bool _isZoomed = false;
 
   ///
   @override
@@ -73,8 +73,8 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
   void _onTransformChanged() {
     final double currentScale = _controller.value.getMaxScaleOnAxis();
     final bool zoomed = _fitScale != null && currentScale > _fitScale! + 0.01;
-    if (zoomed != _isZoomed) {
-      setState(() => _isZoomed = zoomed);
+    if (zoomed != ref.read(appParamProvider).isZoomed) {
+      appParamNotifier.setIsZoomed(flag: zoomed);
     }
   }
 

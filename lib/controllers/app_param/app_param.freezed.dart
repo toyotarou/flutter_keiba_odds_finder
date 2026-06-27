@@ -34,7 +34,7 @@ mixin _$AppParamState {
       throw _privateConstructorUsedError;
   List<PushNotifierUserModel> get keepPushNotifierUserList =>
       throw _privateConstructorUsedError;
-  Map<int, List<PopularityRankOddsAverageModel>>
+  Map<int, PopularityRankOddsAverageModel>
       get keepPopularityRankOddsAverageMap =>
           throw _privateConstructorUsedError;
 
@@ -54,6 +54,7 @@ mixin _$AppParamState {
   bool get isShowUpperBox => throw _privateConstructorUsedError;
   bool get isShowUpperBox2 => throw _privateConstructorUsedError;
   String get selectedDrawerRace => throw _privateConstructorUsedError;
+  bool get isZoomed => throw _privateConstructorUsedError;
 
   @JsonKey(ignore: true)
   $AppParamStateCopyWith<AppParamState> get copyWith =>
@@ -76,8 +77,7 @@ abstract class $AppParamStateCopyWith<$Res> {
       Map<String, List<String>> keepSummaryDateBashoMap,
       Map<String, LoginUserModel> keepLoginUserMap,
       List<PushNotifierUserModel> keepPushNotifierUserList,
-      Map<int, List<PopularityRankOddsAverageModel>>
-          keepPopularityRankOddsAverageMap,
+      Map<int, PopularityRankOddsAverageModel> keepPopularityRankOddsAverageMap,
       String configOddsGetTiming,
       String selectedScheduleDate,
       String selectedScheduleKaisuuBashoDay,
@@ -88,7 +88,8 @@ abstract class $AppParamStateCopyWith<$Res> {
       String queryUser,
       bool isShowUpperBox,
       bool isShowUpperBox2,
-      String selectedDrawerRace});
+      String selectedDrawerRace,
+      bool isZoomed});
 }
 
 /// @nodoc
@@ -125,6 +126,7 @@ class _$AppParamStateCopyWithImpl<$Res, $Val extends AppParamState>
     Object? isShowUpperBox = null,
     Object? isShowUpperBox2 = null,
     Object? selectedDrawerRace = null,
+    Object? isZoomed = null,
   }) {
     return _then(_value.copyWith(
       keepScheduleDateBashoMap: null == keepScheduleDateBashoMap
@@ -166,7 +168,7 @@ class _$AppParamStateCopyWithImpl<$Res, $Val extends AppParamState>
       keepPopularityRankOddsAverageMap: null == keepPopularityRankOddsAverageMap
           ? _value.keepPopularityRankOddsAverageMap
           : keepPopularityRankOddsAverageMap // ignore: cast_nullable_to_non_nullable
-              as Map<int, List<PopularityRankOddsAverageModel>>,
+              as Map<int, PopularityRankOddsAverageModel>,
       configOddsGetTiming: null == configOddsGetTiming
           ? _value.configOddsGetTiming
           : configOddsGetTiming // ignore: cast_nullable_to_non_nullable
@@ -212,6 +214,10 @@ class _$AppParamStateCopyWithImpl<$Res, $Val extends AppParamState>
           ? _value.selectedDrawerRace
           : selectedDrawerRace // ignore: cast_nullable_to_non_nullable
               as String,
+      isZoomed: null == isZoomed
+          ? _value.isZoomed
+          : isZoomed // ignore: cast_nullable_to_non_nullable
+              as bool,
     ) as $Val);
   }
 }
@@ -234,8 +240,7 @@ abstract class _$$AppParamStateImplCopyWith<$Res>
       Map<String, List<String>> keepSummaryDateBashoMap,
       Map<String, LoginUserModel> keepLoginUserMap,
       List<PushNotifierUserModel> keepPushNotifierUserList,
-      Map<int, List<PopularityRankOddsAverageModel>>
-          keepPopularityRankOddsAverageMap,
+      Map<int, PopularityRankOddsAverageModel> keepPopularityRankOddsAverageMap,
       String configOddsGetTiming,
       String selectedScheduleDate,
       String selectedScheduleKaisuuBashoDay,
@@ -246,7 +251,8 @@ abstract class _$$AppParamStateImplCopyWith<$Res>
       String queryUser,
       bool isShowUpperBox,
       bool isShowUpperBox2,
-      String selectedDrawerRace});
+      String selectedDrawerRace,
+      bool isZoomed});
 }
 
 /// @nodoc
@@ -281,6 +287,7 @@ class __$$AppParamStateImplCopyWithImpl<$Res>
     Object? isShowUpperBox = null,
     Object? isShowUpperBox2 = null,
     Object? selectedDrawerRace = null,
+    Object? isZoomed = null,
   }) {
     return _then(_$AppParamStateImpl(
       keepScheduleDateBashoMap: null == keepScheduleDateBashoMap
@@ -322,7 +329,7 @@ class __$$AppParamStateImplCopyWithImpl<$Res>
       keepPopularityRankOddsAverageMap: null == keepPopularityRankOddsAverageMap
           ? _value._keepPopularityRankOddsAverageMap
           : keepPopularityRankOddsAverageMap // ignore: cast_nullable_to_non_nullable
-              as Map<int, List<PopularityRankOddsAverageModel>>,
+              as Map<int, PopularityRankOddsAverageModel>,
       configOddsGetTiming: null == configOddsGetTiming
           ? _value.configOddsGetTiming
           : configOddsGetTiming // ignore: cast_nullable_to_non_nullable
@@ -368,6 +375,10 @@ class __$$AppParamStateImplCopyWithImpl<$Res>
           ? _value.selectedDrawerRace
           : selectedDrawerRace // ignore: cast_nullable_to_non_nullable
               as String,
+      isZoomed: null == isZoomed
+          ? _value.isZoomed
+          : isZoomed // ignore: cast_nullable_to_non_nullable
+              as bool,
     ));
   }
 }
@@ -394,8 +405,8 @@ class _$AppParamStateImpl implements _AppParamState {
           const <String, LoginUserModel>{},
       final List<PushNotifierUserModel> keepPushNotifierUserList =
           const <PushNotifierUserModel>[],
-      final Map<int, List<PopularityRankOddsAverageModel>> keepPopularityRankOddsAverageMap =
-          const <int, List<PopularityRankOddsAverageModel>>{},
+      final Map<int, PopularityRankOddsAverageModel> keepPopularityRankOddsAverageMap =
+          const <int, PopularityRankOddsAverageModel>{},
       this.configOddsGetTiming = '',
       this.selectedScheduleDate = '',
       this.selectedScheduleKaisuuBashoDay = '',
@@ -406,7 +417,8 @@ class _$AppParamStateImpl implements _AppParamState {
       this.queryUser = '',
       this.isShowUpperBox = true,
       this.isShowUpperBox2 = true,
-      this.selectedDrawerRace = ''})
+      this.selectedDrawerRace = '',
+      this.isZoomed = false})
       : _keepScheduleDateBashoMap = keepScheduleDateBashoMap,
         _keepRaceMap = keepRaceMap,
         _keepHorseMap = keepHorseMap,
@@ -502,11 +514,11 @@ class _$AppParamStateImpl implements _AppParamState {
     return EqualUnmodifiableListView(_keepPushNotifierUserList);
   }
 
-  final Map<int, List<PopularityRankOddsAverageModel>>
+  final Map<int, PopularityRankOddsAverageModel>
       _keepPopularityRankOddsAverageMap;
   @override
   @JsonKey()
-  Map<int, List<PopularityRankOddsAverageModel>>
+  Map<int, PopularityRankOddsAverageModel>
       get keepPopularityRankOddsAverageMap {
     if (_keepPopularityRankOddsAverageMap is EqualUnmodifiableMapView)
       return _keepPopularityRankOddsAverageMap;
@@ -550,10 +562,13 @@ class _$AppParamStateImpl implements _AppParamState {
   @override
   @JsonKey()
   final String selectedDrawerRace;
+  @override
+  @JsonKey()
+  final bool isZoomed;
 
   @override
   String toString() {
-    return 'AppParamState(keepScheduleDateBashoMap: $keepScheduleDateBashoMap, keepRaceMap: $keepRaceMap, keepHorseMap: $keepHorseMap, keepOddsMap: $keepOddsMap, keepOddsWideMap: $keepOddsWideMap, keepSummaryMap: $keepSummaryMap, keepSummaryDateBashoMap: $keepSummaryDateBashoMap, keepLoginUserMap: $keepLoginUserMap, keepPushNotifierUserList: $keepPushNotifierUserList, keepPopularityRankOddsAverageMap: $keepPopularityRankOddsAverageMap, configOddsGetTiming: $configOddsGetTiming, selectedScheduleDate: $selectedScheduleDate, selectedScheduleKaisuuBashoDay: $selectedScheduleKaisuuBashoDay, selectedScheduleKaisuuBashoDayName: $selectedScheduleKaisuuBashoDayName, selectedRaceNumber: $selectedRaceNumber, selectedTiming: $selectedTiming, selectedTiming2: $selectedTiming2, queryUser: $queryUser, isShowUpperBox: $isShowUpperBox, isShowUpperBox2: $isShowUpperBox2, selectedDrawerRace: $selectedDrawerRace)';
+    return 'AppParamState(keepScheduleDateBashoMap: $keepScheduleDateBashoMap, keepRaceMap: $keepRaceMap, keepHorseMap: $keepHorseMap, keepOddsMap: $keepOddsMap, keepOddsWideMap: $keepOddsWideMap, keepSummaryMap: $keepSummaryMap, keepSummaryDateBashoMap: $keepSummaryDateBashoMap, keepLoginUserMap: $keepLoginUserMap, keepPushNotifierUserList: $keepPushNotifierUserList, keepPopularityRankOddsAverageMap: $keepPopularityRankOddsAverageMap, configOddsGetTiming: $configOddsGetTiming, selectedScheduleDate: $selectedScheduleDate, selectedScheduleKaisuuBashoDay: $selectedScheduleKaisuuBashoDay, selectedScheduleKaisuuBashoDayName: $selectedScheduleKaisuuBashoDayName, selectedRaceNumber: $selectedRaceNumber, selectedTiming: $selectedTiming, selectedTiming2: $selectedTiming2, queryUser: $queryUser, isShowUpperBox: $isShowUpperBox, isShowUpperBox2: $isShowUpperBox2, selectedDrawerRace: $selectedDrawerRace, isZoomed: $isZoomed)';
   }
 
   @override
@@ -607,7 +622,9 @@ class _$AppParamStateImpl implements _AppParamState {
             (identical(other.isShowUpperBox2, isShowUpperBox2) ||
                 other.isShowUpperBox2 == isShowUpperBox2) &&
             (identical(other.selectedDrawerRace, selectedDrawerRace) ||
-                other.selectedDrawerRace == selectedDrawerRace));
+                other.selectedDrawerRace == selectedDrawerRace) &&
+            (identical(other.isZoomed, isZoomed) ||
+                other.isZoomed == isZoomed));
   }
 
   @override
@@ -633,7 +650,8 @@ class _$AppParamStateImpl implements _AppParamState {
         queryUser,
         isShowUpperBox,
         isShowUpperBox2,
-        selectedDrawerRace
+        selectedDrawerRace,
+        isZoomed
       ]);
 
   @JsonKey(ignore: true)
@@ -654,7 +672,7 @@ abstract class _AppParamState implements AppParamState {
       final Map<String, List<String>> keepSummaryDateBashoMap,
       final Map<String, LoginUserModel> keepLoginUserMap,
       final List<PushNotifierUserModel> keepPushNotifierUserList,
-      final Map<int, List<PopularityRankOddsAverageModel>>
+      final Map<int, PopularityRankOddsAverageModel>
           keepPopularityRankOddsAverageMap,
       final String configOddsGetTiming,
       final String selectedScheduleDate,
@@ -666,7 +684,8 @@ abstract class _AppParamState implements AppParamState {
       final String queryUser,
       final bool isShowUpperBox,
       final bool isShowUpperBox2,
-      final String selectedDrawerRace}) = _$AppParamStateImpl;
+      final String selectedDrawerRace,
+      final bool isZoomed}) = _$AppParamStateImpl;
 
   @override
   Map<String, List<ScheduleModel>> get keepScheduleDateBashoMap;
@@ -687,8 +706,7 @@ abstract class _AppParamState implements AppParamState {
   @override
   List<PushNotifierUserModel> get keepPushNotifierUserList;
   @override
-  Map<int, List<PopularityRankOddsAverageModel>>
-      get keepPopularityRankOddsAverageMap;
+  Map<int, PopularityRankOddsAverageModel> get keepPopularityRankOddsAverageMap;
   @override
 
   ///
@@ -715,6 +733,8 @@ abstract class _AppParamState implements AppParamState {
   bool get isShowUpperBox2;
   @override
   String get selectedDrawerRace;
+  @override
+  bool get isZoomed;
   @override
   @JsonKey(ignore: true)
   _$$AppParamStateImplCopyWith<_$AppParamStateImpl> get copyWith =>

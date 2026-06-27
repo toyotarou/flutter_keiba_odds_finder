@@ -16,8 +16,8 @@ class PopularityRankOddsAverageState with _$PopularityRankOddsAverageState {
   const factory PopularityRankOddsAverageState({
     @Default(<PopularityRankOddsAverageModel>[]) List<PopularityRankOddsAverageModel> popularityRankOddsAverageList,
 
-    @Default(<int, List<PopularityRankOddsAverageModel>>{})
-    Map<int, List<PopularityRankOddsAverageModel>> popularityRankOddsAverageMap,
+    @Default(<int, PopularityRankOddsAverageModel>{})
+    Map<int, PopularityRankOddsAverageModel> popularityRankOddsAverageMap,
   }) = _PopularityRankOddsAverageState;
 }
 
@@ -38,7 +38,7 @@ class PopularityRankOddsAverage extends _$PopularityRankOddsAverage {
     try {
       final List<PopularityRankOddsAverageModel> list = <PopularityRankOddsAverageModel>[];
 
-      final Map<int, List<PopularityRankOddsAverageModel>> map = <int, List<PopularityRankOddsAverageModel>>{};
+      final Map<int, PopularityRankOddsAverageModel> map = <int, PopularityRankOddsAverageModel>{};
 
       // ignore: always_specify_types
       await client.get(path: APIPath.getHorseOddsFinderPopularityRankAverage).then((value) {
@@ -51,7 +51,7 @@ class PopularityRankOddsAverage extends _$PopularityRankOddsAverage {
 
           list.add(val);
 
-          (map[val.popularityRank] ??= <PopularityRankOddsAverageModel>[]).add(val);
+          map[val.popularityRank] = val;
         }
       });
 

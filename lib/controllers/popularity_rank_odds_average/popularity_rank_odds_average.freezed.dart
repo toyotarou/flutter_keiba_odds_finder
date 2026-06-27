@@ -18,8 +18,8 @@ final _privateConstructorUsedError = UnsupportedError(
 mixin _$PopularityRankOddsAverageState {
   List<PopularityRankOddsAverageModel> get popularityRankOddsAverageList =>
       throw _privateConstructorUsedError;
-  Map<int, List<PopularityRankOddsAverageModel>>
-      get popularityRankOddsAverageMap => throw _privateConstructorUsedError;
+  Map<int, PopularityRankOddsAverageModel> get popularityRankOddsAverageMap =>
+      throw _privateConstructorUsedError;
 
   @JsonKey(ignore: true)
   $PopularityRankOddsAverageStateCopyWith<PopularityRankOddsAverageState>
@@ -36,8 +36,7 @@ abstract class $PopularityRankOddsAverageStateCopyWith<$Res> {
   @useResult
   $Res call(
       {List<PopularityRankOddsAverageModel> popularityRankOddsAverageList,
-      Map<int, List<PopularityRankOddsAverageModel>>
-          popularityRankOddsAverageMap});
+      Map<int, PopularityRankOddsAverageModel> popularityRankOddsAverageMap});
 }
 
 /// @nodoc
@@ -65,7 +64,7 @@ class _$PopularityRankOddsAverageStateCopyWithImpl<$Res,
       popularityRankOddsAverageMap: null == popularityRankOddsAverageMap
           ? _value.popularityRankOddsAverageMap
           : popularityRankOddsAverageMap // ignore: cast_nullable_to_non_nullable
-              as Map<int, List<PopularityRankOddsAverageModel>>,
+              as Map<int, PopularityRankOddsAverageModel>,
     ) as $Val);
   }
 }
@@ -81,8 +80,7 @@ abstract class _$$PopularityRankOddsAverageStateImplCopyWith<$Res>
   @useResult
   $Res call(
       {List<PopularityRankOddsAverageModel> popularityRankOddsAverageList,
-      Map<int, List<PopularityRankOddsAverageModel>>
-          popularityRankOddsAverageMap});
+      Map<int, PopularityRankOddsAverageModel> popularityRankOddsAverageMap});
 }
 
 /// @nodoc
@@ -109,7 +107,7 @@ class __$$PopularityRankOddsAverageStateImplCopyWithImpl<$Res>
       popularityRankOddsAverageMap: null == popularityRankOddsAverageMap
           ? _value._popularityRankOddsAverageMap
           : popularityRankOddsAverageMap // ignore: cast_nullable_to_non_nullable
-              as Map<int, List<PopularityRankOddsAverageModel>>,
+              as Map<int, PopularityRankOddsAverageModel>,
     ));
   }
 }
@@ -121,8 +119,8 @@ class _$PopularityRankOddsAverageStateImpl
   const _$PopularityRankOddsAverageStateImpl(
       {final List<PopularityRankOddsAverageModel> popularityRankOddsAverageList =
           const <PopularityRankOddsAverageModel>[],
-      final Map<int, List<PopularityRankOddsAverageModel>> popularityRankOddsAverageMap =
-          const <int, List<PopularityRankOddsAverageModel>>{}})
+      final Map<int, PopularityRankOddsAverageModel> popularityRankOddsAverageMap =
+          const <int, PopularityRankOddsAverageModel>{}})
       : _popularityRankOddsAverageList = popularityRankOddsAverageList,
         _popularityRankOddsAverageMap = popularityRankOddsAverageMap;
 
@@ -136,12 +134,10 @@ class _$PopularityRankOddsAverageStateImpl
     return EqualUnmodifiableListView(_popularityRankOddsAverageList);
   }
 
-  final Map<int, List<PopularityRankOddsAverageModel>>
-      _popularityRankOddsAverageMap;
+  final Map<int, PopularityRankOddsAverageModel> _popularityRankOddsAverageMap;
   @override
   @JsonKey()
-  Map<int, List<PopularityRankOddsAverageModel>>
-      get popularityRankOddsAverageMap {
+  Map<int, PopularityRankOddsAverageModel> get popularityRankOddsAverageMap {
     if (_popularityRankOddsAverageMap is EqualUnmodifiableMapView)
       return _popularityRankOddsAverageMap;
     // ignore: implicit_dynamic_type
@@ -185,14 +181,13 @@ abstract class _PopularityRankOddsAverageState
     implements PopularityRankOddsAverageState {
   const factory _PopularityRankOddsAverageState(
       {final List<PopularityRankOddsAverageModel> popularityRankOddsAverageList,
-      final Map<int, List<PopularityRankOddsAverageModel>>
+      final Map<int, PopularityRankOddsAverageModel>
           popularityRankOddsAverageMap}) = _$PopularityRankOddsAverageStateImpl;
 
   @override
   List<PopularityRankOddsAverageModel> get popularityRankOddsAverageList;
   @override
-  Map<int, List<PopularityRankOddsAverageModel>>
-      get popularityRankOddsAverageMap;
+  Map<int, PopularityRankOddsAverageModel> get popularityRankOddsAverageMap;
   @override
   @JsonKey(ignore: true)
   _$$PopularityRankOddsAverageStateImplCopyWith<

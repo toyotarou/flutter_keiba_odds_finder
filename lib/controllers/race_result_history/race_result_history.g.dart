@@ -6,7 +6,7 @@ part of 'race_result_history.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$raceResultHistoryHash() => r'3614238e8619beb73f51489ce742c63926e1d5fd';
+String _$raceResultHistoryHash() => r'4273412227e9cf7bb1d387988607a627b1d68468';
 
 /// See also [RaceResultHistory].
 @ProviderFor(RaceResultHistory)

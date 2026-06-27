@@ -37,8 +37,8 @@ class AppParamState with _$AppParamState {
 
     @Default(<PushNotifierUserModel>[]) List<PushNotifierUserModel> keepPushNotifierUserList,
 
-    @Default(<int, List<PopularityRankOddsAverageModel>>{})
-    Map<int, List<PopularityRankOddsAverageModel>> keepPopularityRankOddsAverageMap,
+    @Default(<int, PopularityRankOddsAverageModel>{})
+    Map<int, PopularityRankOddsAverageModel> keepPopularityRankOddsAverageMap,
 
     ///
     @Default('') String configOddsGetTiming,
@@ -63,6 +63,8 @@ class AppParamState with _$AppParamState {
     @Default(true) bool isShowUpperBox2,
 
     @Default('') String selectedDrawerRace,
+
+    @Default(false) bool isZoomed,
   }) = _AppParamState;
 }
 
@@ -106,7 +108,7 @@ class AppParam extends _$AppParam {
       state = state.copyWith(keepPushNotifierUserList: list);
 
   ///
-  void setKeepPopularityRankOddsAverageMap({required Map<int, List<PopularityRankOddsAverageModel>> map}) =>
+  void setKeepPopularityRankOddsAverageMap({required Map<int, PopularityRankOddsAverageModel> map}) =>
       state = state.copyWith(keepPopularityRankOddsAverageMap: map);
 
   //////////////
@@ -143,4 +145,7 @@ class AppParam extends _$AppParam {
 
   ///
   void setSelectedDrawerRace({required String race}) => state = state.copyWith(selectedDrawerRace: race);
+
+  ///
+  void setIsZoomed({required bool flag}) => state = state.copyWith(isZoomed: flag);
 }

@@ -38,7 +38,7 @@ class RaceResultHistory extends _$RaceResultHistory {
       final Map<String, List<RaceResultHistoryModel>> map = <String, List<RaceResultHistoryModel>>{};
 
       await client
-          .get(path: APIPath.getHorseOddsFinderRaceResultHistory, queryParameters: <String, dynamic>{'rank': rank})
+          .get(path: APIPath.getHorseOddsFinderRaceResultHistory, queryParameters: <String, dynamic>{'rank': rank.toString()})
           .then((
             // ignore: always_specify_types
             value,

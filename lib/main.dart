@@ -25,6 +25,7 @@ Future<void> main() async {
   String deepLinkName = '';
   int deepLinkRace = 0;
   bool deepLinkRanking = false;
+  bool deepLinkZoomed = false;
 
   if (kIsWeb) {
     final Uri uri = Uri.base;
@@ -35,6 +36,7 @@ Future<void> main() async {
     deepLinkName = uri.queryParameters['name'] ?? '';
     deepLinkRace = int.tryParse(uri.queryParameters['race'] ?? '') ?? 0;
     deepLinkRanking = uri.queryParameters['ranking'] == '1';
+    deepLinkZoomed = uri.queryParameters['zoomed'] == '1';
   }
 
   final SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -61,6 +63,7 @@ Future<void> main() async {
         deepLinkName: deepLinkName,
         deepLinkRace: deepLinkRace,
         deepLinkRanking: deepLinkRanking,
+        deepLinkZoomed: deepLinkZoomed,
       ),
     ),
   );
@@ -76,6 +79,7 @@ class AppRoot extends StatefulWidget {
     this.deepLinkName = '',
     this.deepLinkRace = 0,
     this.deepLinkRanking = false,
+    this.deepLinkZoomed = false,
   });
 
   final String? queryUser;
@@ -87,6 +91,7 @@ class AppRoot extends StatefulWidget {
   final String deepLinkName;
   final int deepLinkRace;
   final bool deepLinkRanking;
+  final bool deepLinkZoomed;
 
   @override
   State<AppRoot> createState() => AppRootState();
@@ -99,6 +104,7 @@ class AppRootState extends State<AppRoot> {
   String _reloadName = '';
   int _reloadRace = 0;
   bool _reloadIsRankingDialogOpen = false;
+  bool _reloadIsZoomed = false;
   late String _loggedInUserId;
 
   @override
@@ -115,6 +121,7 @@ class AppRootState extends State<AppRoot> {
       _reloadName = widget.deepLinkName;
       _reloadRace = widget.deepLinkRace;
       _reloadIsRankingDialogOpen = widget.deepLinkRanking;
+      _reloadIsZoomed = widget.deepLinkZoomed;
     }
   }
 
@@ -151,6 +158,7 @@ class AppRootState extends State<AppRoot> {
       reloadName: _reloadName,
       reloadRace: _reloadRace,
       reloadIsRankingDialogOpen: _reloadIsRankingDialogOpen,
+      reloadIsZoomed: _reloadIsZoomed,
       queryUser: widget.queryUser,
       loggedInUserId: _loggedInUserId,
     );
@@ -166,6 +174,7 @@ class MyApp extends ConsumerStatefulWidget {
     required this.reloadName,
     required this.reloadRace,
     required this.reloadIsRankingDialogOpen,
+    this.reloadIsZoomed = false,
     this.queryUser,
     required this.loggedInUserId,
   });
@@ -177,6 +186,7 @@ class MyApp extends ConsumerStatefulWidget {
   final String reloadName;
   final int reloadRace;
   final bool reloadIsRankingDialogOpen;
+  final bool reloadIsZoomed;
   final String? queryUser;
   final String loggedInUserId;
 
@@ -207,6 +217,8 @@ class _MyAppState extends ConsumerState<MyApp> with ControllersMixin<MyApp> {
         if (widget.reloadRace > 0) {
           appParamNotifier.setSelectedRaceNumber(num: widget.reloadRace);
         }
+
+        appParamNotifier.setIsZoomed(flag: widget.reloadIsZoomed);
       }
     });
   }
