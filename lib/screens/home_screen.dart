@@ -1594,23 +1594,40 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
           ],
         ),
 
-        Container(
-          width: 40,
-          height: 30,
-          padding: const EdgeInsets.only(top: 10, left: 5),
-          alignment: Alignment.topLeft,
-          child: GestureDetector(
-            onTap: () {
-              OddsFinderDialog(
-                context: context,
-                widget: PopularityRankOddsAverageAlert(popularity: popularity),
-                paddingTop: context.screenSize.height * 0.1,
-                paddingBottom: context.screenSize.height * 0.1,
-              );
-            },
-            child: Icon(Icons.info_outline, color: Colors.orangeAccent.withValues(alpha: 0.7)),
-          ),
+        //
+        // Container(
+        //   width: 40,
+        //   height: 30,
+        //   padding: const EdgeInsets.only(top: 10, left: 5),
+        //   alignment: Alignment.topLeft,
+        //   child: GestureDetector(
+        //     onTap: () {
+        //       OddsFinderDialog(
+        //         context: context,
+        //         widget: PopularityRankOddsAverageAlert(popularity: popularity),
+        //         paddingTop: context.screenSize.height * 0.1,
+        //         paddingBottom: context.screenSize.height * 0.1,
+        //       );
+        //     },
+        //     child: const Icon(Icons.info_outline, color: Colors.white),
+        //   ),
+        // ),
+        //
+        //
+        //
+        GestureDetector(
+          onTap: () {
+            OddsFinderDialog(
+              context: context,
+              widget: PopularityRankOddsAverageAlert(popularity: popularity),
+              paddingTop: context.screenSize.height * 0.1,
+              paddingBottom: context.screenSize.height * 0.1,
+            );
+          },
+          child: Icon(Icons.info_outline, color: Colors.white.withValues(alpha: 0.5)),
         ),
+
+        const SizedBox(width: 20),
 
         if (fukuRank != null) ...<Widget>[
           Stack(
