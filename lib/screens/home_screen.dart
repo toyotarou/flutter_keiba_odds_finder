@@ -29,6 +29,7 @@ import 'components/horse_odds_ranking_display_alert.dart';
 // 一応残しておく
 // import 'components/horse_odds_wide_display_alert.dart';
 
+import 'components/popularity_rank_odds_average_alert.dart';
 import 'parts/error_confirm_dialog.dart';
 import 'parts/odds_finder_dialog.dart';
 import 'parts/odds_up_down_icon.dart';
@@ -1593,21 +1594,23 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
           ],
         ),
 
-        // Container(
-        //   width: 40,
-        //   height: 30,
-        //   padding: const EdgeInsets.only(top: 10, left: 5),
-        //   alignment: Alignment.topLeft,
-        //   child: GestureDetector(
-        //     onTap: () {
-        //       OddsFinderDialog(
-        //         context: context,
-        //         widget: PopularityRankOddsAverageAlert(popularity: popularity),
-        //       );
-        //     },
-        //     child: Icon(Icons.info_outline, color: Colors.orangeAccent.withValues(alpha: 0.7)),
-        //   ),
-        // ),
+        Container(
+          width: 40,
+          height: 30,
+          padding: const EdgeInsets.only(top: 10, left: 5),
+          alignment: Alignment.topLeft,
+          child: GestureDetector(
+            onTap: () {
+              OddsFinderDialog(
+                context: context,
+                widget: PopularityRankOddsAverageAlert(popularity: popularity),
+                paddingTop: context.screenSize.height * 0.1,
+                paddingBottom: context.screenSize.height * 0.1,
+              );
+            },
+            child: Icon(Icons.info_outline, color: Colors.orangeAccent.withValues(alpha: 0.7)),
+          ),
+        ),
 
         if (fukuRank != null) ...<Widget>[
           Stack(

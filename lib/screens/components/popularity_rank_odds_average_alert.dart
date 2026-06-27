@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -17,11 +19,25 @@ class PopularityRankOddsAverageAlert extends ConsumerStatefulWidget {
 
 class _PopularityRankOddsAverageAlertState extends ConsumerState<PopularityRankOddsAverageAlert>
     with ControllersMixin<PopularityRankOddsAverageAlert> {
+  final ScrollController _scrollController = ScrollController();
+
+  static const double _moveAmount = 18;
+  static const int _tickMs = 16;
+
+  Timer? _repeatTimer;
+
   ///
   @override
   void initState() {
     super.initState();
     raceResultHistoryNotifier.fetchRaceResultHistory(rank: widget.popularity).catchError((_) {});
+  }
+
+  @override
+  void dispose() {
+    _repeatTimer?.cancel();
+    _scrollController.dispose();
+    super.dispose();
   }
 
   ///
@@ -41,7 +57,7 @@ class _PopularityRankOddsAverageAlertState extends ConsumerState<PopularityRankO
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                 DefaultTextStyle(
-                  style: const TextStyle(fontSize: 12),
+                  style: const TextStyle(fontSize: 12, color: Colors.white),
 
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -67,7 +83,7 @@ class _PopularityRankOddsAverageAlertState extends ConsumerState<PopularityRankO
                       left: 5,
                       child: Text(
                         '${popularityRankOddsAverageModel.count}レース平均',
-                        style: const TextStyle(color: Colors.orangeAccent),
+                        style: const TextStyle(color: Colors.white),
                       ),
                     ),
 
@@ -82,14 +98,48 @@ class _PopularityRankOddsAverageAlertState extends ConsumerState<PopularityRankO
                       child: Center(
                         child: Text(
                           popularityRankOddsAverageModel.oddsAverage,
-                          style: const TextStyle(fontSize: 50, color: Colors.orangeAccent),
+                          style: const TextStyle(fontSize: 50, color: Colors.white),
                         ),
                       ),
                     ),
                   ],
                 ),
 
-                const SizedBox(height: 30),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: <Widget>[
+                    const SizedBox.shrink(),
+                    Row(
+                      children: <Widget>[
+                        GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTapDown: (_) => _startRepeating(() => _scrollBy(_moveAmount)),
+                          onTapUp: (_) => _stopRepeating(),
+                          onTapCancel: _stopRepeating,
+                          child: const SizedBox(
+                            width: 44,
+                            height: 44,
+                            child: Center(child: Icon(Icons.arrow_downward, color: Colors.white)),
+                          ),
+                        ),
+
+                        GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTapDown: (_) => _startRepeating(() => _scrollBy(-_moveAmount)),
+                          onTapUp: (_) => _stopRepeating(),
+                          onTapCancel: _stopRepeating,
+                          child: const SizedBox(
+                            width: 44,
+                            height: 44,
+                            child: Center(child: Icon(Icons.arrow_upward, color: Colors.white)),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+
+                Divider(color: Colors.white.withValues(alpha: 0.4)),
 
                 Expanded(child: displayPopularityRankOddsList()),
               ],
@@ -101,25 +151,51 @@ class _PopularityRankOddsAverageAlertState extends ConsumerState<PopularityRankO
   }
 
   ///
+  void _startRepeating(VoidCallback action) {
+    _repeatTimer?.cancel();
+    action();
+    _repeatTimer = Timer.periodic(const Duration(milliseconds: _tickMs), (_) => action());
+  }
+
+  ///
+  void _stopRepeating() {
+    _repeatTimer?.cancel();
+    _repeatTimer = null;
+  }
+
+  ///
+  void _scrollBy(double delta) {
+    if (!_scrollController.hasClients) {
+      return;
+    }
+    final ScrollPosition pos = _scrollController.position;
+    final double newOffset = (_scrollController.offset + delta).clamp(0.0, pos.maxScrollExtent);
+    _scrollController.jumpTo(newOffset);
+  }
+
+  ///
   Widget displayPopularityRankOddsList() {
     final List<RaceResultHistoryModel> list = raceResultHistoryState.raceResultHistoryList;
 
     if (list.isEmpty) {
-      return const Center(child: CircularProgressIndicator(color: Colors.orangeAccent));
+      return const Center(child: CircularProgressIndicator(color: Colors.white));
     }
 
     return SingleChildScrollView(
+      controller: _scrollController,
       child: Wrap(
         spacing: 8,
         runSpacing: 8,
         children: list.map((RaceResultHistoryModel e) {
           return Container(
-            padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            width: context.screenSize.width * 0.1,
+            alignment: Alignment.center,
             decoration: BoxDecoration(
-              border: Border.all(color: Colors.orangeAccent.withValues(alpha: 0.5)),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.5)),
               borderRadius: BorderRadius.circular(4),
             ),
-            child: Text(e.tan, style: const TextStyle(color: Colors.orangeAccent, fontSize: 13)),
+            child: Text(e.tan, style: const TextStyle(color: Colors.white, fontSize: 12)),
           );
         }).toList(),
       ),

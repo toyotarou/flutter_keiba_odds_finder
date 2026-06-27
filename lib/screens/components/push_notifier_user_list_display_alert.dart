@@ -44,6 +44,7 @@ class _PushNotifierUserListDisplayAlertState extends ConsumerState<PushNotifierU
   Widget displayPushNotifierUserList() {
     final List<Widget> list = <Widget>[];
 
+    int i = 1;
     for (final PushNotifierUserModel value in appParamState.keepPushNotifierUserList) {
       list.add(
         Container(
@@ -57,7 +58,7 @@ class _PushNotifierUserListDisplayAlertState extends ConsumerState<PushNotifierU
                 children: <Widget>[
                   CircleAvatar(
                     radius: 12,
-                    child: Text(value.id.toString(), style: const TextStyle(fontSize: 10, color: Colors.white)),
+                    child: Text(i.toString(), style: const TextStyle(fontSize: 10, color: Colors.white)),
                   ),
                   const SizedBox(width: 10),
                   Expanded(child: Text(value.userId)),
@@ -114,6 +115,8 @@ class _PushNotifierUserListDisplayAlertState extends ConsumerState<PushNotifierU
           ),
         ),
       );
+
+      i++;
     }
 
     return SingleChildScrollView(child: Column(children: list));
