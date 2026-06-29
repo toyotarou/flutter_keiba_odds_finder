@@ -359,7 +359,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
               appParamNotifier.setSelectedRaceNumber(num: 0);
             },
             child: Container(
-              margin: const EdgeInsets.all(5),
+              margin: const EdgeInsets.symmetric(horizontal: 5.0),
               padding: const EdgeInsets.all(5),
               decoration: BoxDecoration(
                 color: (appParamState.selectedScheduleDate == e.key)
@@ -1032,7 +1032,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                       if (widget.scheduleDateBashoMap.isNotEmpty)
                         const Text('日付を選択してください', style: TextStyle(fontSize: 12, color: Colors.greenAccent)),
                     ],
-                    const SizedBox(height: 5),
+
                     if (widget.raceMap[_mapKey] != null) ...<Widget>[
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1051,14 +1051,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                       if (widget.scheduleDateBashoMap[appParamState.selectedScheduleDate] != null)
                         const Text('会場を選択してください', style: TextStyle(fontSize: 12, color: Colors.greenAccent)),
                     ],
-                    const SizedBox(height: 5),
+
                     if (appParamState.selectedRaceNumber > 0) ...<Widget>[
                       SizedBox(height: 40, child: displayRaceMinutesRow()),
                       _buildControlButtons(),
 
-                      _buildRaceResultBox(),
-
                       _buildPopularityHorseRow(),
+
+                      _buildRaceResultBox(),
 
                       if (widget.scheduleDateBashoMap.isNotEmpty) ...<Widget>[
                         Divider(color: Colors.white.withValues(alpha: 0.5)),
