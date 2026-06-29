@@ -29,7 +29,12 @@ import 'components/horse_odds_ranking_display_alert.dart';
 // 一応残しておく
 // import 'components/horse_odds_wide_display_alert.dart';
 
-import 'components/popularity_rank_odds_average_alert.dart';
+// import 'components/popularity_rank_odds_average_alert.dart';
+//
+//
+//
+//
+
 import 'parts/error_confirm_dialog.dart';
 import 'parts/odds_finder_dialog.dart';
 import 'parts/odds_up_down_icon.dart';
@@ -1059,6 +1064,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
 
                       _buildRaceResultBox(),
 
+                      _buildPopularityHorseRow(),
+
                       if (widget.scheduleDateBashoMap.isNotEmpty) ...<Widget>[
                         Divider(color: Colors.white.withValues(alpha: 0.5)),
                         const SizedBox(height: 5),
@@ -1423,6 +1430,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
           key: ValueKey<int>(index),
           controller: _horseListScrollController,
           index: index,
+
+          /////////////////
+          /////////////////
+          /////////////////
           child: _buildHorseListItem(
             index: index,
             element: element,
@@ -1439,6 +1450,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
             nextOddsTimeline: index + 1 < displayList.length ? oddsTimelineMap[displayList[index + 1].num] : null,
             fukuRank: fukuRankMap[element.num],
           ),
+
+          /////////////////
+          /////////////////
+
+          /////////////////
         );
       },
     );
@@ -1542,10 +1558,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
             children: <Widget>[
               _buildHorseItemHeader(popularity: popularity, horse: horse, fukuRank: fukuRank),
               const SizedBox(height: 10),
+
+              ///////////////////////////
+
+              ///////////////////////////
+
+              ///////////////////////////
               _buildHorseNameRow(element: element, horse: horse, horseWakuColorMap: horseWakuColorMap),
+
               if (oddsTimeline != null) ...<Widget>[
                 const SizedBox(height: 20),
 
+                ///HHH
                 _buildOddsTimelineRow(
                   timeline: oddsTimeline,
                   activeTimingKey: activeTimingKey,
@@ -1555,7 +1579,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                   nextTimeline: nextOddsTimeline,
                 ),
               ],
+
               const SizedBox(height: 10),
+
+              ///////////////////////////
+
+              ///////////////////////////
+
+              ///////////////////////////
             ],
           ),
         ),
@@ -1615,20 +1646,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
         //
         //
         //
-        GestureDetector(
-          onTap: () {
-            OddsFinderDialog(
-              context: context,
-              widget: PopularityRankOddsAverageAlert(popularity: popularity),
-              paddingTop: context.screenSize.height * 0.1,
-              paddingBottom: context.screenSize.height * 0.1,
-            );
-          },
-          child: Icon(Icons.info_outline, color: Colors.white.withValues(alpha: 0.5)),
-        ),
-
-        const SizedBox(width: 20),
-
+        // GestureDetector(
+        //   onTap: () {
+        //     OddsFinderDialog(
+        //       context: context,
+        //       widget: PopularityRankOddsAverageAlert(popularity: popularity),
+        //       paddingTop: context.screenSize.height * 0.1,
+        //       paddingBottom: context.screenSize.height * 0.1,
+        //     );
+        //   },
+        //   child: Icon(Icons.info_outline, color: Colors.white.withValues(alpha: 0.5)),
+        // ),
+        //
+        // const SizedBox(width: 20),
+        //
         if (fukuRank != null) ...<Widget>[
           Stack(
             children: <Widget>[
@@ -1690,6 +1721,80 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
         // ] else ...<Widget>[const SizedBox.shrink()],
 */
       ],
+    );
+  }
+
+  ///
+  Widget _buildPopularityHorseRow() {
+    final List<OddsModel> allOdds = (widget.oddsMap[_mapKey] ?? <OddsModel>[])
+        .where((OddsModel o) => o.race == appParamState.selectedRaceNumber)
+        .toList();
+
+    final int? filterMinutes = _resolveFilterMinutes(appParamState.selectedTiming, allOdds);
+
+    final List<OddsModel> finalOdds =
+        (filterMinutes != null
+              ? allOdds.where((OddsModel o) => o.minutesBeforeStart == filterMinutes).toList()
+              : allOdds)
+          ..sort((OddsModel a, OddsModel b) => (double.tryParse(a.odds) ?? 0).compareTo(double.tryParse(b.odds) ?? 0));
+
+    if (finalOdds.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: finalOdds.asMap().entries.map((MapEntry<int, OddsModel> entry) {
+          final int index = entry.key + 1;
+
+          final OddsModel o = entry.value;
+
+          String average = '';
+          String upsetScore = '';
+          if (appParamState.keepPopularityRankOddsAverageMap[index] != null) {
+            average = appParamState.keepPopularityRankOddsAverageMap[index]!.oddsAverage;
+
+            upsetScore = (average.toDouble() / o.odds.toDouble()).toStringAsFixed(2);
+          }
+
+          return Container(
+            width: 44,
+            margin: const EdgeInsets.symmetric(horizontal: 2),
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.05),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+              borderRadius: BorderRadius.circular(3),
+            ),
+            child: Column(
+              children: <Widget>[
+                Text(
+                  index.toString(),
+                  style: const TextStyle(color: Colors.green, fontSize: 10),
+                  textAlign: TextAlign.center,
+                ),
+
+                Text(
+                  o.num.toString(),
+                  style: const TextStyle(color: Colors.white, fontSize: 12),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  o.odds,
+                  style: const TextStyle(color: Colors.yellowAccent, fontSize: 10),
+                  textAlign: TextAlign.center,
+                ),
+
+                Text(average),
+
+                Text(upsetScore),
+              ],
+            ),
+          );
+        }).toList(),
+      ),
     );
   }
 
