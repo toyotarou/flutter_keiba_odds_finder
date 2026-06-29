@@ -11,8 +11,6 @@ import '../extensions/extensions.dart';
 import '../main.dart';
 import '../models/horse_model.dart';
 import '../models/login_user_model.dart';
-
-// import '../models/netkeiba_odds_model.dart';
 import '../models/odds_model.dart';
 import '../models/odds_wide_model.dart';
 import '../models/popularity_rank_odds_average_model.dart';
@@ -46,7 +44,6 @@ class HomeScreen extends ConsumerStatefulWidget {
     required this.raceMap,
     required this.horseMap,
     required this.oddsMap,
-    // required this.netkeibaOddsMap,
     required this.oddsGetTiming,
     required this.oddsWideMap,
     required this.isRankingDialogOpen,
@@ -65,7 +62,6 @@ class HomeScreen extends ConsumerStatefulWidget {
   final Map<String, List<HorseModel>> horseMap;
   final Map<String, List<OddsModel>> oddsMap;
 
-  // final Map<String, List<NetkeibaOddsModel>> netkeibaOddsMap;
   final String oddsGetTiming;
   final Map<String, List<OddsWideModel>> oddsWideMap;
   final bool isRankingDialogOpen;
@@ -110,8 +106,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
     horseNotifier.getAllHorseData();
     oddsNotifier.getAllOddsData();
     laravelConfigNotifier.getAllLaravelConfigData();
-    // netkeibaOddsNotifier.getAllNetkeibaOddsData();
-    // netkeibaRaceNotifier.getAllNetkeibaRaceData();
     oddsGetTimingNotifier.getAllOddsGetTimingData();
     oddsWideNotifier.getAllOddsWideData();
     summaryNotifier.getAllSummaryData();
@@ -1309,18 +1303,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
   ///
   Widget displayRaceHorseList() {
     final List<OddsModel> oddsModelList = <OddsModel>[];
-    // final List<NetkeibaOddsModel> netkeibaOddsModelList = <NetkeibaOddsModel>[];
     final Map<int, HorseModel> horseModelMap = <int, HorseModel>{};
 
     if (widget.raceMap[_mapKey] != null && appParamState.selectedRaceNumber > 0) {
       oddsModelList.addAll(
         (widget.oddsMap[_mapKey] ?? <OddsModel>[]).where((OddsModel e) => e.race == appParamState.selectedRaceNumber),
       );
-      // netkeibaOddsModelList.addAll(
-      //   (widget.netkeibaOddsMap[_mapKey] ?? <NetkeibaOddsModel>[]).where(
-      //     (NetkeibaOddsModel e) => e.race == appParamState.selectedRaceNumber,
-      //   ),
-      // );
       for (final HorseModel e in (widget.horseMap[_mapKey] ?? <HorseModel>[]).where(
         (HorseModel e) => e.race == appParamState.selectedRaceNumber,
       )) {
@@ -1332,10 +1320,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
       final int cmp = a.num.compareTo(b.num);
       return cmp != 0 ? cmp : b.minutesBeforeStart.compareTo(a.minutesBeforeStart);
     });
-    // netkeibaOddsModelList.sort((NetkeibaOddsModel a, NetkeibaOddsModel b) {
-    //   final int cmp = a.num.compareTo(b.num);
-    //   return cmp != 0 ? cmp : b.minutesBeforeStart.compareTo(a.minutesBeforeStart);
-    // });
 
     final List<String> timingParts = widget.oddsGetTiming.split('|');
     final List<int> timingOrder = _buildTimingOrder(timingParts);
@@ -1348,14 +1332,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
       length: timingParts.length,
       timingOrder: timingOrder,
     );
-    // final Map<int, List<String>> netkeibaOddsTimelineMap = _buildTimelineMap<NetkeibaOddsModel>(
-    //   models: netkeibaOddsModelList,
-    //   getNum: (NetkeibaOddsModel e) => e.num,
-    //   getMinutes: (NetkeibaOddsModel e) => e.minutesBeforeStart,
-    //   getValue: (NetkeibaOddsModel e) => e.odds,
-    //   length: timingParts.length,
-    //   timingOrder: timingOrder,
-    // );
     final Map<int, List<String>> fukuMinTimelineMap = _buildTimelineMap<OddsModel>(
       models: oddsModelList,
       getNum: (OddsModel e) => e.num,
@@ -1372,22 +1348,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
       length: timingParts.length,
       timingOrder: timingOrder,
     );
-    // final Map<int, List<String>> netkeibaFukuMinTimelineMap = _buildTimelineMap<NetkeibaOddsModel>(
-    //   models: netkeibaOddsModelList,
-    //   getNum: (NetkeibaOddsModel e) => e.num,
-    //   getMinutes: (NetkeibaOddsModel e) => e.minutesBeforeStart,
-    //   getValue: (NetkeibaOddsModel e) => e.fukuMin,
-    //   length: timingParts.length,
-    //   timingOrder: timingOrder,
-    // );
-    // final Map<int, List<String>> netkeibaFukuMaxTimelineMap = _buildTimelineMap<NetkeibaOddsModel>(
-    //   models: netkeibaOddsModelList,
-    //   getNum: (NetkeibaOddsModel e) => e.num,
-    //   getMinutes: (NetkeibaOddsModel e) => e.minutesBeforeStart,
-    //   getValue: (NetkeibaOddsModel e) => e.fukuMax,
-    //   length: timingParts.length,
-    //   timingOrder: timingOrder,
-    // );
 
     final String selectedTiming = appParamState.selectedTiming;
     final int? filterMinutes = _resolveFilterMinutes(selectedTiming, oddsModelList);
@@ -1440,11 +1400,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
             horseModelMap: horseModelMap,
             horseWakuColorMap: horseWakuColorMap,
             oddsTimelineMap: oddsTimelineMap,
-            // netkeibaOddsTimelineMap: netkeibaOddsTimelineMap,
             fukuMinTimelineMap: fukuMinTimelineMap,
             fukuMaxTimelineMap: fukuMaxTimelineMap,
-            // netkeibaFukuMinTimelineMap: netkeibaFukuMinTimelineMap,
-            // netkeibaFukuMaxTimelineMap: netkeibaFukuMaxTimelineMap,
             activeTimingKey: activeTimingKey,
             selectedTiming: selectedTiming,
             nextOddsTimeline: index + 1 < displayList.length ? oddsTimelineMap[displayList[index + 1].num] : null,
@@ -1510,11 +1467,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
     required Map<int, HorseModel> horseModelMap,
     required Map<int, Color> horseWakuColorMap,
     required Map<int, List<String>> oddsTimelineMap,
-    // required Map<int, List<String>> netkeibaOddsTimelineMap,
     required Map<int, List<String>> fukuMinTimelineMap,
     required Map<int, List<String>> fukuMaxTimelineMap,
-    // required Map<int, List<String>> netkeibaFukuMinTimelineMap,
-    // required Map<int, List<String>> netkeibaFukuMaxTimelineMap,
     required String activeTimingKey,
     required String selectedTiming,
     List<String>? nextOddsTimeline,
@@ -1523,19 +1477,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
     final int popularity = index + 1;
     final HorseModel? horse = horseModelMap[element.num];
     final List<String>? oddsTimeline = oddsTimelineMap[element.num];
-    // final List<String>? netkeibaTimeline = netkeibaOddsTimelineMap[element.num];
     final List<String>? fukuMinTimeline = fukuMinTimelineMap[element.num];
     final List<String>? fukuMaxTimeline = fukuMaxTimelineMap[element.num];
-    // final List<String>? netkeibaFukuMinTimeline = netkeibaFukuMinTimelineMap[element.num];
-    // final List<String>? netkeibaFukuMaxTimeline = netkeibaFukuMaxTimelineMap[element.num];
 
     double boxHeight = 100.0;
     if (oddsTimeline != null) {
       boxHeight += 130;
     }
-    // if (netkeibaTimeline != null) {
-    //   boxHeight += 160;
-    // }
 
     return Stack(
       children: <Widget>[
