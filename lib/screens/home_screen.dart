@@ -1391,9 +1391,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
           controller: _horseListScrollController,
           index: index,
 
-          /////////////////
-          /////////////////
-          /////////////////
           child: _buildHorseListItem(
             index: index,
             element: element,
@@ -1407,11 +1404,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
             nextOddsTimeline: index + 1 < displayList.length ? oddsTimelineMap[displayList[index + 1].num] : null,
             fukuRank: fukuRankMap[element.num],
           ),
-
-          /////////////////
-          /////////////////
-
-          /////////////////
         );
       },
     );
@@ -1480,15 +1472,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
     final List<String>? fukuMinTimeline = fukuMinTimelineMap[element.num];
     final List<String>? fukuMaxTimeline = fukuMaxTimelineMap[element.num];
 
-    double boxHeight = 100.0;
-    if (oddsTimeline != null) {
-      boxHeight += 130;
-    }
-
     return Stack(
       children: <Widget>[
         Container(
-          height: boxHeight,
           margin: const EdgeInsets.symmetric(vertical: 10),
           padding: const EdgeInsets.only(top: 5),
           decoration: BoxDecoration(
@@ -1496,45 +1482,48 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
           ),
         ),
         Container(
-          margin: const EdgeInsets.symmetric(vertical: 10),
           padding: const EdgeInsets.only(top: 5),
-          // decoration: BoxDecoration(
-          //   border: Border(bottom: BorderSide(color: Colors.greenAccent.withValues(alpha: 0.2), width: 2)),
-          // ),
+
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              _buildHorseItemHeader(popularity: popularity, horse: horse, fukuRank: fukuRank),
-              const SizedBox(height: 10),
+              ExpansionTile(
+                tilePadding: const EdgeInsets.symmetric(horizontal: 8),
+                childrenPadding: const EdgeInsets.symmetric(horizontal: 8),
+                title: DefaultTextStyle(
+                  style: const TextStyle(fontSize: 10),
+                  child: Column(
+                    children: <Widget>[
+                      _buildHorseItemHeader(popularity: popularity, horse: horse, fukuRank: fukuRank),
+                      const SizedBox(height: 10),
 
-              ///////////////////////////
-
-              ///////////////////////////
-
-              ///////////////////////////
-              _buildHorseNameRow(element: element, horse: horse, horseWakuColorMap: horseWakuColorMap),
-
-              if (oddsTimeline != null) ...<Widget>[
-                const SizedBox(height: 20),
-
-                ///HHH
-                _buildOddsTimelineRow(
-                  timeline: oddsTimeline,
-                  activeTimingKey: activeTimingKey,
-                  selectedTiming: selectedTiming,
-                  fukuMinList: fukuMinTimeline,
-                  fukuMaxList: fukuMaxTimeline,
-                  nextTimeline: nextOddsTimeline,
+                      _buildHorseNameRow(element: element, horse: horse, horseWakuColorMap: horseWakuColorMap),
+                    ],
+                  ),
                 ),
-              ],
+                children: <Widget>[
+                  SizedBox(
+                    width: double.infinity,
 
-              const SizedBox(height: 10),
+                    child: Column(
+                      children: <Widget>[
+                        if (oddsTimeline != null) ...<Widget>[
+                          const SizedBox(height: 20),
 
-              ///////////////////////////
-
-              ///////////////////////////
-
-              ///////////////////////////
+                          _buildOddsTimelineRow(
+                            timeline: oddsTimeline,
+                            activeTimingKey: activeTimingKey,
+                            selectedTiming: selectedTiming,
+                            fukuMinList: fukuMinTimeline,
+                            fukuMaxList: fukuMaxTimeline,
+                            nextTimeline: nextOddsTimeline,
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ],
           ),
         ),
