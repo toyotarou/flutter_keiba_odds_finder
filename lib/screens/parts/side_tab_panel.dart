@@ -17,6 +17,7 @@ class SideTabPanel extends StatelessWidget {
     this.unselectedTextColor = Colors.white,
     this.borderWidth = 1.5,
     this.selectedBorderWidth = 3.0,
+    this.borderRadius = 3.0,
     this.tabTextStyle,
     this.panelTextStyle,
     this.panelChild,
@@ -45,6 +46,10 @@ class SideTabPanel extends StatelessWidget {
 
   final double borderWidth;
   final double selectedBorderWidth;
+
+  /// 四隅の角丸半径。
+  final double borderRadius;
+
   final TextStyle? tabTextStyle;
   final TextStyle? panelTextStyle;
 
@@ -59,7 +64,7 @@ class SideTabPanel extends StatelessWidget {
       height: height,
       child: Padding(
         // 端のボーダーが半分はみ出してクリップされるのを防ぐ
-        padding: EdgeInsets.all(borderWidth),
+        padding: EdgeInsets.all(selectedBorderWidth),
         child: LayoutBuilder(
           builder: (BuildContext context, BoxConstraints constraints) {
             final double h = constraints.maxHeight;
@@ -82,6 +87,7 @@ class SideTabPanel extends StatelessWidget {
                       selectedColor: selectedBorderColor.withValues(alpha: 0.4),
                       strokeWidth: borderWidth,
                       selectedStrokeWidth: selectedBorderWidth,
+                      cornerRadius: borderRadius,
                     ),
                   ),
                 ),
@@ -153,6 +159,7 @@ class _SideTabPainter extends CustomPainter {
     required this.selectedColor,
     required this.strokeWidth,
     required this.selectedStrokeWidth,
+    required this.cornerRadius,
   });
 
   final int tabCount;
@@ -164,6 +171,7 @@ class _SideTabPainter extends CustomPainter {
   final Color selectedColor;
   final double strokeWidth;
   final double selectedStrokeWidth;
+  final double cornerRadius;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -183,7 +191,9 @@ class _SideTabPainter extends CustomPainter {
 
     final double w = size.width;
     final double h = size.height;
-    final double panelLeft = tabWidth;
+    final double pl = tabWidth; // panelLeft
+    final double r = cornerRadius;
+    final Radius rad = Radius.circular(r);
 
     double tabTop(int i) => i * (tabHeight + tabGap);
     double tabBottom(int i) => tabTop(i) + tabHeight;
@@ -191,44 +201,52 @@ class _SideTabPainter extends CustomPainter {
     final double selTop = tabTop(selectedIndex);
     final double selBottom = tabBottom(selectedIndex);
 
-    // パネル輪郭: gap を挟んだ開いたパス（コーナーは miter join で alpha 重複なし）
+    // パネル輪郭（時計回り → clockwise: true）
     canvas.drawPath(
       Path()
-        ..moveTo(panelLeft, selTop)
-        ..lineTo(panelLeft, 0)
-        ..lineTo(w, 0)
-        ..lineTo(w, h)
-        ..lineTo(panelLeft, h)
-        ..lineTo(panelLeft, selBottom),
+        ..moveTo(pl, selTop)
+        ..lineTo(pl, r)
+        ..arcToPoint(Offset(pl + r, 0), radius: rad, clockwise: true) // 左上
+        ..lineTo(w - r, 0)
+        ..arcToPoint(Offset(w, r), radius: rad, clockwise: true) // 右上
+        ..lineTo(w, h - r)
+        ..arcToPoint(Offset(w - r, h), radius: rad, clockwise: true) // 右下
+        ..lineTo(pl + r, h)
+        ..arcToPoint(Offset(pl, h - r), radius: rad, clockwise: true) // 左下
+        ..lineTo(pl, selBottom),
       selected,
     );
 
-    // 選択タブ: 右辺なしの開いたパス
+    // 選択タブ（反時計回り → clockwise: false）
     canvas.drawPath(
       Path()
-        ..moveTo(panelLeft, selTop)
-        ..lineTo(0, selTop)
-        ..lineTo(0, selBottom)
-        ..lineTo(panelLeft, selBottom),
+        ..moveTo(pl, selTop)
+        ..lineTo(r, selTop)
+        ..arcToPoint(Offset(0, selTop + r), radius: rad, clockwise: false) // 左上
+        ..lineTo(0, selBottom - r)
+        ..arcToPoint(Offset(r, selBottom), radius: rad, clockwise: false) // 左下
+        ..lineTo(pl, selBottom),
       selected,
     );
 
-    // 非選択タブ: 上側は「上辺＋左辺」、下側は「左辺＋下辺」のL字パス
+    // 非選択タブ（clockwise: false）
     for (int i = 0; i < tabCount; i++) {
-      if (i == selectedIndex) {
-        continue;
-      }
+      if (i == selectedIndex) continue;
       final double top = tabTop(i);
       final double bottom = tabBottom(i);
       final Path tabPath = i < selectedIndex
+          // 上側: 上辺＋左辺。左上コーナーを丸める
           ? (Path()
-              ..moveTo(panelLeft, top)
-              ..lineTo(0, top)
+              ..moveTo(pl, top)
+              ..lineTo(r, top)
+              ..arcToPoint(Offset(0, top + r), radius: rad, clockwise: false)
               ..lineTo(0, bottom))
+          // 下側: 左辺＋下辺。左下コーナーを丸める
           : (Path()
               ..moveTo(0, top)
-              ..lineTo(0, bottom)
-              ..lineTo(panelLeft, bottom));
+              ..lineTo(0, bottom - r)
+              ..arcToPoint(Offset(r, bottom), radius: rad, clockwise: false)
+              ..lineTo(pl, bottom));
       canvas.drawPath(tabPath, normal);
     }
   }
@@ -243,6 +261,7 @@ class _SideTabPainter extends CustomPainter {
         old.color != color ||
         old.selectedColor != selectedColor ||
         old.strokeWidth != strokeWidth ||
-        old.selectedStrokeWidth != selectedStrokeWidth;
+        old.selectedStrokeWidth != selectedStrokeWidth ||
+        old.cornerRadius != cornerRadius;
   }
 }
