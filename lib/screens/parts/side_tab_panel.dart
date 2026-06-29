@@ -206,13 +206,13 @@ class _SideTabPainter extends CustomPainter {
       Path()
         ..moveTo(pl, selTop)
         ..lineTo(pl, r)
-        ..arcToPoint(Offset(pl + r, 0), radius: rad, clockwise: true) // 左上
+        ..arcToPoint(Offset(pl + r, 0), radius: rad) // 左上
         ..lineTo(w - r, 0)
-        ..arcToPoint(Offset(w, r), radius: rad, clockwise: true) // 右上
+        ..arcToPoint(Offset(w, r), radius: rad) // 右上
         ..lineTo(w, h - r)
-        ..arcToPoint(Offset(w - r, h), radius: rad, clockwise: true) // 右下
+        ..arcToPoint(Offset(w - r, h), radius: rad) // 右下
         ..lineTo(pl + r, h)
-        ..arcToPoint(Offset(pl, h - r), radius: rad, clockwise: true) // 左下
+        ..arcToPoint(Offset(pl, h - r), radius: rad) // 左下
         ..lineTo(pl, selBottom),
       selected,
     );
@@ -231,7 +231,9 @@ class _SideTabPainter extends CustomPainter {
 
     // 非選択タブ（clockwise: false）
     for (int i = 0; i < tabCount; i++) {
-      if (i == selectedIndex) continue;
+      if (i == selectedIndex) {
+        continue;
+      }
       final double top = tabTop(i);
       final double bottom = tabBottom(i);
       final Path tabPath = i < selectedIndex

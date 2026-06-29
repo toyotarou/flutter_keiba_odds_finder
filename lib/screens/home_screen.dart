@@ -37,6 +37,7 @@ import 'parts/error_confirm_dialog.dart';
 import 'parts/odds_finder_dialog.dart';
 import 'parts/odds_up_down_icon.dart';
 import 'parts/side_tab_panel.dart';
+import 'parts/widget_display_overlay.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({
@@ -94,6 +95,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
   final Utility _utility = Utility();
 
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  final GlobalKey _haranidoKey = GlobalKey();
 
   String get _mapKey => '${appParamState.selectedScheduleDate}_${appParamState.selectedScheduleKaisuuBashoDay}';
 
@@ -1664,9 +1666,57 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
             ),
           ),
         ),
-        const Padding(
-          padding: EdgeInsets.only(right: 20),
-          child: Text('波乱度とは？', style: TextStyle(fontSize: 10)),
+        Padding(
+          padding: const EdgeInsets.only(right: 20),
+          child: GestureDetector(
+            key: _haranidoKey,
+            onTap: () {
+              widgetDisplayOverlay(
+                context: context,
+                buttonKey: _haranidoKey,
+
+                displayDuration: const Duration(seconds: 10),
+
+                child: Container(
+                  width: 280,
+                  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.black87.withValues(alpha: 0.3),
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: Colors.white30),
+                  ),
+                  child: const Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      DefaultTextStyle(
+                        style: TextStyle(color: Colors.white, fontSize: 11),
+
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+
+                          children: <Widget>[
+                            Text('2023年以降の人気順の平均オッズ（A）'),
+                            Text('このレースの人気順のオッズ（B）'),
+                            Text('「A ÷ B」を行うことで、波乱の度合いがわかります。'),
+                            Text('人気順のどこに高い数値が出るかによって'),
+                            Text('レースの波乱度が決まります。'),
+                          ],
+                        ),
+                      ),
+
+                      SizedBox(height: 10),
+
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: Text('過去データ', style: TextStyle(fontSize: 10)),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+            child: const Text('波乱度とは？', style: TextStyle(fontSize: 10)),
+          ),
         ),
         const SizedBox(height: 3),
       ],
