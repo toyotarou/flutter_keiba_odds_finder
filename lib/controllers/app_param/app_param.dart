@@ -65,6 +65,8 @@ class AppParamState with _$AppParamState {
     @Default('') String selectedDrawerRace,
 
     @Default(false) bool isZoomed,
+
+    @Default(0) int selectedUpsetBoxNum,
   }) = _AppParamState;
 }
 
@@ -148,4 +150,7 @@ class AppParam extends _$AppParam {
 
   ///
   void setIsZoomed({required bool flag}) => state = state.copyWith(isZoomed: flag);
+
+  ///
+  void setSelectedUpsetBoxNum({required int num}) => state = state.copyWith(selectedUpsetBoxNum: num);
 }

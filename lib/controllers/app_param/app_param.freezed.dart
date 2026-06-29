@@ -55,6 +55,7 @@ mixin _$AppParamState {
   bool get isShowUpperBox2 => throw _privateConstructorUsedError;
   String get selectedDrawerRace => throw _privateConstructorUsedError;
   bool get isZoomed => throw _privateConstructorUsedError;
+  int get selectedUpsetBoxNum => throw _privateConstructorUsedError;
 
   @JsonKey(ignore: true)
   $AppParamStateCopyWith<AppParamState> get copyWith =>
@@ -89,7 +90,8 @@ abstract class $AppParamStateCopyWith<$Res> {
       bool isShowUpperBox,
       bool isShowUpperBox2,
       String selectedDrawerRace,
-      bool isZoomed});
+      bool isZoomed,
+      int selectedUpsetBoxNum});
 }
 
 /// @nodoc
@@ -127,6 +129,7 @@ class _$AppParamStateCopyWithImpl<$Res, $Val extends AppParamState>
     Object? isShowUpperBox2 = null,
     Object? selectedDrawerRace = null,
     Object? isZoomed = null,
+    Object? selectedUpsetBoxNum = null,
   }) {
     return _then(_value.copyWith(
       keepScheduleDateBashoMap: null == keepScheduleDateBashoMap
@@ -218,6 +221,10 @@ class _$AppParamStateCopyWithImpl<$Res, $Val extends AppParamState>
           ? _value.isZoomed
           : isZoomed // ignore: cast_nullable_to_non_nullable
               as bool,
+      selectedUpsetBoxNum: null == selectedUpsetBoxNum
+          ? _value.selectedUpsetBoxNum
+          : selectedUpsetBoxNum // ignore: cast_nullable_to_non_nullable
+              as int,
     ) as $Val);
   }
 }
@@ -252,7 +259,8 @@ abstract class _$$AppParamStateImplCopyWith<$Res>
       bool isShowUpperBox,
       bool isShowUpperBox2,
       String selectedDrawerRace,
-      bool isZoomed});
+      bool isZoomed,
+      int selectedUpsetBoxNum});
 }
 
 /// @nodoc
@@ -288,6 +296,7 @@ class __$$AppParamStateImplCopyWithImpl<$Res>
     Object? isShowUpperBox2 = null,
     Object? selectedDrawerRace = null,
     Object? isZoomed = null,
+    Object? selectedUpsetBoxNum = null,
   }) {
     return _then(_$AppParamStateImpl(
       keepScheduleDateBashoMap: null == keepScheduleDateBashoMap
@@ -379,6 +388,10 @@ class __$$AppParamStateImplCopyWithImpl<$Res>
           ? _value.isZoomed
           : isZoomed // ignore: cast_nullable_to_non_nullable
               as bool,
+      selectedUpsetBoxNum: null == selectedUpsetBoxNum
+          ? _value.selectedUpsetBoxNum
+          : selectedUpsetBoxNum // ignore: cast_nullable_to_non_nullable
+              as int,
     ));
   }
 }
@@ -418,7 +431,8 @@ class _$AppParamStateImpl implements _AppParamState {
       this.isShowUpperBox = true,
       this.isShowUpperBox2 = true,
       this.selectedDrawerRace = '',
-      this.isZoomed = false})
+      this.isZoomed = false,
+      this.selectedUpsetBoxNum = 0})
       : _keepScheduleDateBashoMap = keepScheduleDateBashoMap,
         _keepRaceMap = keepRaceMap,
         _keepHorseMap = keepHorseMap,
@@ -565,10 +579,13 @@ class _$AppParamStateImpl implements _AppParamState {
   @override
   @JsonKey()
   final bool isZoomed;
+  @override
+  @JsonKey()
+  final int selectedUpsetBoxNum;
 
   @override
   String toString() {
-    return 'AppParamState(keepScheduleDateBashoMap: $keepScheduleDateBashoMap, keepRaceMap: $keepRaceMap, keepHorseMap: $keepHorseMap, keepOddsMap: $keepOddsMap, keepOddsWideMap: $keepOddsWideMap, keepSummaryMap: $keepSummaryMap, keepSummaryDateBashoMap: $keepSummaryDateBashoMap, keepLoginUserMap: $keepLoginUserMap, keepPushNotifierUserList: $keepPushNotifierUserList, keepPopularityRankOddsAverageMap: $keepPopularityRankOddsAverageMap, configOddsGetTiming: $configOddsGetTiming, selectedScheduleDate: $selectedScheduleDate, selectedScheduleKaisuuBashoDay: $selectedScheduleKaisuuBashoDay, selectedScheduleKaisuuBashoDayName: $selectedScheduleKaisuuBashoDayName, selectedRaceNumber: $selectedRaceNumber, selectedTiming: $selectedTiming, selectedTiming2: $selectedTiming2, queryUser: $queryUser, isShowUpperBox: $isShowUpperBox, isShowUpperBox2: $isShowUpperBox2, selectedDrawerRace: $selectedDrawerRace, isZoomed: $isZoomed)';
+    return 'AppParamState(keepScheduleDateBashoMap: $keepScheduleDateBashoMap, keepRaceMap: $keepRaceMap, keepHorseMap: $keepHorseMap, keepOddsMap: $keepOddsMap, keepOddsWideMap: $keepOddsWideMap, keepSummaryMap: $keepSummaryMap, keepSummaryDateBashoMap: $keepSummaryDateBashoMap, keepLoginUserMap: $keepLoginUserMap, keepPushNotifierUserList: $keepPushNotifierUserList, keepPopularityRankOddsAverageMap: $keepPopularityRankOddsAverageMap, configOddsGetTiming: $configOddsGetTiming, selectedScheduleDate: $selectedScheduleDate, selectedScheduleKaisuuBashoDay: $selectedScheduleKaisuuBashoDay, selectedScheduleKaisuuBashoDayName: $selectedScheduleKaisuuBashoDayName, selectedRaceNumber: $selectedRaceNumber, selectedTiming: $selectedTiming, selectedTiming2: $selectedTiming2, queryUser: $queryUser, isShowUpperBox: $isShowUpperBox, isShowUpperBox2: $isShowUpperBox2, selectedDrawerRace: $selectedDrawerRace, isZoomed: $isZoomed, selectedUpsetBoxNum: $selectedUpsetBoxNum)';
   }
 
   @override
@@ -624,7 +641,9 @@ class _$AppParamStateImpl implements _AppParamState {
             (identical(other.selectedDrawerRace, selectedDrawerRace) ||
                 other.selectedDrawerRace == selectedDrawerRace) &&
             (identical(other.isZoomed, isZoomed) ||
-                other.isZoomed == isZoomed));
+                other.isZoomed == isZoomed) &&
+            (identical(other.selectedUpsetBoxNum, selectedUpsetBoxNum) ||
+                other.selectedUpsetBoxNum == selectedUpsetBoxNum));
   }
 
   @override
@@ -651,7 +670,8 @@ class _$AppParamStateImpl implements _AppParamState {
         isShowUpperBox,
         isShowUpperBox2,
         selectedDrawerRace,
-        isZoomed
+        isZoomed,
+        selectedUpsetBoxNum
       ]);
 
   @JsonKey(ignore: true)
@@ -685,7 +705,8 @@ abstract class _AppParamState implements AppParamState {
       final bool isShowUpperBox,
       final bool isShowUpperBox2,
       final String selectedDrawerRace,
-      final bool isZoomed}) = _$AppParamStateImpl;
+      final bool isZoomed,
+      final int selectedUpsetBoxNum}) = _$AppParamStateImpl;
 
   @override
   Map<String, List<ScheduleModel>> get keepScheduleDateBashoMap;
@@ -735,6 +756,8 @@ abstract class _AppParamState implements AppParamState {
   String get selectedDrawerRace;
   @override
   bool get isZoomed;
+  @override
+  int get selectedUpsetBoxNum;
   @override
   @JsonKey(ignore: true)
   _$$AppParamStateImplCopyWith<_$AppParamStateImpl> get copyWith =>

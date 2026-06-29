@@ -36,6 +36,7 @@ import 'components/horse_odds_ranking_display_alert.dart';
 import 'parts/error_confirm_dialog.dart';
 import 'parts/odds_finder_dialog.dart';
 import 'parts/odds_up_down_icon.dart';
+import 'parts/side_tab_panel.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({
@@ -525,13 +526,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
   }
 
   ///
-  Widget _buildRaceResultBox() {
-    final Map<int, RaceResultModel> raceResultByRank = Map<int, RaceResultModel>.fromEntries(
-      (widget.raceResultMap[_mapKey] ?? <RaceResultModel>[])
-          .where((RaceResultModel e) => e.race == appParamState.selectedRaceNumber)
-          .map((RaceResultModel e) => MapEntry<int, RaceResultModel>(e.result, e)),
-    );
-
+  Widget _buildRaceResultBox({required Map<int, RaceResultModel> raceResultByRank}) {
     if (raceResultByRank.isEmpty) {
       return const SizedBox.shrink();
     }
@@ -548,84 +543,69 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
 
     final Map<int, String> numToOddsMap = <int, String>{for (final OddsModel o in eRecordOdds) o.num: o.odds};
 
-    return Row(
-      children: <Widget>[
-        const Spacer(),
-        Container(
-          width: context.screenSize.width * 0.7,
-          margin: const EdgeInsets.only(bottom: 5),
-          padding: const EdgeInsets.all(5),
-          decoration: BoxDecoration(
-            color: Colors.green[900]!.withValues(alpha: 0.4),
-            border: Border.all(color: Colors.yellowAccent.withValues(alpha: 0.4)),
-          ),
-          child: DefaultTextStyle(
-            style: const TextStyle(fontSize: 10, color: Colors.white),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Container(
-                  decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.1)),
-                  width: double.infinity,
-                  alignment: Alignment.center,
-                  child: const Text('レース結果'),
-                ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <int>[1, 2, 3].map((int e) {
-                    final RaceResultModel? horse = raceResultByRank[e];
-                    return Container(
-                      decoration: BoxDecoration(
-                        border: Border(bottom: BorderSide(color: Colors.white.withValues(alpha: 0.3))),
-                      ),
-                      child: Row(
-                        children: <Widget>[
-                          Container(
-                            width: 40,
-                            alignment: Alignment.center,
-                            decoration: BoxDecoration(
-                              color: switch (e) {
-                                1 => const Color(0xFFFFD700).withValues(alpha: 0.5),
-                                2 => const Color(0xFFC0C0C0).withValues(alpha: 0.5),
-                                3 => const Color(0xFFCD7F32).withValues(alpha: 0.5),
-                                _ => Colors.grey.withValues(alpha: 0.3),
-                              },
-                            ),
-                            child: Text(e.toString()),
-                          ),
-                          Container(
-                            width: 40,
-                            alignment: Alignment.center,
-                            child: Text(horse != null ? horse.num.toString() : ''),
-                          ),
-                          Expanded(
-                            child: Text(
-                              horse != null ? horse.horseName : '',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          Container(
-                            width: 40,
-                            alignment: Alignment.center,
-                            child: Text(horse != null ? numToOddsMap[horse.num] ?? '' : ''),
-                          ),
-                          Container(
-                            width: 50,
-                            alignment: Alignment.center,
-                            child: Text(horse != null ? '${numToPopularityMap[horse.num] ?? '-'}番人気' : ''),
-                          ),
-                        ],
-                      ),
-                    );
-                  }).toList(),
-                ),
-              ],
+    return DefaultTextStyle(
+      style: const TextStyle(fontSize: 10, color: Colors.white),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Container(
+              decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.1)),
+              width: double.infinity,
+              alignment: Alignment.center,
+              child: const Text('レース結果'),
             ),
-          ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <int>[1, 2, 3].map((int e) {
+                final RaceResultModel? horse = raceResultByRank[e];
+                return Container(
+                  decoration: BoxDecoration(
+                    border: Border(bottom: BorderSide(color: Colors.white.withValues(alpha: 0.3))),
+                  ),
+                  child: Row(
+                    children: <Widget>[
+                      Container(
+                        width: 40,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: switch (e) {
+                            1 => const Color(0xFFFFD700).withValues(alpha: 0.5),
+                            2 => const Color(0xFFC0C0C0).withValues(alpha: 0.5),
+                            3 => const Color(0xFFCD7F32).withValues(alpha: 0.5),
+                            _ => Colors.grey.withValues(alpha: 0.3),
+                          },
+                        ),
+                        child: Text(e.toString()),
+                      ),
+                      Container(
+                        width: 40,
+                        alignment: Alignment.center,
+                        child: Text(horse != null ? horse.num.toString() : ''),
+                      ),
+                      Expanded(
+                        child: Text(horse != null ? horse.horseName : '', maxLines: 1, overflow: TextOverflow.ellipsis),
+                      ),
+                      Container(
+                        width: 40,
+                        alignment: Alignment.center,
+                        child: Text(horse != null ? numToOddsMap[horse.num] ?? '' : ''),
+                      ),
+                      Container(
+                        width: 50,
+                        alignment: Alignment.center,
+                        child: Text(horse != null ? '${numToPopularityMap[horse.num] ?? '-'}番人気' : ''),
+                      ),
+                    ],
+                  ),
+                );
+              }).toList(),
+            ),
+          ],
         ),
-        const Spacer(),
-      ],
+      ),
     );
   }
 
@@ -953,6 +933,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
       });
     }
 
+    final List<OddsModel> displayList = _buildDisplayList();
+
+    final Map<int, RaceResultModel> raceResultByRank = Map<int, RaceResultModel>.fromEntries(
+      (widget.raceResultMap[_mapKey] ?? <RaceResultModel>[])
+          .where((RaceResultModel e) => e.race == appParamState.selectedRaceNumber)
+          .map((RaceResultModel e) => MapEntry<int, RaceResultModel>(e.result, e)),
+    );
+
     return Scaffold(
       key: _scaffoldKey,
       backgroundColor: Colors.black,
@@ -1056,9 +1044,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                       SizedBox(height: 40, child: displayRaceMinutesRow()),
                       _buildControlButtons(),
 
-                      _buildPopularityHorseRow(),
-
-                      _buildRaceResultBox(),
+                      if (displayList.isNotEmpty) ...<Widget>[
+                        SideTabPanel(
+                          tabLabels: raceResultByRank.isEmpty ? <String>['波乱度'] : <String>['波乱度', 'レース結果'],
+                          tabWidth: 90,
+                          tabGap: 0,
+                          height: 100,
+                          borderColor: Colors.white.withValues(alpha: 0.4),
+                          selectedIndex: raceResultByRank.isEmpty ? 0 : appParamState.selectedUpsetBoxNum,
+                          onSelected: (int i) => appParamNotifier.setSelectedUpsetBoxNum(num: i),
+                          panelChild: (raceResultByRank.isEmpty || appParamState.selectedUpsetBoxNum == 0)
+                              ? _buildPopularityHorseRow(displayList: displayList)
+                              : _buildRaceResultBox(raceResultByRank: raceResultByRank),
+                        ),
+                      ],
 
                       if (widget.scheduleDateBashoMap.isNotEmpty) ...<Widget>[
                         Divider(color: Colors.white.withValues(alpha: 0.5)),
@@ -1288,6 +1287,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
   }
 
   ///
+  List<OddsModel> _buildDisplayList() {
+    final List<OddsModel> allOdds = (widget.oddsMap[_mapKey] ?? <OddsModel>[])
+        .where((OddsModel e) => e.race == appParamState.selectedRaceNumber)
+        .toList();
+
+    final int? filterMinutes = _resolveFilterMinutes(appParamState.selectedTiming, allOdds);
+
+    return (filterMinutes != null
+          ? allOdds.where((OddsModel e) => e.minutesBeforeStart == filterMinutes).toList()
+          : allOdds)
+      ..sort((OddsModel a, OddsModel b) => (double.tryParse(a.odds) ?? 0).compareTo(double.tryParse(b.odds) ?? 0));
+  }
+
+  ///
   static String _resolveMinTiming(List<OddsModel> oddsModelList) {
     if (oddsModelList.any((OddsModel e) => e.minutesBeforeStart == -999)) {
       return '0';
@@ -1350,14 +1363,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
     );
 
     final String selectedTiming = appParamState.selectedTiming;
-    final int? filterMinutes = _resolveFilterMinutes(selectedTiming, oddsModelList);
-    final String activeTimingKey = _filterMinutesToTimingKey(filterMinutes);
-
-    final List<OddsModel> displayList =
-        (filterMinutes != null
-              ? oddsModelList.where((OddsModel e) => e.minutesBeforeStart == filterMinutes).toList()
-              : oddsModelList)
-          ..sort((OddsModel a, OddsModel b) => (double.tryParse(a.odds) ?? 0).compareTo(double.tryParse(b.odds) ?? 0));
+    final List<OddsModel> displayList = _buildDisplayList();
 
     if (displayList.isEmpty) {
       _displayListLength = 0;
@@ -1366,6 +1372,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
         style: const TextStyle(color: Colors.greenAccent, fontSize: 12),
       );
     }
+
+    final int? filterMinutes = _resolveFilterMinutes(selectedTiming, displayList);
+    final String activeTimingKey = _filterMinutesToTimingKey(filterMinutes);
 
     _displayListLength = displayList.length;
 
@@ -1562,41 +1571,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
           ],
         ),
 
-        //
-        // Container(
-        //   width: 40,
-        //   height: 30,
-        //   padding: const EdgeInsets.only(top: 10, left: 5),
-        //   alignment: Alignment.topLeft,
-        //   child: GestureDetector(
-        //     onTap: () {
-        //       OddsFinderDialog(
-        //         context: context,
-        //         widget: PopularityRankOddsAverageAlert(popularity: popularity),
-        //         paddingTop: context.screenSize.height * 0.1,
-        //         paddingBottom: context.screenSize.height * 0.1,
-        //       );
-        //     },
-        //     child: const Icon(Icons.info_outline, color: Colors.white),
-        //   ),
-        // ),
-        //
-        //
-        //
-        // GestureDetector(
-        //   onTap: () {
-        //     OddsFinderDialog(
-        //       context: context,
-        //       widget: PopularityRankOddsAverageAlert(popularity: popularity),
-        //       paddingTop: context.screenSize.height * 0.1,
-        //       paddingBottom: context.screenSize.height * 0.1,
-        //     );
-        //   },
-        //   child: Icon(Icons.info_outline, color: Colors.white.withValues(alpha: 0.5)),
-        // ),
-        //
-        // const SizedBox(width: 20),
-        //
         if (fukuRank != null) ...<Widget>[
           Stack(
             children: <Widget>[
@@ -1626,112 +1600,76 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
             ],
           ),
         ],
-
-        /*
-        ///////////////// 一応残しておく
-        // if (appParamState.queryUser == 'hidechy') ...<Widget>[
-        //   GestureDetector(
-        //     onTap: () {
-        //       final String timing =
-        //           <String>[
-        //             appParamState.selectedTiming,
-        //             appParamState.selectedTiming2,
-        //           ].where((String e) => e.isNotEmpty).firstOrNull ??
-        //           '';
-        //       OddsFinderDialog(
-        //         context: context,
-        //         widget: HorseOddsWideDisplayAlert(timing: timing, horse: horse),
-        //       );
-        //     },
-        //     child: Container(
-        //       decoration: BoxDecoration(
-        //         color: Colors.orangeAccent.withValues(alpha: 0.2),
-        //         borderRadius: BorderRadius.circular(10),
-        //       ),
-        //       padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 20),
-        //       child: const Text(
-        //         'WIDE',
-        //         style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
-        //       ),
-        //     ),
-        //   ),
-        // ] else ...<Widget>[const SizedBox.shrink()],
-*/
       ],
     );
   }
 
   ///
-  Widget _buildPopularityHorseRow() {
-    final List<OddsModel> allOdds = (widget.oddsMap[_mapKey] ?? <OddsModel>[])
-        .where((OddsModel o) => o.race == appParamState.selectedRaceNumber)
-        .toList();
+  Widget _buildPopularityHorseRow({required List<OddsModel> displayList}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: <Widget>[
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Row(
+              children: displayList.asMap().entries.map((MapEntry<int, OddsModel> entry) {
+                final int index = entry.key + 1;
 
-    final int? filterMinutes = _resolveFilterMinutes(appParamState.selectedTiming, allOdds);
+                final OddsModel o = entry.value;
 
-    final List<OddsModel> finalOdds =
-        (filterMinutes != null
-              ? allOdds.where((OddsModel o) => o.minutesBeforeStart == filterMinutes).toList()
-              : allOdds)
-          ..sort((OddsModel a, OddsModel b) => (double.tryParse(a.odds) ?? 0).compareTo(double.tryParse(b.odds) ?? 0));
+                String average = '';
+                String upsetScore = '';
+                if (appParamState.keepPopularityRankOddsAverageMap[index] != null) {
+                  average = appParamState.keepPopularityRankOddsAverageMap[index]!.oddsAverage;
 
-    if (finalOdds.isEmpty) {
-      return const SizedBox.shrink();
-    }
+                  upsetScore = (average.toDouble() / o.odds.toDouble()).toStringAsFixed(2);
+                }
 
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: finalOdds.asMap().entries.map((MapEntry<int, OddsModel> entry) {
-          final int index = entry.key + 1;
+                return Container(
+                  width: 70,
+                  margin: const EdgeInsets.symmetric(horizontal: 2),
 
-          final OddsModel o = entry.value;
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.05),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+                    borderRadius: BorderRadius.circular(3),
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      Container(
+                        decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.1)),
+                        width: double.infinity,
+                        alignment: Alignment.center,
+                        child: Text('$index番人気'),
+                      ),
 
-          String average = '';
-          String upsetScore = '';
-          if (appParamState.keepPopularityRankOddsAverageMap[index] != null) {
-            average = appParamState.keepPopularityRankOddsAverageMap[index]!.oddsAverage;
+                      Text(
+                        '馬番: ${o.num}',
+                        style: const TextStyle(color: Colors.white, fontSize: 12),
+                        textAlign: TextAlign.center,
+                      ),
 
-            upsetScore = (average.toDouble() / o.odds.toDouble()).toStringAsFixed(2);
-          }
+                      const SizedBox(height: 3),
 
-          return Container(
-            width: 44,
-            margin: const EdgeInsets.symmetric(horizontal: 2),
-            padding: const EdgeInsets.symmetric(vertical: 4),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.05),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
-              borderRadius: BorderRadius.circular(3),
+                      Text(upsetScore),
+
+                      const SizedBox(height: 3),
+                    ],
+                  ),
+                );
+              }).toList(),
             ),
-            child: Column(
-              children: <Widget>[
-                Text(
-                  index.toString(),
-                  style: const TextStyle(color: Colors.green, fontSize: 10),
-                  textAlign: TextAlign.center,
-                ),
-
-                Text(
-                  o.num.toString(),
-                  style: const TextStyle(color: Colors.white, fontSize: 12),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  o.odds,
-                  style: const TextStyle(color: Colors.yellowAccent, fontSize: 10),
-                  textAlign: TextAlign.center,
-                ),
-
-                Text(average),
-
-                Text(upsetScore),
-              ],
-            ),
-          );
-        }).toList(),
-      ),
+          ),
+        ),
+        const Padding(
+          padding: EdgeInsets.only(right: 20),
+          child: Text('波乱度とは？', style: TextStyle(fontSize: 10)),
+        ),
+        const SizedBox(height: 3),
+      ],
     );
   }
 
