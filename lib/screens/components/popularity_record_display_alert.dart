@@ -196,7 +196,7 @@ class _PopularityRecordDisplayAlertState extends ConsumerState<PopularityRecordD
         ),
         Center(
           child: Text(
-            model != null ? model.oddsAverage : '-----',
+            model != null ? (double.tryParse(model.oddsAverage)?.toStringAsFixed(1) ?? model.oddsAverage) : '-----',
             style: const TextStyle(fontSize: 50, color: Colors.grey),
           ),
         ),

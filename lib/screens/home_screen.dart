@@ -1676,7 +1676,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                 context: context,
                 buttonKey: _haranidoKey,
 
-                displayDuration: const Duration(seconds: 7),
+                displayDuration: const Duration(seconds: 5),
 
                 child: Container(
                   width: 300,
@@ -1698,9 +1698,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                           children: <Widget>[
                             Text('2023年以降の人気順の平均オッズ（A）'),
                             Text('このレースの人気順のオッズ（B）'),
-                            Text('「A ÷ B」を行うことで、波乱の度合いがわかります。'),
-                            Text('人気順のどこに高い数値が出るかによって'),
-                            Text('レースの波乱度が決まります。'),
+                            Text('「A / B」を行うことで、波乱の度合いがわかります。'),
+                            Text('人気順のどこに高い数値が出るかによって、レースの波乱度が決まります。'),
                           ],
                         ),
                       ),
@@ -1714,7 +1713,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
 
                             OddsFinderDialog(context: context, widget: const PopularityRecordDisplayAlert());
                           },
-                          child: const Text('過去データ', style: TextStyle(fontSize: 10)),
+                          child: const Text('過去オッズレコード', style: TextStyle(fontSize: 10)),
                         ),
                       ),
                     ],
