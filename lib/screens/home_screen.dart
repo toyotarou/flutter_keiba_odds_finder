@@ -23,6 +23,7 @@ import '../utility/utility.dart';
 import 'components/admin_menu_alert.dart';
 import 'components/history_race_record_display_alert.dart';
 import 'components/horse_detail_display_alert.dart';
+import 'components/horse_name_initial_panel_alert.dart';
 import 'components/horse_odds_ranking_display_alert.dart';
 
 // 一応残しておく
@@ -834,8 +835,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                           ],
                         ),
                       ),
-
-                      //                      const SizedBox(height: 10),
                     ],
                   ],
                 ),
@@ -1099,19 +1098,31 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
             const SizedBox(height: 60),
 
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: <Widget>[
-                const SizedBox.shrink(),
+                Expanded(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: <Widget>[
+                      TextButton(
+                        onPressed: () {
+                          OddsFinderDialog(context: context, widget: const HistoryRaceRecordDisplayAlert());
+                        },
+                        child: const Text('過去データ'),
+                      ),
 
-                Padding(
-                  padding: const EdgeInsets.only(right: 10),
-                  child: TextButton(
-                    onPressed: () {
-                      OddsFinderDialog(context: context, widget: const HistoryRaceRecordDisplayAlert());
-                    },
-                    child: const Text('過去データ'),
+                      TextButton(
+                        onPressed: () {
+                          OddsFinderDialog(context: context, widget: const HorseNameInitialPanelAlert());
+                        },
+                        child: const Text('馬名リスト'),
+                      ),
+
+                      const SizedBox(width: 60),
+                    ],
                   ),
                 ),
+
+                const SizedBox(width: 10),
               ],
             ),
 
