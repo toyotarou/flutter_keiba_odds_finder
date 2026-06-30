@@ -270,6 +270,29 @@ class _PopularityRecordDisplayAlertState extends ConsumerState<PopularityRecordD
                 children: <Widget>[
                   Text('件数: ${list.length}', style: const TextStyle(color: Colors.greenAccent, fontSize: 11)),
 
+                  Builder(
+                    builder: (_) {
+                      final List<double> tanValues = list
+                          .map((RaceResultHistoryModel e) => double.tryParse(e.tan))
+                          .whereType<double>()
+                          .toList();
+                      final double? yearlyAvg = tanValues.isEmpty
+                          ? null
+                          : tanValues.reduce((double a, double b) => a + b) / tanValues.length;
+                      final String avgText = yearlyAvg == null ? '---' : yearlyAvg.toStringAsFixed(1);
+                      final double? overallAvg = double.tryParse(averageModel?.oddsAverage ?? '');
+
+                      return Stack(
+                        alignment: Alignment.center,
+                        children: <Widget>[
+                          if (yearlyAvg != null && overallAvg != null)
+                            _dispUpDownIcon(tan: yearlyAvg, average: overallAvg),
+                          Text('この年の平均: $avgText', style: const TextStyle(color: Colors.yellowAccent, fontSize: 11)),
+                        ],
+                      );
+                    },
+                  ),
+
                   Row(
                     children: <Widget>[
                       Listener(
