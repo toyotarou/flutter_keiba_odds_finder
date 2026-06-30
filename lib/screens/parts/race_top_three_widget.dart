@@ -1,12 +1,7 @@
 import 'package:flutter/material.dart';
 
 class RaceTopThreeEntry {
-  const RaceTopThreeEntry({
-    required this.num,
-    required this.name,
-    required this.odds,
-    required this.popularity,
-  });
+  const RaceTopThreeEntry({required this.num, required this.name, required this.odds, required this.popularity});
 
   final int num;
   final String name;
@@ -15,11 +10,7 @@ class RaceTopThreeEntry {
 }
 
 class RaceTopThreeWidget extends StatelessWidget {
-  const RaceTopThreeWidget({
-    super.key,
-    required this.entries,
-    this.showTitle = false,
-  });
+  const RaceTopThreeWidget({super.key, required this.entries, this.showTitle = false});
 
   /// key = 着順(1/2/3), value = 馬情報
   final Map<int, RaceTopThreeEntry> entries;
@@ -42,6 +33,7 @@ class RaceTopThreeWidget extends StatelessWidget {
                 alignment: Alignment.center,
                 child: const Text('レース結果'),
               ),
+
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <int>[1, 2, 3].map((int rank) {
@@ -63,31 +55,16 @@ class RaceTopThreeWidget extends StatelessWidget {
                             _ => Colors.grey.withValues(alpha: 0.3),
                           },
                         ),
+
                         child: Text(rank.toString()),
                       ),
-                      Container(
-                        width: 40,
-                        alignment: Alignment.center,
-                        child: Text(h != null ? h.num.toString() : ''),
-                      ),
-                      Expanded(
-                        child: Text(
-                          h != null ? h.name : '',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      Container(
-                        width: 40,
-                        alignment: Alignment.center,
-                        child: Text(h != null ? h.odds : ''),
-                      ),
+                      Container(width: 40, alignment: Alignment.center, child: Text(h != null ? h.num.toString() : '')),
+                      Expanded(child: Text(h != null ? h.name : '', maxLines: 1, overflow: TextOverflow.ellipsis)),
+                      Container(width: 40, alignment: Alignment.center, child: Text(h != null ? h.odds : '')),
                       Container(
                         width: 50,
                         alignment: Alignment.center,
-                        child: Text(
-                          h != null ? '${h.popularity ?? '-'}番人気' : '',
-                        ),
+                        child: Text(h != null ? '${h.popularity ?? '-'}番人気' : ''),
                       ),
                     ],
                   ),

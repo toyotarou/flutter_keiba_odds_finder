@@ -230,11 +230,11 @@ class _PopularityRecordDisplayAlertState extends ConsumerState<PopularityRecordD
   ///
   Widget _dispUpDownIcon({required double tan, required double average}) {
     if (tan > average) {
-      return Icon(Icons.arrow_upward, color: Colors.greenAccent.withValues(alpha: 0.8), size: 40);
+      return Icon(Icons.arrow_upward, color: Colors.greenAccent.withValues(alpha: 0.5), size: 40);
     } else if (tan < average) {
-      return Icon(Icons.arrow_downward, color: Colors.redAccent.withValues(alpha: 0.8), size: 40);
+      return Icon(Icons.arrow_downward, color: Colors.redAccent.withValues(alpha: 0.5), size: 40);
     } else {
-      return Icon(Icons.remove, color: Colors.blueAccent.withValues(alpha: 0.8), size: 40);
+      return Icon(Icons.remove, color: Colors.blueAccent.withValues(alpha: 0.5), size: 40);
     }
   }
 
@@ -366,7 +366,7 @@ class _PopularityRecordDisplayAlertState extends ConsumerState<PopularityRecordD
                                     Center(
                                       child: Text(
                                         double.tryParse(item.tan)?.toStringAsFixed(1) ?? item.tan,
-                                        style: const TextStyle(fontSize: 16),
+                                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                                       ),
                                     ),
                                   ],

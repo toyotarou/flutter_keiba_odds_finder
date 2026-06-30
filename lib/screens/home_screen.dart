@@ -1107,14 +1107,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                         onPressed: () {
                           OddsFinderDialog(context: context, widget: const HistoryRaceRecordDisplayAlert());
                         },
-                        child: const Text('過去データ'),
+                        child: const Text('過去データ', style: TextStyle(color: Colors.white)),
                       ),
 
                       TextButton(
                         onPressed: () {
+                          appParamNotifier.setSelectedHorseNameChar1(char: '');
+                          appParamNotifier.setSelectedHorseNameChar2(char: '');
+
                           OddsFinderDialog(context: context, widget: const HorseNameInitialPanelAlert());
                         },
-                        child: const Text('馬名リスト'),
+                        child: const Text('馬名リスト', style: TextStyle(color: Colors.white)),
                       ),
 
                       const SizedBox(width: 60),
@@ -1772,7 +1775,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                     OddsFinderDialog(context: context, widget: const HorseDetailDisplayAlert());
                   }
                 },
-                child: Icon(FontAwesomeIcons.horse, size: 20, color: Colors.green[500]),
+                child: Icon(FontAwesomeIcons.horse, size: 20, color: Colors.green[500]!.withValues(alpha: 0.8)),
               ),
             ),
           ),
