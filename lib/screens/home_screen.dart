@@ -33,6 +33,7 @@ import 'components/horse_odds_ranking_display_alert.dart';
 //
 //
 
+import 'components/popularity_record_display_alert.dart';
 import 'parts/error_confirm_dialog.dart';
 import 'parts/odds_finder_dialog.dart';
 import 'parts/odds_up_down_icon.dart';
@@ -1675,20 +1676,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                 context: context,
                 buttonKey: _haranidoKey,
 
-                displayDuration: const Duration(seconds: 10),
+                displayDuration: const Duration(seconds: 7),
 
                 child: Container(
-                  width: 280,
+                  width: 300,
                   padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
                   decoration: BoxDecoration(
-                    color: Colors.black87.withValues(alpha: 0.3),
+                    color: Colors.black87.withValues(alpha: 0.7),
                     borderRadius: BorderRadius.circular(6),
                     border: Border.all(color: Colors.white30),
                   ),
-                  child: const Column(
+                  child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
-                      DefaultTextStyle(
+                      const DefaultTextStyle(
                         style: TextStyle(color: Colors.white, fontSize: 11),
 
                         child: Column(
@@ -1704,11 +1705,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                         ),
                       ),
 
-                      SizedBox(height: 10),
-
                       Align(
                         alignment: Alignment.centerRight,
-                        child: Text('過去データ', style: TextStyle(fontSize: 10)),
+                        child: TextButton(
+                          onPressed: () {
+                            appParamNotifier.setSelectedPopularityRank(rank: 0);
+                            appParamNotifier.setSelectedPopularityRankYear(year: '');
+
+                            OddsFinderDialog(context: context, widget: const PopularityRecordDisplayAlert());
+                          },
+                          child: const Text('過去データ', style: TextStyle(fontSize: 10)),
+                        ),
                       ),
                     ],
                   ),

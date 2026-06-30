@@ -14,7 +14,6 @@ import 'popularity_rank_odds_average/popularity_rank_odds_average.dart';
 import 'push_notifier_user/push_notifier_user.dart';
 import 'race/race.dart';
 import 'race_result/race_result.dart';
-import 'race_result_history/race_result_history.dart';
 import 'schedule/schedule.dart';
 import 'summary/summary.dart';
 
@@ -63,22 +62,6 @@ mixin ControllersMixin<T extends ConsumerStatefulWidget> on ConsumerState<T> {
 
   //==========================================//
 
-  // //==========================================//
-  //
-  // NetkeibaOddsState get netkeibaOddsState => ref.watch(netkeibaOddsProvider);
-  //
-  // NetkeibaOdds get netkeibaOddsNotifier => ref.read(netkeibaOddsProvider.notifier);
-  //
-  // //==========================================//
-  //
-  // //==========================================//
-  //
-  // NetkeibaRaceState get netkeibaRaceState => ref.watch(netkeibaRaceProvider);
-  //
-  // NetkeibaRace get netkeibaRaceNotifier => ref.read(netkeibaRaceProvider.notifier);
-  //
-  // //==========================================//
-
   //==========================================//
 
   OddsGetTimingState get oddsGetTimingState => ref.watch(oddsGetTimingProvider);
@@ -122,13 +105,6 @@ mixin ControllersMixin<T extends ConsumerStatefulWidget> on ConsumerState<T> {
   PushNotifierUserState get pushNotifierUserState => ref.watch(pushNotifierUserProvider);
 
   PushNotifierUser get pushNotifierUserNotifier => ref.read(pushNotifierUserProvider.notifier);
-
-  //==========================================//
-
-  //==========================================//
-  RaceResultHistoryState get raceResultHistoryState => ref.watch(raceResultHistoryProvider);
-
-  RaceResultHistory get raceResultHistoryNotifier => ref.read(raceResultHistoryProvider.notifier);
 
   //==========================================//
 

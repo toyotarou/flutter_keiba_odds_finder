@@ -67,6 +67,10 @@ class AppParamState with _$AppParamState {
     @Default(false) bool isZoomed,
 
     @Default(0) int selectedUpsetBoxNum,
+
+    @Default(0) int selectedPopularityRank,
+
+    @Default('') String selectedPopularityRankYear,
   }) = _AppParamState;
 }
 
@@ -153,4 +157,11 @@ class AppParam extends _$AppParam {
 
   ///
   void setSelectedUpsetBoxNum({required int num}) => state = state.copyWith(selectedUpsetBoxNum: num);
+
+  ///
+  void setSelectedPopularityRank({required int rank}) => state = state.copyWith(selectedPopularityRank: rank);
+
+  ///
+  void setSelectedPopularityRankYear({required String year}) =>
+      state = state.copyWith(selectedPopularityRankYear: year);
 }
