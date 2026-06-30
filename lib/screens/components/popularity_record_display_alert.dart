@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -20,14 +22,78 @@ class _PopularityRecordDisplayAlertState extends ConsumerState<PopularityRecordD
     with ControllersMixin<PopularityRecordDisplayAlert> {
   Future<List<RaceResultHistoryModel>>? _future;
 
+  late final ScrollController _scrollController;
+  Timer? _repeatTimer;
+
+  static const double _moveAmount = 18;
+  static const int _tickMs = 16;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController = ScrollController();
+  }
+
+  @override
+  void dispose() {
+    _repeatTimer?.cancel();
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _startRepeating(VoidCallback action) {
+    _repeatTimer?.cancel();
+    action();
+    _repeatTimer = Timer.periodic(const Duration(milliseconds: _tickMs), (_) => action());
+  }
+
+  void _stopRepeating() {
+    _repeatTimer?.cancel();
+    _repeatTimer = null;
+  }
+
+  void _scrollBy(double delta) {
+    if (!_scrollController.hasClients) {
+      return;
+    }
+    final ScrollPosition pos = _scrollController.position;
+    _scrollController.jumpTo((_scrollController.offset + delta).clamp(0.0, pos.maxScrollExtent));
+  }
+
+  ///
   Future<List<RaceResultHistoryModel>> _fetch({required int rank, required int year}) async {
     final HttpClient client = ref.read(httpClientProvider);
+
     final dynamic value = await client.get(
       path: APIPath.getHorseOddsFinderRaceResultHistory,
       queryParameters: <String, dynamic>{'year': year.toString(), 'popularity_rank': rank.toString()},
     );
+
+    // ignore: avoid_dynamic_calls
     final List<dynamic> data = value['data'] as List<dynamic>;
     return data.map((dynamic e) => RaceResultHistoryModel.fromJson(e as Map<String, dynamic>)).toList();
+  }
+
+  ///
+  void _onRankTap(int newRank, String selectedYear) {
+    appParamNotifier.setSelectedPopularityRank(rank: newRank);
+    if (selectedYear.isNotEmpty) {
+      setState(() {
+        _future = _fetch(rank: newRank, year: int.parse(selectedYear));
+      });
+    }
+  }
+
+  ///
+  void _onYearTap(int year, int selectedRank) {
+    if (selectedRank == 0) {
+      errorConfirmDialog(context: context, title: 'エラー', content: 'リストを表示する人気順が選択されていません。');
+      return;
+    }
+    appParamNotifier.setSelectedPopularityRankYear(year: year.toString());
+    setState(() {
+      _future = _fetch(rank: selectedRank, year: year);
+    });
   }
 
   ///
@@ -35,14 +101,8 @@ class _PopularityRecordDisplayAlertState extends ConsumerState<PopularityRecordD
   Widget build(BuildContext context) {
     final int selectedRank = appParamState.selectedPopularityRank;
     final String selectedYear = appParamState.selectedPopularityRankYear;
-
-    final PopularityRankOddsAverageModel? popularityRankOddsAverageModel =
-        appParamState.keepPopularityRankOddsAverageMap[selectedRank];
-
-    List<int> yearList = [];
-    for (int i = 2023; i <= DateTime.now().year; i++) {
-      yearList.add(i);
-    }
+    final PopularityRankOddsAverageModel? averageModel = appParamState.keepPopularityRankOddsAverageMap[selectedRank];
+    final List<int> yearList = List<int>.generate(DateTime.now().year - 2022, (int i) => 2023 + i);
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -56,173 +116,303 @@ class _PopularityRecordDisplayAlertState extends ConsumerState<PopularityRecordD
               children: <Widget>[
                 const Text('過去オッズレコード', style: TextStyle(fontSize: 12)),
                 Divider(color: Colors.white.withValues(alpha: 0.4), thickness: 5),
-
-                Container(
-                  width: double.infinity,
-                  height: context.screenSize.height * 0.2,
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.white.withValues(alpha: 0.4)),
-                    borderRadius: BorderRadius.circular(5),
-                  ),
-                  padding: const EdgeInsets.symmetric(vertical: 6),
-                  child: Column(
-                    children: <Widget>[
-                      SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: Row(
-                          // ignore: always_specify_types
-                          children: List.generate(
-                            18,
-                            (int index) => Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 3, horizontal: 7),
-                              child: GestureDetector(
-                                onTap: () {
-                                  final int newRank = index + 1;
-                                  appParamNotifier.setSelectedPopularityRank(rank: newRank);
-
-                                  if (selectedYear.isNotEmpty) {
-                                    setState(() {
-                                      _future = _fetch(rank: newRank, year: int.parse(selectedYear));
-                                    });
-                                  }
-                                },
-                                child: CircleAvatar(
-                                  radius: 15,
-                                  backgroundColor: (selectedRank == index + 1)
-                                      ? Colors.green[500]!.withValues(alpha: 0.4)
-                                      : Colors.black.withValues(alpha: 0.8),
-                                  child: Text(
-                                    (index + 1).toString(),
-                                    style: const TextStyle(fontSize: 10, color: Colors.white),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-
-                      Expanded(
-                        child: Stack(
-                          children: <Widget>[
-                            Positioned(
-                              bottom: 5,
-                              right: 5,
-                              child: Text(
-                                (popularityRankOddsAverageModel != null)
-                                    ? '${popularityRankOddsAverageModel.startDate} 〜 ${popularityRankOddsAverageModel.endDate}'
-                                    : '',
-                                style: const TextStyle(color: Colors.grey),
-                              ),
-                            ),
-
-                            Positioned(
-                              top: 5,
-                              left: 5,
-                              child: Text(
-                                (popularityRankOddsAverageModel != null)
-                                    ? '${popularityRankOddsAverageModel.count}回の平均'
-                                    : '',
-                                style: const TextStyle(color: Colors.grey),
-                              ),
-                            ),
-
-                            Center(
-                              child: Text(
-                                (popularityRankOddsAverageModel != null)
-                                    ? popularityRankOddsAverageModel.oddsAverage
-                                    : '-----',
-                                style: const TextStyle(fontSize: 50, color: Colors.grey),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: yearList.map((e) {
-                      return TextButton(
-                        onPressed: () {
-                          if (selectedRank == 0) {
-                            errorConfirmDialog(context: context, title: 'エラー', content: 'リストを表示する人気順が選択されていません。');
-                            return;
-                          }
-
-                          appParamNotifier.setSelectedPopularityRankYear(year: e.toString());
-
-                          setState(() {
-                            _future = _fetch(rank: selectedRank, year: e);
-                          });
-                        },
-                        child: Text(
-                          e.toString(),
-                          style: TextStyle(color: (selectedYear == e.toString()) ? Colors.greenAccent : Colors.grey),
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                ),
-
-                Expanded(
-                  child: FutureBuilder<List<RaceResultHistoryModel>>(
-                    future: _future,
-                    builder: (BuildContext context, AsyncSnapshot<List<RaceResultHistoryModel>> snapshot) {
-                      if (_future == null) {
-                        return const SizedBox.shrink();
-                      }
-
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const Center(child: CircularProgressIndicator());
-                      }
-
-                      if (snapshot.hasError) {
-                        return Center(
-                          child: Text(
-                            'エラー: ${snapshot.error}',
-                            style: const TextStyle(color: Colors.red, fontSize: 12),
-                          ),
-                        );
-                      }
-
-                      final List<RaceResultHistoryModel> list = snapshot.data ?? [];
-
-                      if (list.isEmpty) {
-                        return const Center(
-                          child: Text('データなし', style: TextStyle(color: Colors.white)),
-                        );
-                      }
-
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: <Widget>[
-                          Text('件数: ${list.length}', style: const TextStyle(color: Colors.greenAccent, fontSize: 11)),
-                          Expanded(
-                            child: ListView.builder(
-                              itemCount: list.length,
-                              itemBuilder: (BuildContext context, int index) {
-                                final RaceResultHistoryModel item = list[index];
-                                return Text(
-                                  '${item.date}  ${item.name}  単:${item.tan}',
-                                  style: const TextStyle(color: Colors.white, fontSize: 12),
-                                );
-                              },
-                            ),
-                          ),
-                        ],
-                      );
-                    },
-                  ),
-                ),
+                _buildTopPanel(context, selectedRank, selectedYear, averageModel),
+                _buildYearSelector(selectedRank, selectedYear, yearList),
+                Expanded(child: _buildHistoryList(averageModel)),
               ],
             ),
           ),
         ),
       ),
+    );
+  }
+
+  ///
+  Widget _buildTopPanel(
+    BuildContext context,
+    int selectedRank,
+    String selectedYear,
+    PopularityRankOddsAverageModel? averageModel,
+  ) {
+    return Container(
+      width: double.infinity,
+      height: context.screenSize.height * 0.2,
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.white.withValues(alpha: 0.4)),
+        borderRadius: BorderRadius.circular(5),
+      ),
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Column(
+        children: <Widget>[
+          _buildRankSelector(selectedRank, selectedYear),
+          Expanded(child: _buildAverageDisplay(averageModel)),
+        ],
+      ),
+    );
+  }
+
+  ///
+  Widget _buildRankSelector(int selectedRank, String selectedYear) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        // ignore: always_specify_types
+        children: List.generate(18, (int index) {
+          final int rank = index + 1;
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 3, horizontal: 7),
+            child: GestureDetector(
+              onTap: () => _onRankTap(rank, selectedYear),
+              child: CircleAvatar(
+                radius: 15,
+                backgroundColor: (selectedRank == rank)
+                    ? Colors.green[500]!.withValues(alpha: 0.4)
+                    : Colors.black.withValues(alpha: 0.8),
+                child: Text(rank.toString(), style: const TextStyle(fontSize: 10, color: Colors.white)),
+              ),
+            ),
+          );
+        }),
+      ),
+    );
+  }
+
+  ///
+  Widget _buildAverageDisplay(PopularityRankOddsAverageModel? model) {
+    return Stack(
+      children: <Widget>[
+        Positioned(
+          top: 5,
+          left: 5,
+          child: Text(model != null ? '${model.count}回の平均' : '', style: const TextStyle(color: Colors.grey)),
+        ),
+        Positioned(
+          bottom: 5,
+          right: 5,
+          child: Text(
+            model != null ? '${model.startDate} 〜 ${model.endDate}' : '',
+            style: const TextStyle(color: Colors.grey),
+          ),
+        ),
+        Center(
+          child: Text(
+            model != null ? model.oddsAverage : '-----',
+            style: const TextStyle(fontSize: 50, color: Colors.grey),
+          ),
+        ),
+      ],
+    );
+  }
+
+  ///
+  Widget _buildYearSelector(int selectedRank, String selectedYear, List<int> yearList) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: yearList.map((int year) {
+          return TextButton(
+            onPressed: () => _onYearTap(year, selectedRank),
+            child: Text(
+              year.toString(),
+              style: TextStyle(color: (selectedYear == year.toString()) ? Colors.greenAccent : Colors.grey),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  ///
+  Widget _dispUpDownIcon({required double tan, required double average}) {
+    if (tan > average) {
+      return Icon(Icons.arrow_upward, color: Colors.greenAccent.withValues(alpha: 0.8), size: 40);
+    } else if (tan < average) {
+      return Icon(Icons.arrow_downward, color: Colors.redAccent.withValues(alpha: 0.8), size: 40);
+    } else {
+      return Icon(Icons.remove, color: Colors.blueAccent.withValues(alpha: 0.8), size: 40);
+    }
+  }
+
+  Widget _buildHistoryList(PopularityRankOddsAverageModel? averageModel) {
+    return FutureBuilder<List<RaceResultHistoryModel>>(
+      future: _future,
+      builder: (BuildContext context, AsyncSnapshot<List<RaceResultHistoryModel>> snapshot) {
+        if (_future == null) {
+          return const SizedBox.shrink();
+        }
+
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (snapshot.hasError) {
+          return Center(
+            child: Text('エラー: ${snapshot.error}', style: const TextStyle(color: Colors.red, fontSize: 12)),
+          );
+        }
+
+        final List<RaceResultHistoryModel> list = snapshot.data ?? <RaceResultHistoryModel>[];
+
+        if (list.isEmpty) {
+          return const Center(
+            child: Text('データなし', style: TextStyle(color: Colors.white)),
+          );
+        }
+
+        return DefaultTextStyle(
+          style: const TextStyle(color: Colors.white, fontSize: 12),
+
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: <Widget>[
+                  Text('件数: ${list.length}', style: const TextStyle(color: Colors.greenAccent, fontSize: 11)),
+
+                  Row(
+                    children: <Widget>[
+                      Listener(
+                        behavior: HitTestBehavior.opaque,
+                        onPointerDown: (_) => _startRepeating(() => _scrollBy(-_moveAmount)),
+                        onPointerUp: (_) => _stopRepeating(),
+                        onPointerCancel: (_) => _stopRepeating(),
+                        child: const SizedBox(
+                          width: 44,
+                          height: 44,
+                          child: Center(child: Icon(Icons.arrow_upward, color: Colors.white70)),
+                        ),
+                      ),
+                      Listener(
+                        behavior: HitTestBehavior.opaque,
+                        onPointerDown: (_) => _startRepeating(() => _scrollBy(_moveAmount)),
+                        onPointerUp: (_) => _stopRepeating(),
+                        onPointerCancel: (_) => _stopRepeating(),
+                        child: const SizedBox(
+                          width: 44,
+                          height: 44,
+                          child: Center(child: Icon(Icons.arrow_downward, color: Colors.white70)),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+
+              Expanded(
+                child: ListView.builder(
+                  controller: _scrollController,
+                  itemCount: list.length,
+                  itemBuilder: (BuildContext context, int index) {
+                    final RaceResultHistoryModel item = list[index];
+                    return Column(
+                      children: <Widget>[
+                        Container(
+                          decoration: BoxDecoration(
+                            border: Border(bottom: BorderSide(color: Colors.white.withValues(alpha: 0.3))),
+                          ),
+
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+
+                            children: <Widget>[
+                              SizedBox(
+                                width: 50,
+                                height: 50,
+                                child: Stack(
+                                  children: <Widget>[
+                                    Center(
+                                      child: Builder(
+                                        builder: (_) {
+                                          final double? tanVal = double.tryParse(item.tan);
+                                          final double? avgVal = double.tryParse(averageModel?.oddsAverage ?? '');
+                                          if (tanVal == null || avgVal == null) {
+                                            return const Icon(Icons.circle_outlined, color: Colors.white24, size: 40);
+                                          }
+                                          return _dispUpDownIcon(tan: tanVal, average: avgVal);
+                                        },
+                                      ),
+                                    ),
+
+                                    Center(
+                                      child: Text(
+                                        double.tryParse(item.tan)?.toStringAsFixed(1) ?? item.tan,
+                                        style: const TextStyle(fontSize: 16),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+
+                              const SizedBox(width: 10),
+
+                              Expanded(
+                                child: Stack(
+                                  children: <Widget>[
+                                    Positioned(
+                                      right: 5,
+                                      bottom: 5,
+                                      child: Text(item.date, style: const TextStyle(color: Colors.grey)),
+                                    ),
+
+                                    Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: <Widget>[
+                                        Row(
+                                          children: <Widget>[
+                                            Container(
+                                              width: 30,
+                                              alignment: Alignment.center,
+                                              child: Text(item.num.toString()),
+                                            ),
+                                            Expanded(
+                                              child: Text(
+                                                item.name,
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: const TextStyle(fontSize: 14),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+
+                                        Row(
+                                          children: <Widget>[
+                                            const SizedBox(width: 30),
+
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                children: <Widget>[
+                                                  Text('${item.kaisuu}回${item.basho}${item.day}日 R${item.race}'),
+
+                                                  Text(item.raceName, maxLines: 1, overflow: TextOverflow.ellipsis),
+                                                ],
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+
+                                        const SizedBox(height: 20),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        const SizedBox(height: 10),
+                      ],
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

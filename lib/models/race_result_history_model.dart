@@ -50,10 +50,3 @@ class RaceResultHistoryModel {
   final String fukuMax;
   final int popularityRank;
 }
-
-/*
-
-https://baganriki.com/api/getHorseOddsFinderRaceResultHistory?rank=1
-
-
-*/
