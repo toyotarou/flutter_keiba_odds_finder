@@ -107,26 +107,7 @@ class _HistoryRaceRecordDisplayAlertState extends ConsumerState<HistoryRaceRecor
                             return ListView.builder(
                               itemCount: groups.length,
                               itemBuilder: (BuildContext context, int index) {
-                                final List<RaceResultHistoryModel> group = groups[index];
-                                final RaceResultHistoryModel head = group.first;
-                                return ExpansionTile(
-                                  dense: true,
-                                  collapsedIconColor: Colors.white54,
-                                  iconColor: Colors.white70,
-                                  title: Row(
-                                    children: <Widget>[
-                                      Text(head.date, style: const TextStyle(fontSize: 12, color: Colors.grey)),
-                                      const SizedBox(width: 10),
-                                      Text(
-                                        '${head.kaisuu}回 ${head.basho} ${head.day}日目',
-                                        style: const TextStyle(fontSize: 13, color: Colors.white),
-                                      ),
-                                    ],
-                                  ),
-                                  children: group
-                                      .map((RaceResultHistoryModel item) => _RaceExpansionTile(item: item))
-                                      .toList(),
-                                );
+                                return _DateGroupExpansionTile(group: groups[index]);
                               },
                             );
                           },
@@ -137,6 +118,56 @@ class _HistoryRaceRecordDisplayAlertState extends ConsumerState<HistoryRaceRecor
           ),
         ),
       ),
+    );
+  }
+}
+
+///
+class _DateGroupExpansionTile extends StatefulWidget {
+  const _DateGroupExpansionTile({required this.group});
+
+  final List<RaceResultHistoryModel> group;
+
+  @override
+  State<_DateGroupExpansionTile> createState() => _DateGroupExpansionTileState();
+}
+
+class _DateGroupExpansionTileState extends State<_DateGroupExpansionTile> {
+  bool _isExpanded = false;
+
+  ///
+  @override
+  Widget build(BuildContext context) {
+    final RaceResultHistoryModel head = widget.group.first;
+    return ExpansionTile(
+      dense: true,
+      collapsedIconColor: Colors.white54,
+      iconColor: Colors.white70,
+      shape: const Border(),
+      collapsedShape: const Border(),
+      onExpansionChanged: (bool expanded) => setState(() => _isExpanded = expanded),
+      title: Container(
+        decoration: BoxDecoration(
+          border: _isExpanded
+              ? Border(bottom: BorderSide(color: Colors.greenAccent.withValues(alpha: 0.3), width: 2))
+              : Border(bottom: BorderSide(color: Colors.white.withValues(alpha: 0.3), width: 2)),
+        ),
+        padding: const EdgeInsets.only(bottom: 2),
+        child: Row(
+          children: <Widget>[
+            Text(
+              '${head.date.split('-')[1]}-${head.date.split('-')[2]}',
+              style: const TextStyle(fontSize: 12, color: Colors.greenAccent),
+            ),
+            const SizedBox(width: 10),
+            Text(
+              '${head.kaisuu}回 ${head.basho} ${head.day}日目',
+              style: const TextStyle(fontSize: 13, color: Colors.white),
+            ),
+          ],
+        ),
+      ),
+      children: widget.group.map((RaceResultHistoryModel item) => _RaceExpansionTile(item: item)).toList(),
     );
   }
 }
@@ -153,6 +184,7 @@ class _RaceExpansionTile extends ConsumerStatefulWidget {
 
 class _RaceExpansionTileState extends ConsumerState<_RaceExpansionTile> {
   Future<List<RaceResultHistoryModel>>? _future;
+  bool _isExpanded = false;
 
   ///
   Future<List<RaceResultHistoryModel>> _fetch() async {
@@ -185,6 +217,7 @@ class _RaceExpansionTileState extends ConsumerState<_RaceExpansionTile> {
   @override
   Widget build(BuildContext context) {
     final RaceResultHistoryModel m = widget.item;
+
     return ExpansionTile(
       dense: true,
       collapsedIconColor: Colors.white38,
@@ -192,6 +225,10 @@ class _RaceExpansionTileState extends ConsumerState<_RaceExpansionTile> {
       tilePadding: const EdgeInsets.only(left: 16, right: 8),
       title: Row(
         children: <Widget>[
+          Icon(Icons.double_arrow_sharp, color: _isExpanded ? Colors.green : Colors.white),
+
+          const SizedBox(width: 10),
+
           SizedBox(
             width: 32,
             child: Text('R${m.race}', style: const TextStyle(fontSize: 12, color: Colors.greenAccent)),
@@ -207,6 +244,7 @@ class _RaceExpansionTileState extends ConsumerState<_RaceExpansionTile> {
         ],
       ),
       onExpansionChanged: (bool expanded) {
+        setState(() => _isExpanded = expanded);
         if (expanded && _future == null) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (mounted) {
