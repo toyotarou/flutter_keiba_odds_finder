@@ -21,6 +21,7 @@ enum APIPath {
   getHorseOddsFinderRaceResultHistory,
   getHorseOddsFinderPopularityRankAverage,
   getHorseOddsFinderRaceResultHistoryRaceList,
+  getHorseOddsFinderRaceResultHistoryRaceContents,
 }
 
 extension APIPathExtension on APIPath {
@@ -40,12 +41,6 @@ extension APIPathExtension on APIPath {
 
       case APIPath.getHorseOddsFinderConfigs:
         return 'getHorseOddsFinderConfigs';
-
-      // case APIPath.getHorseOddsFinderNetkeibaRaces:
-      //   return 'getHorseOddsFinderNetkeibaRaces';
-      //
-      // case APIPath.getHorseOddsFinderNetkeibaOdds:
-      //   return 'getHorseOddsFinderNetkeibaOdds';
 
       case APIPath.getHorseOddsFinderOddsGetTiming:
         return 'getHorseOddsFinderOddsGetTiming';
@@ -96,6 +91,8 @@ extension APIPathExtension on APIPath {
 
       case APIPath.getHorseOddsFinderRaceResultHistoryRaceList:
         return 'getHorseOddsFinderRaceResultHistoryRaceList';
+      case APIPath.getHorseOddsFinderRaceResultHistoryRaceContents:
+        return 'getHorseOddsFinderRaceResultHistoryRaceContents';
     }
   }
 }

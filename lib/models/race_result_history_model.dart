@@ -14,6 +14,7 @@ class RaceResultHistoryModel {
     required this.fukuMin,
     required this.fukuMax,
     required this.popularityRank,
+    required this.finishingPosition,
   });
 
   factory RaceResultHistoryModel.fromJson(Map<String, dynamic> json) {
@@ -32,6 +33,7 @@ class RaceResultHistoryModel {
       fukuMin: (json['fuku_min'] as String?) ?? '',
       fukuMax: (json['fuku_max'] as String?) ?? '',
       popularityRank: (json['popularity_rank'] as int?) ?? 0,
+      finishingPosition: (json['finishing_position'] as int?) ?? 0,
     );
   }
 
@@ -49,4 +51,5 @@ class RaceResultHistoryModel {
   final String fukuMin;
   final String fukuMax;
   final int popularityRank;
+  final int finishingPosition;
 }

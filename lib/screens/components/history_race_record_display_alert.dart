@@ -7,6 +7,7 @@ import '../../controllers/controllers_mixin.dart';
 import '../../data/http/client.dart';
 import '../../data/http/path.dart';
 import '../../models/race_result_history_model.dart';
+import '../parts/race_top_three_widget.dart';
 
 class HistoryRaceRecordDisplayAlert extends ConsumerStatefulWidget {
   const HistoryRaceRecordDisplayAlert({super.key});
@@ -122,30 +123,9 @@ class _HistoryRaceRecordDisplayAlertState extends ConsumerState<HistoryRaceRecor
                                       ),
                                     ],
                                   ),
-                                  children: group.map((RaceResultHistoryModel item) {
-                                    return Padding(
-                                      padding: const EdgeInsets.only(left: 16, bottom: 6),
-                                      child: Row(
-                                        children: <Widget>[
-                                          SizedBox(
-                                            width: 32,
-                                            child: Text(
-                                              'R${item.race}',
-                                              style: const TextStyle(fontSize: 12, color: Colors.greenAccent),
-                                            ),
-                                          ),
-                                          const SizedBox(width: 6),
-                                          Expanded(
-                                            child: Text(
-                                              item.raceName,
-                                              style: const TextStyle(fontSize: 12, color: Colors.white),
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    );
-                                  }).toList(),
+                                  children: group
+                                      .map((RaceResultHistoryModel item) => _RaceExpansionTile(item: item))
+                                      .toList(),
                                 );
                               },
                             );
@@ -157,6 +137,120 @@ class _HistoryRaceRecordDisplayAlertState extends ConsumerState<HistoryRaceRecor
           ),
         ),
       ),
+    );
+  }
+}
+
+///
+class _RaceExpansionTile extends ConsumerStatefulWidget {
+  const _RaceExpansionTile({required this.item});
+
+  final RaceResultHistoryModel item;
+
+  @override
+  ConsumerState<_RaceExpansionTile> createState() => _RaceExpansionTileState();
+}
+
+class _RaceExpansionTileState extends ConsumerState<_RaceExpansionTile> {
+  Future<List<RaceResultHistoryModel>>? _future;
+
+  ///
+  Future<List<RaceResultHistoryModel>> _fetch() async {
+    final RaceResultHistoryModel m = widget.item;
+    final HttpClient client = ref.read(httpClientProvider);
+
+    final dynamic value = await client.get(
+      path: APIPath.getHorseOddsFinderRaceResultHistoryRaceContents,
+      queryParameters: <String, dynamic>{
+        'date': m.date,
+        'kaisuu': m.kaisuu.toString(),
+        'basho_code': m.bashoCode,
+        'day': m.day.toString(),
+        'race': m.race.toString(),
+      },
+    );
+
+    // ignore: avoid_dynamic_calls
+    final List<dynamic> data = value['data'] as List<dynamic>;
+    final List<RaceResultHistoryModel> list = data
+        .map((dynamic e) => RaceResultHistoryModel.fromJson(e as Map<String, dynamic>))
+        .toList();
+    list.sort(
+      (RaceResultHistoryModel a, RaceResultHistoryModel b) => a.finishingPosition.compareTo(b.finishingPosition),
+    );
+    return list;
+  }
+
+  ///
+  @override
+  Widget build(BuildContext context) {
+    final RaceResultHistoryModel m = widget.item;
+    return ExpansionTile(
+      dense: true,
+      collapsedIconColor: Colors.white38,
+      iconColor: Colors.white60,
+      tilePadding: const EdgeInsets.only(left: 16, right: 8),
+      title: Row(
+        children: <Widget>[
+          SizedBox(
+            width: 32,
+            child: Text('R${m.race}', style: const TextStyle(fontSize: 12, color: Colors.greenAccent)),
+          ),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              m.raceName,
+              style: const TextStyle(fontSize: 12, color: Colors.white),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
+      onExpansionChanged: (bool expanded) {
+        if (expanded && _future == null) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              final Future<List<RaceResultHistoryModel>> f = _fetch();
+              setState(() {
+                _future = f;
+              });
+            }
+          });
+        }
+      },
+      children: <Widget>[
+        FutureBuilder<List<RaceResultHistoryModel>>(
+          future: _future,
+          builder: (BuildContext context, AsyncSnapshot<List<RaceResultHistoryModel>> snapshot) {
+            if (snapshot.connectionState == ConnectionState.none) {
+              return const SizedBox.shrink();
+            }
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Padding(
+                padding: EdgeInsets.all(12),
+                child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+              );
+            }
+            if (snapshot.hasError) {
+              return Padding(
+                padding: const EdgeInsets.all(8),
+                child: Text('エラー: ${snapshot.error}', style: const TextStyle(color: Colors.redAccent, fontSize: 11)),
+              );
+            }
+            final List<RaceResultHistoryModel> horses = snapshot.data ?? <RaceResultHistoryModel>[];
+            final Map<int, RaceTopThreeEntry> entries = <int, RaceTopThreeEntry>{
+              for (final RaceResultHistoryModel h in horses)
+                h.finishingPosition: RaceTopThreeEntry(
+                  num: h.num,
+                  name: h.name,
+                  odds: double.tryParse(h.tan)?.toStringAsFixed(1) ?? h.tan,
+                  popularity: h.popularityRank,
+                ),
+            };
+            return RaceTopThreeWidget(entries: entries);
+          },
+        ),
+      ],
     );
   }
 }

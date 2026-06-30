@@ -38,6 +38,7 @@ import 'components/popularity_record_display_alert.dart';
 import 'parts/error_confirm_dialog.dart';
 import 'parts/odds_finder_dialog.dart';
 import 'parts/odds_up_down_icon.dart';
+import 'parts/race_top_three_widget.dart';
 import 'parts/side_tab_panel.dart';
 import 'parts/widget_display_overlay.dart';
 
@@ -547,70 +548,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
 
     final Map<int, String> numToOddsMap = <int, String>{for (final OddsModel o in eRecordOdds) o.num: o.odds};
 
-    return DefaultTextStyle(
-      style: const TextStyle(fontSize: 10, color: Colors.white),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Container(
-              decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.1)),
-              width: double.infinity,
-              alignment: Alignment.center,
-              child: const Text('レース結果'),
-            ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <int>[1, 2, 3].map((int e) {
-                final RaceResultModel? horse = raceResultByRank[e];
-                return Container(
-                  decoration: BoxDecoration(
-                    border: Border(bottom: BorderSide(color: Colors.white.withValues(alpha: 0.3))),
-                  ),
-                  child: Row(
-                    children: <Widget>[
-                      Container(
-                        width: 40,
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          color: switch (e) {
-                            1 => const Color(0xFFFFD700).withValues(alpha: 0.5),
-                            2 => const Color(0xFFC0C0C0).withValues(alpha: 0.5),
-                            3 => const Color(0xFFCD7F32).withValues(alpha: 0.5),
-                            _ => Colors.grey.withValues(alpha: 0.3),
-                          },
-                        ),
-                        child: Text(e.toString()),
-                      ),
-                      Container(
-                        width: 40,
-                        alignment: Alignment.center,
-                        child: Text(horse != null ? horse.num.toString() : ''),
-                      ),
-                      Expanded(
-                        child: Text(horse != null ? horse.horseName : '', maxLines: 1, overflow: TextOverflow.ellipsis),
-                      ),
-                      Container(
-                        width: 40,
-                        alignment: Alignment.center,
-                        child: Text(horse != null ? numToOddsMap[horse.num] ?? '' : ''),
-                      ),
-                      Container(
-                        width: 50,
-                        alignment: Alignment.center,
-                        child: Text(horse != null ? '${numToPopularityMap[horse.num] ?? '-'}番人気' : ''),
-                      ),
-                    ],
-                  ),
-                );
-              }).toList(),
-            ),
-          ],
+    final Map<int, RaceTopThreeEntry> entries = <int, RaceTopThreeEntry>{
+      for (final MapEntry<int, RaceResultModel> e in raceResultByRank.entries)
+        e.key: RaceTopThreeEntry(
+          num: e.value.num,
+          name: e.value.horseName,
+          odds: numToOddsMap[e.value.num] ?? '',
+          popularity: numToPopularityMap[e.value.num],
         ),
-      ),
-    );
+    };
+
+    return RaceTopThreeWidget(entries: entries, showTitle: true);
   }
 
   ///
@@ -1159,7 +1107,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                   padding: const EdgeInsets.only(right: 10),
                   child: TextButton(
                     onPressed: () {
-                      OddsFinderDialog(context: context, widget: HistoryRaceRecordDisplayAlert());
+                      OddsFinderDialog(context: context, widget: const HistoryRaceRecordDisplayAlert());
                     },
                     child: const Text('過去データ'),
                   ),
