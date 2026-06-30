@@ -71,6 +71,8 @@ class AppParamState with _$AppParamState {
     @Default(0) int selectedPopularityRank,
 
     @Default('') String selectedPopularityRankYear,
+
+    @Default('') String selectedHistoryYear,
   }) = _AppParamState;
 }
 
@@ -164,4 +166,7 @@ class AppParam extends _$AppParam {
   ///
   void setSelectedPopularityRankYear({required String year}) =>
       state = state.copyWith(selectedPopularityRankYear: year);
+
+  ///
+  void setSelectedHistoryYear({required String year}) => state = state.copyWith(selectedHistoryYear: year);
 }

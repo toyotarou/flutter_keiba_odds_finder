@@ -74,7 +74,7 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
     final double currentScale = _controller.value.getMaxScaleOnAxis();
     final bool zoomed = _fitScale != null && currentScale > _fitScale! + 0.01;
     if (zoomed != ref.read(appParamProvider).isZoomed) {
-      appParamNotifier.setIsZoomed(flag: zoomed);
+      Future<void>(() => appParamNotifier.setIsZoomed(flag: zoomed));
     }
   }
 

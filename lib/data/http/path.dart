@@ -4,8 +4,6 @@ enum APIPath {
   getHorseOddsFinderHorses,
   getHorseOddsFinderOdds,
   getHorseOddsFinderConfigs,
-  // getHorseOddsFinderNetkeibaRaces,
-  // getHorseOddsFinderNetkeibaOdds,
   getHorseOddsFinderOddsGetTiming,
   getHorseDetail,
   getHorseOddsFinderOddsWide,
@@ -22,6 +20,7 @@ enum APIPath {
   changePushNotifierUserDelete,
   getHorseOddsFinderRaceResultHistory,
   getHorseOddsFinderPopularityRankAverage,
+  getHorseOddsFinderRaceResultHistoryRaceList,
 }
 
 extension APIPathExtension on APIPath {
@@ -94,6 +93,9 @@ extension APIPathExtension on APIPath {
 
       case APIPath.getHorseOddsFinderPopularityRankAverage:
         return 'getHorseOddsFinderPopularityRankAverage';
+
+      case APIPath.getHorseOddsFinderRaceResultHistoryRaceList:
+        return 'getHorseOddsFinderRaceResultHistoryRaceList';
     }
   }
 }

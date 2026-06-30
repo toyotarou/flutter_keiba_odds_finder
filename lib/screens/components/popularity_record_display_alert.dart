@@ -28,12 +28,14 @@ class _PopularityRecordDisplayAlertState extends ConsumerState<PopularityRecordD
   static const double _moveAmount = 18;
   static const int _tickMs = 16;
 
+  ///
   @override
   void initState() {
     super.initState();
     _scrollController = ScrollController();
   }
 
+  ///
   @override
   void dispose() {
     _repeatTimer?.cancel();
@@ -41,17 +43,20 @@ class _PopularityRecordDisplayAlertState extends ConsumerState<PopularityRecordD
     super.dispose();
   }
 
+  ///
   void _startRepeating(VoidCallback action) {
     _repeatTimer?.cancel();
     action();
     _repeatTimer = Timer.periodic(const Duration(milliseconds: _tickMs), (_) => action());
   }
 
+  ///
   void _stopRepeating() {
     _repeatTimer?.cancel();
     _repeatTimer = null;
   }
 
+  ///
   void _scrollBy(double delta) {
     if (!_scrollController.hasClients) {
       return;
@@ -233,6 +238,7 @@ class _PopularityRecordDisplayAlertState extends ConsumerState<PopularityRecordD
     }
   }
 
+  ///
   Widget _buildHistoryList(PopularityRankOddsAverageModel? averageModel) {
     return FutureBuilder<List<RaceResultHistoryModel>>(
       future: _future,

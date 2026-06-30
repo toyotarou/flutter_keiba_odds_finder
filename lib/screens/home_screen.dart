@@ -21,6 +21,7 @@ import '../models/schedule_model.dart';
 import '../models/summary_model.dart';
 import '../utility/utility.dart';
 import 'components/admin_menu_alert.dart';
+import 'components/history_race_record_display_alert.dart';
 import 'components/horse_detail_display_alert.dart';
 import 'components/horse_odds_ranking_display_alert.dart';
 
@@ -1148,6 +1149,23 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
             const SizedBox(height: 60),
+
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: <Widget>[
+                const SizedBox.shrink(),
+
+                Padding(
+                  padding: const EdgeInsets.only(right: 10),
+                  child: TextButton(
+                    onPressed: () {
+                      OddsFinderDialog(context: context, widget: HistoryRaceRecordDisplayAlert());
+                    },
+                    child: const Text('過去データ'),
+                  ),
+                ),
+              ],
+            ),
 
             Expanded(
               child: SingleChildScrollView(
