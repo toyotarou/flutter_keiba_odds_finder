@@ -122,6 +122,21 @@ class _PopularityRecordDisplayAlertState extends ConsumerState<PopularityRecordD
                 const Text('過去オッズレコード', style: TextStyle(fontSize: 12)),
                 Divider(color: Colors.white.withValues(alpha: 0.4), thickness: 5),
                 _buildTopPanel(context, selectedRank, selectedYear, averageModel),
+
+                const SizedBox(height: 10),
+
+                Row(
+                  children: <Widget>[
+                    Container(
+                      width: 10,
+                      margin: const EdgeInsets.only(right: 10, left: 10),
+                      decoration: BoxDecoration(color: Colors.green.withValues(alpha: 0.5)),
+                      child: const Text(''),
+                    ),
+                    const Text('表示年'),
+                  ],
+                ),
+
                 _buildYearSelector(selectedRank, selectedYear, yearList),
                 Expanded(child: _buildHistoryList(averageModel)),
               ],
@@ -148,7 +163,19 @@ class _PopularityRecordDisplayAlertState extends ConsumerState<PopularityRecordD
       ),
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
+          Row(
+            children: <Widget>[
+              Container(
+                width: 10,
+                margin: const EdgeInsets.only(right: 10, left: 10),
+                decoration: BoxDecoration(color: Colors.green.withValues(alpha: 0.5)),
+                child: const Text(''),
+              ),
+              const Text('人気度'),
+            ],
+          ),
           _buildRankSelector(selectedRank, selectedYear),
           Expanded(child: _buildAverageDisplay(averageModel)),
         ],

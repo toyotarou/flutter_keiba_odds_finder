@@ -53,6 +53,18 @@ class _HistoryRaceRecordDisplayAlertState extends ConsumerState<HistoryRaceRecor
                 const Text('過去データ', style: TextStyle(fontSize: 12)),
                 Divider(color: Colors.white.withValues(alpha: 0.4), thickness: 5),
 
+                Row(
+                  children: <Widget>[
+                    Container(
+                      width: 10,
+                      margin: const EdgeInsets.only(right: 10, left: 10),
+                      decoration: BoxDecoration(color: Colors.green.withValues(alpha: 0.5)),
+                      child: const Text(''),
+                    ),
+                    const Text('表示年'),
+                  ],
+                ),
+
                 SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: Row(
@@ -152,11 +164,12 @@ class _DateGroupExpansionTileState extends State<_DateGroupExpansionTile> {
               ? Border(bottom: BorderSide(color: Colors.greenAccent.withValues(alpha: 0.3), width: 2))
               : Border(bottom: BorderSide(color: Colors.white.withValues(alpha: 0.3), width: 2)),
         ),
+
         padding: const EdgeInsets.only(bottom: 2),
         child: Row(
           children: <Widget>[
             Text(
-              '${head.date.split('-')[1]}-${head.date.split('-')[2]}',
+              '${head.date.split('-')[1]}/${head.date.split('-')[2]}',
               style: const TextStyle(fontSize: 12, color: Colors.greenAccent),
             ),
             const SizedBox(width: 10),
