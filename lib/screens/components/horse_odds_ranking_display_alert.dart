@@ -208,7 +208,7 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
             widget: HorseRaceResultDisplayAlert(from: ResultDisplayFrom.summary, numToPopularityRank: popularityRank),
 
             paddingTop: context.screenSize.height * 0.45,
-            paddingBottom: context.screenSize.height * 0.2,
+            paddingBottom: context.screenSize.height * 0.1,
             clearBarrierColor: true,
           );
         },
@@ -225,7 +225,7 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
               widget: const HorseRaceResultDisplayAlert(from: ResultDisplayFrom.raceResult),
 
               paddingTop: context.screenSize.height * 0.45,
-              paddingBottom: context.screenSize.height * 0.2,
+              paddingBottom: context.screenSize.height * 0.1,
               clearBarrierColor: true,
             ),
             child: const Icon(Icons.flag, color: Colors.greenAccent),
