@@ -1626,7 +1626,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                         decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.1)),
                         width: double.infinity,
                         alignment: Alignment.center,
-                        child: Text('$index番人気'),
+                        child: Text('$index番人気', style: const TextStyle(color: Colors.white)),
                       ),
 
                       Text(
@@ -1637,7 +1637,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
 
                       const SizedBox(height: 3),
 
-                      Text(upsetScore),
+                      Text(upsetScore, style: const TextStyle(color: Colors.white)),
 
                       const SizedBox(height: 3),
                     ],
@@ -1701,7 +1701,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                 ),
               );
             },
-            child: const Text('波乱度とは？', style: TextStyle(fontSize: 10)),
+            child: const Text('波乱度とは？', style: TextStyle(fontSize: 10, color: Colors.white)),
           ),
         ),
         const SizedBox(height: 3),
