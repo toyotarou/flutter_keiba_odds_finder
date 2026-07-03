@@ -997,7 +997,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
 
                       if (displayList.isNotEmpty) ...<Widget>[
                         SideTabPanel(
-                          tabLabels: raceResultByRank.isEmpty ? <String>['波乱度'] : <String>['波乱度', 'レース結果'],
+                          tabLabels: raceResultByRank.isEmpty ? <String>['期待数値'] : <String>['期待数値', 'レース結果'],
                           tabWidth: 90,
                           tabGap: 0,
                           height: 100,
@@ -1678,8 +1678,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                           children: <Widget>[
                             Text('2023年以降の人気順の平均オッズ（A）'),
                             Text('このレースの人気順のオッズ（B）'),
-                            Text('「A / B」を行うことで、波乱の度合いがわかります。'),
-                            Text('人気順のどこに高い数値が出るかによって、レースの波乱度が決まります。'),
+                            Text('「A / B」を行うことで、期待数値がわかります。'),
+                            Text('人気順のどこに高い数値が出るかによって、レースの期待数値が決まります。'),
                           ],
                         ),
                       ),
@@ -1701,7 +1701,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                 ),
               );
             },
-            child: const Text('波乱度とは？', style: TextStyle(fontSize: 10, color: Colors.white)),
+
+            child: const Text('期待数値とは？', style: TextStyle(fontSize: 10, color: Colors.white)),
           ),
         ),
         const SizedBox(height: 3),
