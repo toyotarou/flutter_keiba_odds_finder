@@ -149,7 +149,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
         oldWidget.horseMap != widget.horseMap ||
         oldWidget.oddsMap != widget.oddsMap ||
         oldWidget.oddsGetTiming != widget.oddsGetTiming ||
-        oldWidget.oddsWideMap != widget.oddsWideMap) {
+        oldWidget.oddsWideMap != widget.oddsWideMap ||
+        oldWidget.popularityRankOddsAverageMap != widget.popularityRankOddsAverageMap) {
       WidgetsBinding.instance.addPostFrameCallback((_) => _syncAppParam());
     }
   }
@@ -1669,7 +1670,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
 
                       const SizedBox(height: 3),
 
-                      Text(upsetScore, style: const TextStyle(color: Colors.white)),
+                      Text(
+                        upsetScore,
+                        style: TextStyle(
+                          color: Colors.yellowAccent.withValues(alpha: 0.6),
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
 
                       const SizedBox(height: 3),
                     ],
