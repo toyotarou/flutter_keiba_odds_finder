@@ -6,11 +6,13 @@ import '../../controllers/app_param/app_param.dart';
 import '../../controllers/controllers_mixin.dart';
 import '../../extensions/extensions.dart';
 import '../../main.dart';
+import '../../models/horse_model.dart';
 import '../../models/odds_model.dart';
 import '../../models/race_model.dart';
 import '../../models/race_result_model.dart';
 import '../../models/summary_model.dart';
 import '../parts/odds_finder_dialog.dart';
+import '../parts/widget_display_overlay.dart';
 import 'horse_race_result_display_alert.dart';
 
 enum RankingMode { live, summary }
@@ -53,6 +55,9 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
     with ControllersMixin<HorseOddsRankingDisplayAlert> {
   final TransformationController _controller = TransformationController();
   double? _fitScale;
+  Map<int, HorseModel> _horseMap = <int, HorseModel>{};
+
+  String get _mapKey => '${appParamState.selectedScheduleDate}_${appParamState.selectedScheduleKaisuuBashoDay}';
 
   ///
   @override
@@ -89,6 +94,12 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
   ///
   @override
   Widget build(BuildContext context) {
+    _horseMap = Map<int, HorseModel>.fromEntries(
+      (appParamState.keepHorseMap[_mapKey] ?? <HorseModel>[])
+          .where((HorseModel e) => e.race == appParamState.selectedRaceNumber)
+          .map((HorseModel e) => MapEntry<int, HorseModel>(e.num, e)),
+    );
+
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: SafeArea(
@@ -415,7 +426,7 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
   }
 
   ///
-  static Widget _buildDataCell(int? num, int changeLevel) {
+  Widget _buildDataCell(int? num, int changeLevel) {
     final Color bgColor = switch (changeLevel) {
       -1 => _droppedBgColor,
       1 => _changedBgColor1,
@@ -423,15 +434,32 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
       3 => _changedBgColor3,
       _ => _defaultBgColor,
     };
-    return Container(
-      width: 50,
-      height: 30,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: bgColor,
-        border: Border.all(color: Colors.white24),
+    return GestureDetector(
+      onTapUp: num == null
+          ? null
+          : (TapUpDetails details) {
+              final String horseName = _horseMap[num]?.name ?? '';
+
+              if (horseName.isEmpty) {
+                return;
+              }
+
+              widgetDisplayOverlay(
+                context: context,
+                tapPosition: details.globalPosition,
+                child: Text(horseName, style: const TextStyle(color: Colors.yellowAccent, fontSize: 12)),
+              );
+            },
+      child: Container(
+        width: 50,
+        height: 30,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: bgColor,
+          border: Border.all(color: Colors.white24),
+        ),
+        child: Text(num != null ? num.toString() : '-', style: const TextStyle(color: Colors.white, fontSize: 10)),
       ),
-      child: Text(num != null ? num.toString() : '-', style: const TextStyle(color: Colors.white, fontSize: 10)),
     );
   }
 
@@ -466,7 +494,7 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
   }
 
   ///
-  static Widget _buildRankingRow(int rank, List<int?> rowData, Map<int, int> horseToStartRank) {
+  Widget _buildRankingRow(int rank, List<int?> rowData, Map<int, int> horseToStartRank) {
     return Row(
       children: <Widget>[
         _buildRankCell(rank),
