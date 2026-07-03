@@ -98,6 +98,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
 
   final Utility _utility = Utility();
 
+  bool _allExpanded = false;
+
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final GlobalKey _haranidoKey = GlobalKey();
 
@@ -569,6 +571,30 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
       children: <Widget>[
         Row(
           children: <Widget>[
+            GestureDetector(
+              onTap: () => setState(() => _allExpanded = !_allExpanded),
+              child: Container(
+                width: 70,
+                padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 10),
+                decoration: BoxDecoration(
+                  color: _allExpanded
+                      ? const Color(0xFF2196F3).withValues(alpha: 0.4)
+                      : const Color(0xFF4CAF50).withValues(alpha: 0.4),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Center(
+                  child: Text(
+                    _allExpanded ? 'CLOSE' : 'OPEN',
+                    style: const TextStyle(color: Colors.white, fontSize: 12),
+                  ),
+                ),
+              ),
+            ),
+
+            const SizedBox(width: 15),
+
+            const SizedBox(height: 24, child: VerticalDivider(color: Colors.white38, thickness: 3, width: 16)),
+
             IconButton(
               onPressed: () async {
                 final SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -993,7 +1019,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
 
                     if (appParamState.selectedRaceNumber > 0) ...<Widget>[
                       SizedBox(height: 40, child: displayRaceMinutesRow()),
-                      _buildControlButtons(),
+
+                      const SizedBox(height: 5),
 
                       if (displayList.isNotEmpty) ...<Widget>[
                         SideTabPanel(
@@ -1009,6 +1036,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                               : _buildRaceResultBox(raceResultByRank: raceResultByRank),
                         ),
                       ],
+
+                      _buildControlButtons(),
 
                       if (widget.scheduleDateBashoMap.isNotEmpty) ...<Widget>[
                         Divider(color: Colors.white.withValues(alpha: 0.5)),
@@ -1479,7 +1508,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
+              ///BBB
               ExpansionTile(
+                key: ValueKey<String>('horse_${element.num}_$_allExpanded'),
+                initiallyExpanded: _allExpanded,
                 tilePadding: const EdgeInsets.symmetric(horizontal: 8),
                 childrenPadding: const EdgeInsets.symmetric(horizontal: 8),
                 title: DefaultTextStyle(

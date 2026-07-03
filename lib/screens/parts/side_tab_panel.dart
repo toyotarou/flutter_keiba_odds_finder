@@ -102,20 +102,18 @@ class SideTabPanel extends StatelessWidget {
                     child: GestureDetector(
                       behavior: HitTestBehavior.opaque,
                       onTap: () => onSelected(i),
-                      child: Center(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 4),
-                          child: Text(
-                            tabLabels[i],
-                            textAlign: TextAlign.center,
-                            style:
-                                tabTextStyle ??
-                                TextStyle(
-                                  color: i == selectedIndex ? selectedBorderColor : unselectedTextColor,
-                                  fontSize: 13,
-                                  fontWeight: i == selectedIndex ? FontWeight.bold : FontWeight.normal,
-                                ),
-                          ),
+                      child: Padding(
+                        padding: const EdgeInsets.only(left: 4, right: 4, top: 15),
+                        child: Text(
+                          tabLabels[i],
+                          textAlign: TextAlign.center,
+                          style:
+                              tabTextStyle ??
+                              TextStyle(
+                                color: i == selectedIndex ? selectedBorderColor : unselectedTextColor,
+                                fontSize: 13,
+                                fontWeight: i == selectedIndex ? FontWeight.bold : FontWeight.normal,
+                              ),
                         ),
                       ),
                     ),
