@@ -98,10 +98,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
 
   final Utility _utility = Utility();
 
-  bool _allExpanded = false;
-
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  final GlobalKey _haranidoKey = GlobalKey();
+  final GlobalKey _harandoKey = GlobalKey();
 
   String get _mapKey => '${appParamState.selectedScheduleDate}_${appParamState.selectedScheduleKaisuuBashoDay}';
 
@@ -573,19 +571,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
         Row(
           children: <Widget>[
             GestureDetector(
-              onTap: () => setState(() => _allExpanded = !_allExpanded),
+              onTap: () => appParamNotifier.setAllExpanded(),
               child: Container(
                 width: 70,
                 padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 10),
                 decoration: BoxDecoration(
-                  color: _allExpanded
+                  color: appParamState.allExpanded
                       ? const Color(0xFF2196F3).withValues(alpha: 0.4)
                       : const Color(0xFF4CAF50).withValues(alpha: 0.4),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Center(
                   child: Text(
-                    _allExpanded ? 'CLOSE' : 'OPEN',
+                    appParamState.allExpanded ? 'CLOSE' : 'OPEN',
                     style: const TextStyle(color: Colors.white, fontSize: 12),
                   ),
                 ),
@@ -609,6 +607,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                   appParamState.selectedScheduleKaisuuBashoDayName,
                 );
                 await prefs.setInt('reload_selected_race_number', appParamState.selectedRaceNumber);
+                await prefs.setBool('reload_all_expanded', appParamState.allExpanded);
                 if (mounted) {
                   // ignore: use_build_context_synchronously
                   context.findAncestorStateOfType<AppRootState>()?.restartApp();
@@ -1509,10 +1508,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              ///BBB
               ExpansionTile(
-                key: ValueKey<String>('horse_${element.num}_$_allExpanded'),
-                initiallyExpanded: _allExpanded,
+                key: ValueKey<String>('horse_${element.num}_${appParamState.allExpanded}'),
+                initiallyExpanded: appParamState.allExpanded,
                 tilePadding: const EdgeInsets.symmetric(horizontal: 8),
                 childrenPadding: const EdgeInsets.symmetric(horizontal: 8),
                 title: DefaultTextStyle(
@@ -1689,11 +1687,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
         Padding(
           padding: const EdgeInsets.only(right: 20),
           child: GestureDetector(
-            key: _haranidoKey,
+            key: _harandoKey,
             onTap: () {
               widgetDisplayOverlay(
                 context: context,
-                buttonKey: _haranidoKey,
+                buttonKey: _harandoKey,
 
                 displayDuration: const Duration(seconds: 5),
 

@@ -61,6 +61,7 @@ mixin _$AppParamState {
   String get selectedHistoryYear => throw _privateConstructorUsedError;
   String get selectedHorseNameChar1 => throw _privateConstructorUsedError;
   String get selectedHorseNameChar2 => throw _privateConstructorUsedError;
+  bool get allExpanded => throw _privateConstructorUsedError;
 
   @JsonKey(ignore: true)
   $AppParamStateCopyWith<AppParamState> get copyWith =>
@@ -101,7 +102,8 @@ abstract class $AppParamStateCopyWith<$Res> {
       String selectedPopularityRankYear,
       String selectedHistoryYear,
       String selectedHorseNameChar1,
-      String selectedHorseNameChar2});
+      String selectedHorseNameChar2,
+      bool allExpanded});
 }
 
 /// @nodoc
@@ -145,6 +147,7 @@ class _$AppParamStateCopyWithImpl<$Res, $Val extends AppParamState>
     Object? selectedHistoryYear = null,
     Object? selectedHorseNameChar1 = null,
     Object? selectedHorseNameChar2 = null,
+    Object? allExpanded = null,
   }) {
     return _then(_value.copyWith(
       keepScheduleDateBashoMap: null == keepScheduleDateBashoMap
@@ -260,6 +263,10 @@ class _$AppParamStateCopyWithImpl<$Res, $Val extends AppParamState>
           ? _value.selectedHorseNameChar2
           : selectedHorseNameChar2 // ignore: cast_nullable_to_non_nullable
               as String,
+      allExpanded: null == allExpanded
+          ? _value.allExpanded
+          : allExpanded // ignore: cast_nullable_to_non_nullable
+              as bool,
     ) as $Val);
   }
 }
@@ -300,7 +307,8 @@ abstract class _$$AppParamStateImplCopyWith<$Res>
       String selectedPopularityRankYear,
       String selectedHistoryYear,
       String selectedHorseNameChar1,
-      String selectedHorseNameChar2});
+      String selectedHorseNameChar2,
+      bool allExpanded});
 }
 
 /// @nodoc
@@ -342,6 +350,7 @@ class __$$AppParamStateImplCopyWithImpl<$Res>
     Object? selectedHistoryYear = null,
     Object? selectedHorseNameChar1 = null,
     Object? selectedHorseNameChar2 = null,
+    Object? allExpanded = null,
   }) {
     return _then(_$AppParamStateImpl(
       keepScheduleDateBashoMap: null == keepScheduleDateBashoMap
@@ -457,6 +466,10 @@ class __$$AppParamStateImplCopyWithImpl<$Res>
           ? _value.selectedHorseNameChar2
           : selectedHorseNameChar2 // ignore: cast_nullable_to_non_nullable
               as String,
+      allExpanded: null == allExpanded
+          ? _value.allExpanded
+          : allExpanded // ignore: cast_nullable_to_non_nullable
+              as bool,
     ));
   }
 }
@@ -502,7 +515,8 @@ class _$AppParamStateImpl implements _AppParamState {
       this.selectedPopularityRankYear = '',
       this.selectedHistoryYear = '',
       this.selectedHorseNameChar1 = '',
-      this.selectedHorseNameChar2 = ''})
+      this.selectedHorseNameChar2 = '',
+      this.allExpanded = false})
       : _keepScheduleDateBashoMap = keepScheduleDateBashoMap,
         _keepRaceMap = keepRaceMap,
         _keepHorseMap = keepHorseMap,
@@ -667,10 +681,13 @@ class _$AppParamStateImpl implements _AppParamState {
   @override
   @JsonKey()
   final String selectedHorseNameChar2;
+  @override
+  @JsonKey()
+  final bool allExpanded;
 
   @override
   String toString() {
-    return 'AppParamState(keepScheduleDateBashoMap: $keepScheduleDateBashoMap, keepRaceMap: $keepRaceMap, keepHorseMap: $keepHorseMap, keepOddsMap: $keepOddsMap, keepOddsWideMap: $keepOddsWideMap, keepSummaryMap: $keepSummaryMap, keepSummaryDateBashoMap: $keepSummaryDateBashoMap, keepLoginUserMap: $keepLoginUserMap, keepPushNotifierUserList: $keepPushNotifierUserList, keepPopularityRankOddsAverageMap: $keepPopularityRankOddsAverageMap, configOddsGetTiming: $configOddsGetTiming, selectedScheduleDate: $selectedScheduleDate, selectedScheduleKaisuuBashoDay: $selectedScheduleKaisuuBashoDay, selectedScheduleKaisuuBashoDayName: $selectedScheduleKaisuuBashoDayName, selectedRaceNumber: $selectedRaceNumber, selectedTiming: $selectedTiming, selectedTiming2: $selectedTiming2, queryUser: $queryUser, isShowUpperBox: $isShowUpperBox, isShowUpperBox2: $isShowUpperBox2, selectedDrawerRace: $selectedDrawerRace, isZoomed: $isZoomed, selectedUpsetBoxNum: $selectedUpsetBoxNum, selectedPopularityRank: $selectedPopularityRank, selectedPopularityRankYear: $selectedPopularityRankYear, selectedHistoryYear: $selectedHistoryYear, selectedHorseNameChar1: $selectedHorseNameChar1, selectedHorseNameChar2: $selectedHorseNameChar2)';
+    return 'AppParamState(keepScheduleDateBashoMap: $keepScheduleDateBashoMap, keepRaceMap: $keepRaceMap, keepHorseMap: $keepHorseMap, keepOddsMap: $keepOddsMap, keepOddsWideMap: $keepOddsWideMap, keepSummaryMap: $keepSummaryMap, keepSummaryDateBashoMap: $keepSummaryDateBashoMap, keepLoginUserMap: $keepLoginUserMap, keepPushNotifierUserList: $keepPushNotifierUserList, keepPopularityRankOddsAverageMap: $keepPopularityRankOddsAverageMap, configOddsGetTiming: $configOddsGetTiming, selectedScheduleDate: $selectedScheduleDate, selectedScheduleKaisuuBashoDay: $selectedScheduleKaisuuBashoDay, selectedScheduleKaisuuBashoDayName: $selectedScheduleKaisuuBashoDayName, selectedRaceNumber: $selectedRaceNumber, selectedTiming: $selectedTiming, selectedTiming2: $selectedTiming2, queryUser: $queryUser, isShowUpperBox: $isShowUpperBox, isShowUpperBox2: $isShowUpperBox2, selectedDrawerRace: $selectedDrawerRace, isZoomed: $isZoomed, selectedUpsetBoxNum: $selectedUpsetBoxNum, selectedPopularityRank: $selectedPopularityRank, selectedPopularityRankYear: $selectedPopularityRankYear, selectedHistoryYear: $selectedHistoryYear, selectedHorseNameChar1: $selectedHorseNameChar1, selectedHorseNameChar2: $selectedHorseNameChar2, allExpanded: $allExpanded)';
   }
 
   @override
@@ -738,7 +755,8 @@ class _$AppParamStateImpl implements _AppParamState {
             (identical(other.selectedHorseNameChar1, selectedHorseNameChar1) ||
                 other.selectedHorseNameChar1 == selectedHorseNameChar1) &&
             (identical(other.selectedHorseNameChar2, selectedHorseNameChar2) ||
-                other.selectedHorseNameChar2 == selectedHorseNameChar2));
+                other.selectedHorseNameChar2 == selectedHorseNameChar2) &&
+            (identical(other.allExpanded, allExpanded) || other.allExpanded == allExpanded));
   }
 
   @override
@@ -771,7 +789,8 @@ class _$AppParamStateImpl implements _AppParamState {
         selectedPopularityRankYear,
         selectedHistoryYear,
         selectedHorseNameChar1,
-        selectedHorseNameChar2
+        selectedHorseNameChar2,
+        allExpanded
       ]);
 
   @JsonKey(ignore: true)
@@ -811,7 +830,8 @@ abstract class _AppParamState implements AppParamState {
       final String selectedPopularityRankYear,
       final String selectedHistoryYear,
       final String selectedHorseNameChar1,
-      final String selectedHorseNameChar2}) = _$AppParamStateImpl;
+      final String selectedHorseNameChar2,
+      final bool allExpanded}) = _$AppParamStateImpl;
 
   @override
   Map<String, List<ScheduleModel>> get keepScheduleDateBashoMap;
@@ -873,6 +893,8 @@ abstract class _AppParamState implements AppParamState {
   String get selectedHorseNameChar1;
   @override
   String get selectedHorseNameChar2;
+  @override
+  bool get allExpanded;
   @override
   @JsonKey(ignore: true)
   _$$AppParamStateImplCopyWith<_$AppParamStateImpl> get copyWith =>

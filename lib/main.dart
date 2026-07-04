@@ -105,6 +105,7 @@ class AppRootState extends State<AppRoot> {
   int _reloadRace = 0;
   bool _reloadIsRankingDialogOpen = false;
   bool _reloadIsZoomed = false;
+  bool _reloadAllExpanded = false;
   late String _loggedInUserId;
 
   @override
@@ -135,12 +136,14 @@ class AppRootState extends State<AppRoot> {
     _reloadName = prefs.getString('reload_selected_schedule_kaisuu_basho_day_name') ?? '';
     _reloadRace = prefs.getInt('reload_selected_race_number') ?? 0;
     _reloadIsRankingDialogOpen = prefs.getBool('isRankingDialogOpen') ?? false;
+    _reloadAllExpanded = prefs.getBool('reload_all_expanded') ?? false;
 
     await prefs.remove('reload_selected_schedule_date');
     await prefs.remove('reload_selected_schedule_kaisuu_basho_day');
     await prefs.remove('reload_selected_schedule_kaisuu_basho_day_name');
     await prefs.remove('reload_selected_race_number');
     await prefs.remove('isRankingDialogOpen');
+    await prefs.remove('reload_all_expanded');
 
     if (mounted) {
       setState(() => _appKey = UniqueKey());
@@ -159,6 +162,7 @@ class AppRootState extends State<AppRoot> {
       reloadRace: _reloadRace,
       reloadIsRankingDialogOpen: _reloadIsRankingDialogOpen,
       reloadIsZoomed: _reloadIsZoomed,
+      reloadAllExpanded: _reloadAllExpanded,
       queryUser: widget.queryUser,
       loggedInUserId: _loggedInUserId,
     );
@@ -175,6 +179,7 @@ class MyApp extends ConsumerStatefulWidget {
     required this.reloadRace,
     required this.reloadIsRankingDialogOpen,
     this.reloadIsZoomed = false,
+    this.reloadAllExpanded = false,
     this.queryUser,
     required this.loggedInUserId,
   });
@@ -187,6 +192,7 @@ class MyApp extends ConsumerStatefulWidget {
   final int reloadRace;
   final bool reloadIsRankingDialogOpen;
   final bool reloadIsZoomed;
+  final bool reloadAllExpanded;
   final String? queryUser;
   final String loggedInUserId;
 
@@ -219,6 +225,10 @@ class _MyAppState extends ConsumerState<MyApp> with ControllersMixin<MyApp> {
         }
 
         appParamNotifier.setIsZoomed(flag: widget.reloadIsZoomed);
+
+        if (widget.reloadAllExpanded != appParamState.allExpanded) {
+          appParamNotifier.setAllExpanded();
+        }
       }
     });
   }

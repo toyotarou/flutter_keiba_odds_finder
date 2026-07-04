@@ -257,6 +257,7 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
             );
             await prefs.setInt('reload_selected_race_number', appParamState.selectedRaceNumber);
             await prefs.setBool('isRankingDialogOpen', true);
+            await prefs.setBool('reload_all_expanded', appParamState.allExpanded);
             if (mounted) {
               // ignore: use_build_context_synchronously
               context.findAncestorStateOfType<AppRootState>()?.restartApp();

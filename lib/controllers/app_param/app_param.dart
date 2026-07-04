@@ -76,6 +76,8 @@ class AppParamState with _$AppParamState {
 
     @Default('') String selectedHorseNameChar1,
     @Default('') String selectedHorseNameChar2,
+
+    @Default(false) bool allExpanded,
   }) = _AppParamState;
 }
 
@@ -178,4 +180,7 @@ class AppParam extends _$AppParam {
 
   ///
   void setSelectedHorseNameChar2({required String char}) => state = state.copyWith(selectedHorseNameChar2: char);
+
+  ///
+  void setAllExpanded() => state = state.copyWith(allExpanded: !state.allExpanded);
 }
