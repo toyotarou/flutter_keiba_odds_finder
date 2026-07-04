@@ -56,6 +56,7 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
   final TransformationController _controller = TransformationController();
   double? _fitScale;
   Map<int, HorseModel> _horseMap = <int, HorseModel>{};
+  Offset? _pendingTapPosition;
 
   String get _mapKey => '${appParamState.selectedScheduleDate}_${appParamState.selectedScheduleKaisuuBashoDay}';
 
@@ -99,7 +100,6 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
           .where((HorseModel e) => e.race == appParamState.selectedRaceNumber)
           .map((HorseModel e) => MapEntry<int, HorseModel>(e.num, e)),
     );
-
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: SafeArea(
@@ -167,27 +167,40 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
   ///
   Widget _buildHeaderText() {
     final bool isSummary = widget.mode == RankingMode.summary;
+
     final String date;
+
     final String kaisuuBashoDay;
+
     final String race;
+
     final String raceName;
 
     if (isSummary) {
       final List<SummaryModel> list = summaryState.oneRaceSummaryList;
+
       if (list.isNotEmpty) {
         final SummaryModel s = list.first;
+
         date = s.date;
+
         kaisuuBashoDay = '${s.kaisuu}回${s.bashoName}${s.day}日';
+
         race = '${s.race}R';
+
         raceName = s.raceName;
       } else {
         date = kaisuuBashoDay = race = raceName = '';
       }
     } else {
       date = appParamState.selectedScheduleDate;
+
       kaisuuBashoDay = appParamState.selectedScheduleKaisuuBashoDayName;
+
       race = '${appParamState.selectedRaceNumber}R';
+
       final String mapKey = '${appParamState.selectedScheduleDate}_${appParamState.selectedScheduleKaisuuBashoDay}';
+
       raceName =
           (appParamState.keepRaceMap[mapKey] ?? <RaceModel>[])
               .where((RaceModel e) => e.race == appParamState.selectedRaceNumber)
@@ -247,17 +260,23 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
           onTap: () async {
             final SharedPreferences prefs = await SharedPreferences.getInstance();
             await prefs.setString('reload_selected_schedule_date', appParamState.selectedScheduleDate);
+
             await prefs.setString(
               'reload_selected_schedule_kaisuu_basho_day',
               appParamState.selectedScheduleKaisuuBashoDay,
             );
+
             await prefs.setString(
               'reload_selected_schedule_kaisuu_basho_day_name',
               appParamState.selectedScheduleKaisuuBashoDayName,
             );
+
             await prefs.setInt('reload_selected_race_number', appParamState.selectedRaceNumber);
+
             await prefs.setBool('isRankingDialogOpen', true);
+
             await prefs.setBool('reload_all_expanded', appParamState.allExpanded);
+
             if (mounted) {
               // ignore: use_build_context_synchronously
               context.findAncestorStateOfType<AppRootState>()?.restartApp();
@@ -276,6 +295,7 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
   static List<SummaryModel> _sortSummaryByOdds(List<SummaryModel> horses, int minutes) {
     return horses.where((SummaryModel e) {
       final String odds = _oddsAt(e, minutes);
+
       return odds.isNotEmpty && odds != '0' && double.tryParse(odds) != null;
     }).toList()..sort(
       (SummaryModel a, SummaryModel b) =>
@@ -291,6 +311,7 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
         return <int, int>{for (int i = 0; i < sorted.length; i++) sorted[i].num: i + 1};
       }
     }
+
     return <int, int>{};
   }
 
@@ -300,9 +321,11 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
       if (i == 0) {
         return 999;
       }
+
       if (timingParts[i] == '0') {
         return -999;
       }
+
       return int.parse(timingParts[i]);
     });
   }
@@ -313,6 +336,7 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
       timingOrder.map((int timing) {
         final List<OddsModel> sorted = list.where((OddsModel e) => e.minutesBeforeStart == timing).toList()
           ..sort((OddsModel a, OddsModel b) => (double.tryParse(a.odds) ?? 0).compareTo(double.tryParse(b.odds) ?? 0));
+
         return MapEntry<int, List<OddsModel>>(timing, sorted);
       }),
     );
@@ -329,6 +353,7 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
   ///
   _GridData _buildFromOddsModel() {
     final String mapKey = '${appParamState.selectedScheduleDate}_${appParamState.selectedScheduleKaisuuBashoDay}';
+
     final bool hasData = appParamState.keepRaceMap[mapKey] != null && appParamState.selectedRaceNumber > 0;
 
     final int horseNum = hasData
@@ -351,6 +376,7 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
       for (int r = 1; r <= horseNum; r++)
         r: timingOrder.map((int timing) {
           final List<OddsModel> slot = oddsTimingMap[timing] ?? <OddsModel>[];
+
           return r - 1 < slot.length ? slot[r - 1].num : null;
         }).toList(),
     };
@@ -359,9 +385,11 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
       if (i == 0) {
         return 'S';
       }
+
       if (i == timingParts.length - 1) {
         return 'E';
       }
+
       return timingParts[i];
     });
 
@@ -376,6 +404,7 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
   ///
   _GridData _buildFromSummaryModel() {
     final List<SummaryModel> horses = summaryState.oneRaceSummaryList;
+
     final int horseNum = horses.length;
 
     final List<List<SummaryModel>> perTiming = _kSummaryTimingMinutes
@@ -386,6 +415,7 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
       for (int rank = 1; rank <= horseNum; rank++)
         rank: _kSummaryTimingMinutes.asMap().entries.map((MapEntry<int, int> e) {
           final List<SummaryModel> sorted = perTiming[e.key];
+
           return rank - 1 < sorted.length ? sorted[rank - 1].num : null;
         }).toList(),
     };
@@ -436,21 +466,25 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
       _ => _defaultBgColor,
     };
     return GestureDetector(
-      onTapUp: num == null
+      onTapDown: num == null ? null : (TapDownDetails details) => _pendingTapPosition = details.globalPosition,
+      onTap: num == null
           ? null
-          : (TapUpDetails details) {
+          : () {
               final String horseName = _horseMap[num]?.name ?? '';
 
-              if (horseName.isEmpty) {
+              final Offset? pos = _pendingTapPosition;
+
+              if (horseName.isEmpty || pos == null) {
                 return;
               }
 
               widgetDisplayOverlay(
                 context: context,
-                tapPosition: details.globalPosition,
+                tapPosition: pos,
                 child: Text(horseName, style: const TextStyle(color: Colors.yellowAccent, fontSize: 12)),
               );
             },
+      onDoubleTap: () => _controller.value = Matrix4.identity()..scale(_fitScale),
       child: Container(
         width: 50,
         height: 30,
@@ -501,6 +535,7 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
         _buildRankCell(rank),
         ...rowData.asMap().entries.map((MapEntry<int, int?> entry) {
           int changeLevel = 0;
+
           if (entry.key > 0 && entry.value != null) {
             final int? startRank = horseToStartRank[entry.value!];
             if (startRank != null) {
@@ -514,6 +549,7 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
               };
             }
           }
+
           return _buildDataCell(entry.value, changeLevel);
         }),
         _buildRankCell(rank),
@@ -535,12 +571,14 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
     }
 
     const String cornerLabel = '分前';
+
     final double tableWidth = 80 + 50.0 * data.timingLabels.length;
 
     return LayoutBuilder(
       builder: (BuildContext ctx, BoxConstraints constraints) {
         if (_fitScale == null) {
           _fitScale = constraints.maxWidth / tableWidth;
+
           _controller.value = Matrix4.identity()..scale(_fitScale);
         }
         return GestureDetector(
