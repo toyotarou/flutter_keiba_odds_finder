@@ -683,9 +683,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                 : Colors.white;
 
             final String circleMinute = entry.key == 0
-                ? 'S'
+                ? '24'
                 : entry.key == timingKeys.length - 1
-                ? 'E'
+                ? '0'
                 : entryTimingKey;
 
             final String fukuMin = fukuMinList?[entry.key] ?? '';
@@ -1242,21 +1242,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
 
   ///
   Widget displayRaceMinutesRow() {
-    final Map<String, String> ogtNamesMap = Map<String, String>.fromEntries(
-      appParamState.configOddsGetTiming
-          .split('|')
-          .map(
-            (String e) => MapEntry<String, String>(
-              e,
-              e == '24'
-                  ? 'S'
-                  : e == '0'
-                  ? 'E'
-                  : e,
-            ),
-          ),
-    );
-
     final List<OddsModel> oddsModelList = <OddsModel>[];
     if (widget.raceMap[_mapKey] != null && appParamState.selectedRaceNumber > 0) {
       oddsModelList.addAll(
@@ -1290,7 +1275,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                 borderRadius: BorderRadius.circular(3),
               ),
               alignment: Alignment.center,
-              child: Text(ogtNamesMap[e] ?? '', style: const TextStyle(color: Colors.white, fontSize: 8)),
+              child: Text(e, style: const TextStyle(color: Colors.white, fontSize: 8)),
             ),
           ),
         );

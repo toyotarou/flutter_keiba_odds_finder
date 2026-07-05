@@ -48,7 +48,7 @@ class _HorseOddsRecordDisplayAlertState extends ConsumerState<HorseOddsRecordDis
   Widget _displayOddsRecordList() {
     final List<Widget> list = <Widget>[];
 
-    const List<String> timingLabels = <String>['S', '21', '18', '15', '12', '9', '6', '3', 'E'];
+    const List<String> timingLabels = <String>['24', '21', '18', '15', '12', '9', '6', '3', '0'];
 
     final List<SummaryModel> matched =
         appParamState.keepSummaryMap.values

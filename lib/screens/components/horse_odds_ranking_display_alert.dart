@@ -18,7 +18,7 @@ import 'horse_race_result_display_alert.dart';
 enum RankingMode { live, summary }
 
 typedef RankingGrid = Map<int, List<int?>>;
-typedef _GridData = ({RankingGrid grid, List<String> timingLabels, int horseNum, Map<int, int> horseToStartRank});
+typedef _GridData = ({RankingGrid grid, List<String> timingParts, int horseNum, Map<int, int> horseToStartRank});
 
 const Color _headerBgColor = Color(0xFF1B3A2A);
 const Color _changedBgColor1 = Color(0xFF1B3A5A);
@@ -28,7 +28,8 @@ const Color _droppedBgColor = Color(0xFF4A1A6A);
 const Color _defaultBgColor = Colors.transparent;
 
 const List<int> _kSummaryTimingMinutes = <int>[24, 21, 18, 15, 12, 9, 6, 3, 0];
-const List<String> _kSummaryTimingLabels = <String>['S', '21', '18', '15', '12', '9', '6', '3', 'E'];
+
+const List<String> _kSummaryTimingLabels = <String>['24', '21', '18', '15', '12', '9', '6', '3', '0'];
 
 final Map<int, String Function(SummaryModel)> _kOddsGetters = <int, String Function(SummaryModel)>{
   24: (SummaryModel m) => m.oddsTanBefore24,
@@ -346,7 +347,7 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
   static Map<int, int> _buildHorseToStartRank(RankingGrid grid, int horseNum) {
     return <int, int>{
       for (int r = 1; r <= horseNum; r++)
-        if (grid[r]?.firstOrNull case final int num) num: r,
+        if (grid[r]?.firstWhere((int? n) => n != null, orElse: () => null) case final int num) num: r,
     };
   }
 
@@ -381,21 +382,9 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
         }).toList(),
     };
 
-    final List<String> timingLabels = List<String>.generate(timingParts.length, (int i) {
-      if (i == 0) {
-        return 'S';
-      }
-
-      if (i == timingParts.length - 1) {
-        return 'E';
-      }
-
-      return timingParts[i];
-    });
-
     return (
       grid: grid,
-      timingLabels: timingLabels,
+      timingParts: timingParts,
       horseNum: horseNum,
       horseToStartRank: _buildHorseToStartRank(grid, horseNum),
     );
@@ -422,7 +411,7 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
 
     return (
       grid: grid,
-      timingLabels: _kSummaryTimingLabels,
+      timingParts: _kSummaryTimingLabels,
       horseNum: horseNum,
       horseToStartRank: _buildHorseToStartRank(grid, horseNum),
     );
@@ -572,7 +561,7 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
 
     const String cornerLabel = '分前';
 
-    final double tableWidth = 80 + 50.0 * data.timingLabels.length;
+    final double tableWidth = 80 + 50.0 * data.timingParts.length;
 
     return LayoutBuilder(
       builder: (BuildContext ctx, BoxConstraints constraints) {
@@ -591,12 +580,12 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                _buildHeaderFooterRow(data.timingLabels, isTop: true, cornerLabel: cornerLabel),
+                _buildHeaderFooterRow(data.timingParts, isTop: true, cornerLabel: cornerLabel),
                 ...List<Widget>.generate(data.horseNum, (int i) {
                   final int rank = i + 1;
                   return _buildRankingRow(rank, data.grid[rank] ?? <int?>[], data.horseToStartRank);
                 }),
-                _buildHeaderFooterRow(data.timingLabels, isTop: false, cornerLabel: cornerLabel),
+                _buildHeaderFooterRow(data.timingParts, isTop: false, cornerLabel: cornerLabel),
               ],
             ),
           ),
