@@ -246,9 +246,33 @@ class _SimilarRacesDisplayAlertState extends ConsumerState<SimilarRacesDisplayAl
           Positioned(
             top: 10,
             right: 10,
-            child: Text(
-              '$matchPercent%',
-              style: TextStyle(color: Colors.orange.withValues(alpha: 0.4), fontSize: 60, fontWeight: FontWeight.bold),
+            child: IntrinsicWidth(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: <Widget>[
+                  Container(
+                    decoration: BoxDecoration(color: Colors.orangeAccent.withValues(alpha: 0.3)),
+                    alignment: Alignment.center,
+                    child: Text(
+                      '合致',
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.5),
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+
+                  Text(
+                    '$matchPercent%',
+                    style: TextStyle(
+                      color: Colors.orange.withValues(alpha: 0.3),
+                      fontSize: 60,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ],
@@ -370,9 +394,7 @@ class _SimilarRacesDisplayAlertState extends ConsumerState<SimilarRacesDisplayAl
                                 ),
                               ),
                               const SizedBox(width: 4),
-                            ] else ...<Widget>[
-                              const SizedBox(width: 26),
-                            ],
+                            ] else ...<Widget>[const SizedBox(width: 26)],
 
                             Expanded(
                               child: Text(name, style: const TextStyle(color: Colors.white, fontSize: 11)),
@@ -421,7 +443,36 @@ class _SimilarRacesDisplayAlertState extends ConsumerState<SimilarRacesDisplayAl
 
               const SizedBox(height: 8),
 
-              const Text('払い戻し', style: TextStyle(color: Colors.yellowAccent)),
+              () {
+                final List<String> exTan = payout.tan.split('|');
+
+                final int cost = widget.raceModel.numHorses * 100;
+
+                final String percent = ((exTan[1].toInt() / cost) * 100).toStringAsFixed(1);
+
+                return Container(
+                  decoration: BoxDecoration(color: Colors.yellowAccent.withValues(alpha: 0.1)),
+                  padding: const EdgeInsets.symmetric(vertical: 3, horizontal: 10),
+
+                  child: DefaultTextStyle(
+                    style: const TextStyle(color: Colors.white, fontSize: 12),
+
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: <Widget>[
+                        const Text('払い戻し'),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: <Widget>[
+                            Text('$percent %'),
+                            Text('${exTan[1]} / (${widget.raceModel.numHorses} * 100)'),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }(),
 
               const SizedBox(height: 8),
 
