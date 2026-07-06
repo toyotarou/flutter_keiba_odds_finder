@@ -40,6 +40,7 @@ import 'components/horse_odds_ranking_display_alert.dart';
 //
 
 import 'components/popularity_record_display_alert.dart';
+import 'components/similar_races_display_alert.dart';
 import 'parts/error_confirm_dialog.dart';
 import 'parts/odds_finder_dialog.dart';
 import 'parts/odds_up_down_icon.dart';
@@ -641,6 +642,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
 
               icon: Icon(Icons.refresh, color: Colors.green[500]),
             ),
+
             IconButton(
               onPressed: () {
                 appParamNotifier.setIsShowUpperBox2(flag: true);
@@ -649,6 +651,44 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
               },
               icon: Icon(Icons.list, color: Colors.white.withValues(alpha: 0.5)),
             ),
+
+            () {
+              if (widget.raceMap[_mapKey] == null || appParamState.selectedRaceNumber <= 0) {
+                return const SizedBox.shrink();
+              }
+              final List<RaceModel> races = widget.raceMap[_mapKey]!;
+              final int idx = races.indexWhere((RaceModel e) => e.race == appParamState.selectedRaceNumber);
+              if (idx == -1 || races[idx].popularityRatioTableIds.isEmpty) {
+                return const SizedBox.shrink();
+              }
+              final RaceModel currentRace = races[idx];
+
+              return Row(
+                children: <Widget>[
+                  const SizedBox(height: 24, child: VerticalDivider(color: Colors.white38, thickness: 3, width: 16)),
+                  const SizedBox(width: 10),
+                  GestureDetector(
+                    onTap: () {
+                      OddsFinderDialog(
+                        context: context,
+                        widget: SimilarRacesDisplayAlert(raceModel: currentRace),
+                      );
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 10),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: const Color(0xFFFBB6CE)),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Text(
+                        '類似',
+                        style: TextStyle(fontSize: 10, color: Color(0xFFFBB6CE), fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            }(),
           ],
         ),
         Row(
