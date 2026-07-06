@@ -370,7 +370,7 @@ class _SimilarRacesDisplayAlertState extends ConsumerState<SimilarRacesDisplayAl
                                 ),
                               ),
                               const SizedBox(width: 4),
-                            ] else ...[
+                            ] else ...<Widget>[
                               const SizedBox(width: 26),
                             ],
 
