@@ -23,9 +23,11 @@ mixin _$AppParamState {
   Map<String, List<HorseModel>> get keepHorseMap =>
       throw _privateConstructorUsedError;
   Map<String, List<OddsModel>> get keepOddsMap =>
-      throw _privateConstructorUsedError;
-  Map<String, List<OddsWideModel>> get keepOddsWideMap =>
-      throw _privateConstructorUsedError;
+      throw _privateConstructorUsedError; // @Default(<String, List<OddsWideModel>>{}) Map<String, List<OddsWideModel>> keepOddsWideMap,
+//
+//
+//
+//
   Map<String, List<SummaryModel>> get keepSummaryMap =>
       throw _privateConstructorUsedError;
   Map<String, List<String>> get keepSummaryDateBashoMap =>
@@ -79,7 +81,6 @@ abstract class $AppParamStateCopyWith<$Res> {
       Map<String, List<RaceModel>> keepRaceMap,
       Map<String, List<HorseModel>> keepHorseMap,
       Map<String, List<OddsModel>> keepOddsMap,
-      Map<String, List<OddsWideModel>> keepOddsWideMap,
       Map<String, List<SummaryModel>> keepSummaryMap,
       Map<String, List<String>> keepSummaryDateBashoMap,
       Map<String, LoginUserModel> keepLoginUserMap,
@@ -123,7 +124,6 @@ class _$AppParamStateCopyWithImpl<$Res, $Val extends AppParamState>
     Object? keepRaceMap = null,
     Object? keepHorseMap = null,
     Object? keepOddsMap = null,
-    Object? keepOddsWideMap = null,
     Object? keepSummaryMap = null,
     Object? keepSummaryDateBashoMap = null,
     Object? keepLoginUserMap = null,
@@ -166,10 +166,6 @@ class _$AppParamStateCopyWithImpl<$Res, $Val extends AppParamState>
           ? _value.keepOddsMap
           : keepOddsMap // ignore: cast_nullable_to_non_nullable
               as Map<String, List<OddsModel>>,
-      keepOddsWideMap: null == keepOddsWideMap
-          ? _value.keepOddsWideMap
-          : keepOddsWideMap // ignore: cast_nullable_to_non_nullable
-              as Map<String, List<OddsWideModel>>,
       keepSummaryMap: null == keepSummaryMap
           ? _value.keepSummaryMap
           : keepSummaryMap // ignore: cast_nullable_to_non_nullable
@@ -284,7 +280,6 @@ abstract class _$$AppParamStateImplCopyWith<$Res>
       Map<String, List<RaceModel>> keepRaceMap,
       Map<String, List<HorseModel>> keepHorseMap,
       Map<String, List<OddsModel>> keepOddsMap,
-      Map<String, List<OddsWideModel>> keepOddsWideMap,
       Map<String, List<SummaryModel>> keepSummaryMap,
       Map<String, List<String>> keepSummaryDateBashoMap,
       Map<String, LoginUserModel> keepLoginUserMap,
@@ -326,7 +321,6 @@ class __$$AppParamStateImplCopyWithImpl<$Res>
     Object? keepRaceMap = null,
     Object? keepHorseMap = null,
     Object? keepOddsMap = null,
-    Object? keepOddsWideMap = null,
     Object? keepSummaryMap = null,
     Object? keepSummaryDateBashoMap = null,
     Object? keepLoginUserMap = null,
@@ -369,10 +363,6 @@ class __$$AppParamStateImplCopyWithImpl<$Res>
           ? _value._keepOddsMap
           : keepOddsMap // ignore: cast_nullable_to_non_nullable
               as Map<String, List<OddsModel>>,
-      keepOddsWideMap: null == keepOddsWideMap
-          ? _value._keepOddsWideMap
-          : keepOddsWideMap // ignore: cast_nullable_to_non_nullable
-              as Map<String, List<OddsWideModel>>,
       keepSummaryMap: null == keepSummaryMap
           ? _value._keepSummaryMap
           : keepSummaryMap // ignore: cast_nullable_to_non_nullable
@@ -486,8 +476,6 @@ class _$AppParamStateImpl implements _AppParamState {
           const <String, List<HorseModel>>{},
       final Map<String, List<OddsModel>> keepOddsMap =
           const <String, List<OddsModel>>{},
-      final Map<String, List<OddsWideModel>> keepOddsWideMap =
-          const <String, List<OddsWideModel>>{},
       final Map<String, List<SummaryModel>> keepSummaryMap =
           const <String, List<SummaryModel>>{},
       final Map<String, List<String>> keepSummaryDateBashoMap =
@@ -521,7 +509,6 @@ class _$AppParamStateImpl implements _AppParamState {
         _keepRaceMap = keepRaceMap,
         _keepHorseMap = keepHorseMap,
         _keepOddsMap = keepOddsMap,
-        _keepOddsWideMap = keepOddsWideMap,
         _keepSummaryMap = keepSummaryMap,
         _keepSummaryDateBashoMap = keepSummaryDateBashoMap,
         _keepLoginUserMap = keepLoginUserMap,
@@ -565,16 +552,17 @@ class _$AppParamStateImpl implements _AppParamState {
     return EqualUnmodifiableMapView(_keepOddsMap);
   }
 
-  final Map<String, List<OddsWideModel>> _keepOddsWideMap;
-  @override
-  @JsonKey()
-  Map<String, List<OddsWideModel>> get keepOddsWideMap {
-    if (_keepOddsWideMap is EqualUnmodifiableMapView) return _keepOddsWideMap;
-    // ignore: implicit_dynamic_type
-    return EqualUnmodifiableMapView(_keepOddsWideMap);
-  }
-
+// @Default(<String, List<OddsWideModel>>{}) Map<String, List<OddsWideModel>> keepOddsWideMap,
+//
+//
+//
+//
   final Map<String, List<SummaryModel>> _keepSummaryMap;
+// @Default(<String, List<OddsWideModel>>{}) Map<String, List<OddsWideModel>> keepOddsWideMap,
+//
+//
+//
+//
   @override
   @JsonKey()
   Map<String, List<SummaryModel>> get keepSummaryMap {
@@ -687,7 +675,7 @@ class _$AppParamStateImpl implements _AppParamState {
 
   @override
   String toString() {
-    return 'AppParamState(keepScheduleDateBashoMap: $keepScheduleDateBashoMap, keepRaceMap: $keepRaceMap, keepHorseMap: $keepHorseMap, keepOddsMap: $keepOddsMap, keepOddsWideMap: $keepOddsWideMap, keepSummaryMap: $keepSummaryMap, keepSummaryDateBashoMap: $keepSummaryDateBashoMap, keepLoginUserMap: $keepLoginUserMap, keepPushNotifierUserList: $keepPushNotifierUserList, keepPopularityRankOddsAverageMap: $keepPopularityRankOddsAverageMap, configOddsGetTiming: $configOddsGetTiming, selectedScheduleDate: $selectedScheduleDate, selectedScheduleKaisuuBashoDay: $selectedScheduleKaisuuBashoDay, selectedScheduleKaisuuBashoDayName: $selectedScheduleKaisuuBashoDayName, selectedRaceNumber: $selectedRaceNumber, selectedTiming: $selectedTiming, selectedTiming2: $selectedTiming2, queryUser: $queryUser, isShowUpperBox: $isShowUpperBox, isShowUpperBox2: $isShowUpperBox2, selectedDrawerRace: $selectedDrawerRace, isZoomed: $isZoomed, selectedUpsetBoxNum: $selectedUpsetBoxNum, selectedPopularityRank: $selectedPopularityRank, selectedPopularityRankYear: $selectedPopularityRankYear, selectedHistoryYear: $selectedHistoryYear, selectedHorseNameChar1: $selectedHorseNameChar1, selectedHorseNameChar2: $selectedHorseNameChar2, allExpanded: $allExpanded)';
+    return 'AppParamState(keepScheduleDateBashoMap: $keepScheduleDateBashoMap, keepRaceMap: $keepRaceMap, keepHorseMap: $keepHorseMap, keepOddsMap: $keepOddsMap, keepSummaryMap: $keepSummaryMap, keepSummaryDateBashoMap: $keepSummaryDateBashoMap, keepLoginUserMap: $keepLoginUserMap, keepPushNotifierUserList: $keepPushNotifierUserList, keepPopularityRankOddsAverageMap: $keepPopularityRankOddsAverageMap, configOddsGetTiming: $configOddsGetTiming, selectedScheduleDate: $selectedScheduleDate, selectedScheduleKaisuuBashoDay: $selectedScheduleKaisuuBashoDay, selectedScheduleKaisuuBashoDayName: $selectedScheduleKaisuuBashoDayName, selectedRaceNumber: $selectedRaceNumber, selectedTiming: $selectedTiming, selectedTiming2: $selectedTiming2, queryUser: $queryUser, isShowUpperBox: $isShowUpperBox, isShowUpperBox2: $isShowUpperBox2, selectedDrawerRace: $selectedDrawerRace, isZoomed: $isZoomed, selectedUpsetBoxNum: $selectedUpsetBoxNum, selectedPopularityRank: $selectedPopularityRank, selectedPopularityRankYear: $selectedPopularityRankYear, selectedHistoryYear: $selectedHistoryYear, selectedHorseNameChar1: $selectedHorseNameChar1, selectedHorseNameChar2: $selectedHorseNameChar2, allExpanded: $allExpanded)';
   }
 
   @override
@@ -703,8 +691,6 @@ class _$AppParamStateImpl implements _AppParamState {
                 .equals(other._keepHorseMap, _keepHorseMap) &&
             const DeepCollectionEquality()
                 .equals(other._keepOddsMap, _keepOddsMap) &&
-            const DeepCollectionEquality()
-                .equals(other._keepOddsWideMap, _keepOddsWideMap) &&
             const DeepCollectionEquality()
                 .equals(other._keepSummaryMap, _keepSummaryMap) &&
             const DeepCollectionEquality().equals(
@@ -766,7 +752,6 @@ class _$AppParamStateImpl implements _AppParamState {
         const DeepCollectionEquality().hash(_keepRaceMap),
         const DeepCollectionEquality().hash(_keepHorseMap),
         const DeepCollectionEquality().hash(_keepOddsMap),
-        const DeepCollectionEquality().hash(_keepOddsWideMap),
         const DeepCollectionEquality().hash(_keepSummaryMap),
         const DeepCollectionEquality().hash(_keepSummaryDateBashoMap),
         const DeepCollectionEquality().hash(_keepLoginUserMap),
@@ -806,7 +791,6 @@ abstract class _AppParamState implements AppParamState {
       final Map<String, List<RaceModel>> keepRaceMap,
       final Map<String, List<HorseModel>> keepHorseMap,
       final Map<String, List<OddsModel>> keepOddsMap,
-      final Map<String, List<OddsWideModel>> keepOddsWideMap,
       final Map<String, List<SummaryModel>> keepSummaryMap,
       final Map<String, List<String>> keepSummaryDateBashoMap,
       final Map<String, LoginUserModel> keepLoginUserMap,
@@ -841,9 +825,11 @@ abstract class _AppParamState implements AppParamState {
   Map<String, List<HorseModel>> get keepHorseMap;
   @override
   Map<String, List<OddsModel>> get keepOddsMap;
-  @override
-  Map<String, List<OddsWideModel>> get keepOddsWideMap;
-  @override
+  @override // @Default(<String, List<OddsWideModel>>{}) Map<String, List<OddsWideModel>> keepOddsWideMap,
+//
+//
+//
+//
   Map<String, List<SummaryModel>> get keepSummaryMap;
   @override
   Map<String, List<String>> get keepSummaryDateBashoMap;

@@ -6,7 +6,12 @@ enum APIPath {
   getHorseOddsFinderConfigs,
   getHorseOddsFinderOddsGetTiming,
   getHorseDetail,
-  getHorseOddsFinderOddsWide,
+
+  // getHorseOddsFinderOddsWide,
+  //
+  //
+  //
+  //
   getHorseOddsFinderSummary,
   getHorseOddsFinderSummaryOneRace,
   getHorseOddsFinderRaceOneResult,
@@ -50,8 +55,11 @@ extension APIPathExtension on APIPath {
       case APIPath.getHorseDetail:
         return 'getHorseDetail';
 
-      case APIPath.getHorseOddsFinderOddsWide:
-        return 'getHorseOddsFinderOddsWide';
+      // case APIPath.getHorseOddsFinderOddsWide:
+      //   return 'getHorseOddsFinderOddsWide';
+      //
+      //
+      //
 
       case APIPath.getHorseOddsFinderSummary:
         return 'getHorseOddsFinderSummary';

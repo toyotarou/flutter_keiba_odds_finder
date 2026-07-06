@@ -12,7 +12,11 @@ import '../main.dart';
 import '../models/horse_model.dart';
 import '../models/login_user_model.dart';
 import '../models/odds_model.dart';
-import '../models/odds_wide_model.dart';
+
+// import '../models/odds_wide_model.dart';
+//
+//
+
 import '../models/popularity_rank_odds_average_model.dart';
 import '../models/push_notifier_user_model.dart';
 import '../models/race_model.dart';
@@ -51,7 +55,11 @@ class HomeScreen extends ConsumerStatefulWidget {
     required this.horseMap,
     required this.oddsMap,
     required this.oddsGetTiming,
-    required this.oddsWideMap,
+
+    // required this.oddsWideMap,
+    //
+    //
+    //
     required this.isRankingDialogOpen,
     required this.summaryMap,
     required this.summaryDateBashoMap,
@@ -69,7 +77,12 @@ class HomeScreen extends ConsumerStatefulWidget {
   final Map<String, List<OddsModel>> oddsMap;
 
   final String oddsGetTiming;
-  final Map<String, List<OddsWideModel>> oddsWideMap;
+
+  // final Map<String, List<OddsWideModel>> oddsWideMap;
+  //
+  //
+  //
+
   final bool isRankingDialogOpen;
   final Map<String, List<SummaryModel>> summaryMap;
   final Map<String, List<String>> summaryDateBashoMap;
@@ -114,7 +127,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
     oddsNotifier.getAllOddsData();
     laravelConfigNotifier.getAllLaravelConfigData();
     oddsGetTimingNotifier.getAllOddsGetTimingData();
-    oddsWideNotifier.getAllOddsWideData();
+    // oddsWideNotifier.getAllOddsWideData();
+    //
+    //
+    //
+    //
+
     summaryNotifier.getAllSummaryData();
     raceResultNotifier.getAllRaceResultData();
     loginUserNotifier.getAllLoginUserData();
@@ -147,7 +165,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
         oldWidget.horseMap != widget.horseMap ||
         oldWidget.oddsMap != widget.oddsMap ||
         oldWidget.oddsGetTiming != widget.oddsGetTiming ||
-        oldWidget.oddsWideMap != widget.oddsWideMap ||
+        // oldWidget.oddsWideMap != widget.oddsWideMap ||
+        //
+        //
+        //
         oldWidget.popularityRankOddsAverageMap != widget.popularityRankOddsAverageMap) {
       WidgetsBinding.instance.addPostFrameCallback((_) => _syncAppParam());
     }
@@ -197,7 +218,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
     appParamNotifier.setKeepHorseMap(map: widget.horseMap);
     appParamNotifier.setKeepOddsMap(map: widget.oddsMap);
     appParamNotifier.setConfigOddsGetTiming(oddsGetTiming: widget.oddsGetTiming);
-    appParamNotifier.setKeepOddsWideMap(map: widget.oddsWideMap);
+    // appParamNotifier.setKeepOddsWideMap(map: widget.oddsWideMap);
+    //
+    //
+    //
+
     appParamNotifier.setKeepSummaryMap(map: widget.summaryMap);
     appParamNotifier.setKeepSummaryDateBashoMap(map: widget.summaryDateBashoMap);
     appParamNotifier.setKeepLoginUserMap(map: widget.loginUserMap);

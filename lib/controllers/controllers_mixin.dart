@@ -9,7 +9,12 @@ import 'login_user/login_user.dart';
 // import 'netkeiba_race/netkeiba_race.dart';
 import 'odds/odds.dart';
 import 'odds_get_timing/odds_get_timing.dart';
-import 'odds_wide/odds_wide.dart';
+
+// import 'odds_wide/odds_wide.dart';
+//
+//
+//
+
 import 'popularity_rank_odds_average/popularity_rank_odds_average.dart';
 import 'push_notifier_user/push_notifier_user.dart';
 import 'race/race.dart';
@@ -71,9 +76,9 @@ mixin ControllersMixin<T extends ConsumerStatefulWidget> on ConsumerState<T> {
   //==========================================//
 
   //==========================================//
-  OddsWideState get oddsWideState => ref.watch(oddsWideProvider);
-
-  OddsWide get oddsWideNotifier => ref.read(oddsWideProvider.notifier);
+  // OddsWideState get oddsWideState => ref.watch(oddsWideProvider);
+  //
+  // OddsWide get oddsWideNotifier => ref.read(oddsWideProvider.notifier);
 
   //==========================================//
 

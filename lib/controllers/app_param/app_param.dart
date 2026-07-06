@@ -5,7 +5,11 @@ import '../../../utility/utility.dart';
 import '../../models/horse_model.dart';
 import '../../models/login_user_model.dart';
 import '../../models/odds_model.dart';
-import '../../models/odds_wide_model.dart';
+
+// import '../../models/odds_wide_model.dart';
+//
+//
+
 import '../../models/popularity_rank_odds_average_model.dart';
 import '../../models/push_notifier_user_model.dart';
 import '../../models/race_model.dart';
@@ -27,8 +31,11 @@ class AppParamState with _$AppParamState {
 
     @Default(<String, List<OddsModel>>{}) Map<String, List<OddsModel>> keepOddsMap,
 
-    @Default(<String, List<OddsWideModel>>{}) Map<String, List<OddsWideModel>> keepOddsWideMap,
-
+    // @Default(<String, List<OddsWideModel>>{}) Map<String, List<OddsWideModel>> keepOddsWideMap,
+    //
+    //
+    //
+    //
     @Default(<String, List<SummaryModel>>{}) Map<String, List<SummaryModel>> keepSummaryMap,
 
     @Default(<String, List<String>>{}) Map<String, List<String>> keepSummaryDateBashoMap,
@@ -102,9 +109,13 @@ class AppParam extends _$AppParam {
   ///
   void setKeepOddsMap({required Map<String, List<OddsModel>> map}) => state = state.copyWith(keepOddsMap: map);
 
-  ///
-  void setKeepOddsWideMap({required Map<String, List<OddsWideModel>> map}) =>
-      state = state.copyWith(keepOddsWideMap: map);
+  // ///
+  // void setKeepOddsWideMap({required Map<String, List<OddsWideModel>> map}) =>
+  //     state = state.copyWith(keepOddsWideMap: map);
+  //
+  //
+  //
+  //
 
   ///
   void setKeepSummaryMap({required Map<String, List<SummaryModel>> map}) => state = state.copyWith(keepSummaryMap: map);
