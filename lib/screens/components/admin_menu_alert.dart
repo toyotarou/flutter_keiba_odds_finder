@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../extensions/extensions.dart';
 import '../parts/odds_finder_dialog.dart';
+import 'data_count_display_alert.dart';
 import 'login_user_list_display_alert.dart';
 import 'push_notifier_user_list_display_alert.dart';
 
@@ -68,6 +69,32 @@ class _AdminMenuAlertState extends ConsumerState<AdminMenuAlert> {
                     ),
                     padding: const EdgeInsets.symmetric(vertical: 6),
                     child: const Center(child: Text('プッシュ通知ユーザーリスト', style: TextStyle(fontSize: 12))),
+                  ),
+                ),
+
+                SizedBox(height: context.screenSize.height * 0.02),
+
+                GestureDetector(
+                  onTap: () {
+                    // OddsFinderDialog(
+                    //   context: context,
+                    //   widget: PushNotifierUserListDisplayAlert(loggedInUserId: widget.loggedInUserId),
+                    // );
+
+                    ///AAA
+
+                    OddsFinderDialog(context: context, widget: const DataCountDisplayAlert());
+                  },
+                  child: Container(
+                    width: double.infinity,
+                    height: context.screenSize.height * 0.1,
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.white.withValues(alpha: 0.4)),
+                      borderRadius: BorderRadius.circular(5),
+                      color: Colors.yellowAccent.withValues(alpha: 0.1),
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 6),
+                    child: const Center(child: Text('サマリーテーブル確認', style: TextStyle(fontSize: 12))),
                   ),
                 ),
               ],

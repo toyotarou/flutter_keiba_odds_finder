@@ -31,6 +31,7 @@ enum APIPath {
   getHorseOddsFinderHorseBattleRecord,
   getHorseOddsFinderRacesPopularityRatio,
   getHorseOddsFinderRaceResultPayout,
+  getHorseOddsFinderSummaryTableCount,
 }
 
 extension APIPathExtension on APIPath {
@@ -116,6 +117,9 @@ extension APIPathExtension on APIPath {
 
       case APIPath.getHorseOddsFinderRaceResultPayout:
         return 'getHorseOddsFinderRaceResultPayout';
+
+      case APIPath.getHorseOddsFinderSummaryTableCount:
+        return 'getHorseOddsFinderSummaryTableCount';
     }
   }
 }
