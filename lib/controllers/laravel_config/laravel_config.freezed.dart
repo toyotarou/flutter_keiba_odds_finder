@@ -16,7 +16,10 @@ final _privateConstructorUsedError = UnsupportedError(
 
 /// @nodoc
 mixin _$LaravelConfigState {
-  String get odds_get_timing => throw _privateConstructorUsedError;
+  String get oddsGetTiming => throw _privateConstructorUsedError;
+  String get oddsDropRateHonmei => throw _privateConstructorUsedError;
+  String get oddsDropRateChuana => throw _privateConstructorUsedError;
+  String get oddsDropRateDaiana => throw _privateConstructorUsedError;
 
   @JsonKey(ignore: true)
   $LaravelConfigStateCopyWith<LaravelConfigState> get copyWith =>
@@ -29,7 +32,11 @@ abstract class $LaravelConfigStateCopyWith<$Res> {
           LaravelConfigState value, $Res Function(LaravelConfigState) then) =
       _$LaravelConfigStateCopyWithImpl<$Res, LaravelConfigState>;
   @useResult
-  $Res call({String odds_get_timing});
+  $Res call(
+      {String oddsGetTiming,
+      String oddsDropRateHonmei,
+      String oddsDropRateChuana,
+      String oddsDropRateDaiana});
 }
 
 /// @nodoc
@@ -45,12 +52,27 @@ class _$LaravelConfigStateCopyWithImpl<$Res, $Val extends LaravelConfigState>
   @pragma('vm:prefer-inline')
   @override
   $Res call({
-    Object? odds_get_timing = null,
+    Object? oddsGetTiming = null,
+    Object? oddsDropRateHonmei = null,
+    Object? oddsDropRateChuana = null,
+    Object? oddsDropRateDaiana = null,
   }) {
     return _then(_value.copyWith(
-      odds_get_timing: null == odds_get_timing
-          ? _value.odds_get_timing
-          : odds_get_timing // ignore: cast_nullable_to_non_nullable
+      oddsGetTiming: null == oddsGetTiming
+          ? _value.oddsGetTiming
+          : oddsGetTiming // ignore: cast_nullable_to_non_nullable
+              as String,
+      oddsDropRateHonmei: null == oddsDropRateHonmei
+          ? _value.oddsDropRateHonmei
+          : oddsDropRateHonmei // ignore: cast_nullable_to_non_nullable
+              as String,
+      oddsDropRateChuana: null == oddsDropRateChuana
+          ? _value.oddsDropRateChuana
+          : oddsDropRateChuana // ignore: cast_nullable_to_non_nullable
+              as String,
+      oddsDropRateDaiana: null == oddsDropRateDaiana
+          ? _value.oddsDropRateDaiana
+          : oddsDropRateDaiana // ignore: cast_nullable_to_non_nullable
               as String,
     ) as $Val);
   }
@@ -64,7 +86,11 @@ abstract class _$$LaravelConfigStateImplCopyWith<$Res>
       __$$LaravelConfigStateImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call({String odds_get_timing});
+  $Res call(
+      {String oddsGetTiming,
+      String oddsDropRateHonmei,
+      String oddsDropRateChuana,
+      String oddsDropRateDaiana});
 }
 
 /// @nodoc
@@ -78,12 +104,27 @@ class __$$LaravelConfigStateImplCopyWithImpl<$Res>
   @pragma('vm:prefer-inline')
   @override
   $Res call({
-    Object? odds_get_timing = null,
+    Object? oddsGetTiming = null,
+    Object? oddsDropRateHonmei = null,
+    Object? oddsDropRateChuana = null,
+    Object? oddsDropRateDaiana = null,
   }) {
     return _then(_$LaravelConfigStateImpl(
-      odds_get_timing: null == odds_get_timing
-          ? _value.odds_get_timing
-          : odds_get_timing // ignore: cast_nullable_to_non_nullable
+      oddsGetTiming: null == oddsGetTiming
+          ? _value.oddsGetTiming
+          : oddsGetTiming // ignore: cast_nullable_to_non_nullable
+              as String,
+      oddsDropRateHonmei: null == oddsDropRateHonmei
+          ? _value.oddsDropRateHonmei
+          : oddsDropRateHonmei // ignore: cast_nullable_to_non_nullable
+              as String,
+      oddsDropRateChuana: null == oddsDropRateChuana
+          ? _value.oddsDropRateChuana
+          : oddsDropRateChuana // ignore: cast_nullable_to_non_nullable
+              as String,
+      oddsDropRateDaiana: null == oddsDropRateDaiana
+          ? _value.oddsDropRateDaiana
+          : oddsDropRateDaiana // ignore: cast_nullable_to_non_nullable
               as String,
     ));
   }
@@ -92,15 +133,28 @@ class __$$LaravelConfigStateImplCopyWithImpl<$Res>
 /// @nodoc
 
 class _$LaravelConfigStateImpl implements _LaravelConfigState {
-  const _$LaravelConfigStateImpl({this.odds_get_timing = ''});
+  const _$LaravelConfigStateImpl(
+      {this.oddsGetTiming = '',
+      this.oddsDropRateHonmei = '',
+      this.oddsDropRateChuana = '',
+      this.oddsDropRateDaiana = ''});
 
   @override
   @JsonKey()
-  final String odds_get_timing;
+  final String oddsGetTiming;
+  @override
+  @JsonKey()
+  final String oddsDropRateHonmei;
+  @override
+  @JsonKey()
+  final String oddsDropRateChuana;
+  @override
+  @JsonKey()
+  final String oddsDropRateDaiana;
 
   @override
   String toString() {
-    return 'LaravelConfigState(odds_get_timing: $odds_get_timing)';
+    return 'LaravelConfigState(oddsGetTiming: $oddsGetTiming, oddsDropRateHonmei: $oddsDropRateHonmei, oddsDropRateChuana: $oddsDropRateChuana, oddsDropRateDaiana: $oddsDropRateDaiana)';
   }
 
   @override
@@ -108,12 +162,19 @@ class _$LaravelConfigStateImpl implements _LaravelConfigState {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _$LaravelConfigStateImpl &&
-            (identical(other.odds_get_timing, odds_get_timing) ||
-                other.odds_get_timing == odds_get_timing));
+            (identical(other.oddsGetTiming, oddsGetTiming) ||
+                other.oddsGetTiming == oddsGetTiming) &&
+            (identical(other.oddsDropRateHonmei, oddsDropRateHonmei) ||
+                other.oddsDropRateHonmei == oddsDropRateHonmei) &&
+            (identical(other.oddsDropRateChuana, oddsDropRateChuana) ||
+                other.oddsDropRateChuana == oddsDropRateChuana) &&
+            (identical(other.oddsDropRateDaiana, oddsDropRateDaiana) ||
+                other.oddsDropRateDaiana == oddsDropRateDaiana));
   }
 
   @override
-  int get hashCode => Object.hash(runtimeType, odds_get_timing);
+  int get hashCode => Object.hash(runtimeType, oddsGetTiming,
+      oddsDropRateHonmei, oddsDropRateChuana, oddsDropRateDaiana);
 
   @JsonKey(ignore: true)
   @override
@@ -124,11 +185,20 @@ class _$LaravelConfigStateImpl implements _LaravelConfigState {
 }
 
 abstract class _LaravelConfigState implements LaravelConfigState {
-  const factory _LaravelConfigState({final String odds_get_timing}) =
-      _$LaravelConfigStateImpl;
+  const factory _LaravelConfigState(
+      {final String oddsGetTiming,
+      final String oddsDropRateHonmei,
+      final String oddsDropRateChuana,
+      final String oddsDropRateDaiana}) = _$LaravelConfigStateImpl;
 
   @override
-  String get odds_get_timing;
+  String get oddsGetTiming;
+  @override
+  String get oddsDropRateHonmei;
+  @override
+  String get oddsDropRateChuana;
+  @override
+  String get oddsDropRateDaiana;
   @override
   @JsonKey(ignore: true)
   _$$LaravelConfigStateImplCopyWith<_$LaravelConfigStateImpl> get copyWith =>

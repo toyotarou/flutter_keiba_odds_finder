@@ -6,7 +6,7 @@ part of 'laravel_config.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$laravelConfigHash() => r'0badc3e5ed4d264f5bae8becea057b8246169b83';
+String _$laravelConfigHash() => r'317fe29cec9cd835df75f2b08056362633272e30';
 
 /// See also [LaravelConfig].
 @ProviderFor(LaravelConfig)

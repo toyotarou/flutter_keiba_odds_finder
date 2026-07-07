@@ -57,6 +57,10 @@ class HomeScreen extends ConsumerStatefulWidget {
     required this.oddsMap,
     required this.oddsGetTiming,
 
+    required this.oddsDropRateHonmei,
+    required this.oddsDropRateChuana,
+    required this.oddsDropRateDaiana,
+
     // required this.oddsWideMap,
     //
     //
@@ -78,6 +82,10 @@ class HomeScreen extends ConsumerStatefulWidget {
   final Map<String, List<OddsModel>> oddsMap;
 
   final String oddsGetTiming;
+
+  final String oddsDropRateHonmei;
+  final String oddsDropRateChuana;
+  final String oddsDropRateDaiana;
 
   // final Map<String, List<OddsWideModel>> oddsWideMap;
   //
@@ -219,6 +227,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
     appParamNotifier.setKeepHorseMap(map: widget.horseMap);
     appParamNotifier.setKeepOddsMap(map: widget.oddsMap);
     appParamNotifier.setConfigOddsGetTiming(oddsGetTiming: widget.oddsGetTiming);
+
+    appParamNotifier.setConfigOddsDropRate(
+      oddsDropRateHonmei: widget.oddsDropRateHonmei,
+      oddsDropRateChuana: widget.oddsDropRateChuana,
+      oddsDropRateDaiana: widget.oddsDropRateDaiana,
+    );
+
     // appParamNotifier.setKeepOddsWideMap(map: widget.oddsWideMap);
     //
     //

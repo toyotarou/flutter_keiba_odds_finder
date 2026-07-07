@@ -42,6 +42,9 @@ mixin _$AppParamState {
 
   ///
   String get configOddsGetTiming => throw _privateConstructorUsedError;
+  String get configOddsDropRateHonmei => throw _privateConstructorUsedError;
+  String get configOddsDropRateChuana => throw _privateConstructorUsedError;
+  String get configOddsDropRateDaiana => throw _privateConstructorUsedError;
 
   ///
   String get selectedScheduleDate => throw _privateConstructorUsedError;
@@ -87,6 +90,9 @@ abstract class $AppParamStateCopyWith<$Res> {
       List<PushNotifierUserModel> keepPushNotifierUserList,
       Map<int, PopularityRankOddsAverageModel> keepPopularityRankOddsAverageMap,
       String configOddsGetTiming,
+      String configOddsDropRateHonmei,
+      String configOddsDropRateChuana,
+      String configOddsDropRateDaiana,
       String selectedScheduleDate,
       String selectedScheduleKaisuuBashoDay,
       String selectedScheduleKaisuuBashoDayName,
@@ -130,6 +136,9 @@ class _$AppParamStateCopyWithImpl<$Res, $Val extends AppParamState>
     Object? keepPushNotifierUserList = null,
     Object? keepPopularityRankOddsAverageMap = null,
     Object? configOddsGetTiming = null,
+    Object? configOddsDropRateHonmei = null,
+    Object? configOddsDropRateChuana = null,
+    Object? configOddsDropRateDaiana = null,
     Object? selectedScheduleDate = null,
     Object? selectedScheduleKaisuuBashoDay = null,
     Object? selectedScheduleKaisuuBashoDayName = null,
@@ -189,6 +198,18 @@ class _$AppParamStateCopyWithImpl<$Res, $Val extends AppParamState>
       configOddsGetTiming: null == configOddsGetTiming
           ? _value.configOddsGetTiming
           : configOddsGetTiming // ignore: cast_nullable_to_non_nullable
+              as String,
+      configOddsDropRateHonmei: null == configOddsDropRateHonmei
+          ? _value.configOddsDropRateHonmei
+          : configOddsDropRateHonmei // ignore: cast_nullable_to_non_nullable
+              as String,
+      configOddsDropRateChuana: null == configOddsDropRateChuana
+          ? _value.configOddsDropRateChuana
+          : configOddsDropRateChuana // ignore: cast_nullable_to_non_nullable
+              as String,
+      configOddsDropRateDaiana: null == configOddsDropRateDaiana
+          ? _value.configOddsDropRateDaiana
+          : configOddsDropRateDaiana // ignore: cast_nullable_to_non_nullable
               as String,
       selectedScheduleDate: null == selectedScheduleDate
           ? _value.selectedScheduleDate
@@ -286,6 +307,9 @@ abstract class _$$AppParamStateImplCopyWith<$Res>
       List<PushNotifierUserModel> keepPushNotifierUserList,
       Map<int, PopularityRankOddsAverageModel> keepPopularityRankOddsAverageMap,
       String configOddsGetTiming,
+      String configOddsDropRateHonmei,
+      String configOddsDropRateChuana,
+      String configOddsDropRateDaiana,
       String selectedScheduleDate,
       String selectedScheduleKaisuuBashoDay,
       String selectedScheduleKaisuuBashoDayName,
@@ -327,6 +351,9 @@ class __$$AppParamStateImplCopyWithImpl<$Res>
     Object? keepPushNotifierUserList = null,
     Object? keepPopularityRankOddsAverageMap = null,
     Object? configOddsGetTiming = null,
+    Object? configOddsDropRateHonmei = null,
+    Object? configOddsDropRateChuana = null,
+    Object? configOddsDropRateDaiana = null,
     Object? selectedScheduleDate = null,
     Object? selectedScheduleKaisuuBashoDay = null,
     Object? selectedScheduleKaisuuBashoDayName = null,
@@ -386,6 +413,18 @@ class __$$AppParamStateImplCopyWithImpl<$Res>
       configOddsGetTiming: null == configOddsGetTiming
           ? _value.configOddsGetTiming
           : configOddsGetTiming // ignore: cast_nullable_to_non_nullable
+              as String,
+      configOddsDropRateHonmei: null == configOddsDropRateHonmei
+          ? _value.configOddsDropRateHonmei
+          : configOddsDropRateHonmei // ignore: cast_nullable_to_non_nullable
+              as String,
+      configOddsDropRateChuana: null == configOddsDropRateChuana
+          ? _value.configOddsDropRateChuana
+          : configOddsDropRateChuana // ignore: cast_nullable_to_non_nullable
+              as String,
+      configOddsDropRateDaiana: null == configOddsDropRateDaiana
+          ? _value.configOddsDropRateDaiana
+          : configOddsDropRateDaiana // ignore: cast_nullable_to_non_nullable
               as String,
       selectedScheduleDate: null == selectedScheduleDate
           ? _value.selectedScheduleDate
@@ -487,6 +526,9 @@ class _$AppParamStateImpl implements _AppParamState {
       final Map<int, PopularityRankOddsAverageModel> keepPopularityRankOddsAverageMap =
           const <int, PopularityRankOddsAverageModel>{},
       this.configOddsGetTiming = '',
+      this.configOddsDropRateHonmei = '',
+      this.configOddsDropRateChuana = '',
+      this.configOddsDropRateDaiana = '',
       this.selectedScheduleDate = '',
       this.selectedScheduleKaisuuBashoDay = '',
       this.selectedScheduleKaisuuBashoDayName = '',
@@ -616,6 +658,15 @@ class _$AppParamStateImpl implements _AppParamState {
   @override
   @JsonKey()
   final String configOddsGetTiming;
+  @override
+  @JsonKey()
+  final String configOddsDropRateHonmei;
+  @override
+  @JsonKey()
+  final String configOddsDropRateChuana;
+  @override
+  @JsonKey()
+  final String configOddsDropRateDaiana;
 
   ///
   @override
@@ -675,7 +726,7 @@ class _$AppParamStateImpl implements _AppParamState {
 
   @override
   String toString() {
-    return 'AppParamState(keepScheduleDateBashoMap: $keepScheduleDateBashoMap, keepRaceMap: $keepRaceMap, keepHorseMap: $keepHorseMap, keepOddsMap: $keepOddsMap, keepSummaryMap: $keepSummaryMap, keepSummaryDateBashoMap: $keepSummaryDateBashoMap, keepLoginUserMap: $keepLoginUserMap, keepPushNotifierUserList: $keepPushNotifierUserList, keepPopularityRankOddsAverageMap: $keepPopularityRankOddsAverageMap, configOddsGetTiming: $configOddsGetTiming, selectedScheduleDate: $selectedScheduleDate, selectedScheduleKaisuuBashoDay: $selectedScheduleKaisuuBashoDay, selectedScheduleKaisuuBashoDayName: $selectedScheduleKaisuuBashoDayName, selectedRaceNumber: $selectedRaceNumber, selectedTiming: $selectedTiming, selectedTiming2: $selectedTiming2, queryUser: $queryUser, isShowUpperBox: $isShowUpperBox, isShowUpperBox2: $isShowUpperBox2, selectedDrawerRace: $selectedDrawerRace, isZoomed: $isZoomed, selectedUpsetBoxNum: $selectedUpsetBoxNum, selectedPopularityRank: $selectedPopularityRank, selectedPopularityRankYear: $selectedPopularityRankYear, selectedHistoryYear: $selectedHistoryYear, selectedHorseNameChar1: $selectedHorseNameChar1, selectedHorseNameChar2: $selectedHorseNameChar2, allExpanded: $allExpanded)';
+    return 'AppParamState(keepScheduleDateBashoMap: $keepScheduleDateBashoMap, keepRaceMap: $keepRaceMap, keepHorseMap: $keepHorseMap, keepOddsMap: $keepOddsMap, keepSummaryMap: $keepSummaryMap, keepSummaryDateBashoMap: $keepSummaryDateBashoMap, keepLoginUserMap: $keepLoginUserMap, keepPushNotifierUserList: $keepPushNotifierUserList, keepPopularityRankOddsAverageMap: $keepPopularityRankOddsAverageMap, configOddsGetTiming: $configOddsGetTiming, configOddsDropRateHonmei: $configOddsDropRateHonmei, configOddsDropRateChuana: $configOddsDropRateChuana, configOddsDropRateDaiana: $configOddsDropRateDaiana, selectedScheduleDate: $selectedScheduleDate, selectedScheduleKaisuuBashoDay: $selectedScheduleKaisuuBashoDay, selectedScheduleKaisuuBashoDayName: $selectedScheduleKaisuuBashoDayName, selectedRaceNumber: $selectedRaceNumber, selectedTiming: $selectedTiming, selectedTiming2: $selectedTiming2, queryUser: $queryUser, isShowUpperBox: $isShowUpperBox, isShowUpperBox2: $isShowUpperBox2, selectedDrawerRace: $selectedDrawerRace, isZoomed: $isZoomed, selectedUpsetBoxNum: $selectedUpsetBoxNum, selectedPopularityRank: $selectedPopularityRank, selectedPopularityRankYear: $selectedPopularityRankYear, selectedHistoryYear: $selectedHistoryYear, selectedHorseNameChar1: $selectedHorseNameChar1, selectedHorseNameChar2: $selectedHorseNameChar2, allExpanded: $allExpanded)';
   }
 
   @override
@@ -704,13 +755,18 @@ class _$AppParamStateImpl implements _AppParamState {
                 _keepPopularityRankOddsAverageMap) &&
             (identical(other.configOddsGetTiming, configOddsGetTiming) ||
                 other.configOddsGetTiming == configOddsGetTiming) &&
+            (identical(other.configOddsDropRateHonmei, configOddsDropRateHonmei) ||
+                other.configOddsDropRateHonmei == configOddsDropRateHonmei) &&
+            (identical(other.configOddsDropRateChuana, configOddsDropRateChuana) ||
+                other.configOddsDropRateChuana == configOddsDropRateChuana) &&
+            (identical(other.configOddsDropRateDaiana, configOddsDropRateDaiana) ||
+                other.configOddsDropRateDaiana == configOddsDropRateDaiana) &&
             (identical(other.selectedScheduleDate, selectedScheduleDate) ||
                 other.selectedScheduleDate == selectedScheduleDate) &&
             (identical(other.selectedScheduleKaisuuBashoDay, selectedScheduleKaisuuBashoDay) ||
                 other.selectedScheduleKaisuuBashoDay ==
                     selectedScheduleKaisuuBashoDay) &&
-            (identical(other.selectedScheduleKaisuuBashoDayName,
-                    selectedScheduleKaisuuBashoDayName) ||
+            (identical(other.selectedScheduleKaisuuBashoDayName, selectedScheduleKaisuuBashoDayName) ||
                 other.selectedScheduleKaisuuBashoDayName ==
                     selectedScheduleKaisuuBashoDayName) &&
             (identical(other.selectedRaceNumber, selectedRaceNumber) ||
@@ -734,14 +790,10 @@ class _$AppParamStateImpl implements _AppParamState {
             (identical(other.selectedPopularityRank, selectedPopularityRank) ||
                 other.selectedPopularityRank == selectedPopularityRank) &&
             (identical(other.selectedPopularityRankYear, selectedPopularityRankYear) ||
-                other.selectedPopularityRankYear ==
-                    selectedPopularityRankYear) &&
-            (identical(other.selectedHistoryYear, selectedHistoryYear) ||
-                other.selectedHistoryYear == selectedHistoryYear) &&
-            (identical(other.selectedHorseNameChar1, selectedHorseNameChar1) ||
-                other.selectedHorseNameChar1 == selectedHorseNameChar1) &&
-            (identical(other.selectedHorseNameChar2, selectedHorseNameChar2) ||
-                other.selectedHorseNameChar2 == selectedHorseNameChar2) &&
+                other.selectedPopularityRankYear == selectedPopularityRankYear) &&
+            (identical(other.selectedHistoryYear, selectedHistoryYear) || other.selectedHistoryYear == selectedHistoryYear) &&
+            (identical(other.selectedHorseNameChar1, selectedHorseNameChar1) || other.selectedHorseNameChar1 == selectedHorseNameChar1) &&
+            (identical(other.selectedHorseNameChar2, selectedHorseNameChar2) || other.selectedHorseNameChar2 == selectedHorseNameChar2) &&
             (identical(other.allExpanded, allExpanded) || other.allExpanded == allExpanded));
   }
 
@@ -758,6 +810,9 @@ class _$AppParamStateImpl implements _AppParamState {
         const DeepCollectionEquality().hash(_keepPushNotifierUserList),
         const DeepCollectionEquality().hash(_keepPopularityRankOddsAverageMap),
         configOddsGetTiming,
+        configOddsDropRateHonmei,
+        configOddsDropRateChuana,
+        configOddsDropRateDaiana,
         selectedScheduleDate,
         selectedScheduleKaisuuBashoDay,
         selectedScheduleKaisuuBashoDayName,
@@ -798,6 +853,9 @@ abstract class _AppParamState implements AppParamState {
       final Map<int, PopularityRankOddsAverageModel>
           keepPopularityRankOddsAverageMap,
       final String configOddsGetTiming,
+      final String configOddsDropRateHonmei,
+      final String configOddsDropRateChuana,
+      final String configOddsDropRateDaiana,
       final String selectedScheduleDate,
       final String selectedScheduleKaisuuBashoDay,
       final String selectedScheduleKaisuuBashoDayName,
@@ -843,6 +901,12 @@ abstract class _AppParamState implements AppParamState {
 
   ///
   String get configOddsGetTiming;
+  @override
+  String get configOddsDropRateHonmei;
+  @override
+  String get configOddsDropRateChuana;
+  @override
+  String get configOddsDropRateDaiana;
   @override
 
   ///

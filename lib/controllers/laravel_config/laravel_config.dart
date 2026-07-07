@@ -12,7 +12,13 @@ part 'laravel_config.g.dart';
 @freezed
 class LaravelConfigState with _$LaravelConfigState {
   // ignore: non_constant_identifier_names
-  const factory LaravelConfigState({@Default('') String odds_get_timing}) = _LaravelConfigState;
+  const factory LaravelConfigState({
+    @Default('') String oddsGetTiming,
+
+    @Default('') String oddsDropRateHonmei,
+    @Default('') String oddsDropRateChuana,
+    @Default('') String oddsDropRateDaiana,
+  }) = _LaravelConfigState;
 }
 
 @riverpod
@@ -32,13 +38,31 @@ class LaravelConfig extends _$LaravelConfig {
     try {
       String strOddsGetTiming = '';
 
+      String strOddsDropRateHonmei = '';
+      String strOddsDropRateChuana = '';
+      String strOddsDropRateDaiana = '';
+
       // ignore: always_specify_types
       await client.get(path: APIPath.getHorseOddsFinderConfigs).then((value) {
         // ignore: avoid_dynamic_calls
         strOddsGetTiming = value['data']['odds_get_timing'] as String;
+
+        // ignore: avoid_dynamic_calls, always_specify_types
+        final oddsDropRate = value['data']['odds_drop_rate'];
+        // ignore: avoid_dynamic_calls
+        strOddsDropRateHonmei = (oddsDropRate['honmei'] as num).toString();
+        // ignore: avoid_dynamic_calls
+        strOddsDropRateChuana = (oddsDropRate['chu_ana'] as num).toString();
+        // ignore: avoid_dynamic_calls
+        strOddsDropRateDaiana = (oddsDropRate['daiana'] as num).toString();
       });
 
-      return state.copyWith(odds_get_timing: strOddsGetTiming);
+      return state.copyWith(
+        oddsGetTiming: strOddsGetTiming,
+        oddsDropRateHonmei: strOddsDropRateHonmei,
+        oddsDropRateChuana: strOddsDropRateChuana,
+        oddsDropRateDaiana: strOddsDropRateDaiana,
+      );
     } catch (e) {
       utility.showError('予期せぬエラーが発生しました');
       rethrow; // これにより呼び出し元でキャッチできる

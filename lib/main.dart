@@ -266,7 +266,11 @@ class _MyAppState extends ConsumerState<MyApp> with ControllersMixin<MyApp> {
                 raceMap: raceState.raceMap,
                 horseMap: horseState.horseMap,
                 oddsMap: oddsState.oddsMap,
-                oddsGetTiming: laravelConfigState.odds_get_timing,
+                oddsGetTiming: laravelConfigState.oddsGetTiming,
+
+                oddsDropRateHonmei: laravelConfigState.oddsDropRateHonmei,
+                oddsDropRateChuana: laravelConfigState.oddsDropRateChuana,
+                oddsDropRateDaiana: laravelConfigState.oddsDropRateDaiana,
 
                 //                netkeibaOddsMap: netkeibaOddsState.netkeibaOddsMap,
                 // oddsWideMap: oddsWideState.oddsWideMap,

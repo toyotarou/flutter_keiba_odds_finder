@@ -49,6 +49,9 @@ class AppParamState with _$AppParamState {
 
     ///
     @Default('') String configOddsGetTiming,
+    @Default('') String configOddsDropRateHonmei,
+    @Default('') String configOddsDropRateChuana,
+    @Default('') String configOddsDropRateDaiana,
 
     ///
     @Default('') String selectedScheduleDate,
@@ -139,6 +142,19 @@ class AppParam extends _$AppParam {
 
   void setConfigOddsGetTiming({required String oddsGetTiming}) =>
       state = state.copyWith(configOddsGetTiming: oddsGetTiming);
+
+  ///
+  void setConfigOddsDropRate({
+    required String oddsDropRateHonmei,
+    required String oddsDropRateChuana,
+    required String oddsDropRateDaiana,
+  }) {
+    state = state.copyWith(
+      configOddsDropRateHonmei: oddsDropRateHonmei,
+      configOddsDropRateChuana: oddsDropRateChuana,
+      configOddsDropRateDaiana: oddsDropRateDaiana,
+    );
+  }
 
   //////////////
 
