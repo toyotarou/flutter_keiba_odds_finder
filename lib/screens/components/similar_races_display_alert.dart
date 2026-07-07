@@ -244,29 +244,25 @@ class _SimilarRacesDisplayAlertState extends ConsumerState<SimilarRacesDisplayAl
       children: <Widget>[
         if (matchPercent.isNotEmpty) ...<Widget>[
           Positioned(
-            top: 10,
-            right: 10,
+            top: 15,
+            right: 15,
             child: IntrinsicWidth(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: <Widget>[
                   Container(
-                    decoration: BoxDecoration(color: Colors.orangeAccent.withValues(alpha: 0.3)),
+                    decoration: BoxDecoration(color: Colors.orangeAccent.withValues(alpha: 0.5)),
                     alignment: Alignment.center,
-                    child: Text(
+                    child: const Text(
                       '合致',
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.5),
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
                     ),
                   ),
 
                   Text(
                     '$matchPercent%',
                     style: TextStyle(
-                      color: Colors.orange.withValues(alpha: 0.3),
+                      color: Colors.orange.withValues(alpha: 0.5),
                       fontSize: 60,
                       fontWeight: FontWeight.bold,
                     ),
@@ -282,8 +278,8 @@ class _SimilarRacesDisplayAlertState extends ConsumerState<SimilarRacesDisplayAl
           padding: const EdgeInsets.all(10),
 
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.05),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+            color: Colors.black.withValues(alpha: 0.4),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.5)),
             borderRadius: BorderRadius.circular(6),
           ),
 
