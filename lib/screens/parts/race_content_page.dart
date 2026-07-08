@@ -63,7 +63,6 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
   final ValueNotifier<int> _remainingSecondsNotifier = ValueNotifier<int>(0);
   String _lastStartTime = '';
 
-  // 重複していた utility フィールドを _utility に統一
   final Utility _utility = Utility();
   final GlobalKey _harandoKey = GlobalKey();
 
@@ -354,7 +353,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     return RaceTopThreeWidget(entries: entries, showTitle: true);
   }
 
-  /// IIFE を排除し、null-safe なメソッドに切り出し
+  ///
   Widget _buildSimilarRaceButton(int raceIdx) {
     if (raceIdx == -1) {
       return const SizedBox.shrink();
@@ -519,7 +518,6 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
 
   ///
   Widget _displayRaceHorseList() {
-    // addAll パターンをシンプルな代入に変更
     final List<OddsModel> oddsModelList = (widget.oddsMap[widget.mapKey] ?? <OddsModel>[])
         .where((OddsModel e) => e.race == widget.raceNumber)
         .toList();
@@ -639,54 +637,42 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     final List<String>? fukuMinTimeline = fukuMinTimelineMap[element.num];
     final List<String>? fukuMaxTimeline = fukuMaxTimelineMap[element.num];
 
-    return Stack(
-      children: <Widget>[
-        Container(
-          margin: const EdgeInsets.symmetric(vertical: 10),
-          padding: const EdgeInsets.only(top: 5),
-          decoration: BoxDecoration(
-            border: Border(left: BorderSide(color: Colors.greenAccent.withValues(alpha: 0.1), width: 10)),
-          ),
-        ),
-        // Container(padding のみ) + Column(子1個) → Padding に簡略化
-        Padding(
-          padding: const EdgeInsets.only(top: 5),
-          child: ExpansionTile(
-            key: ValueKey<String>('horse_${element.num}_${appParamState.allExpanded}'),
-            initiallyExpanded: appParamState.allExpanded,
-            tilePadding: const EdgeInsets.symmetric(horizontal: 8),
-            childrenPadding: const EdgeInsets.symmetric(horizontal: 8),
-            title: DefaultTextStyle(
-              style: const TextStyle(fontSize: 10),
-              child: Column(
-                children: <Widget>[
-                  _buildHorseItemHeader(popularity: popularity, fukuRank: fukuRank, timeline: oddsTimeline),
-                  const SizedBox(height: 10),
-                  _buildHorseNameRow(element: element, horse: horse, horseWakuColorMap: horseWakuColorMap),
-                ],
-              ),
-            ),
-            // SizedBox(width: ∞) + Column ラッパーを削除
+    return Padding(
+      padding: const EdgeInsets.only(top: 5),
+      child: ExpansionTile(
+        key: ValueKey<String>('horse_${element.num}_${appParamState.allExpanded}'),
+        initiallyExpanded: appParamState.allExpanded,
+        tilePadding: const EdgeInsets.symmetric(horizontal: 8),
+        childrenPadding: const EdgeInsets.symmetric(horizontal: 8),
+        title: DefaultTextStyle(
+          style: const TextStyle(fontSize: 10),
+          child: Column(
             children: <Widget>[
-              if (oddsTimeline != null) ...<Widget>[
-                const SizedBox(height: 20),
-                _buildOddsTimelineRow(
-                  timeline: oddsTimeline,
-                  activeTimingKey: activeTimingKey,
-                  selectedTiming: selectedTiming,
-                  fukuMinList: fukuMinTimeline,
-                  fukuMaxList: fukuMaxTimeline,
-                  nextTimeline: nextOddsTimeline,
-                ),
-              ],
+              _buildHorseItemHeader(popularity: popularity, fukuRank: fukuRank, timeline: oddsTimeline),
+              const SizedBox(height: 10),
+              _buildHorseNameRow(element: element, horse: horse, horseWakuColorMap: horseWakuColorMap),
             ],
           ),
         ),
-      ],
+
+        children: <Widget>[
+          if (oddsTimeline != null) ...<Widget>[
+            const SizedBox(height: 20),
+            _buildOddsTimelineRow(
+              timeline: oddsTimeline,
+              activeTimingKey: activeTimingKey,
+              selectedTiming: selectedTiming,
+              fukuMinList: fukuMinTimeline,
+              fukuMaxList: fukuMaxTimeline,
+              nextTimeline: nextOddsTimeline,
+            ),
+          ],
+        ],
+      ),
     );
   }
 
-  /// IIFE を排除し、安全なキャストで切り出し
+  ///
   Widget _buildJudgeOddsSection(List<String> timeline) {
     final List<String> timingParts = widget.oddsGetTiming.split('|');
     final String odds24 = timeline[0];
@@ -991,7 +977,6 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
   }) {
     final List<String> timingKeys = widget.oddsGetTiming.split('|');
 
-    // IIFE を排除: ウィジェットツリーの外で事前計算
     int oddsEdgeNum = 0;
     if (nextTimeline != null) {
       for (final MapEntry<int, String> entry in timeline.asMap().entries) {
@@ -1056,7 +1041,6 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
             final String fukuMin = fukuMinList?[entry.key] ?? '';
             final String fukuMax = fukuMaxList?[entry.key] ?? '';
 
-            // next/current を1回だけ計算してテキストと色の両方に使う
             final double? nextVal = (nextTimeline != null && entry.key < nextTimeline.length)
                 ? double.tryParse(nextTimeline[entry.key])
                 : null;
