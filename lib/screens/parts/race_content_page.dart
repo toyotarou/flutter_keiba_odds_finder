@@ -856,30 +856,30 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                     border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
                     borderRadius: BorderRadius.circular(3),
                   ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: <Widget>[
-                      Container(
-                        decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.1)),
-                        width: double.infinity,
-                        alignment: Alignment.center,
-                        child: Text('$index番人気', style: const TextStyle(color: Colors.white)),
-                      ),
-                      Text(
-                        '馬番: ${o.num}',
-                        style: const TextStyle(color: Colors.white, fontSize: 12),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 3),
-                      Text(
-                        upsetScore,
-                        style: TextStyle(
-                          color: Colors.yellowAccent.withValues(alpha: 0.6),
-                          fontWeight: FontWeight.bold,
+                  child: DefaultTextStyle(
+                    style: const TextStyle(fontSize: 12, color: Colors.white),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        Container(
+                          decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.3)),
+                          width: double.infinity,
+                          alignment: Alignment.center,
+                          child: Text('$index番人気'),
                         ),
-                      ),
-                      const SizedBox(height: 3),
-                    ],
+                        Text('馬番: ${o.num}'),
+                        const SizedBox(height: 3),
+                        Text(
+                          upsetScore,
+                          style: TextStyle(
+                            color: Colors.yellowAccent.withValues(alpha: 0.6),
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 3),
+                      ],
+                    ),
                   ),
                 );
               }).toList(),
@@ -952,45 +952,46 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
       style: const TextStyle(color: Colors.white),
       child: Stack(
         children: <Widget>[
-          Row(
-            children: <Widget>[
-              const SizedBox(width: 20),
-              if (horse != null) ...<Widget>[
-                Container(
-                  padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
-                  decoration: BoxDecoration(
-                    color: (horseWakuColorMap[horse.waku] != null)
-                        ? horseWakuColorMap[horse.waku]!.withValues(alpha: 0.2)
-                        : Colors.white.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(3),
-                  ),
-                  child: DefaultTextStyle(
-                    style: const TextStyle(fontSize: 12),
-                    child: Row(
-                      children: <Widget>[
-                        SizedBox(
-                          width: 15,
-                          child: Text(horse.waku.toString(), style: const TextStyle(color: Colors.white)),
-                        ),
-                        const Text('枠', style: TextStyle(color: Colors.white)),
-                      ],
+          DefaultTextStyle(
+            style: const TextStyle(fontSize: 12, color: Colors.white),
+            child: Row(
+              children: <Widget>[
+                const SizedBox(width: 20),
+                if (horse != null) ...<Widget>[
+                  Container(
+                    padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
+                    decoration: BoxDecoration(
+                      color: (horseWakuColorMap[horse.waku] != null)
+                          ? horseWakuColorMap[horse.waku]!.withValues(alpha: 0.2)
+                          : Colors.white.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(3),
+                    ),
+                    child: DefaultTextStyle(
+                      style: const TextStyle(fontSize: 12),
+                      child: Row(
+                        children: <Widget>[
+                          SizedBox(width: 15, child: Text(horse.waku.toString())),
+                          const Text('枠'),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-              ],
-              const SizedBox(width: 20),
-              Row(
-                children: <Widget>[
-                  SizedBox(width: 20, child: Text(element.num.toString())),
-                  const Text('番'),
                 ],
-              ),
-              const SizedBox(width: 20),
-              if (horse != null) ...<Widget>[
-                Expanded(child: Text(horse.name, maxLines: 1, overflow: TextOverflow.ellipsis)),
+                const SizedBox(width: 20),
+                Row(
+                  children: <Widget>[
+                    SizedBox(width: 20, child: Text(element.num.toString())),
+                    const Text('番'),
+                  ],
+                ),
+                const SizedBox(width: 20),
+                if (horse != null) ...<Widget>[
+                  Expanded(child: Text(horse.name, maxLines: 1, overflow: TextOverflow.ellipsis)),
+                ],
               ],
-            ],
+            ),
           ),
+
           Positioned(
             right: 0,
             child: Transform(
