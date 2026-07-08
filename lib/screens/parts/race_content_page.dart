@@ -63,10 +63,9 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
   final ValueNotifier<int> _remainingSecondsNotifier = ValueNotifier<int>(0);
   String _lastStartTime = '';
 
+  // 重複していた utility フィールドを _utility に統一
   final Utility _utility = Utility();
   final GlobalKey _harandoKey = GlobalKey();
-
-  Utility utility = Utility();
 
   ///
   @override
@@ -355,6 +354,47 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     return RaceTopThreeWidget(entries: entries, showTitle: true);
   }
 
+  /// IIFE を排除し、null-safe なメソッドに切り出し
+  Widget _buildSimilarRaceButton(int raceIdx) {
+    if (raceIdx == -1) {
+      return const SizedBox.shrink();
+    }
+
+    final List<RaceModel>? races = widget.raceMap[widget.mapKey];
+    if (races == null || raceIdx >= races.length) {
+      return const SizedBox.shrink();
+    }
+
+    final RaceModel currentRace = races[raceIdx];
+    if (currentRace.popularityRatioTableIds.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Row(
+      children: <Widget>[
+        const SizedBox(height: 24, child: VerticalDivider(color: Colors.white38, thickness: 3, width: 16)),
+        const SizedBox(width: 10),
+        GestureDetector(
+          onTap: () => OddsFinderDialog(
+            context: context,
+            widget: SimilarRacesDisplayAlert(raceModel: currentRace),
+          ),
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 10),
+            decoration: BoxDecoration(
+              border: Border.all(color: const Color(0xFFFBB6CE)),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Text(
+              '類似',
+              style: TextStyle(fontSize: 10, color: Color(0xFFFBB6CE), fontWeight: FontWeight.bold),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   ///
   Widget _buildControlButtons({required int raceIdx}) {
     return Row(
@@ -416,43 +456,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
               icon: Icon(Icons.list, color: Colors.white.withValues(alpha: 0.5)),
             ),
 
-            () {
-              if (raceIdx == -1) {
-                return const SizedBox.shrink();
-              }
-              final List<RaceModel> races = widget.raceMap[widget.mapKey]!;
-              final RaceModel currentRace = races[raceIdx];
-              if (currentRace.popularityRatioTableIds.isEmpty) {
-                return const SizedBox.shrink();
-              }
-              return Row(
-                children: <Widget>[
-                  const SizedBox(height: 24, child: VerticalDivider(color: Colors.white38, thickness: 3, width: 16)),
-
-                  const SizedBox(width: 10),
-
-                  GestureDetector(
-                    onTap: () {
-                      OddsFinderDialog(
-                        context: context,
-                        widget: SimilarRacesDisplayAlert(raceModel: currentRace),
-                      );
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 10),
-                      decoration: BoxDecoration(
-                        border: Border.all(color: const Color(0xFFFBB6CE)),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: const Text(
-                        '類似',
-                        style: TextStyle(fontSize: 10, color: Color(0xFFFBB6CE), fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                  ),
-                ],
-              );
-            }(),
+            _buildSimilarRaceButton(raceIdx),
           ],
         ),
         Row(
@@ -515,17 +519,17 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
 
   ///
   Widget _displayRaceHorseList() {
-    final List<OddsModel> oddsModelList = <OddsModel>[];
-    final Map<int, HorseModel> horseModelMap = <int, HorseModel>{};
+    // addAll パターンをシンプルな代入に変更
+    final List<OddsModel> oddsModelList = (widget.oddsMap[widget.mapKey] ?? <OddsModel>[])
+        .where((OddsModel e) => e.race == widget.raceNumber)
+        .toList();
 
-    oddsModelList.addAll(
-      (widget.oddsMap[widget.mapKey] ?? <OddsModel>[]).where((OddsModel e) => e.race == widget.raceNumber),
-    );
-    for (final HorseModel e in (widget.horseMap[widget.mapKey] ?? <HorseModel>[]).where(
-      (HorseModel e) => e.race == widget.raceNumber,
-    )) {
-      horseModelMap[e.num] = e;
-    }
+    final Map<int, HorseModel> horseModelMap = <int, HorseModel>{
+      for (final HorseModel e in (widget.horseMap[widget.mapKey] ?? <HorseModel>[]).where(
+        (HorseModel e) => e.race == widget.raceNumber,
+      ))
+        e.num: e,
+    };
 
     oddsModelList.sort((OddsModel a, OddsModel b) {
       final int cmp = a.num.compareTo(b.num);
@@ -644,52 +648,73 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
             border: Border(left: BorderSide(color: Colors.greenAccent.withValues(alpha: 0.1), width: 10)),
           ),
         ),
-        Container(
+        // Container(padding のみ) + Column(子1個) → Padding に簡略化
+        Padding(
           padding: const EdgeInsets.only(top: 5),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              ExpansionTile(
-                key: ValueKey<String>('horse_${element.num}_${appParamState.allExpanded}'),
-                initiallyExpanded: appParamState.allExpanded,
-                tilePadding: const EdgeInsets.symmetric(horizontal: 8),
-                childrenPadding: const EdgeInsets.symmetric(horizontal: 8),
-                title: DefaultTextStyle(
-                  style: const TextStyle(fontSize: 10),
-                  child: Column(
-                    children: <Widget>[
-                      _buildHorseItemHeader(popularity: popularity, fukuRank: fukuRank, timeline: oddsTimeline),
-                      const SizedBox(height: 10),
-                      _buildHorseNameRow(element: element, horse: horse, horseWakuColorMap: horseWakuColorMap),
-                    ],
-                  ),
-                ),
+          child: ExpansionTile(
+            key: ValueKey<String>('horse_${element.num}_${appParamState.allExpanded}'),
+            initiallyExpanded: appParamState.allExpanded,
+            tilePadding: const EdgeInsets.symmetric(horizontal: 8),
+            childrenPadding: const EdgeInsets.symmetric(horizontal: 8),
+            title: DefaultTextStyle(
+              style: const TextStyle(fontSize: 10),
+              child: Column(
                 children: <Widget>[
-                  SizedBox(
-                    width: double.infinity,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        if (oddsTimeline != null) ...<Widget>[
-                          const SizedBox(height: 20),
-                          _buildOddsTimelineRow(
-                            timeline: oddsTimeline,
-                            activeTimingKey: activeTimingKey,
-                            selectedTiming: selectedTiming,
-                            fukuMinList: fukuMinTimeline,
-                            fukuMaxList: fukuMaxTimeline,
-                            nextTimeline: nextOddsTimeline,
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
+                  _buildHorseItemHeader(popularity: popularity, fukuRank: fukuRank, timeline: oddsTimeline),
+                  const SizedBox(height: 10),
+                  _buildHorseNameRow(element: element, horse: horse, horseWakuColorMap: horseWakuColorMap),
                 ],
               ),
+            ),
+            // SizedBox(width: ∞) + Column ラッパーを削除
+            children: <Widget>[
+              if (oddsTimeline != null) ...<Widget>[
+                const SizedBox(height: 20),
+                _buildOddsTimelineRow(
+                  timeline: oddsTimeline,
+                  activeTimingKey: activeTimingKey,
+                  selectedTiming: selectedTiming,
+                  fukuMinList: fukuMinTimeline,
+                  fukuMaxList: fukuMaxTimeline,
+                  nextTimeline: nextOddsTimeline,
+                ),
+              ],
             ],
           ),
         ),
       ],
+    );
+  }
+
+  /// IIFE を排除し、安全なキャストで切り出し
+  Widget _buildJudgeOddsSection(List<String> timeline) {
+    final List<String> timingParts = widget.oddsGetTiming.split('|');
+    final String odds24 = timeline[0];
+    final int idx3 = timingParts.indexOf('3');
+    final String odds3 = idx3 != -1 && idx3 < timeline.length ? timeline[idx3] : '';
+
+    if (odds24.isEmpty || odds3.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    final Map<String, dynamic> judged = _utility.judgeOdds(
+      before24: double.tryParse(odds24) ?? 0,
+      before3: double.tryParse(odds3) ?? 0,
+      rateHonmei: double.tryParse(appParamState.configOddsDropRateHonmei) ?? 0,
+      rateChuAna: double.tryParse(appParamState.configOddsDropRateChuana) ?? 0,
+    );
+
+    if (judged['display'] != true) {
+      return const SizedBox.shrink();
+    }
+
+    // as String → as String? でクラッシュを防止
+    return DefaultTextStyle(
+      style: const TextStyle(fontSize: 10, color: Colors.yellowAccent),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[Text((judged['message'] as String?) ?? ''), Text((judged['description'] as String?) ?? '')],
+      ),
     );
   }
 
@@ -700,10 +725,8 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
       children: <Widget>[
         SizedBox(
           width: context.screenSize.width * 0.4,
-
           child: Row(
             children: <Widget>[
-              //------------------------------------------------------------------//
               Stack(
                 children: <Widget>[
                   Container(
@@ -729,10 +752,6 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                   ),
                 ],
               ),
-
-              //------------------------------------------------------------------//
-
-              //------------------------------------------------------------------//
               if (fukuRank != null) ...<Widget>[
                 Stack(
                   children: <Widget>[
@@ -761,46 +780,11 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                   ],
                 ),
               ],
-
-              //------------------------------------------------------------------//
             ],
           ),
         ),
-
         Expanded(
-          child: () {
-            if (timeline == null || timeline.isEmpty) {
-              return const SizedBox.shrink();
-            }
-
-            final List<String> timingParts = widget.oddsGetTiming.split('|');
-            final String odds24 = timeline[0];
-            final int idx3 = timingParts.indexOf('3');
-            final String odds3 = idx3 != -1 && idx3 < timeline.length ? timeline[idx3] : '';
-
-            if (odds24.isEmpty || odds3.isEmpty) {
-              return const SizedBox.shrink();
-            }
-
-            final Map<String, dynamic> judged = utility.judgeOdds(
-              before24: double.tryParse(odds24) ?? 0,
-              before3: double.tryParse(odds3) ?? 0,
-              rateHonmei: double.tryParse(appParamState.configOddsDropRateHonmei) ?? 0,
-              rateChuAna: double.tryParse(appParamState.configOddsDropRateChuana) ?? 0,
-            );
-
-            if (judged['display'] != true) {
-              return const SizedBox.shrink();
-            }
-
-            return DefaultTextStyle(
-              style: const TextStyle(fontSize: 10, color: Colors.yellowAccent),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[Text(judged['message'] as String), Text(judged['description'] as String)],
-              ),
-            );
-          }(),
+          child: timeline != null && timeline.isNotEmpty ? _buildJudgeOddsSection(timeline) : const SizedBox.shrink(),
         ),
       ],
     );
@@ -970,7 +954,6 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
               ],
             ],
           ),
-
           Positioned(
             right: 0,
             child: Transform(
@@ -1008,6 +991,20 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
   }) {
     final List<String> timingKeys = widget.oddsGetTiming.split('|');
 
+    // IIFE を排除: ウィジェットツリーの外で事前計算
+    int oddsEdgeNum = 0;
+    if (nextTimeline != null) {
+      for (final MapEntry<int, String> entry in timeline.asMap().entries) {
+        if (entry.value.isNotEmpty && entry.key < nextTimeline.length) {
+          final double? next = double.tryParse(nextTimeline[entry.key]);
+          final double? current = double.tryParse(entry.value);
+          if (next != null && current != null && current != 0) {
+            oddsEdgeNum = (next / current).toInt();
+          }
+        }
+      }
+    }
+
     return Stack(
       children: <Widget>[
         Positioned(
@@ -1018,30 +1015,14 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
               Container(
                 height: 100,
                 margin: const EdgeInsets.only(top: 10, right: 15),
-
                 child: const Text('オッズ断層数値', style: TextStyle(fontSize: 10, color: Color(0xFFFBB6CE))),
               ),
-
-              () {
-                int oddsEdgeNum = 0;
-                for (final MapEntry<int, String> entry in timeline.asMap().entries) {
-                  if (entry.value.isNotEmpty && nextTimeline != null) {
-                    final double? next = double.tryParse(nextTimeline[entry.key]);
-                    final double? current = double.tryParse(entry.value);
-                    if (next != null && current != null && current != 0) {
-                      oddsEdgeNum = (next / current).toInt();
-                    }
-                  }
-                }
-                if (oddsEdgeNum > 1) {
-                  return const Positioned(
-                    top: 0,
-                    right: 0,
-                    child: Icon(Icons.circle_outlined, size: 30, color: Color(0xFFFBB6CE)),
-                  );
-                }
-                return const SizedBox.shrink();
-              }(),
+              if (oddsEdgeNum > 1)
+                const Positioned(
+                  top: 0,
+                  right: 0,
+                  child: Icon(Icons.circle_outlined, size: 30, color: Color(0xFFFBB6CE)),
+                ),
             ],
           ),
         ),
@@ -1074,6 +1055,14 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
 
             final String fukuMin = fukuMinList?[entry.key] ?? '';
             final String fukuMax = fukuMaxList?[entry.key] ?? '';
+
+            // next/current を1回だけ計算してテキストと色の両方に使う
+            final double? nextVal = (nextTimeline != null && entry.key < nextTimeline.length)
+                ? double.tryParse(nextTimeline[entry.key])
+                : null;
+            final double? currentVal = double.tryParse(entry.value);
+            final bool hasRatio = nextVal != null && currentVal != null && currentVal != 0;
+            final double ratio = hasRatio ? nextVal / currentVal : 0;
 
             return Expanded(
               child: Padding(
@@ -1211,26 +1200,12 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                           children: <Widget>[
                             const Spacer(),
                             Text(
-                              () {
-                                final double? next = double.tryParse(nextTimeline[entry.key]);
-                                final double? current = double.tryParse(entry.value);
-                                if (next == null || current == null || current == 0) {
-                                  return '';
-                                }
-                                return (next / current).toStringAsFixed(2);
-                              }(),
+                              hasRatio ? ratio.toStringAsFixed(2) : '',
                               style: TextStyle(
                                 fontSize: 10,
-                                color: () {
-                                  final double? next = double.tryParse(nextTimeline[entry.key]);
-                                  final double? current = double.tryParse(entry.value);
-                                  if (next == null || current == null || current == 0) {
-                                    return Colors.white;
-                                  }
-                                  return (next / current) >= 2.0
-                                      ? const Color(0xFFFBB6CE)
-                                      : Colors.white.withValues(alpha: 0.5);
-                                }(),
+                                color: hasRatio && ratio >= 2.0
+                                    ? const Color(0xFFFBB6CE)
+                                    : Colors.white.withValues(alpha: 0.5),
                               ),
                             ),
                             const Spacer(),
