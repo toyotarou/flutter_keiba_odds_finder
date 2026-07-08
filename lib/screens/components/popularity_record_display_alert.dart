@@ -10,6 +10,7 @@ import '../../extensions/extensions.dart';
 import '../../models/popularity_rank_odds_average_model.dart';
 import '../../models/race_result_history_model.dart';
 import '../parts/error_confirm_dialog.dart';
+import '../parts/rank_badge_painter.dart';
 
 class PopularityRecordDisplayAlert extends ConsumerStatefulWidget {
   const PopularityRecordDisplayAlert({super.key});
@@ -295,177 +296,257 @@ class _PopularityRecordDisplayAlertState extends ConsumerState<PopularityRecordD
         return DefaultTextStyle(
           style: const TextStyle(color: Colors.white, fontSize: 12),
 
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: <Widget>[
-                  Text('件数: ${list.length}', style: const TextStyle(color: Colors.greenAccent, fontSize: 11)),
+          child: Container(
+            decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.4)),
 
-                  Builder(
-                    builder: (_) {
-                      final List<double> tanValues = list
-                          .map((RaceResultHistoryModel e) => double.tryParse(e.tan))
-                          .whereType<double>()
-                          .toList();
-                      final double? yearlyAvg = tanValues.isEmpty
-                          ? null
-                          : tanValues.reduce((double a, double b) => a + b) / tanValues.length;
-                      final String avgText = yearlyAvg == null ? '---' : yearlyAvg.toStringAsFixed(1);
-                      final double? overallAvg = double.tryParse(averageModel?.oddsAverage ?? '');
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: <Widget>[
+                    Text('件数: ${list.length}', style: const TextStyle(color: Colors.greenAccent, fontSize: 11)),
 
-                      return Stack(
-                        alignment: Alignment.center,
-                        children: <Widget>[
-                          if (yearlyAvg != null && overallAvg != null)
-                            _dispUpDownIcon(tan: yearlyAvg, average: overallAvg),
-                          Text('この年の平均: $avgText', style: const TextStyle(color: Colors.yellowAccent, fontSize: 11)),
-                        ],
-                      );
-                    },
-                  ),
+                    Builder(
+                      builder: (_) {
+                        final List<double> tanValues = list
+                            .map((RaceResultHistoryModel e) => double.tryParse(e.tan))
+                            .whereType<double>()
+                            .toList();
+                        final double? yearlyAvg = tanValues.isEmpty
+                            ? null
+                            : tanValues.reduce((double a, double b) => a + b) / tanValues.length;
+                        final String avgText = yearlyAvg == null ? '---' : yearlyAvg.toStringAsFixed(1);
+                        final double? overallAvg = double.tryParse(averageModel?.oddsAverage ?? '');
 
-                  Row(
-                    children: <Widget>[
-                      Listener(
-                        behavior: HitTestBehavior.opaque,
-                        onPointerDown: (_) => _startRepeating(() => _scrollBy(-_moveAmount)),
-                        onPointerUp: (_) => _stopRepeating(),
-                        onPointerCancel: (_) => _stopRepeating(),
-                        child: const SizedBox(
-                          width: 44,
-                          height: 44,
-                          child: Center(child: Icon(Icons.arrow_upward, color: Colors.white70)),
-                        ),
-                      ),
-                      Listener(
-                        behavior: HitTestBehavior.opaque,
-                        onPointerDown: (_) => _startRepeating(() => _scrollBy(_moveAmount)),
-                        onPointerUp: (_) => _stopRepeating(),
-                        onPointerCancel: (_) => _stopRepeating(),
-                        child: const SizedBox(
-                          width: 44,
-                          height: 44,
-                          child: Center(child: Icon(Icons.arrow_downward, color: Colors.white70)),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+                        return Stack(
+                          alignment: Alignment.center,
+                          children: <Widget>[
+                            if (yearlyAvg != null && overallAvg != null)
+                              _dispUpDownIcon(tan: yearlyAvg, average: overallAvg),
+                            Text('この年の平均: $avgText', style: const TextStyle(color: Colors.yellowAccent, fontSize: 11)),
+                          ],
+                        );
+                      },
+                    ),
 
-              Expanded(
-                child: ListView.builder(
-                  controller: _scrollController,
-                  itemCount: list.length,
-                  itemBuilder: (BuildContext context, int index) {
-                    final RaceResultHistoryModel item = list[index];
-                    return Column(
+                    Row(
                       children: <Widget>[
-                        Container(
-                          decoration: BoxDecoration(
-                            border: Border(bottom: BorderSide(color: Colors.white.withValues(alpha: 0.3))),
-                          ),
-
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-
-                            children: <Widget>[
-                              SizedBox(
-                                width: 50,
-                                height: 50,
-                                child: Stack(
-                                  children: <Widget>[
-                                    Center(
-                                      child: Builder(
-                                        builder: (_) {
-                                          final double? tanVal = double.tryParse(item.tan);
-                                          final double? avgVal = double.tryParse(averageModel?.oddsAverage ?? '');
-                                          if (tanVal == null || avgVal == null) {
-                                            return const Icon(Icons.circle_outlined, color: Colors.white24, size: 40);
-                                          }
-                                          return _dispUpDownIcon(tan: tanVal, average: avgVal);
-                                        },
-                                      ),
-                                    ),
-
-                                    Center(
-                                      child: Text(
-                                        double.tryParse(item.tan)?.toStringAsFixed(1) ?? item.tan,
-                                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-
-                              const SizedBox(width: 10),
-
-                              Expanded(
-                                child: Stack(
-                                  children: <Widget>[
-                                    Positioned(
-                                      right: 5,
-                                      bottom: 5,
-                                      child: Text(item.date, style: const TextStyle(color: Colors.grey)),
-                                    ),
-
-                                    Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: <Widget>[
-                                        Row(
-                                          children: <Widget>[
-                                            Container(
-                                              width: 30,
-                                              alignment: Alignment.center,
-                                              child: Text(item.num.toString()),
-                                            ),
-                                            Expanded(
-                                              child: Text(
-                                                item.name,
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
-                                                style: const TextStyle(fontSize: 14),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-
-                                        Row(
-                                          children: <Widget>[
-                                            const SizedBox(width: 30),
-
-                                            Expanded(
-                                              child: Column(
-                                                crossAxisAlignment: CrossAxisAlignment.start,
-                                                children: <Widget>[
-                                                  Text('${item.kaisuu}回${item.basho}${item.day}日 R${item.race}'),
-
-                                                  Text(item.raceName, maxLines: 1, overflow: TextOverflow.ellipsis),
-                                                ],
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-
-                                        const SizedBox(height: 20),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
+                        Listener(
+                          behavior: HitTestBehavior.opaque,
+                          onPointerDown: (_) => _startRepeating(() => _scrollBy(-_moveAmount)),
+                          onPointerUp: (_) => _stopRepeating(),
+                          onPointerCancel: (_) => _stopRepeating(),
+                          child: const SizedBox(
+                            width: 44,
+                            height: 44,
+                            child: Center(child: Icon(Icons.arrow_upward, color: Colors.white70)),
                           ),
                         ),
+                        Listener(
+                          behavior: HitTestBehavior.opaque,
+                          onPointerDown: (_) => _startRepeating(() => _scrollBy(_moveAmount)),
+                          onPointerUp: (_) => _stopRepeating(),
+                          onPointerCancel: (_) => _stopRepeating(),
+                          child: const SizedBox(
+                            width: 44,
+                            height: 44,
+                            child: Center(child: Icon(Icons.arrow_downward, color: Colors.white70)),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
 
-                        const SizedBox(height: 10),
+                Builder(
+                  builder: (BuildContext context) {
+                    final Map<int, int> counts = <int, int>{};
+                    for (final RaceResultHistoryModel e in list) {
+                      if (e.finishingPosition <= 3) {
+                        counts[e.finishingPosition] = (counts[e.finishingPosition] ?? 0) + 1;
+                      }
+                    }
+                    const Map<int, Color> rankColors = <int, Color>{
+                      1: Color(0xFFFFD700),
+                      2: Color(0xFFC0C0C0),
+                      3: Color(0xFFCD7F32),
+                    };
+                    final List<int> positions = <int>[1, 2, 3].where((int p) => counts.containsKey(p)).toList();
+                    return Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: <Widget>[
+                        const SizedBox.shrink(),
+                        Row(
+                          children: positions
+                              .map(
+                                (int p) => Padding(
+                                  padding: const EdgeInsets.only(right: 12),
+                                  child: Text(
+                                    '$p着${counts[p].toString().toCurrency()}回',
+                                    style: TextStyle(fontSize: 11, color: rankColors[p]),
+                                  ),
+                                ),
+                              )
+                              .toList(),
+                        ),
                       ],
                     );
                   },
                 ),
-              ),
-            ],
+
+                Divider(color: Colors.white.withValues(alpha: 0.5)),
+
+                Expanded(
+                  child: ListView.builder(
+                    controller: _scrollController,
+                    itemCount: list.length,
+                    itemBuilder: (BuildContext context, int index) {
+                      final RaceResultHistoryModel item = list[index];
+                      return Column(
+                        children: <Widget>[
+                          Container(
+                            decoration: BoxDecoration(
+                              border: Border(bottom: BorderSide(color: Colors.white.withValues(alpha: 0.3))),
+                            ),
+
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+
+                              children: <Widget>[
+                                SizedBox(
+                                  width: 50,
+                                  height: 50,
+                                  child: Stack(
+                                    children: <Widget>[
+                                      Center(
+                                        child: Builder(
+                                          builder: (_) {
+                                            final double? tanVal = double.tryParse(item.tan);
+                                            final double? avgVal = double.tryParse(averageModel?.oddsAverage ?? '');
+                                            if (tanVal == null || avgVal == null) {
+                                              return const Icon(Icons.circle_outlined, color: Colors.white24, size: 40);
+                                            }
+                                            return _dispUpDownIcon(tan: tanVal, average: avgVal);
+                                          },
+                                        ),
+                                      ),
+
+                                      Center(
+                                        child: Text(
+                                          double.tryParse(item.tan)?.toStringAsFixed(1) ?? item.tan,
+                                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+
+                                const SizedBox(width: 10),
+
+                                Expanded(
+                                  child: Stack(
+                                    children: <Widget>[
+                                      Positioned(
+                                        right: 5,
+                                        bottom: 5,
+                                        child: Text(item.date, style: const TextStyle(color: Colors.grey)),
+                                      ),
+
+                                      if (item.finishingPosition <= 3) ...<Widget>[
+                                        Positioned(
+                                          top: (context.screenSize.height * 0.08) * -1,
+                                          right: (context.screenSize.width * 0.08) * -1,
+
+                                          child: CustomPaint(
+                                            painter: RankBadgePainter(
+                                              color: switch (item.finishingPosition) {
+                                                1 => const Color(0xFFFFD700).withValues(alpha: 0.3),
+                                                2 => const Color(0xFFC0C0C0).withValues(alpha: 0.3),
+                                                3 => const Color(0xFFCD7F32).withValues(alpha: 0.3),
+                                                _ => Colors.transparent,
+                                              },
+                                            ),
+                                            child: SizedBox(
+                                              width: context.screenSize.width * 0.2,
+                                              height: context.screenSize.height * 0.15,
+                                              child: Align(
+                                                alignment: Alignment.bottomLeft,
+                                                child: Padding(
+                                                  padding: const EdgeInsets.only(bottom: 30, left: 25),
+                                                  child: Text(
+                                                    '${item.finishingPosition}着',
+                                                    style: TextStyle(
+                                                      fontSize: 12,
+                                                      color: Colors.white.withValues(alpha: 0.8),
+                                                      fontWeight: FontWeight.bold,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+
+                                      Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: <Widget>[
+                                          Row(
+                                            children: <Widget>[
+                                              Container(
+                                                width: 30,
+                                                alignment: Alignment.center,
+                                                child: Text(item.num.toString()),
+                                              ),
+                                              Expanded(
+                                                child: Text(
+                                                  item.name,
+                                                  maxLines: 1,
+                                                  overflow: TextOverflow.ellipsis,
+                                                  style: const TextStyle(fontSize: 14),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+
+                                          Row(
+                                            children: <Widget>[
+                                              const SizedBox(width: 30),
+
+                                              Expanded(
+                                                child: Column(
+                                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                                  children: <Widget>[
+                                                    Text('${item.kaisuu}回${item.basho}${item.day}日 R${item.race}'),
+
+                                                    Text(item.raceName, maxLines: 1, overflow: TextOverflow.ellipsis),
+
+                                                    Text(item.finishingPosition.toString()),
+                                                  ],
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+
+                                          const SizedBox(height: 20),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          const SizedBox(height: 10),
+                        ],
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
           ),
         );
       },

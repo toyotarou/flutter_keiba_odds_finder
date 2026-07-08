@@ -18,11 +18,12 @@ import '../components/horse_detail_display_alert.dart';
 import '../components/horse_odds_ranking_display_alert.dart';
 import '../components/popularity_record_display_alert.dart';
 import '../components/similar_races_display_alert.dart';
-import 'odds_finder_dialog.dart';
-import 'odds_up_down_icon.dart';
-import 'race_top_three_widget.dart';
-import 'side_tab_panel.dart';
-import 'widget_display_overlay.dart';
+import '../parts/odds_finder_dialog.dart';
+import '../parts/odds_up_down_icon.dart';
+import '../parts/race_top_three_widget.dart';
+import '../parts/rank_badge_painter.dart';
+import '../parts/side_tab_panel.dart';
+import '../parts/widget_display_overlay.dart';
 
 class RaceContentPage extends ConsumerStatefulWidget {
   const RaceContentPage({
@@ -662,7 +663,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                 right: (context.screenSize.width * 0.08) * -1,
 
                 child: CustomPaint(
-                  painter: _RankBadgePainter(
+                  painter: RankBadgePainter(
                     color: switch (raceRank) {
                       1 => const Color(0xFFFFD700).withValues(alpha: 0.3),
                       2 => const Color(0xFFC0C0C0).withValues(alpha: 0.3),
@@ -1323,24 +1324,4 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
       ],
     );
   }
-}
-
-class _RankBadgePainter extends CustomPainter {
-  const _RankBadgePainter({required this.color});
-
-  final Color color;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final Paint paint = Paint()..color = color;
-    final Path path = Path()
-      ..moveTo(0, 0)
-      ..lineTo(size.width, 0)
-      ..lineTo(size.width, size.height)
-      ..cubicTo(0, size.height, 0, size.height * 0.3, 0, 0);
-    canvas.drawPath(path, paint);
-  }
-
-  @override
-  bool shouldRepaint(_RankBadgePainter old) => old.color != color;
 }

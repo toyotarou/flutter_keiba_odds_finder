@@ -7,7 +7,6 @@ import '../extensions/extensions.dart';
 import '../models/horse_model.dart';
 import '../models/login_user_model.dart';
 import '../models/odds_model.dart';
-
 // import '../models/odds_wide_model.dart';
 //
 //
@@ -22,9 +21,9 @@ import 'components/admin_menu_alert.dart';
 import 'components/history_race_record_display_alert.dart';
 import 'components/horse_name_initial_panel_alert.dart';
 import 'components/horse_odds_ranking_display_alert.dart';
+import 'page/race_content_page.dart';
 import 'parts/error_confirm_dialog.dart';
 import 'parts/odds_finder_dialog.dart';
-import 'parts/race_content_page.dart';
 
 class RaceTabInfo {
   RaceTabInfo(this.raceNumber, this.widget);
