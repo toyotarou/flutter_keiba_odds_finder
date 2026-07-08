@@ -769,34 +769,37 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
 
         Expanded(
           child: () {
-            if (timeline != null && timeline.isNotEmpty) {
-              final List<String> timingParts = widget.oddsGetTiming.split('|');
-              final String odds24 = (timeline.isNotEmpty) ? timeline[0] : '';
-              final int idx3 = timingParts.indexOf('3');
-              final String odds3 = (idx3 != -1 && idx3 < timeline.length) ? timeline[idx3] : '';
-
-              final Map<String, dynamic> judgeOddsStr = utility.judgeOdds(
-                before24: double.tryParse(odds24) ?? 0,
-                before3: double.tryParse(odds3) ?? 0,
-                rateHonmei: double.tryParse(appParamState.configOddsDropRateHonmei) ?? 0,
-                rateChuAna: double.tryParse(appParamState.configOddsDropRateChuana) ?? 0,
-              );
-
-              return DefaultTextStyle(
-                style: const TextStyle(fontSize: 10, color: Colors.yellowAccent),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    if (judgeOddsStr.isNotEmpty && judgeOddsStr['display'] as bool) ...<Widget>[
-                      Text(judgeOddsStr['message'] as String),
-                      Text(judgeOddsStr['description'] as String),
-                    ],
-                  ],
-                ),
-              );
+            if (timeline == null || timeline.isEmpty) {
+              return const SizedBox.shrink();
             }
 
-            return const SizedBox.shrink();
+            final List<String> timingParts = widget.oddsGetTiming.split('|');
+            final String odds24 = timeline[0];
+            final int idx3 = timingParts.indexOf('3');
+            final String odds3 = idx3 != -1 && idx3 < timeline.length ? timeline[idx3] : '';
+
+            if (odds24.isEmpty || odds3.isEmpty) {
+              return const SizedBox.shrink();
+            }
+
+            final Map<String, dynamic> judged = utility.judgeOdds(
+              before24: double.tryParse(odds24) ?? 0,
+              before3: double.tryParse(odds3) ?? 0,
+              rateHonmei: double.tryParse(appParamState.configOddsDropRateHonmei) ?? 0,
+              rateChuAna: double.tryParse(appParamState.configOddsDropRateChuana) ?? 0,
+            );
+
+            if (judged['display'] != true) {
+              return const SizedBox.shrink();
+            }
+
+            return DefaultTextStyle(
+              style: const TextStyle(fontSize: 10, color: Colors.yellowAccent),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[Text(judged['message'] as String), Text(judged['description'] as String)],
+              ),
+            );
           }(),
         ),
       ],
