@@ -658,39 +658,35 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
           children: <Widget>[
             if (raceRank != null && raceRank <= 3) ...<Widget>[
               Positioned(
-                top: -60,
-                right: -80,
+                top: (context.screenSize.height * 0.08) * -1,
+                right: (context.screenSize.width * 0.08) * -1,
 
-                child: CircleAvatar(
-                  radius: 60,
-                  backgroundColor: switch (raceRank) {
-                    1 => const Color(0xFFFFD700).withValues(alpha: 0.4),
-                    2 => const Color(0xFFC0C0C0).withValues(alpha: 0.4),
-                    3 => const Color(0xFFCD7F32).withValues(alpha: 0.4),
-                    _ => Colors.transparent,
-                  },
-                  child: Container(
-                    width: double.infinity,
-                    alignment: Alignment.centerRight,
-                    child: Column(
-                      children: <Widget>[
-                        SizedBox(height: context.screenSize.height * 0.08),
+                child: CustomPaint(
+                  painter: _RankBadgePainter(
+                    color: switch (raceRank) {
+                      1 => const Color(0xFFFFD700).withValues(alpha: 0.3),
+                      2 => const Color(0xFFC0C0C0).withValues(alpha: 0.3),
+                      3 => const Color(0xFFCD7F32).withValues(alpha: 0.3),
+                      _ => Colors.transparent,
+                    },
+                  ),
 
-                        Row(
-                          children: <Widget>[
-                            const SizedBox(width: 15),
-
-                            Text(
-                              '$raceRank着',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.white.withValues(alpha: 0.5),
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
+                  child: SizedBox(
+                    width: context.screenSize.width * 0.2,
+                    height: context.screenSize.height * 0.15,
+                    child: Align(
+                      alignment: Alignment.bottomLeft,
+                      child: Padding(
+                        padding: const EdgeInsets.only(bottom: 30, left: 25),
+                        child: Text(
+                          '$raceRank着',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.white.withValues(alpha: 0.8),
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                      ],
+                      ),
                     ),
                   ),
                 ),
@@ -1326,4 +1322,24 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
       ],
     );
   }
+}
+
+class _RankBadgePainter extends CustomPainter {
+  const _RankBadgePainter({required this.color});
+
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final Paint paint = Paint()..color = color;
+    final Path path = Path()
+      ..moveTo(0, 0)
+      ..lineTo(size.width, 0)
+      ..lineTo(size.width, size.height)
+      ..cubicTo(0, size.height, 0, size.height * 0.3, 0, 0);
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(_RankBadgePainter old) => old.color != color;
 }
