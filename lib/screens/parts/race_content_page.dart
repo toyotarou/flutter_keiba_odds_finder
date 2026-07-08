@@ -956,10 +956,40 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
 
     return Stack(
       children: <Widget>[
-        const Positioned(
+        Positioned(
           top: 145,
           left: 0,
-          child: Text('オッズ断層数値', style: TextStyle(fontSize: 10, color: Color(0xFFFBB6CE))),
+          child: Stack(
+            children: <Widget>[
+              Container(
+                height: 100,
+                margin: const EdgeInsets.only(top: 10, right: 15),
+
+                child: const Text('オッズ断層数値', style: TextStyle(fontSize: 10, color: Color(0xFFFBB6CE))),
+              ),
+
+              () {
+                int oddsEdgeNum = 0;
+                for (final MapEntry<int, String> entry in timeline.asMap().entries) {
+                  if (entry.value.isNotEmpty && nextTimeline != null) {
+                    final double? next = double.tryParse(nextTimeline[entry.key]);
+                    final double? current = double.tryParse(entry.value);
+                    if (next != null && current != null && current != 0) {
+                      oddsEdgeNum = (next / current).toInt();
+                    }
+                  }
+                }
+                if (oddsEdgeNum > 1) {
+                  return const Positioned(
+                    top: 0,
+                    right: 0,
+                    child: Icon(Icons.circle_outlined, size: 30, color: Color(0xFFFBB6CE)),
+                  );
+                }
+                return const SizedBox.shrink();
+              }(),
+            ],
+          ),
         ),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1115,7 +1145,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                     ),
 
                     if (nextTimeline != null) ...<Widget>[
-                      const SizedBox(height: 40),
+                      const SizedBox(height: 50),
                       Container(
                         width: double.infinity,
                         height: 50,
