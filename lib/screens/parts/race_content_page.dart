@@ -66,6 +66,8 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
   final Utility _utility = Utility();
   final GlobalKey _harandoKey = GlobalKey();
 
+  Utility utility = Utility();
+
   ///
   @override
   void dispose() {
@@ -656,7 +658,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                   style: const TextStyle(fontSize: 10),
                   child: Column(
                     children: <Widget>[
-                      _buildHorseItemHeader(popularity: popularity, horse: horse, fukuRank: fukuRank),
+                      _buildHorseItemHeader(popularity: popularity, fukuRank: fukuRank, timeline: oddsTimeline),
                       const SizedBox(height: 10),
                       _buildHorseNameRow(element: element, horse: horse, horseWakuColorMap: horseWakuColorMap),
                     ],
@@ -692,62 +694,111 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
   }
 
   ///
-  Widget _buildHorseItemHeader({required int popularity, required HorseModel? horse, int? fukuRank}) {
+  Widget _buildHorseItemHeader({required int popularity, int? fukuRank, List<String>? timeline}) {
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.end,
       children: <Widget>[
-        Stack(
-          children: <Widget>[
-            Container(
-              margin: const EdgeInsets.only(top: 10, left: 15),
-              padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.greenAccent.withValues(alpha: 0.5)),
-                borderRadius: BorderRadius.circular(3),
-              ),
-              child: Row(
+        SizedBox(
+          width: context.screenSize.width * 0.4,
+
+          child: Row(
+            children: <Widget>[
+              //------------------------------------------------------------------//
+              Stack(
                 children: <Widget>[
-                  SizedBox(
-                    width: 20,
-                    child: Text(popularity.toString(), style: TextStyle(color: Colors.green[500])),
+                  Container(
+                    margin: const EdgeInsets.only(top: 10, left: 10),
+                    padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 5),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.greenAccent.withValues(alpha: 0.5)),
+                      borderRadius: BorderRadius.circular(3),
+                    ),
+                    child: Row(
+                      children: <Widget>[
+                        SizedBox(
+                          width: 20,
+                          child: Text(popularity.toString(), style: TextStyle(color: Colors.green[500])),
+                        ),
+                        Text('番人気', style: TextStyle(color: Colors.green[500])),
+                      ],
+                    ),
                   ),
-                  Text('番人気', style: TextStyle(color: Colors.green[500])),
+                  Positioned(
+                    left: 15,
+                    child: Text('単勝', style: TextStyle(fontSize: 10, color: Colors.green[500])),
+                  ),
                 ],
               ),
-            ),
-            Positioned(
-              left: 15,
-              child: Text('単勝', style: TextStyle(fontSize: 10, color: Colors.green[500])),
-            ),
-          ],
-        ),
-        if (fukuRank != null) ...<Widget>[
-          Stack(
-            children: <Widget>[
-              Container(
-                margin: const EdgeInsets.only(top: 10, left: 15),
-                padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.blueAccent.withValues(alpha: 0.5)),
-                  borderRadius: BorderRadius.circular(3),
-                ),
-                child: Row(
+
+              //------------------------------------------------------------------//
+
+              //------------------------------------------------------------------//
+              if (fukuRank != null) ...<Widget>[
+                Stack(
                   children: <Widget>[
-                    const SizedBox(width: 6),
-                    SizedBox(
-                      width: 20,
-                      child: Text(fukuRank.toString(), style: const TextStyle(color: Colors.blue)),
+                    Container(
+                      margin: const EdgeInsets.only(top: 10, left: 10),
+                      padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 5),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.blueAccent.withValues(alpha: 0.5)),
+                        borderRadius: BorderRadius.circular(3),
+                      ),
+                      child: Row(
+                        children: <Widget>[
+                          const SizedBox(width: 6),
+                          SizedBox(
+                            width: 20,
+                            child: Text(fukuRank.toString(), style: const TextStyle(color: Colors.blue)),
+                          ),
+                          const Text('番人気', style: TextStyle(color: Colors.blue)),
+                        ],
+                      ),
                     ),
-                    const Text('番人気', style: TextStyle(color: Colors.blue)),
+                    const Positioned(
+                      left: 15,
+                      child: Text('複勝', style: TextStyle(fontSize: 10, color: Colors.blue)),
+                    ),
                   ],
                 ),
-              ),
-              const Positioned(
-                left: 15,
-                child: Text('複勝', style: TextStyle(fontSize: 10, color: Colors.blue)),
-              ),
+              ],
+
+              //------------------------------------------------------------------//
             ],
           ),
-        ],
+        ),
+
+        Expanded(
+          child: () {
+            if (timeline != null && timeline.isNotEmpty) {
+              final List<String> timingParts = widget.oddsGetTiming.split('|');
+              final String odds24 = (timeline.isNotEmpty) ? timeline[0] : '';
+              final int idx3 = timingParts.indexOf('3');
+              final String odds3 = (idx3 != -1 && idx3 < timeline.length) ? timeline[idx3] : '';
+
+              final Map<String, dynamic> judgeOddsStr = utility.judgeOdds(
+                before24: double.tryParse(odds24) ?? 0,
+                before3: double.tryParse(odds3) ?? 0,
+                rateHonmei: double.tryParse(appParamState.configOddsDropRateHonmei) ?? 0,
+                rateChuAna: double.tryParse(appParamState.configOddsDropRateChuana) ?? 0,
+              );
+
+              return DefaultTextStyle(
+                style: const TextStyle(fontSize: 10, color: Colors.yellowAccent),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    if (judgeOddsStr.isNotEmpty && judgeOddsStr['display'] as bool) ...<Widget>[
+                      Text(judgeOddsStr['message'] as String),
+                      Text(judgeOddsStr['description'] as String),
+                    ],
+                  ],
+                ),
+              );
+            }
+
+            return const SizedBox.shrink();
+          }(),
+        ),
       ],
     );
   }
