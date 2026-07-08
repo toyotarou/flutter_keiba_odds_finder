@@ -590,6 +590,14 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
       for (int i = 0; i < fukuSortable.length; i++) fukuSortable[i].key: i + 1,
     };
 
+    // 馬番 → 着順（1-3着のみ）
+    final Map<int, int> numToRankMap = <int, int>{
+      for (final RaceResultModel r in (widget.raceResultMap[widget.mapKey] ?? <RaceResultModel>[]).where(
+        (RaceResultModel r) => r.race == widget.raceNumber && r.result <= 3,
+      ))
+        r.num: r.result,
+    };
+
     return ListView.builder(
       controller: _horseListScrollController,
       itemCount: displayList.length,
@@ -611,6 +619,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
             selectedTiming: selectedTiming,
             nextOddsTimeline: index + 1 < displayList.length ? oddsTimelineMap[displayList[index + 1].num] : null,
             fukuRank: fukuRankMap[element.num],
+            raceRank: numToRankMap[element.num],
           ),
         );
       },
@@ -630,6 +639,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     required String selectedTiming,
     List<String>? nextOddsTimeline,
     int? fukuRank,
+    int? raceRank,
   }) {
     final int popularity = index + 1;
     final HorseModel? horse = horseModelMap[element.num];
@@ -644,15 +654,60 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
         initiallyExpanded: appParamState.allExpanded,
         tilePadding: const EdgeInsets.symmetric(horizontal: 8),
         childrenPadding: const EdgeInsets.symmetric(horizontal: 8),
-        title: DefaultTextStyle(
-          style: const TextStyle(fontSize: 10),
-          child: Column(
-            children: <Widget>[
-              _buildHorseItemHeader(popularity: popularity, fukuRank: fukuRank, timeline: oddsTimeline),
-              const SizedBox(height: 10),
-              _buildHorseNameRow(element: element, horse: horse, horseWakuColorMap: horseWakuColorMap),
+        title: Stack(
+          children: <Widget>[
+            if (raceRank != null && raceRank <= 3) ...<Widget>[
+              Positioned(
+                top: -60,
+                right: -80,
+
+                child: CircleAvatar(
+                  radius: 60,
+                  backgroundColor: switch (raceRank) {
+                    1 => const Color(0xFFFFD700).withValues(alpha: 0.4),
+                    2 => const Color(0xFFC0C0C0).withValues(alpha: 0.4),
+                    3 => const Color(0xFFCD7F32).withValues(alpha: 0.4),
+                    _ => Colors.transparent,
+                  },
+                  child: Container(
+                    width: double.infinity,
+                    alignment: Alignment.centerRight,
+                    child: Column(
+                      children: <Widget>[
+                        SizedBox(height: context.screenSize.height * 0.08),
+
+                        Row(
+                          children: <Widget>[
+                            const SizedBox(width: 15),
+
+                            Text(
+                              '$raceRank着',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.white.withValues(alpha: 0.5),
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
             ],
-          ),
+
+            DefaultTextStyle(
+              style: const TextStyle(fontSize: 10),
+              child: Column(
+                children: <Widget>[
+                  _buildHorseItemHeader(popularity: popularity, fukuRank: fukuRank, timeline: oddsTimeline),
+                  const SizedBox(height: 10),
+                  _buildHorseNameRow(element: element, horse: horse, horseWakuColorMap: horseWakuColorMap),
+                ],
+              ),
+            ),
+          ],
         ),
 
         children: <Widget>[
