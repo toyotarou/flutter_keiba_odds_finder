@@ -975,21 +975,27 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                     ),
                     child: DefaultTextStyle(
                       style: const TextStyle(fontSize: 12),
-                      child: Row(
-                        children: <Widget>[
-                          SizedBox(width: 15, child: Text(horse.waku.toString())),
-                          const Text('枠'),
-                        ],
+                      child: DefaultTextStyle(
+                        style: const TextStyle(color: Colors.white, fontSize: 12),
+                        child: Row(
+                          children: <Widget>[
+                            SizedBox(width: 15, child: Text(horse.waku.toString())),
+                            const Text('枠'),
+                          ],
+                        ),
                       ),
                     ),
                   ),
                 ],
                 const SizedBox(width: 20),
-                Row(
-                  children: <Widget>[
-                    SizedBox(width: 20, child: Text(element.num.toString())),
-                    const Text('番'),
-                  ],
+                DefaultTextStyle(
+                  style: const TextStyle(color: Colors.white, fontSize: 12),
+                  child: Row(
+                    children: <Widget>[
+                      SizedBox(width: 20, child: Text(element.num.toString())),
+                      const Text('番'),
+                    ],
+                  ),
                 ),
                 const SizedBox(width: 20),
                 if (horse != null) ...<Widget>[
