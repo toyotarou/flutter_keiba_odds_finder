@@ -370,28 +370,22 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
       return const SizedBox.shrink();
     }
 
-    return Row(
-      children: <Widget>[
-        const SizedBox(height: 24, child: VerticalDivider(color: Colors.white38, thickness: 3, width: 16)),
-        const SizedBox(width: 10),
-        GestureDetector(
-          onTap: () => OddsFinderDialog(
-            context: context,
-            widget: SimilarRacesDisplayAlert(raceModel: currentRace),
-          ),
-          child: Container(
-            padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 10),
-            decoration: BoxDecoration(
-              border: Border.all(color: const Color(0xFFFBB6CE)),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: const Text(
-              '類似',
-              style: TextStyle(fontSize: 10, color: Color(0xFFFBB6CE), fontWeight: FontWeight.bold),
-            ),
-          ),
+    return GestureDetector(
+      onTap: () => OddsFinderDialog(
+        context: context,
+        widget: SimilarRacesDisplayAlert(raceModel: currentRace),
+      ),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 10),
+        decoration: BoxDecoration(
+          border: Border.all(color: const Color(0xFFFBB6CE)),
+          borderRadius: BorderRadius.circular(10),
         ),
-      ],
+        child: const Text(
+          '類似',
+          style: TextStyle(fontSize: 10, color: Color(0xFFFBB6CE), fontWeight: FontWeight.bold),
+        ),
+      ),
     );
   }
 
@@ -424,10 +418,8 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
 
             const SizedBox(width: 15),
 
-            const SizedBox(height: 24, child: VerticalDivider(color: Colors.white38, thickness: 3, width: 16)),
-
-            IconButton(
-              onPressed: () async {
+            GestureDetector(
+              onTap: () async {
                 final SharedPreferences prefs = await SharedPreferences.getInstance();
                 await prefs.setString('reload_selected_schedule_date', appParamState.selectedScheduleDate);
                 await prefs.setString(
@@ -445,16 +437,20 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                   context.findAncestorStateOfType<AppRootState>()?.restartApp();
                 }
               },
-              icon: Icon(Icons.refresh, color: Colors.green[500]),
+              child: Icon(Icons.refresh, color: Colors.green[500]),
             ),
 
-            IconButton(
-              onPressed: () {
+            const SizedBox(width: 15),
+
+            GestureDetector(
+              onTap: () {
                 appParamNotifier.setIsShowUpperBox2(flag: true);
                 OddsFinderDialog(context: context, widget: const HorseOddsRankingDisplayAlert());
               },
-              icon: Icon(Icons.list, color: Colors.white.withValues(alpha: 0.5)),
+              child: Icon(Icons.list, color: Colors.white.withValues(alpha: 0.5)),
             ),
+
+            const SizedBox(width: 15),
 
             _buildSimilarRaceButton(raceIdx),
           ],
@@ -650,75 +646,88 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
 
     return Padding(
       padding: const EdgeInsets.only(top: 5),
-      child: ExpansionTile(
-        key: ValueKey<String>('horse_${element.num}_${appParamState.allExpanded}'),
-        initiallyExpanded: appParamState.allExpanded,
-        tilePadding: const EdgeInsets.symmetric(horizontal: 8),
-        childrenPadding: const EdgeInsets.symmetric(horizontal: 8),
-        title: Stack(
-          children: <Widget>[
-            if (raceRank != null && raceRank <= 3) ...<Widget>[
-              Positioned(
-                top: (context.screenSize.height * 0.08) * -1,
-                right: (context.screenSize.width * 0.08) * -1,
+      child: Stack(
+        children: <Widget>[
+          Positioned(
+            top: 5,
+            right: 30,
 
-                child: CustomPaint(
-                  painter: RankBadgePainter(
-                    color: switch (raceRank) {
-                      1 => const Color(0xFFFFD700).withValues(alpha: 0.3),
-                      2 => const Color(0xFFC0C0C0).withValues(alpha: 0.3),
-                      3 => const Color(0xFFCD7F32).withValues(alpha: 0.3),
-                      _ => Colors.transparent,
-                    },
-                  ),
+            child: oddsTimeline != null && oddsTimeline.isNotEmpty
+                ? SizedBox(width: 150, child: _buildJudgeOddsSection(oddsTimeline))
+                : const SizedBox.shrink(),
+          ),
 
-                  child: SizedBox(
-                    width: context.screenSize.width * 0.2,
-                    height: context.screenSize.height * 0.15,
-                    child: Align(
-                      alignment: Alignment.bottomLeft,
-                      child: Padding(
-                        padding: const EdgeInsets.only(bottom: 30, left: 25),
-                        child: Text(
-                          '$raceRank着',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.white.withValues(alpha: 0.8),
-                            fontWeight: FontWeight.bold,
+          ExpansionTile(
+            key: ValueKey<String>('horse_${element.num}_${appParamState.allExpanded}'),
+            initiallyExpanded: appParamState.allExpanded,
+            tilePadding: const EdgeInsets.symmetric(horizontal: 8),
+            childrenPadding: const EdgeInsets.symmetric(horizontal: 8),
+            title: Stack(
+              children: <Widget>[
+                if (raceRank != null && raceRank <= 3) ...<Widget>[
+                  Positioned(
+                    top: (context.screenSize.height * 0.08) * -1,
+                    right: (context.screenSize.width * 0.08) * -1,
+
+                    child: CustomPaint(
+                      painter: RankBadgePainter(
+                        color: switch (raceRank) {
+                          1 => const Color(0xFFFFD700).withValues(alpha: 0.3),
+                          2 => const Color(0xFFC0C0C0).withValues(alpha: 0.3),
+                          3 => const Color(0xFFCD7F32).withValues(alpha: 0.3),
+                          _ => Colors.transparent,
+                        },
+                      ),
+
+                      child: SizedBox(
+                        width: context.screenSize.width * 0.2,
+                        height: context.screenSize.height * 0.15,
+                        child: Align(
+                          alignment: Alignment.bottomLeft,
+                          child: Padding(
+                            padding: const EdgeInsets.only(bottom: 30, left: 25),
+                            child: Text(
+                              '$raceRank着',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.white.withValues(alpha: 0.8),
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                           ),
                         ),
                       ),
                     ),
                   ),
-                ),
-              ),
-            ],
-
-            DefaultTextStyle(
-              style: const TextStyle(fontSize: 10),
-              child: Column(
-                children: <Widget>[
-                  _buildHorseItemHeader(popularity: popularity, fukuRank: fukuRank, timeline: oddsTimeline),
-                  const SizedBox(height: 10),
-                  _buildHorseNameRow(element: element, horse: horse, horseWakuColorMap: horseWakuColorMap),
                 ],
-              ),
-            ),
-          ],
-        ),
 
-        children: <Widget>[
-          if (oddsTimeline != null) ...<Widget>[
-            const SizedBox(height: 20),
-            _buildOddsTimelineRow(
-              timeline: oddsTimeline,
-              activeTimingKey: activeTimingKey,
-              selectedTiming: selectedTiming,
-              fukuMinList: fukuMinTimeline,
-              fukuMaxList: fukuMaxTimeline,
-              nextTimeline: nextOddsTimeline,
+                DefaultTextStyle(
+                  style: const TextStyle(fontSize: 10),
+                  child: Column(
+                    children: <Widget>[
+                      _buildHorseItemHeader(popularity: popularity, fukuRank: fukuRank, timeline: oddsTimeline),
+                      const SizedBox(height: 10),
+                      _buildHorseNameRow(element: element, horse: horse, horseWakuColorMap: horseWakuColorMap),
+                    ],
+                  ),
+                ),
+              ],
             ),
-          ],
+
+            children: <Widget>[
+              if (oddsTimeline != null) ...<Widget>[
+                const SizedBox(height: 20),
+                _buildOddsTimelineRow(
+                  timeline: oddsTimeline,
+                  activeTimingKey: activeTimingKey,
+                  selectedTiming: selectedTiming,
+                  fukuMinList: fukuMinTimeline,
+                  fukuMaxList: fukuMaxTimeline,
+                  nextTimeline: nextOddsTimeline,
+                ),
+              ],
+            ],
+          ),
         ],
       ),
     );
@@ -820,9 +829,6 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
               ],
             ],
           ),
-        ),
-        Expanded(
-          child: timeline != null && timeline.isNotEmpty ? _buildJudgeOddsSection(timeline) : const SizedBox.shrink(),
         ),
       ],
     );
