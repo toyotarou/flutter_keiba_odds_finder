@@ -244,8 +244,10 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     final int? filterMinutes = _resolveFilterMinutes(appParamState.selectedTiming, allOdds);
 
     return (filterMinutes != null
-          ? allOdds.where((OddsModel e) => e.minutesBeforeStart == filterMinutes).toList()
-          : allOdds)
+            ? allOdds.where((OddsModel e) => e.minutesBeforeStart == filterMinutes).toList()
+            : allOdds)
+        .where((OddsModel e) => (double.tryParse(e.odds) ?? 0) > 0)
+        .toList()
       ..sort((OddsModel a, OddsModel b) => (double.tryParse(a.odds) ?? 0).compareTo(double.tryParse(b.odds) ?? 0));
   }
 
@@ -852,7 +854,8 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                 String upsetScore = '';
                 if (appParamState.keepPopularityRankOddsAverageMap[index] != null) {
                   average = appParamState.keepPopularityRankOddsAverageMap[index]!.oddsAverage;
-                  upsetScore = (average.toDouble() / o.odds.toDouble()).toStringAsFixed(2);
+                  final double oddsVal = o.odds.toDouble();
+                  upsetScore = oddsVal != 0 ? (average.toDouble() / oddsVal).toStringAsFixed(2) : '';
                 }
 
                 return Container(
