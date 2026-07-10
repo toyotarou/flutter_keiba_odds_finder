@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -16,7 +17,12 @@ class DataCountDisplayAlert extends ConsumerStatefulWidget {
 class _DataCountDisplayAlertState extends ConsumerState<DataCountDisplayAlert> {
   List<DataCountModel> _dataCountList = <DataCountModel>[];
   bool _isLoading = true;
+  bool _hasError = false;
   final ScrollController _scrollController = ScrollController();
+
+  static const int _maxRetries = 3;
+  static const Duration _timeout = Duration(seconds: 30);
+  static const Duration _retryDelay = Duration(seconds: 2);
 
   ///
   @override
@@ -34,40 +40,55 @@ class _DataCountDisplayAlertState extends ConsumerState<DataCountDisplayAlert> {
 
   ///
   Future<void> _fetchData() async {
-    try {
-      final Uri uri = Uri.http('49.212.166.123', '/api/getHorseOddsFinderSummaryTableCount');
+    if (mounted) {
+      setState(() {
+        _isLoading = true;
+        _hasError = false;
+      });
+    }
 
-      final http.Response response = await http.get(
-        uri,
-        headers: <String, String>{'content-type': 'application/json', 'Accept': 'application/json'},
-      );
+    for (int attempt = 1; attempt <= _maxRetries; attempt++) {
+      try {
+        final Uri uri = Uri.http('49.212.166.123', '/api/getHorseOddsFinderSummaryTableCount');
 
-      if (response.statusCode >= 200 && response.statusCode < 300) {
-        final String bodyString = utf8.decode(response.bodyBytes);
+        final http.Response response = await http
+            .get(uri, headers: <String, String>{'content-type': 'application/json', 'Accept': 'application/json'})
+            .timeout(_timeout);
 
-        final Map<String, dynamic> decoded = jsonDecode(bodyString) as Map<String, dynamic>;
+        if (response.statusCode >= 200 && response.statusCode < 300) {
+          final String bodyString = utf8.decode(response.bodyBytes);
+          final Map<String, dynamic> decoded = jsonDecode(bodyString) as Map<String, dynamic>;
+          final List<dynamic> data = decoded['data'] as List<dynamic>;
+          final List<DataCountModel> list = data
+              .map((dynamic e) => DataCountModel.fromJson(e as Map<String, dynamic>))
+              .toList();
 
-        final List<dynamic> data = decoded['data'] as List<dynamic>;
-
-        final List<DataCountModel> list = data
-            .map((dynamic e) => DataCountModel.fromJson(e as Map<String, dynamic>))
-            .toList();
-
-        if (mounted) {
-          setState(() {
-            _dataCountList = list;
-            _isLoading = false;
-          });
+          if (mounted) {
+            setState(() {
+              _dataCountList = list;
+              _isLoading = false;
+              _hasError = false;
+            });
+          }
+          return;
         }
-      } else {
-        if (mounted) {
-          setState(() => _isLoading = false);
-        }
+
+        debugPrint('DataCountDisplayAlert: HTTP ${response.statusCode} (attempt $attempt)');
+      } catch (e, st) {
+        debugPrint('DataCountDisplayAlert error (attempt $attempt): $e');
+        debugPrint('$st');
       }
-    } catch (e) {
-      if (mounted) {
-        setState(() => _isLoading = false);
+
+      if (attempt < _maxRetries && mounted) {
+        await Future<void>.delayed(_retryDelay);
       }
+    }
+
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+        _hasError = true;
+      });
     }
   }
 
@@ -137,8 +158,20 @@ class _DataCountDisplayAlertState extends ConsumerState<DataCountDisplayAlert> {
       return const Center(child: CircularProgressIndicator(color: Colors.white));
     }
 
-    if (_dataCountList.isEmpty) {
-      return const Center(child: Text('データがありません', style: TextStyle(fontSize: 12)));
+    if (_hasError || _dataCountList.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            const Text('データの取得に失敗しました', style: TextStyle(fontSize: 12)),
+            const SizedBox(height: 12),
+            TextButton(
+              onPressed: _fetchData,
+              child: const Text('再試行', style: TextStyle(color: Colors.greenAccent)),
+            ),
+          ],
+        ),
+      );
     }
 
     return ListView.builder(
