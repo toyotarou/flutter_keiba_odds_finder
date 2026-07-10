@@ -396,7 +396,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                 if (index >= 0 && index < _raceTabs.length) {
                   final int raceNum = _raceTabs[index].raceNumber;
                   Future<void>(() {
-                    if (mounted) {
+                    if (!mounted) {
+                      return;
+                    }
+                    final int selected = appParamState.selectedRaceNumber;
+                    if (selected > 0) {
+                      final int targetIdx = _raceTabs.indexWhere((RaceTabInfo t) => t.raceNumber == selected);
+                      if (targetIdx > 0) {
+                        _raceTabController?.animateTo(targetIdx);
+                      }
+                    } else {
                       appParamNotifier.setSelectedRaceNumber(num: raceNum);
                     }
                   });
