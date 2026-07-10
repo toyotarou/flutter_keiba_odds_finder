@@ -1,10 +1,8 @@
-import 'dart:async';
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:http/http.dart' as http;
 
+import '../../data/http/client.dart';
+import '../../data/http/path.dart';
 import '../../models/data_count_model.dart';
 
 class DataCountDisplayAlert extends ConsumerStatefulWidget {
@@ -19,10 +17,6 @@ class _DataCountDisplayAlertState extends ConsumerState<DataCountDisplayAlert> {
   bool _isLoading = true;
   bool _hasError = false;
   final ScrollController _scrollController = ScrollController();
-
-  static const int _maxRetries = 3;
-  static const Duration _timeout = Duration(seconds: 30);
-  static const Duration _retryDelay = Duration(seconds: 2);
 
   ///
   @override
@@ -47,48 +41,30 @@ class _DataCountDisplayAlertState extends ConsumerState<DataCountDisplayAlert> {
       });
     }
 
-    for (int attempt = 1; attempt <= _maxRetries; attempt++) {
-      try {
-        final Uri uri = Uri.http('49.212.166.123', '/api/getHorseOddsFinderSummaryTableCount');
+    try {
+      final HttpClient client = ref.read(httpClientProvider);
+      final dynamic response = await client.get(path: APIPath.getHorseOddsFinderSummaryTableCount);
 
-        final http.Response response = await http
-            .get(uri, headers: <String, String>{'content-type': 'application/json', 'Accept': 'application/json'})
-            .timeout(_timeout);
+      final List<dynamic> data = response['data'] as List<dynamic>;
+      final List<DataCountModel> list = data
+          .map((dynamic e) => DataCountModel.fromJson(e as Map<String, dynamic>))
+          .toList();
 
-        if (response.statusCode >= 200 && response.statusCode < 300) {
-          final String bodyString = utf8.decode(response.bodyBytes);
-          final Map<String, dynamic> decoded = jsonDecode(bodyString) as Map<String, dynamic>;
-          final List<dynamic> data = decoded['data'] as List<dynamic>;
-          final List<DataCountModel> list = data
-              .map((dynamic e) => DataCountModel.fromJson(e as Map<String, dynamic>))
-              .toList();
-
-          if (mounted) {
-            setState(() {
-              _dataCountList = list;
-              _isLoading = false;
-              _hasError = false;
-            });
-          }
-          return;
-        }
-
-        debugPrint('DataCountDisplayAlert: HTTP ${response.statusCode} (attempt $attempt)');
-      } catch (e, st) {
-        debugPrint('DataCountDisplayAlert error (attempt $attempt): $e');
-        debugPrint('$st');
+      if (mounted) {
+        setState(() {
+          _dataCountList = list;
+          _isLoading = false;
+          _hasError = false;
+        });
       }
-
-      if (attempt < _maxRetries && mounted) {
-        await Future<void>.delayed(_retryDelay);
+    } catch (e) {
+      debugPrint('DataCountDisplayAlert error: $e');
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _hasError = true;
+        });
       }
-    }
-
-    if (mounted) {
-      setState(() {
-        _isLoading = false;
-        _hasError = true;
-      });
     }
   }
 
@@ -179,165 +155,177 @@ class _DataCountDisplayAlertState extends ConsumerState<DataCountDisplayAlert> {
       itemCount: _dataCountList.length,
       itemBuilder: (BuildContext context, int index) {
         final DataCountModel item = _dataCountList[index];
-        return Container(
-          decoration: BoxDecoration(
-            border: Border(bottom: BorderSide(color: Colors.white.withValues(alpha: 0.3))),
-          ),
-          margin: const EdgeInsets.all(8),
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          child: DefaultTextStyle(
-            style: const TextStyle(fontSize: 10),
-            child: Column(
-              children: <Widget>[
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: <Widget>[Text(item.date), const SizedBox.shrink()],
-                ),
+        return DefaultTextStyle(
+          style: const TextStyle(color: Colors.white),
+          child: Container(
+            decoration: BoxDecoration(
+              border: Border(bottom: BorderSide(color: Colors.white.withValues(alpha: 0.3))),
+            ),
+            margin: const EdgeInsets.all(8),
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: DefaultTextStyle(
+              style: const TextStyle(fontSize: 10),
+              child: Column(
+                children: <Widget>[
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: <Widget>[
+                      Text(item.date, style: const TextStyle(color: Colors.white)),
+                      const SizedBox.shrink(),
+                    ],
+                  ),
 
-                const SizedBox(height: 10),
+                  const SizedBox(height: 10),
 
-                Row(
-                  children: <Widget>[
-                    Expanded(
-                      child: Container(
-                        margin: const EdgeInsets.symmetric(horizontal: 8),
-                        child: Column(
-                          children: <Widget>[
-                            Container(
-                              width: double.infinity,
-                              alignment: Alignment.center,
-                              padding: const EdgeInsets.symmetric(vertical: 3),
-                              decoration: BoxDecoration(color: Colors.yellowAccent.withValues(alpha: 0.1)),
-                              child: const Text('summary', style: TextStyle(fontSize: 10)),
-                            ),
+                  Row(
+                    children: <Widget>[
+                      Expanded(
+                        child: Container(
+                          margin: const EdgeInsets.symmetric(horizontal: 8),
+                          child: Column(
+                            children: <Widget>[
+                              Container(
+                                width: double.infinity,
+                                alignment: Alignment.center,
+                                padding: const EdgeInsets.symmetric(vertical: 3),
+                                decoration: BoxDecoration(color: Colors.yellowAccent.withValues(alpha: 0.1)),
+                                child: const Text('summary', style: TextStyle(fontSize: 10, color: Colors.white)),
+                              ),
 
-                            const SizedBox(height: 3),
+                              const SizedBox(height: 3),
 
-                            Text(item.summaryCount.toString()),
-                          ],
+                              Text(item.summaryCount.toString(), style: const TextStyle(color: Colors.white)),
+                            ],
+                          ),
                         ),
                       ),
-                    ),
 
-                    Expanded(
-                      child: Container(margin: const EdgeInsets.all(8.0), child: const SizedBox.shrink()),
-                    ),
-                  ],
-                ),
+                      Expanded(
+                        child: Container(margin: const EdgeInsets.all(8.0), child: const SizedBox.shrink()),
+                      ),
+                    ],
+                  ),
 
-                Row(
-                  children: <Widget>[
-                    Expanded(
-                      child: Container(
-                        margin: const EdgeInsets.symmetric(horizontal: 8),
-                        child: Column(
-                          children: <Widget>[
-                            Container(
-                              width: double.infinity,
-                              alignment: Alignment.center,
-                              padding: const EdgeInsets.symmetric(vertical: 3),
-                              decoration: BoxDecoration(color: Colors.yellowAccent.withValues(alpha: 0.1)),
-                              child: const Text('history', style: TextStyle(fontSize: 10)),
-                            ),
+                  Row(
+                    children: <Widget>[
+                      Expanded(
+                        child: Container(
+                          margin: const EdgeInsets.symmetric(horizontal: 8),
+                          child: Column(
+                            children: <Widget>[
+                              Container(
+                                width: double.infinity,
+                                alignment: Alignment.center,
+                                padding: const EdgeInsets.symmetric(vertical: 3),
+                                decoration: BoxDecoration(color: Colors.yellowAccent.withValues(alpha: 0.1)),
+                                child: const Text('history', style: TextStyle(fontSize: 10, color: Colors.white)),
+                              ),
 
-                            const SizedBox(height: 3),
+                              const SizedBox(height: 3),
 
-                            Text(item.historyCount.toString()),
-                          ],
+                              Text(item.historyCount.toString(), style: const TextStyle(color: Colors.white)),
+                            ],
+                          ),
                         ),
                       ),
-                    ),
 
-                    Expanded(
-                      child: Container(
-                        margin: const EdgeInsets.all(8.0),
-                        child: Column(
-                          children: <Widget>[
-                            Container(
-                              width: double.infinity,
-                              alignment: Alignment.center,
-                              padding: const EdgeInsets.symmetric(vertical: 3),
-                              decoration: BoxDecoration(color: Colors.yellowAccent.withValues(alpha: 0.1)),
-                              child: const Text('popularity', style: TextStyle(fontSize: 10)),
-                            ),
+                      Expanded(
+                        child: Container(
+                          margin: const EdgeInsets.all(8.0),
+                          child: Column(
+                            children: <Widget>[
+                              Container(
+                                width: double.infinity,
+                                alignment: Alignment.center,
+                                padding: const EdgeInsets.symmetric(vertical: 3),
+                                decoration: BoxDecoration(color: Colors.yellowAccent.withValues(alpha: 0.1)),
+                                child: const Text('popularity', style: TextStyle(fontSize: 10, color: Colors.white)),
+                              ),
 
-                            const SizedBox(height: 3),
+                              const SizedBox(height: 3),
 
-                            Text(item.historyPopularityRankCount.toString()),
-                          ],
+                              Text(
+                                item.historyPopularityRankCount.toString(),
+                                style: const TextStyle(color: Colors.white),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                    ),
 
-                    Expanded(
-                      child: Container(
-                        margin: const EdgeInsets.all(8.0),
-                        child: Column(
-                          children: <Widget>[
-                            Container(
-                              width: double.infinity,
-                              alignment: Alignment.center,
-                              padding: const EdgeInsets.symmetric(vertical: 3),
-                              decoration: BoxDecoration(color: Colors.yellowAccent.withValues(alpha: 0.1)),
-                              child: const Text('finishing', style: TextStyle(fontSize: 10)),
-                            ),
+                      Expanded(
+                        child: Container(
+                          margin: const EdgeInsets.all(8.0),
+                          child: Column(
+                            children: <Widget>[
+                              Container(
+                                width: double.infinity,
+                                alignment: Alignment.center,
+                                padding: const EdgeInsets.symmetric(vertical: 3),
+                                decoration: BoxDecoration(color: Colors.yellowAccent.withValues(alpha: 0.1)),
+                                child: const Text('finishing', style: TextStyle(fontSize: 10, color: Colors.white)),
+                              ),
 
-                            const SizedBox(height: 3),
+                              const SizedBox(height: 3),
 
-                            Text(item.historyFinishingPositionCount.toString()),
-                          ],
+                              Text(
+                                item.historyFinishingPositionCount.toString(),
+                                style: const TextStyle(color: Colors.white),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                    ),
-                  ],
-                ),
+                    ],
+                  ),
 
-                Row(
-                  children: <Widget>[
-                    Expanded(
-                      child: Container(
-                        margin: const EdgeInsets.symmetric(horizontal: 8),
-                        child: Column(
-                          children: <Widget>[
-                            Container(
-                              width: double.infinity,
-                              alignment: Alignment.center,
-                              padding: const EdgeInsets.symmetric(vertical: 3),
-                              decoration: BoxDecoration(color: Colors.yellowAccent.withValues(alpha: 0.1)),
-                              child: const Text('payout', style: TextStyle(fontSize: 10)),
-                            ),
+                  Row(
+                    children: <Widget>[
+                      Expanded(
+                        child: Container(
+                          margin: const EdgeInsets.symmetric(horizontal: 8),
+                          child: Column(
+                            children: <Widget>[
+                              Container(
+                                width: double.infinity,
+                                alignment: Alignment.center,
+                                padding: const EdgeInsets.symmetric(vertical: 3),
+                                decoration: BoxDecoration(color: Colors.yellowAccent.withValues(alpha: 0.1)),
+                                child: const Text('payout', style: TextStyle(fontSize: 10, color: Colors.white)),
+                              ),
 
-                            const SizedBox(height: 3),
+                              const SizedBox(height: 3),
 
-                            Text(item.payoutCount.toString()),
-                          ],
+                              Text(item.payoutCount.toString(), style: const TextStyle(color: Colors.white)),
+                            ],
+                          ),
                         ),
                       ),
-                    ),
 
-                    Expanded(
-                      child: Container(
-                        margin: const EdgeInsets.all(8.0),
-                        child: Column(
-                          children: <Widget>[
-                            Container(
-                              width: double.infinity,
-                              alignment: Alignment.center,
-                              padding: const EdgeInsets.symmetric(vertical: 3),
-                              decoration: BoxDecoration(color: Colors.yellowAccent.withValues(alpha: 0.1)),
-                              child: const Text('ratio', style: TextStyle(fontSize: 10)),
-                            ),
+                      Expanded(
+                        child: Container(
+                          margin: const EdgeInsets.all(8.0),
+                          child: Column(
+                            children: <Widget>[
+                              Container(
+                                width: double.infinity,
+                                alignment: Alignment.center,
+                                padding: const EdgeInsets.symmetric(vertical: 3),
+                                decoration: BoxDecoration(color: Colors.yellowAccent.withValues(alpha: 0.1)),
+                                child: const Text('ratio', style: TextStyle(fontSize: 10, color: Colors.white)),
+                              ),
 
-                            const SizedBox(height: 3),
+                              const SizedBox(height: 3),
 
-                            Text(item.ratioCount.toString()),
-                          ],
+                              Text(item.ratioCount.toString(), style: const TextStyle(color: Colors.white)),
+                            ],
+                          ),
                         ),
                       ),
-                    ),
-                  ],
-                ),
-              ],
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
         );
