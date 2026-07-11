@@ -45,6 +45,7 @@ class _DataCountDisplayAlertState extends ConsumerState<DataCountDisplayAlert> {
       final HttpClient client = ref.read(httpClientProvider);
       final dynamic response = await client.get(path: APIPath.getHorseOddsFinderSummaryTableCount);
 
+      // ignore: avoid_dynamic_calls
       final List<dynamic> data = response['data'] as List<dynamic>;
       final List<DataCountModel> list = data
           .map((dynamic e) => DataCountModel.fromJson(e as Map<String, dynamic>))

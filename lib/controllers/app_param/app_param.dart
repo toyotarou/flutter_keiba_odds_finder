@@ -88,6 +88,8 @@ class AppParamState with _$AppParamState {
     @Default('') String selectedHorseNameChar2,
 
     @Default(false) bool allExpanded,
+
+    @Default(false) bool isShowSideTabPanel,
   }) = _AppParamState;
 }
 
@@ -210,4 +212,7 @@ class AppParam extends _$AppParam {
 
   ///
   void setAllExpanded() => state = state.copyWith(allExpanded: !state.allExpanded);
+
+  ///
+  void setIsShowSideTabPanel({required bool flag}) => state = state.copyWith(isShowSideTabPanel: flag);
 }

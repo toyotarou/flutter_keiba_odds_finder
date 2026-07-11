@@ -56,6 +56,7 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
     with ControllersMixin<HorseOddsRankingDisplayAlert> {
   final TransformationController _controller = TransformationController();
   double? _fitScale;
+  double? _lastTableWidth;
   Map<int, HorseModel> _horseMap = <int, HorseModel>{};
   Offset? _pendingTapPosition;
 
@@ -565,9 +566,9 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
 
     return LayoutBuilder(
       builder: (BuildContext ctx, BoxConstraints constraints) {
-        if (_fitScale == null) {
+        if (_fitScale == null || _lastTableWidth != tableWidth) {
+          _lastTableWidth = tableWidth;
           _fitScale = constraints.maxWidth / tableWidth;
-
           _controller.value = Matrix4.identity()..scale(_fitScale);
         }
         return GestureDetector(

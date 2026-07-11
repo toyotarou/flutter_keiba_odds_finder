@@ -55,6 +55,18 @@ class RaceContentPage extends ConsumerStatefulWidget {
   ConsumerState<RaceContentPage> createState() => _RaceContentPageState();
 }
 
+class _TriangleClipper extends CustomClipper<Path> {
+  @override
+  Path getClip(Size size) => Path()
+    ..moveTo(0, 0)
+    ..lineTo(0, size.height)
+    ..lineTo(size.width, 0)
+    ..close();
+
+  @override
+  bool shouldReclip(CustomClipper<Path> oldClipper) => false;
+}
+
 class _RaceContentPageState extends ConsumerState<RaceContentPage> with ControllersMixin<RaceContentPage> {
   final AutoScrollController _horseListScrollController = AutoScrollController();
   int _currentHorseIndex = 0;
@@ -1316,17 +1328,48 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
         _buildControlButtons(raceIdx: raceIdx),
 
         if (displayList.isNotEmpty) ...<Widget>[
-          SideTabPanel(
-            tabLabels: raceResultByRank.isEmpty ? <String>['期待数値'] : <String>['期待数値', 'レース結果'],
-            tabWidth: 90,
-            tabGap: 0,
-            height: 100,
-            borderColor: Colors.white.withValues(alpha: 0.4),
-            selectedIndex: raceResultByRank.isEmpty ? 0 : appParamState.selectedUpsetBoxNum,
-            onSelected: (int i) => appParamNotifier.setSelectedUpsetBoxNum(num: i),
-            panelChild: (raceResultByRank.isEmpty || appParamState.selectedUpsetBoxNum == 0)
-                ? _buildPopularityHorseRow(displayList: displayList)
-                : _buildRaceResultBox(raceResultByRank: raceResultByRank),
+          Stack(
+            children: <Widget>[
+              if (appParamState.isShowSideTabPanel) ...<Widget>[
+                SideTabPanel(
+                  tabLabels: raceResultByRank.isEmpty ? <String>['期待数値'] : <String>['期待数値', 'レース結果'],
+                  tabWidth: 90,
+                  tabGap: 0,
+                  height: 100,
+                  borderColor: Colors.white.withValues(alpha: 0.4),
+                  selectedIndex: raceResultByRank.isEmpty ? 0 : appParamState.selectedUpsetBoxNum,
+                  onSelected: (int i) => appParamNotifier.setSelectedUpsetBoxNum(num: i),
+                  panelChild: (raceResultByRank.isEmpty || appParamState.selectedUpsetBoxNum == 0)
+                      ? _buildPopularityHorseRow(displayList: displayList)
+                      : _buildRaceResultBox(raceResultByRank: raceResultByRank),
+                ),
+              ],
+
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  GestureDetector(
+                    onTap: () => appParamNotifier.setIsShowSideTabPanel(flag: !appParamState.isShowSideTabPanel),
+                    child: ClipPath(
+                      clipper: _TriangleClipper(),
+                      child: Container(
+                        width: 30,
+                        height: 30,
+                        decoration: BoxDecoration(
+                          color: (appParamState.isShowSideTabPanel)
+                              ? Colors.green[500]!.withValues(alpha: 0.4)
+                              : Colors.grey.withValues(alpha: 0.4),
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  if (!appParamState.isShowSideTabPanel) ...<Widget>[
+                    Text('期待数値、レース結果の表示', style: TextStyle(fontSize: 10, color: Colors.white.withValues(alpha: 0.6))),
+                  ],
+                ],
+              ),
+            ],
           ),
         ],
 
