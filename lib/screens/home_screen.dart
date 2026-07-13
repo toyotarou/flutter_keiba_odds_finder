@@ -22,6 +22,7 @@ import 'components/admin_menu_alert.dart';
 import 'components/history_race_record_display_alert.dart';
 import 'components/horse_name_initial_panel_alert.dart';
 import 'components/horse_odds_ranking_display_alert.dart';
+import 'components/terms_alert.dart';
 import 'page/race_content_page.dart';
 import 'parts/error_confirm_dialog.dart';
 import 'parts/odds_finder_dialog.dart';
@@ -546,6 +547,32 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
       ),
 
       drawer: _dispDrawer(),
+
+      bottomNavigationBar: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Divider(color: Colors.white.withValues(alpha: 0.5)),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: <Widget>[
+                  GestureDetector(
+                    onTap: () {
+                      OddsFinderDialog(context: context, widget: TermsAlert());
+                    },
+                    child: const Padding(
+                      padding: EdgeInsets.all(2),
+                      child: Text('利用規約', style: TextStyle(fontSize: 12, color: Colors.white54)),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 

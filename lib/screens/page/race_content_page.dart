@@ -84,7 +84,6 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
   final GlobalKey _analysisButtonKey = GlobalKey();
   Map<int, String> _analysisMap = <int, String>{};
 
-  ///
   @override
   void dispose() {
     _countdownTimer?.cancel();
@@ -93,7 +92,6 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     super.dispose();
   }
 
-  ///
   Future<bool> _fetchAnalysis() async {
     final String date = appParamState.selectedScheduleDate;
     final int race = widget.raceNumber;
@@ -135,7 +133,6 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     }
   }
 
-  ///
   void _startCountdown(String startTime, String raceDate) {
     _countdownTimer?.cancel();
 
@@ -192,7 +189,6 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     });
   }
 
-  ///
   static String _formatCountdown(int totalSeconds) {
     final int h = totalSeconds ~/ 3600;
     final int m = (totalSeconds % 3600) ~/ 60;
@@ -200,7 +196,6 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     return '${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
   }
 
-  ///
   void _scrollHorseList(int delta) {
     if (!_horseListScrollController.hasClients || _displayListLength == 0) {
       return;
@@ -210,14 +205,12 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     _horseListScrollController.scrollToIndex(next, preferPosition: AutoScrollPosition.begin);
   }
 
-  ///
   static String _beforeMinutesText(String selectedTiming) => switch (selectedTiming) {
     '0' => 'レース開始時点の',
     '' => '',
     _ => '$selectedTiming分前の',
   };
 
-  ///
   static Map<int, List<String>> _buildTimelineMap<T>({
     required List<T> models,
     required int Function(T) getNum,
@@ -238,7 +231,6 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     return result;
   }
 
-  ///
   static List<int> _buildTimingOrder(List<String> timingParts) {
     return List<int>.generate(
       timingParts.length,
@@ -250,7 +242,6 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     );
   }
 
-  ///
   static int? _resolveFilterMinutes(String selectedTiming, List<OddsModel> oddsModelList) {
     if (selectedTiming.isNotEmpty) {
       if (selectedTiming == '0') {
@@ -273,7 +264,6 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     return validValues.isNotEmpty ? validValues.first : null;
   }
 
-  ///
   static String _filterMinutesToTimingKey(int? filterMinutes) => switch (filterMinutes) {
     null => '',
     999 => '24',
@@ -281,7 +271,6 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     _ => filterMinutes.toString(),
   };
 
-  ///
   static String _resolveMinTiming(List<OddsModel> oddsModelList) {
     if (oddsModelList.any((OddsModel e) => e.minutesBeforeStart == -999)) {
       return '0';
@@ -294,7 +283,6 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     return validList.isNotEmpty ? validList.first.minutesBeforeStart.toString() : '';
   }
 
-  ///
   List<OddsModel> _buildDisplayList() {
     final List<OddsModel> allOdds = (widget.oddsMap[widget.mapKey] ?? <OddsModel>[])
         .where((OddsModel e) => e.race == widget.raceNumber)
@@ -310,7 +298,6 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
       ..sort((OddsModel a, OddsModel b) => (double.tryParse(a.odds) ?? 0).compareTo(double.tryParse(b.odds) ?? 0));
   }
 
-  ///
   Widget _buildRaceInfoBar(String startTime, String raceName) {
     return Stack(
       children: <Widget>[
@@ -384,7 +371,6 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     );
   }
 
-  ///
   Widget _buildRaceResultBox({required Map<int, RaceResultModel> raceResultByRank}) {
     if (raceResultByRank.isEmpty) {
       return const SizedBox.shrink();
@@ -415,7 +401,6 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     return RaceTopThreeWidget(entries: entries, showTitle: true);
   }
 
-  ///
   Widget _buildSimilarRaceButton(int raceIdx) {
     if (raceIdx == -1) {
       return const SizedBox.shrink();
@@ -450,7 +435,6 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     );
   }
 
-  ///
   Widget _buildControlButtons({required int raceIdx}) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -510,15 +494,6 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
               },
               child: Icon(Icons.list, color: Colors.white.withValues(alpha: 0.5)),
             ),
-
-            // const SizedBox(width: 15),
-            //
-            // _buildSimilarRaceButton(raceIdx),
-            //
-            //
-            //
-            //
-            //
           ],
         ),
         Row(
@@ -537,7 +512,6 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     );
   }
 
-  ///
   Widget _displayRaceMinutesRow() {
     final List<OddsModel> oddsModelList = (widget.oddsMap[widget.mapKey] ?? <OddsModel>[])
         .where((OddsModel e) => e.race == widget.raceNumber)
@@ -579,7 +553,6 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     );
   }
 
-  ///
   Widget _displayRaceHorseList() {
     final List<OddsModel> oddsModelList = (widget.oddsMap[widget.mapKey] ?? <OddsModel>[])
         .where((OddsModel e) => e.race == widget.raceNumber)
@@ -653,7 +626,6 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
       for (int i = 0; i < fukuSortable.length; i++) fukuSortable[i].key: i + 1,
     };
 
-    // 馬番 → 着順（1-3着のみ）
     final Map<int, int> numToRankMap = <int, int>{
       for (final RaceResultModel r in (widget.raceResultMap[widget.mapKey] ?? <RaceResultModel>[]).where(
         (RaceResultModel r) => r.race == widget.raceNumber && r.result <= 3,
@@ -698,7 +670,6 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     );
   }
 
-  ///
   Widget _buildHorseListItem({
     required int index,
     required OddsModel element,
@@ -729,7 +700,6 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
           Positioned(
             top: 5,
             right: 30,
-
             child: oddsTimeline != null && oddsTimeline.isNotEmpty
                 ? SizedBox(width: 150, child: _buildJudgeOddsSection(oddsTimeline))
                 : const SizedBox.shrink(),
@@ -757,7 +727,6 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                     : Colors.transparent,
               ),
             ),
-
             child: ExpansionTile(
               key: ValueKey<String>('horse_${element.num}_${appParamState.allExpanded}'),
               initiallyExpanded: appParamState.allExpanded,
@@ -771,7 +740,6 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                     Positioned(
                       top: (context.screenSize.height * 0.08) * -1,
                       right: (context.screenSize.width * 0.08) * -1,
-
                       child: CustomPaint(
                         painter: RankBadgePainter(
                           color: switch (raceRank) {
@@ -781,7 +749,6 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                             _ => Colors.transparent,
                           },
                         ),
-
                         child: SizedBox(
                           width: context.screenSize.width * 0.2,
                           height: context.screenSize.height * 0.15,
@@ -832,7 +799,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
 
                 if (analysis != null && analysis.isNotEmpty) ...<Widget>[
                   Padding(
-                    padding: const EdgeInsets.all(8.0),
+                    padding: const EdgeInsets.all(8),
                     child: Text(
                       analysis,
                       style: TextStyle(fontSize: 10, color: Colors.yellowAccent.withValues(alpha: 0.8)),
@@ -847,7 +814,6 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     );
   }
 
-  ///
   Widget _buildJudgeOddsSection(List<String> timeline) {
     final List<String> timingParts = widget.oddsGetTiming.split('|');
     final String odds24 = timeline[0];
@@ -869,7 +835,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
       return const SizedBox.shrink();
     }
 
-    // as String → as String? でクラッシュを防止
+    // as String? でクラッシュを防止（APIが稀にnullを返す）
     return DefaultTextStyle(
       style: const TextStyle(fontSize: 10, color: Colors.yellowAccent),
       child: Column(
@@ -879,7 +845,6 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     );
   }
 
-  ///
   Widget _buildHorseItemHeader({required int popularity, int? fukuRank, List<String>? timeline}) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.end,
@@ -948,7 +913,6 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     );
   }
 
-  ///
   Widget _buildPopularityHorseRow({required List<OddsModel> displayList}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.end,
@@ -956,7 +920,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: Padding(
-            padding: const EdgeInsets.all(8.0),
+            padding: const EdgeInsets.all(8),
             child: Row(
               children: displayList.asMap().entries.map((MapEntry<int, OddsModel> entry) {
                 final int index = entry.key + 1;
@@ -1064,60 +1028,47 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     );
   }
 
-  ///
   Widget _buildHorseNameRow({
     required OddsModel element,
     required HorseModel? horse,
     required Map<int, Color> horseWakuColorMap,
   }) {
     return DefaultTextStyle(
-      style: const TextStyle(color: Colors.white),
+      style: const TextStyle(fontSize: 12, color: Colors.white),
       child: Stack(
         children: <Widget>[
-          DefaultTextStyle(
-            style: const TextStyle(fontSize: 12, color: Colors.white),
-            child: Row(
-              children: <Widget>[
-                const SizedBox(width: 20),
-                if (horse != null) ...<Widget>[
-                  Container(
-                    padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
-                    decoration: BoxDecoration(
-                      color: (horseWakuColorMap[horse.waku] != null)
-                          ? horseWakuColorMap[horse.waku]!.withValues(alpha: 0.2)
-                          : Colors.white.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(3),
-                    ),
-                    child: DefaultTextStyle(
-                      style: const TextStyle(fontSize: 12),
-                      child: DefaultTextStyle(
-                        style: const TextStyle(color: Colors.white, fontSize: 12),
-                        child: Row(
-                          children: <Widget>[
-                            SizedBox(width: 15, child: Text(horse.waku.toString())),
-                            const Text('枠'),
-                          ],
-                        ),
-                      ),
-                    ),
+          Row(
+            children: <Widget>[
+              const SizedBox(width: 20),
+              if (horse != null) ...<Widget>[
+                Container(
+                  padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
+                  decoration: BoxDecoration(
+                    color: (horseWakuColorMap[horse.waku] != null)
+                        ? horseWakuColorMap[horse.waku]!.withValues(alpha: 0.2)
+                        : Colors.white.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(3),
                   ),
-                ],
-                const SizedBox(width: 20),
-                DefaultTextStyle(
-                  style: const TextStyle(color: Colors.white, fontSize: 12),
                   child: Row(
                     children: <Widget>[
-                      SizedBox(width: 20, child: Text(element.num.toString())),
-                      const Text('番'),
+                      SizedBox(width: 15, child: Text(horse.waku.toString())),
+                      const Text('枠'),
                     ],
                   ),
                 ),
-                const SizedBox(width: 20),
-                if (horse != null) ...<Widget>[
-                  Expanded(child: Text(horse.name, maxLines: 1, overflow: TextOverflow.ellipsis)),
-                ],
               ],
-            ),
+              const SizedBox(width: 20),
+              Row(
+                children: <Widget>[
+                  SizedBox(width: 20, child: Text(element.num.toString())),
+                  const Text('番'),
+                ],
+              ),
+              const SizedBox(width: 20),
+              if (horse != null) ...<Widget>[
+                Expanded(child: Text(horse.name, maxLines: 1, overflow: TextOverflow.ellipsis)),
+              ],
+            ],
           ),
 
           Positioned(
@@ -1146,7 +1097,6 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     );
   }
 
-  ///
   Widget _buildOddsTimelineRow({
     required List<String> timeline,
     required String activeTimingKey,
@@ -1192,7 +1142,6 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
           ),
         ),
 
-        ///////
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: timeline.asMap().entries.map((MapEntry<int, String> entry) {
@@ -1385,13 +1334,10 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
             );
           }).toList(),
         ),
-
-        /////////
       ],
     );
   }
 
-  ///
   @override
   Widget build(BuildContext context) {
     final List<RaceModel> races = widget.raceMap[widget.mapKey] ?? <RaceModel>[];
@@ -1424,6 +1370,8 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     final bool hasBothTimings =
         allOddsForRace.any((OddsModel e) => e.minutesBeforeStart == 999) &&
         allOddsForRace.any((OddsModel e) => e.minutesBeforeStart == 3);
+
+    final bool hasOOO = raceIdx != -1 && raceIdx < races.length && races[raceIdx].popularityRatioTableIds.isNotEmpty;
 
     final Map<int, RaceResultModel> raceResultByRank = Map<int, RaceResultModel>.fromEntries(
       (widget.raceResultMap[widget.mapKey] ?? <RaceResultModel>[])
@@ -1493,47 +1441,50 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
           ),
         ],
 
-        const SizedBox(height: 5),
+        if (hasOOO) ...<Widget>[
+          const SizedBox(height: 5),
 
-        Row(
-          children: <Widget>[
-            _buildSimilarRaceButton(raceIdx),
+          Row(
+            children: <Widget>[
+              _buildSimilarRaceButton(raceIdx),
 
-            const SizedBox(width: 10),
+              const SizedBox(width: 10),
 
-            if (hasBothTimings)
-              GestureDetector(
-                key: _analysisButtonKey,
-                onTap: () async {
-                  final BuildContext ctx = context;
-                  final bool found = await _fetchAnalysis();
-                  if (!found && ctx.mounted) {
-                    final RenderBox? renderBox = _analysisButtonKey.currentContext?.findRenderObject() as RenderBox?;
-                    if (renderBox != null) {
-                      final Offset offset = renderBox.localToGlobal(Offset.zero);
-                      widgetDisplayOverlay(
-                        context: ctx,
-                        tapPosition: Offset(offset.dx - 20, offset.dy - 10),
-                        displayDuration: const Duration(seconds: 3),
-                        child: const Text('合致がありません', style: TextStyle(fontSize: 12, color: Colors.yellowAccent)),
-                      );
+              if (hasBothTimings) ...<Widget>[
+                GestureDetector(
+                  key: _analysisButtonKey,
+                  onTap: () async {
+                    final BuildContext ctx = context;
+                    final bool found = await _fetchAnalysis();
+                    if (!found && ctx.mounted) {
+                      final RenderBox? renderBox = _analysisButtonKey.currentContext?.findRenderObject() as RenderBox?;
+                      if (renderBox != null) {
+                        final Offset offset = renderBox.localToGlobal(Offset.zero);
+                        widgetDisplayOverlay(
+                          context: ctx,
+                          tapPosition: Offset(offset.dx - 20, offset.dy - 10),
+                          displayDuration: const Duration(seconds: 3),
+                          child: const Text('合致がありません', style: TextStyle(fontSize: 12, color: Colors.yellowAccent)),
+                        );
+                      }
                     }
-                  }
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 10),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.yellowAccent),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Text(
-                    '分析',
-                    style: TextStyle(fontSize: 10, color: Colors.yellowAccent, fontWeight: FontWeight.bold),
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 10),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.yellowAccent),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Text(
+                      '分析',
+                      style: TextStyle(fontSize: 10, color: Colors.yellowAccent, fontWeight: FontWeight.bold),
+                    ),
                   ),
                 ),
-              ),
-          ],
-        ),
+              ],
+            ],
+          ),
+        ],
 
         Divider(color: Colors.white.withValues(alpha: 0.5)),
 
