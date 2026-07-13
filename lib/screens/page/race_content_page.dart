@@ -1452,7 +1452,8 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
         allOddsForRace.any((OddsModel e) => e.minutesBeforeStart == 999) &&
         allOddsForRace.any((OddsModel e) => e.minutesBeforeStart == 3);
 
-    final bool hasOOO = raceIdx != -1 && raceIdx < races.length && races[raceIdx].popularityRatioTableIds.isNotEmpty;
+    final bool hasPopularityRatioData =
+        raceIdx != -1 && raceIdx < races.length && races[raceIdx].popularityRatioTableIds.isNotEmpty;
 
     final Map<int, RaceResultModel> raceResultByRank = Map<int, RaceResultModel>.fromEntries(
       (widget.raceResultMap[widget.mapKey] ?? <RaceResultModel>[])
@@ -1522,15 +1523,16 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
           ),
         ],
 
-        if (hasOOO) ...<Widget>[
-          const SizedBox(height: 5),
+        const SizedBox(height: 5),
 
-          Row(
-            children: <Widget>[
-              _buildSimilarRaceButton(raceIdx),
+        Row(
+          children: <Widget>[
+            ///
 
-              const SizedBox(width: 10),
+            // TODO: 常に表示されるボタンを追加する
 
+            ///
+            if (hasPopularityRatioData) ...<Widget>[
               if (hasBothTimings) ...<Widget>[
                 Material(
                   key: _analysisButtonKey,
@@ -1547,7 +1549,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                           final Offset offset = renderBox.localToGlobal(Offset.zero);
                           widgetDisplayOverlay(
                             context: ctx,
-                            tapPosition: Offset(offset.dx - 20, offset.dy - 10),
+                            tapPosition: Offset(offset.dx, offset.dy - 10),
                             displayDuration: const Duration(seconds: 3),
                             child: const Text('合致がありません', style: TextStyle(fontSize: 12, color: Colors.yellowAccent)),
                           );
@@ -1564,16 +1566,20 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: const Text(
-                        '分析',
+                        '過去データからの分析',
                         style: TextStyle(fontSize: 10, color: Colors.yellowAccent, fontWeight: FontWeight.bold),
                       ),
                     ),
                   ),
                 ),
               ],
+
+              const SizedBox(width: 10),
+
+              _buildSimilarRaceButton(raceIdx),
             ],
-          ),
-        ],
+          ],
+        ),
 
         Divider(color: Colors.white.withValues(alpha: 0.5)),
 
