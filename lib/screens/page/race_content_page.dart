@@ -7,10 +7,13 @@ import 'package:scroll_to_index/scroll_to_index.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../controllers/controllers_mixin.dart';
+import '../../data/http/client.dart';
+import '../../data/http/path.dart';
 import '../../extensions/extensions.dart';
 import '../../main.dart';
 import '../../models/horse_model.dart';
 import '../../models/odds_model.dart';
+import '../../models/race_analysis_model.dart';
 import '../../models/race_model.dart';
 import '../../models/race_result_model.dart';
 import '../../utility/utility.dart';
@@ -78,6 +81,8 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
 
   final Utility _utility = Utility();
   final GlobalKey _harandoKey = GlobalKey();
+  final GlobalKey _analysisButtonKey = GlobalKey();
+  Map<int, String> _analysisMap = <int, String>{};
 
   ///
   @override
@@ -86,6 +91,48 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     _remainingSecondsNotifier.dispose();
     _horseListScrollController.dispose();
     super.dispose();
+  }
+
+  ///
+  Future<bool> _fetchAnalysis() async {
+    final String date = appParamState.selectedScheduleDate;
+    final int race = widget.raceNumber;
+    final List<String> kbdParts = appParamState.selectedScheduleKaisuuBashoDay.split('_');
+    final String kaisuu = kbdParts.isNotEmpty ? kbdParts[0] : '';
+    final String basho = kbdParts.length > 1 ? kbdParts[1] : '';
+    final String day = kbdParts.length > 2 ? kbdParts[2] : '';
+    try {
+      final dynamic response = await ref
+          .read(httpClientProvider)
+          .get(
+            path: APIPath.getHorseOddsFinderHighProbabilityHorses,
+            queryParameters: <String, dynamic>{
+              'date': date,
+              'kaisuu': kaisuu,
+              'basho': basho,
+              'day': day,
+              'race': race.toString(),
+            },
+          );
+      final List<dynamic> dataList = (response as Map<String, dynamic>)['data'] as List<dynamic>? ?? <dynamic>[];
+      final Map<int, String> newMap = <int, String>{};
+      for (final dynamic item in dataList) {
+        final RaceAnalysisModel model = RaceAnalysisModel.fromJson(item as Map<String, dynamic>);
+        if (model.race == race && model.kaisuu == kaisuu && model.basho == basho && model.day == day) {
+          for (final HorseOddsFinderSimilarRaceHorseModel horse in model.horses) {
+            if (horse.analysis.isNotEmpty) {
+              newMap[horse.popularityRank] = horse.analysis;
+            }
+          }
+        }
+      }
+      if (mounted) {
+        setState(() => _analysisMap = newMap);
+      }
+      return newMap.isNotEmpty;
+    } catch (_) {
+      return false;
+    }
   }
 
   ///
@@ -636,6 +683,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
             nextOddsTimeline: index + 1 < displayList.length ? oddsTimelineMap[displayList[index + 1].num] : null,
             fukuRank: fukuRankMap[element.num],
             raceRank: numToRankMap[element.num],
+            analysis: _analysisMap[index + 1],
           ),
         );
       },
@@ -656,6 +704,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     List<String>? nextOddsTimeline,
     int? fukuRank,
     int? raceRank,
+    String? analysis,
   }) {
     final int popularity = index + 1;
     final HorseModel? horse = horseModelMap[element.num];
@@ -676,9 +725,14 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                 : const SizedBox.shrink(),
           ),
 
-          /////////////////
           Container(
-            decoration: BoxDecoration(border: Border.all(color: Colors.yellowAccent)),
+            decoration: BoxDecoration(
+              border: Border.all(
+                color: (analysis != null && analysis.isNotEmpty)
+                    ? Colors.yellowAccent.withValues(alpha: 0.5)
+                    : Colors.transparent,
+              ),
+            ),
 
             child: ExpansionTile(
               key: ValueKey<String>('horse_${element.num}_${appParamState.allExpanded}'),
@@ -752,13 +806,18 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                   ),
                 ],
 
-                ///JJJ
-                const Text('gggggggg'),
+                if (analysis != null && analysis.isNotEmpty) ...<Widget>[
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Text(
+                      analysis,
+                      style: TextStyle(fontSize: 10, color: Colors.yellowAccent.withValues(alpha: 0.8)),
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
-
-          /////////////
         ],
       ),
     );
@@ -1420,6 +1479,23 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
 
             if (hasBothTimings)
               GestureDetector(
+                key: _analysisButtonKey,
+                onTap: () async {
+                  final BuildContext ctx = context;
+                  final bool found = await _fetchAnalysis();
+                  if (!found && ctx.mounted) {
+                    final RenderBox? renderBox = _analysisButtonKey.currentContext?.findRenderObject() as RenderBox?;
+                    if (renderBox != null) {
+                      final Offset offset = renderBox.localToGlobal(Offset.zero);
+                      widgetDisplayOverlay(
+                        context: ctx,
+                        tapPosition: Offset(offset.dx - 20, offset.dy - 10),
+                        displayDuration: const Duration(seconds: 3),
+                        child: const Text('合致がありません', style: TextStyle(fontSize: 12, color: Colors.yellowAccent)),
+                      );
+                    }
+                  }
+                },
                 child: Container(
                   padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 10),
                   decoration: BoxDecoration(
