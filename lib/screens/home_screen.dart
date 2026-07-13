@@ -7,6 +7,7 @@ import '../extensions/extensions.dart';
 import '../models/horse_model.dart';
 import '../models/login_user_model.dart';
 import '../models/odds_model.dart';
+
 // import '../models/odds_wide_model.dart';
 //
 //
@@ -332,7 +333,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
               padding: const EdgeInsets.all(5),
               decoration: BoxDecoration(
                 color: (appParamState.selectedScheduleDate == e.key)
-                    ? Colors.greenAccent.withValues(alpha: 0.1)
+                    ? Colors.greenAccent.withValues(alpha: 0.3)
                     : Colors.black.withValues(alpha: 0.3),
                 border: Border.all(color: Colors.white.withValues(alpha: 0.4)),
                 borderRadius: BorderRadius.circular(3),
@@ -364,7 +365,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
               decoration: BoxDecoration(
                 border: Border.all(color: Colors.white.withValues(alpha: 0.4)),
                 color: (appParamState.selectedScheduleKaisuuBashoDayName == label)
-                    ? Colors.greenAccent.withValues(alpha: 0.1)
+                    ? Colors.greenAccent.withValues(alpha: 0.3)
                     : Colors.transparent,
                 borderRadius: BorderRadius.circular(3),
               ),

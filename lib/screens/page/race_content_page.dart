@@ -661,11 +661,17 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
         r.num: r.result,
     };
 
+    final List<int> sortedAnalysisKeys = _analysisMap.keys.toList()..sort();
+    final int analysisTotalCount = sortedAnalysisKeys.length;
+
     return ListView.builder(
       controller: _horseListScrollController,
       itemCount: displayList.length,
       itemBuilder: (BuildContext context, int index) {
         final OddsModel element = displayList[index];
+        final int popularity = index + 1;
+        final int rawRank = sortedAnalysisKeys.indexOf(popularity);
+        final int? analysisRank = rawRank == -1 ? null : rawRank + 1;
         return AutoScrollTag(
           key: ValueKey<int>(index),
           controller: _horseListScrollController,
@@ -683,7 +689,9 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
             nextOddsTimeline: index + 1 < displayList.length ? oddsTimelineMap[displayList[index + 1].num] : null,
             fukuRank: fukuRankMap[element.num],
             raceRank: numToRankMap[element.num],
-            analysis: _analysisMap[index + 1],
+            analysis: _analysisMap[popularity],
+            analysisRank: analysisRank,
+            analysisTotalCount: analysisTotalCount,
           ),
         );
       },
@@ -705,6 +713,8 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     int? fukuRank,
     int? raceRank,
     String? analysis,
+    int? analysisRank,
+    int analysisTotalCount = 0,
   }) {
     final int popularity = index + 1;
     final HorseModel? horse = horseModelMap[element.num];
@@ -724,6 +734,20 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                 ? SizedBox(width: 150, child: _buildJudgeOddsSection(oddsTimeline))
                 : const SizedBox.shrink(),
           ),
+
+          if (analysis != null && analysis.isNotEmpty && analysisRank != null) ...<Widget>[
+            Container(
+              width: 40,
+              height: 20,
+              decoration: BoxDecoration(color: Colors.yellowAccent.withValues(alpha: 0.3)),
+              child: Center(
+                child: Text(
+                  '$analysisRank/$analysisTotalCount',
+                  style: const TextStyle(fontSize: 10, color: Colors.white),
+                ),
+              ),
+            ),
+          ],
 
           Container(
             decoration: BoxDecoration(
