@@ -9,6 +9,7 @@ import '../../data/http/path.dart';
 import '../../extensions/extensions.dart';
 import '../../models/popularity_rank_odds_average_model.dart';
 import '../../models/race_result_history_model.dart';
+import '../../utility/functions.dart';
 import '../parts/error_confirm_dialog.dart';
 import '../parts/rank_badge_painter.dart';
 
@@ -460,12 +461,7 @@ class _PopularityRecordDisplayAlertState extends ConsumerState<PopularityRecordD
 
                                           child: CustomPaint(
                                             painter: RankBadgePainter(
-                                              color: switch (item.finishingPosition) {
-                                                1 => const Color(0xFFFFD700).withValues(alpha: 0.3),
-                                                2 => const Color(0xFFC0C0C0).withValues(alpha: 0.3),
-                                                3 => const Color(0xFFCD7F32).withValues(alpha: 0.3),
-                                                _ => Colors.transparent,
-                                              },
+                                              color: raceRankColor(item.finishingPosition, alpha: 0.3),
                                             ),
                                             child: SizedBox(
                                               width: context.screenSize.width * 0.2,

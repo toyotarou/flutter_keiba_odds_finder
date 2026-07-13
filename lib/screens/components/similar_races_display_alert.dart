@@ -5,6 +5,7 @@ import '../../data/http/client.dart';
 import '../../data/http/path.dart';
 import '../../extensions/extensions.dart';
 import '../../models/race_model.dart';
+import '../../utility/functions.dart';
 import '../../models/race_result_history_model.dart';
 import '../../models/race_result_payout_model.dart';
 import '../../models/races_popularity_ratio_model.dart';
@@ -356,12 +357,8 @@ class _SimilarRacesDisplayAlertState extends ConsumerState<SimilarRacesDisplayAl
 
                     final int? finishPos = horseNum != null ? finishPosByNum[horseNum] : null;
 
-                    final Color? numBgColor = switch (finishPos) {
-                      1 => const Color(0xFFFFD700).withValues(alpha: 0.5),
-                      2 => const Color(0xFFC0C0C0).withValues(alpha: 0.5),
-                      3 => const Color(0xFFCD7F32).withValues(alpha: 0.5),
-                      _ => null,
-                    };
+                    final Color? numBgColor =
+                        (finishPos != null && finishPos <= 3) ? raceRankColor(finishPos) : null;
 
                     widgets.add(
                       Padding(

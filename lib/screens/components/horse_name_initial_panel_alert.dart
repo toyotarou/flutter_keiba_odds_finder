@@ -5,6 +5,7 @@ import '../../controllers/controllers_mixin.dart';
 import '../../data/http/client.dart';
 import '../../data/http/path.dart';
 import '../../models/race_result_history_model.dart';
+import '../../utility/functions.dart';
 
 class HorseNameInitialPanelAlert extends ConsumerStatefulWidget {
   const HorseNameInitialPanelAlert({super.key});
@@ -389,12 +390,7 @@ class _HorseNameInitialPanelAlertState extends ConsumerState<HorseNameInitialPan
                                                           width: 40,
                                                           alignment: Alignment.center,
                                                           decoration: BoxDecoration(
-                                                            color: switch (r.finishingPosition) {
-                                                              1 => const Color(0xFFFFD700).withValues(alpha: 0.5),
-                                                              2 => const Color(0xFFC0C0C0).withValues(alpha: 0.5),
-                                                              3 => const Color(0xFFCD7F32).withValues(alpha: 0.5),
-                                                              _ => Colors.transparent,
-                                                            },
+                                                            color: raceRankColor(r.finishingPosition),
                                                           ),
                                                           child: Text(
                                                             '${r.finishingPosition}着',

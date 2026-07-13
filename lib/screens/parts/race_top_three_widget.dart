@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../utility/functions.dart';
+
 class RaceTopThreeEntry {
   const RaceTopThreeEntry({required this.num, required this.name, required this.odds, required this.popularity});
 
@@ -48,12 +50,7 @@ class RaceTopThreeWidget extends StatelessWidget {
                         width: 40,
                         alignment: Alignment.center,
                         decoration: BoxDecoration(
-                          color: switch (rank) {
-                            1 => const Color(0xFFFFD700).withValues(alpha: 0.5),
-                            2 => const Color(0xFFC0C0C0).withValues(alpha: 0.5),
-                            3 => const Color(0xFFCD7F32).withValues(alpha: 0.5),
-                            _ => Colors.grey.withValues(alpha: 0.3),
-                          },
+                          color: raceRankColor(rank, fallback: Colors.grey.withValues(alpha: 0.3)),
                         ),
 
                         child: Text(rank.toString()),

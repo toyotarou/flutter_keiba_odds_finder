@@ -16,6 +16,7 @@ import '../../models/odds_model.dart';
 import '../../models/race_analysis_model.dart';
 import '../../models/race_model.dart';
 import '../../models/race_result_model.dart';
+import '../../utility/functions.dart';
 import '../../utility/utility.dart';
 import '../components/horse_detail_display_alert.dart';
 import '../components/horse_odds_ranking_display_alert.dart';
@@ -766,14 +767,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                       top: (context.screenSize.height * 0.08) * -1,
                       right: (context.screenSize.width * 0.08) * -1,
                       child: CustomPaint(
-                        painter: RankBadgePainter(
-                          color: switch (raceRank) {
-                            1 => const Color(0xFFFFD700).withValues(alpha: 0.3),
-                            2 => const Color(0xFFC0C0C0).withValues(alpha: 0.3),
-                            3 => const Color(0xFFCD7F32).withValues(alpha: 0.3),
-                            _ => Colors.transparent,
-                          },
-                        ),
+                        painter: RankBadgePainter(color: raceRankColor(raceRank, alpha: 0.3)),
                         child: SizedBox(
                           width: context.screenSize.width * 0.2,
                           height: context.screenSize.height * 0.15,
@@ -942,6 +936,13 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
 
   ///
   Widget _buildPopularityHorseRow({required List<OddsModel> displayList}) {
+    final Map<int, int> numToRankMap = <int, int>{
+      for (final RaceResultModel r in (widget.raceResultMap[widget.mapKey] ?? <RaceResultModel>[]).where(
+        (RaceResultModel r) => r.race == widget.raceNumber && r.result <= 3,
+      ))
+        r.num: r.result,
+    };
+
     double maxUpsetScore = 0;
     int maxRank = 0;
     for (int i = 0; i < displayList.length; i++) {
@@ -987,46 +988,63 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                   }
                 }
 
-                return Container(
-                  width: 70,
-                  margin: const EdgeInsets.symmetric(horizontal: 2),
-                  decoration: BoxDecoration(
-                    color: maxUpsetScore > 0 && upsetScoreVal == maxUpsetScore
-                        ? Colors.yellowAccent.withValues(alpha: 0.2)
-                        : Colors.white.withValues(alpha: 0.05),
+                return Stack(
+                  clipBehavior: Clip.none,
+                  children: <Widget>[
+                    Container(
+                      width: 70,
+                      margin: const EdgeInsets.symmetric(horizontal: 2),
+                      decoration: BoxDecoration(
+                        color: maxUpsetScore > 0 && upsetScoreVal == maxUpsetScore
+                            ? Colors.yellowAccent.withValues(alpha: 0.2)
+                            : Colors.white.withValues(alpha: 0.05),
 
-                    border: Border.all(
-                      color: maxRank > 0 && index >= highlightStart && index <= highlightEnd
-                          ? Colors.yellowAccent.withValues(alpha: 0.8)
-                          : Colors.white.withValues(alpha: 0.2),
-                    ),
-                    borderRadius: BorderRadius.circular(3),
-                  ),
-                  child: DefaultTextStyle(
-                    style: const TextStyle(fontSize: 12, color: Colors.white),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: <Widget>[
-                        Container(
-                          decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.3)),
-                          width: double.infinity,
-                          alignment: Alignment.center,
-                          child: Text('$index番人気'),
+                        border: Border.all(
+                          color: maxRank > 0 && index >= highlightStart && index <= highlightEnd
+                              ? Colors.yellowAccent.withValues(alpha: 0.8)
+                              : Colors.white.withValues(alpha: 0.2),
                         ),
-                        Text('馬番: ${o.num}'),
-                        const SizedBox(height: 3),
-                        Text(
-                          upsetScore,
-                          style: TextStyle(
-                            color: Colors.yellowAccent.withValues(alpha: 0.6),
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                          ),
+                        borderRadius: BorderRadius.circular(3),
+                      ),
+                      child: DefaultTextStyle(
+                        style: const TextStyle(fontSize: 12, color: Colors.white),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: <Widget>[
+                            Container(
+                              decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.3)),
+                              width: double.infinity,
+                              alignment: Alignment.center,
+                              child: Text('$index番人気'),
+                            ),
+                            Text('馬番: ${o.num}'),
+                            const SizedBox(height: 3),
+                            Text(
+                              upsetScore,
+                              style: TextStyle(
+                                color: Colors.yellowAccent.withValues(alpha: 0.6),
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 3),
+                          ],
                         ),
-                        const SizedBox(height: 3),
-                      ],
+                      ),
                     ),
-                  ),
+
+                    if (numToRankMap.containsKey(o.num))
+                      Positioned(
+                        right: -3,
+                        bottom: -3,
+                        child: Container(
+                          width: 22,
+                          height: 22,
+                          decoration: BoxDecoration(color: raceRankColor(numToRankMap[o.num]), shape: BoxShape.circle),
+                          child: const Icon(Icons.flag, size: 14, color: Colors.white),
+                        ),
+                      ),
+                  ],
                 );
               }).toList(),
             ),
