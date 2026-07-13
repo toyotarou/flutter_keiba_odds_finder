@@ -84,6 +84,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
   final GlobalKey _analysisButtonKey = GlobalKey();
   Map<int, String> _analysisMap = <int, String>{};
 
+  ///
   @override
   void dispose() {
     _countdownTimer?.cancel();
@@ -92,6 +93,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     super.dispose();
   }
 
+  ///
   Future<bool> _fetchAnalysis() async {
     final String date = appParamState.selectedScheduleDate;
     final int race = widget.raceNumber;
@@ -133,6 +135,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     }
   }
 
+  ///
   void _startCountdown(String startTime, String raceDate) {
     _countdownTimer?.cancel();
 
@@ -189,6 +192,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     });
   }
 
+  ///
   static String _formatCountdown(int totalSeconds) {
     final int h = totalSeconds ~/ 3600;
     final int m = (totalSeconds % 3600) ~/ 60;
@@ -196,6 +200,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     return '${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
   }
 
+  ///
   void _scrollHorseList(int delta) {
     if (!_horseListScrollController.hasClients || _displayListLength == 0) {
       return;
@@ -205,12 +210,14 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     _horseListScrollController.scrollToIndex(next, preferPosition: AutoScrollPosition.begin);
   }
 
+  ///
   static String _beforeMinutesText(String selectedTiming) => switch (selectedTiming) {
     '0' => 'レース開始時点の',
     '' => '',
     _ => '$selectedTiming分前の',
   };
 
+  ///
   static Map<int, List<String>> _buildTimelineMap<T>({
     required List<T> models,
     required int Function(T) getNum,
@@ -231,6 +238,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     return result;
   }
 
+  ///
   static List<int> _buildTimingOrder(List<String> timingParts) {
     return List<int>.generate(
       timingParts.length,
@@ -242,6 +250,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     );
   }
 
+  ///
   static int? _resolveFilterMinutes(String selectedTiming, List<OddsModel> oddsModelList) {
     if (selectedTiming.isNotEmpty) {
       if (selectedTiming == '0') {
@@ -271,6 +280,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     _ => filterMinutes.toString(),
   };
 
+  ///
   static String _resolveMinTiming(List<OddsModel> oddsModelList) {
     if (oddsModelList.any((OddsModel e) => e.minutesBeforeStart == -999)) {
       return '0';
@@ -283,6 +293,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     return validList.isNotEmpty ? validList.first.minutesBeforeStart.toString() : '';
   }
 
+  ///
   List<OddsModel> _buildDisplayList() {
     final List<OddsModel> allOdds = (widget.oddsMap[widget.mapKey] ?? <OddsModel>[])
         .where((OddsModel e) => e.race == widget.raceNumber)
@@ -298,6 +309,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
       ..sort((OddsModel a, OddsModel b) => (double.tryParse(a.odds) ?? 0).compareTo(double.tryParse(b.odds) ?? 0));
   }
 
+  ///
   Widget _buildRaceInfoBar(String startTime, String raceName) {
     return Stack(
       children: <Widget>[
@@ -371,6 +383,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     );
   }
 
+  ///
   Widget _buildRaceResultBox({required Map<int, RaceResultModel> raceResultByRank}) {
     if (raceResultByRank.isEmpty) {
       return const SizedBox.shrink();
@@ -401,6 +414,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     return RaceTopThreeWidget(entries: entries, showTitle: true);
   }
 
+  ///
   Widget _buildSimilarRaceButton(int raceIdx) {
     if (raceIdx == -1) {
       return const SizedBox.shrink();
@@ -442,6 +456,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     );
   }
 
+  ///
   Widget _buildControlButtons({required int raceIdx}) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -519,6 +534,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     );
   }
 
+  ///
   Widget _displayRaceMinutesRow() {
     final List<OddsModel> oddsModelList = (widget.oddsMap[widget.mapKey] ?? <OddsModel>[])
         .where((OddsModel e) => e.race == widget.raceNumber)
@@ -560,6 +576,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     );
   }
 
+  ///
   Widget _displayRaceHorseList() {
     final List<OddsModel> oddsModelList = (widget.oddsMap[widget.mapKey] ?? <OddsModel>[])
         .where((OddsModel e) => e.race == widget.raceNumber)
@@ -677,6 +694,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     );
   }
 
+  ///
   Widget _buildHorseListItem({
     required int index,
     required OddsModel element,
@@ -821,6 +839,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     );
   }
 
+  ///
   Widget _buildJudgeOddsSection(List<String> timeline) {
     final List<String> timingParts = widget.oddsGetTiming.split('|');
     final String odds24 = timeline[0];
@@ -852,6 +871,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     );
   }
 
+  ///
   Widget _buildHorseItemHeader({required int popularity, int? fukuRank, List<String>? timeline}) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.end,
@@ -920,7 +940,29 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     );
   }
 
+  ///
   Widget _buildPopularityHorseRow({required List<OddsModel> displayList}) {
+    double maxUpsetScore = 0;
+    int maxRank = 0;
+    for (int i = 0; i < displayList.length; i++) {
+      final int idx = i + 1;
+      final OddsModel o = displayList[i];
+      if (appParamState.keepPopularityRankOddsAverageMap[idx] != null) {
+        final double oddsVal = o.odds.toDouble();
+        if (oddsVal != 0) {
+          final double score = appParamState.keepPopularityRankOddsAverageMap[idx]!.oddsAverage.toDouble() / oddsVal;
+          if (score > maxUpsetScore) {
+            maxUpsetScore = score;
+            maxRank = idx;
+          }
+        }
+      }
+    }
+
+    final int cellCount = displayList.length <= 8 ? 4 : 5;
+    final int highlightStart = maxRank <= 5 ? maxRank : maxRank - cellCount + 1;
+    final int highlightEnd = maxRank <= 5 ? maxRank + cellCount - 1 : maxRank;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: <Widget>[
@@ -935,18 +977,29 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
 
                 String average = '';
                 String upsetScore = '';
+                double upsetScoreVal = 0;
                 if (appParamState.keepPopularityRankOddsAverageMap[index] != null) {
                   average = appParamState.keepPopularityRankOddsAverageMap[index]!.oddsAverage;
                   final double oddsVal = o.odds.toDouble();
-                  upsetScore = oddsVal != 0 ? (average.toDouble() / oddsVal).toStringAsFixed(2) : '';
+                  if (oddsVal != 0) {
+                    upsetScoreVal = average.toDouble() / oddsVal;
+                    upsetScore = upsetScoreVal.toStringAsFixed(2);
+                  }
                 }
 
                 return Container(
                   width: 70,
                   margin: const EdgeInsets.symmetric(horizontal: 2),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.05),
-                    border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+                    color: maxUpsetScore > 0 && upsetScoreVal == maxUpsetScore
+                        ? Colors.yellowAccent.withValues(alpha: 0.2)
+                        : Colors.white.withValues(alpha: 0.05),
+
+                    border: Border.all(
+                      color: maxRank > 0 && index >= highlightStart && index <= highlightEnd
+                          ? Colors.yellowAccent.withValues(alpha: 0.8)
+                          : Colors.white.withValues(alpha: 0.2),
+                    ),
                     borderRadius: BorderRadius.circular(3),
                   ),
                   child: DefaultTextStyle(
@@ -1035,6 +1088,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     );
   }
 
+  ///
   Widget _buildHorseNameRow({
     required OddsModel element,
     required HorseModel? horse,
@@ -1104,6 +1158,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     );
   }
 
+  ///
   Widget _buildOddsTimelineRow({
     required List<String> timeline,
     required String activeTimingKey,
@@ -1345,6 +1400,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     );
   }
 
+  ///
   @override
   Widget build(BuildContext context) {
     final List<RaceModel> races = widget.raceMap[widget.mapKey] ?? <RaceModel>[];
