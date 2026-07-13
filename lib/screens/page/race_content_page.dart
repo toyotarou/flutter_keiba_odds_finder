@@ -396,7 +396,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
           borderRadius: BorderRadius.circular(10),
         ),
         child: const Text(
-          '類似',
+          '類似の過去レース',
           style: TextStyle(fontSize: 10, color: Color(0xFFFBB6CE), fontWeight: FontWeight.bold),
         ),
       ),
@@ -464,9 +464,14 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
               child: Icon(Icons.list, color: Colors.white.withValues(alpha: 0.5)),
             ),
 
-            const SizedBox(width: 15),
-
-            _buildSimilarRaceButton(raceIdx),
+            // const SizedBox(width: 15),
+            //
+            // _buildSimilarRaceButton(raceIdx),
+            //
+            //
+            //
+            //
+            //
           ],
         ),
         Row(
@@ -671,77 +676,89 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                 : const SizedBox.shrink(),
           ),
 
-          ExpansionTile(
-            key: ValueKey<String>('horse_${element.num}_${appParamState.allExpanded}'),
-            initiallyExpanded: appParamState.allExpanded,
-            tilePadding: const EdgeInsets.symmetric(horizontal: 8),
-            childrenPadding: const EdgeInsets.symmetric(horizontal: 8),
-            title: Stack(
-              children: <Widget>[
-                if (raceRank != null && raceRank <= 3) ...<Widget>[
-                  Positioned(
-                    top: (context.screenSize.height * 0.08) * -1,
-                    right: (context.screenSize.width * 0.08) * -1,
+          /////////////////
+          Container(
+            decoration: BoxDecoration(border: Border.all(color: Colors.yellowAccent)),
 
-                    child: CustomPaint(
-                      painter: RankBadgePainter(
-                        color: switch (raceRank) {
-                          1 => const Color(0xFFFFD700).withValues(alpha: 0.3),
-                          2 => const Color(0xFFC0C0C0).withValues(alpha: 0.3),
-                          3 => const Color(0xFFCD7F32).withValues(alpha: 0.3),
-                          _ => Colors.transparent,
-                        },
-                      ),
+            child: ExpansionTile(
+              key: ValueKey<String>('horse_${element.num}_${appParamState.allExpanded}'),
+              initiallyExpanded: appParamState.allExpanded,
+              tilePadding: const EdgeInsets.symmetric(horizontal: 8),
+              childrenPadding: const EdgeInsets.symmetric(horizontal: 8),
+              expandedAlignment: Alignment.centerLeft,
+              expandedCrossAxisAlignment: CrossAxisAlignment.start,
+              title: Stack(
+                children: <Widget>[
+                  if (raceRank != null && raceRank <= 3) ...<Widget>[
+                    Positioned(
+                      top: (context.screenSize.height * 0.08) * -1,
+                      right: (context.screenSize.width * 0.08) * -1,
 
-                      child: SizedBox(
-                        width: context.screenSize.width * 0.2,
-                        height: context.screenSize.height * 0.15,
-                        child: Align(
-                          alignment: Alignment.bottomLeft,
-                          child: Padding(
-                            padding: const EdgeInsets.only(bottom: 30, left: 25),
-                            child: Text(
-                              '$raceRank着',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.white.withValues(alpha: 0.8),
-                                fontWeight: FontWeight.bold,
+                      child: CustomPaint(
+                        painter: RankBadgePainter(
+                          color: switch (raceRank) {
+                            1 => const Color(0xFFFFD700).withValues(alpha: 0.3),
+                            2 => const Color(0xFFC0C0C0).withValues(alpha: 0.3),
+                            3 => const Color(0xFFCD7F32).withValues(alpha: 0.3),
+                            _ => Colors.transparent,
+                          },
+                        ),
+
+                        child: SizedBox(
+                          width: context.screenSize.width * 0.2,
+                          height: context.screenSize.height * 0.15,
+                          child: Align(
+                            alignment: Alignment.bottomLeft,
+                            child: Padding(
+                              padding: const EdgeInsets.only(bottom: 30, left: 25),
+                              child: Text(
+                                '$raceRank着',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.white.withValues(alpha: 0.8),
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
                           ),
                         ),
                       ),
                     ),
+                  ],
+
+                  DefaultTextStyle(
+                    style: const TextStyle(fontSize: 10),
+                    child: Column(
+                      children: <Widget>[
+                        _buildHorseItemHeader(popularity: popularity, fukuRank: fukuRank, timeline: oddsTimeline),
+                        const SizedBox(height: 10),
+                        _buildHorseNameRow(element: element, horse: horse, horseWakuColorMap: horseWakuColorMap),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+
+              children: <Widget>[
+                if (oddsTimeline != null) ...<Widget>[
+                  const SizedBox(height: 20),
+                  _buildOddsTimelineRow(
+                    timeline: oddsTimeline,
+                    activeTimingKey: activeTimingKey,
+                    selectedTiming: selectedTiming,
+                    fukuMinList: fukuMinTimeline,
+                    fukuMaxList: fukuMaxTimeline,
+                    nextTimeline: nextOddsTimeline,
                   ),
                 ],
 
-                DefaultTextStyle(
-                  style: const TextStyle(fontSize: 10),
-                  child: Column(
-                    children: <Widget>[
-                      _buildHorseItemHeader(popularity: popularity, fukuRank: fukuRank, timeline: oddsTimeline),
-                      const SizedBox(height: 10),
-                      _buildHorseNameRow(element: element, horse: horse, horseWakuColorMap: horseWakuColorMap),
-                    ],
-                  ),
-                ),
+                ///JJJ
+                const Text('gggggggg'),
               ],
             ),
-
-            children: <Widget>[
-              if (oddsTimeline != null) ...<Widget>[
-                const SizedBox(height: 20),
-                _buildOddsTimelineRow(
-                  timeline: oddsTimeline,
-                  activeTimingKey: activeTimingKey,
-                  selectedTiming: selectedTiming,
-                  fukuMinList: fukuMinTimeline,
-                  fukuMaxList: fukuMaxTimeline,
-                  nextTimeline: nextOddsTimeline,
-                ),
-              ],
-            ],
           ),
+
+          /////////////
         ],
       ),
     );
@@ -1091,6 +1108,8 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
             ],
           ),
         ),
+
+        ///////
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: timeline.asMap().entries.map((MapEntry<int, String> entry) {
@@ -1283,6 +1302,8 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
             );
           }).toList(),
         ),
+
+        /////////
       ],
     );
   }
@@ -1313,6 +1334,13 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     }
 
     final List<OddsModel> displayList = _buildDisplayList();
+
+    final List<OddsModel> allOddsForRace = (widget.oddsMap[widget.mapKey] ?? <OddsModel>[])
+        .where((OddsModel e) => e.race == widget.raceNumber)
+        .toList();
+    final bool hasBothTimings =
+        allOddsForRace.any((OddsModel e) => e.minutesBeforeStart == 999) &&
+        allOddsForRace.any((OddsModel e) => e.minutesBeforeStart == 3);
 
     final Map<int, RaceResultModel> raceResultByRank = Map<int, RaceResultModel>.fromEntries(
       (widget.raceResultMap[widget.mapKey] ?? <RaceResultModel>[])
@@ -1365,13 +1393,47 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                   ),
 
                   if (!appParamState.isShowSideTabPanel) ...<Widget>[
-                    Text('期待数値、レース結果の表示', style: TextStyle(fontSize: 10, color: Colors.white.withValues(alpha: 0.6))),
+                    GestureDetector(
+                      onTap: () => appParamNotifier.setIsShowSideTabPanel(flag: true),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 12),
+                        child: Text(
+                          '期待数値、レース結果の表示',
+                          style: TextStyle(fontSize: 10, color: Colors.white.withValues(alpha: 0.6)),
+                        ),
+                      ),
+                    ),
                   ],
                 ],
               ),
             ],
           ),
         ],
+
+        const SizedBox(height: 5),
+
+        Row(
+          children: <Widget>[
+            _buildSimilarRaceButton(raceIdx),
+
+            const SizedBox(width: 10),
+
+            if (hasBothTimings)
+              GestureDetector(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 10),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.yellowAccent),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Text(
+                    '分析',
+                    style: TextStyle(fontSize: 10, color: Colors.yellowAccent, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
+          ],
+        ),
 
         Divider(color: Colors.white.withValues(alpha: 0.5)),
 
