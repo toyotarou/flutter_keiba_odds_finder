@@ -416,20 +416,27 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
       return const SizedBox.shrink();
     }
 
-    return GestureDetector(
-      onTap: () => OddsFinderDialog(
-        context: context,
-        widget: SimilarRacesDisplayAlert(raceModel: currentRace),
-      ),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 10),
-        decoration: BoxDecoration(
-          border: Border.all(color: const Color(0xFFFBB6CE)),
-          borderRadius: BorderRadius.circular(10),
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(10),
+      child: InkWell(
+        onTap: () => OddsFinderDialog(
+          context: context,
+          widget: SimilarRacesDisplayAlert(raceModel: currentRace),
         ),
-        child: const Text(
-          '類似の過去レース',
-          style: TextStyle(fontSize: 10, color: Color(0xFFFBB6CE), fontWeight: FontWeight.bold),
+        borderRadius: BorderRadius.circular(10),
+        splashColor: const Color(0xFFFBB6CE).withValues(alpha: 0.35),
+        highlightColor: const Color(0xFFFBB6CE).withValues(alpha: 0.1),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 10),
+          decoration: BoxDecoration(
+            border: Border.all(color: const Color(0xFFFBB6CE)),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: const Text(
+            '類似の過去レース',
+            style: TextStyle(fontSize: 10, color: Color(0xFFFBB6CE), fontWeight: FontWeight.bold),
+          ),
         ),
       ),
     );
@@ -1451,33 +1458,41 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
               const SizedBox(width: 10),
 
               if (hasBothTimings) ...<Widget>[
-                GestureDetector(
+                Material(
                   key: _analysisButtonKey,
-                  onTap: () async {
-                    final BuildContext ctx = context;
-                    final bool found = await _fetchAnalysis();
-                    if (!found && ctx.mounted) {
-                      final RenderBox? renderBox = _analysisButtonKey.currentContext?.findRenderObject() as RenderBox?;
-                      if (renderBox != null) {
-                        final Offset offset = renderBox.localToGlobal(Offset.zero);
-                        widgetDisplayOverlay(
-                          context: ctx,
-                          tapPosition: Offset(offset.dx - 20, offset.dy - 10),
-                          displayDuration: const Duration(seconds: 3),
-                          child: const Text('合致がありません', style: TextStyle(fontSize: 12, color: Colors.yellowAccent)),
-                        );
+                  color: Colors.transparent,
+                  borderRadius: BorderRadius.circular(10),
+                  child: InkWell(
+                    onTap: () async {
+                      final BuildContext ctx = context;
+                      final bool found = await _fetchAnalysis();
+                      if (!found && ctx.mounted) {
+                        final RenderBox? renderBox =
+                            _analysisButtonKey.currentContext?.findRenderObject() as RenderBox?;
+                        if (renderBox != null) {
+                          final Offset offset = renderBox.localToGlobal(Offset.zero);
+                          widgetDisplayOverlay(
+                            context: ctx,
+                            tapPosition: Offset(offset.dx - 20, offset.dy - 10),
+                            displayDuration: const Duration(seconds: 3),
+                            child: const Text('合致がありません', style: TextStyle(fontSize: 12, color: Colors.yellowAccent)),
+                          );
+                        }
                       }
-                    }
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 10),
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.yellowAccent),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: const Text(
-                      '分析',
-                      style: TextStyle(fontSize: 10, color: Colors.yellowAccent, fontWeight: FontWeight.bold),
+                    },
+                    borderRadius: BorderRadius.circular(10),
+                    splashColor: Colors.yellowAccent.withValues(alpha: 0.35),
+                    highlightColor: Colors.yellowAccent.withValues(alpha: 0.1),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 10),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.yellowAccent),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Text(
+                        '分析',
+                        style: TextStyle(fontSize: 10, color: Colors.yellowAccent, fontWeight: FontWeight.bold),
+                      ),
                     ),
                   ),
                 ),

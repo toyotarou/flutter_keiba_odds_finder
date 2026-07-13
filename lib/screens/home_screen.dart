@@ -560,7 +560,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                 children: <Widget>[
                   GestureDetector(
                     onTap: () {
-                      OddsFinderDialog(context: context, widget: TermsAlert());
+                      OddsFinderDialog(context: context, widget: const TermsAlert());
                     },
                     child: const Padding(
                       padding: EdgeInsets.all(2),
