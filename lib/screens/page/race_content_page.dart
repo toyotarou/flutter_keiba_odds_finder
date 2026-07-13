@@ -906,7 +906,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                       margin: const EdgeInsets.only(top: 10, left: 10),
                       padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 5),
                       decoration: BoxDecoration(
-                        border: Border.all(color: Colors.blueAccent.withValues(alpha: 0.5)),
+                        border: Border.all(color: Colors.lightBlueAccent.withValues(alpha: 0.5)),
                         borderRadius: BorderRadius.circular(3),
                       ),
                       child: Row(
@@ -914,15 +914,15 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                           const SizedBox(width: 6),
                           SizedBox(
                             width: 20,
-                            child: Text(fukuRank.toString(), style: const TextStyle(color: Colors.blue)),
+                            child: Text(fukuRank.toString(), style: const TextStyle(color: Colors.lightBlueAccent)),
                           ),
-                          const Text('番人気', style: TextStyle(color: Colors.blue)),
+                          const Text('番人気', style: TextStyle(color: Colors.lightBlueAccent)),
                         ],
                       ),
                     ),
                     const Positioned(
                       left: 15,
-                      child: Text('複勝', style: TextStyle(fontSize: 10, color: Colors.blue)),
+                      child: Text('複勝', style: TextStyle(fontSize: 10, color: Colors.lightBlueAccent)),
                     ),
                   ],
                 ),
@@ -1528,11 +1528,32 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
         Row(
           children: <Widget>[
             ///
-
-            // TODO: 常に表示されるボタンを追加する
+            Material(
+              color: Colors.transparent,
+              borderRadius: BorderRadius.circular(10),
+              child: InkWell(
+                onTap: () {},
+                borderRadius: BorderRadius.circular(10),
+                splashColor: const Color(0xFFFFD700).withValues(alpha: 0.35),
+                highlightColor: const Color(0xFFFFD700).withValues(alpha: 0.1),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 10),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: const Color(0xFFFFD700)),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Text(
+                    'AI予想',
+                    style: TextStyle(fontSize: 10, color: Color(0xFFFFD700), fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
+            ),
 
             ///
             if (hasPopularityRatioData) ...<Widget>[
+              const SizedBox(width: 10),
+
               if (hasBothTimings) ...<Widget>[
                 Material(
                   key: _analysisButtonKey,

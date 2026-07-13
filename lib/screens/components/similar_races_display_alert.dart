@@ -5,10 +5,10 @@ import '../../data/http/client.dart';
 import '../../data/http/path.dart';
 import '../../extensions/extensions.dart';
 import '../../models/race_model.dart';
-import '../../utility/functions.dart';
 import '../../models/race_result_history_model.dart';
 import '../../models/race_result_payout_model.dart';
 import '../../models/races_popularity_ratio_model.dart';
+import '../../utility/functions.dart';
 
 class SimilarRacesDisplayAlert extends ConsumerStatefulWidget {
   const SimilarRacesDisplayAlert({super.key, required this.raceModel});
@@ -438,6 +438,10 @@ class _SimilarRacesDisplayAlertState extends ConsumerState<SimilarRacesDisplayAl
 
               () {
                 final List<String> exTan = payout.tan.split('|');
+
+                if (exTan.length < 2) {
+                  return const SizedBox.shrink();
+                }
 
                 final int cost = widget.raceModel.numHorses * 100;
 
