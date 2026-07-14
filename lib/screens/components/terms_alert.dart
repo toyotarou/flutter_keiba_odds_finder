@@ -73,6 +73,10 @@ class _TermsAlertState extends ConsumerState<TermsAlert> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
             _buildHeader(context),
+
+            Divider(color: Colors.white.withValues(alpha: 0.5), thickness: 5),
+            const SizedBox(height: 16),
+
             Expanded(child: _buildBody()),
           ],
         ),
@@ -87,10 +91,7 @@ class _TermsAlertState extends ConsumerState<TermsAlert> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: <Widget>[
-          Text(
-            '利用規約',
-            style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold, letterSpacing: 2),
-          ),
+          Text('利用規約', style: TextStyle(color: Colors.white, fontSize: 12)),
           SizedBox.shrink(),
         ],
       ),
@@ -108,9 +109,6 @@ class _TermsAlertState extends ConsumerState<TermsAlert> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                Divider(color: Colors.greenAccent.withValues(alpha: 0.6), thickness: 1),
-                const SizedBox(height: 16),
-
                 Container(
                   margin: const EdgeInsets.all(3),
                   padding: const EdgeInsets.all(3),
@@ -164,7 +162,7 @@ class _TermsAlertState extends ConsumerState<TermsAlert> {
                               border: Border.all(color: Colors.white.withValues(alpha: 0.4)),
                               borderRadius: BorderRadius.circular(10),
                             ),
-                            child: const Text('分析について', style: TextStyle(fontSize: 10)),
+                            child: const Text('過去データからの分析について', style: TextStyle(fontSize: 10)),
                           ),
                         ),
                       ),

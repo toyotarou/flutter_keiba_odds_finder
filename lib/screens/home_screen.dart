@@ -555,19 +555,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
               Divider(color: Colors.white.withValues(alpha: 0.5)),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: <Widget>[
-                  GestureDetector(
-                    onTap: () {
-                      OddsFinderDialog(context: context, widget: const TermsAlert());
-                    },
-                    child: const Padding(
-                      padding: EdgeInsets.all(2),
-                      child: Text('利用規約', style: TextStyle(fontSize: 12, color: Colors.white54)),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 5),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: <Widget>[
+                    GestureDetector(
+                      onTap: () {
+                        OddsFinderDialog(context: context, widget: const TermsAlert());
+                      },
+                      child: const Padding(
+                        padding: EdgeInsets.all(2),
+                        child: Text('利用規約', style: TextStyle(fontSize: 12, color: Colors.white54)),
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ],
           ),

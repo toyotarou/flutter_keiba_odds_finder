@@ -522,7 +522,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
               decoration: BoxDecoration(
                 border: Border.all(color: Colors.white.withValues(alpha: 0.4)),
                 color: (appParamState.selectedTiming == e)
-                    ? Colors.greenAccent.withValues(alpha: 0.1)
+                    ? Colors.greenAccent.withValues(alpha: 0.3)
                     : (appParamState.selectedTiming == '' && e == minTiming)
                     ? Colors.red.withValues(alpha: 0.3)
                     : Colors.transparent,

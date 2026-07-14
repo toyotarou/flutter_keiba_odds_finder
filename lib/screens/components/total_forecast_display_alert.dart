@@ -195,11 +195,11 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
     final int highlightEnd = maxRank <= 5 ? maxRank + cellCount - 1 : maxRank;
 
     return Scaffold(
+      backgroundColor: Colors.transparent,
       body: SafeArea(
         child: Column(
           children: <Widget>[
             Expanded(
-              ///HHH
               child: Container(
                 margin: const EdgeInsets.all(20),
                 padding: const EdgeInsets.all(5),
@@ -247,14 +247,14 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
                             ),
                             Expanded(
                               child: Text(
-                                'AI',
+                                'AI判定',
                                 textAlign: TextAlign.center,
                                 style: TextStyle(fontSize: 11, color: Colors.white54, fontWeight: FontWeight.bold),
                               ),
                             ),
                             Expanded(
                               child: Text(
-                                '過去',
+                                '過去合致',
                                 textAlign: TextAlign.center,
                                 style: TextStyle(fontSize: 11, color: Colors.white54, fontWeight: FontWeight.bold),
                               ),
@@ -369,13 +369,7 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
                                       child: Row(
                                         children: <Widget>[
                                           Expanded(
-                                            child: Text(
-                                              item.odds,
-                                              style: TextStyle(
-                                                fontSize: 12,
-                                                color: Colors.white.withValues(alpha: 0.7),
-                                              ),
-                                            ),
+                                            child: Text(item.odds, style: const TextStyle(fontSize: 12, color: Colors.white)),
                                           ),
                                           Expanded(
                                             child: Text(
@@ -386,7 +380,7 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
                                                     ? Colors.lightGreenAccent
                                                     : isInHighlight
                                                     ? Colors.yellowAccent
-                                                    : Colors.white,
+                                                    : Colors.grey,
                                                 fontWeight: isInHighlight ? FontWeight.bold : FontWeight.normal,
                                               ),
                                             ),
