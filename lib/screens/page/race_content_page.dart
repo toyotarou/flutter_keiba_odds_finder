@@ -18,10 +18,15 @@ import '../../models/race_model.dart';
 import '../../models/race_result_model.dart';
 import '../../utility/functions.dart';
 import '../../utility/utility.dart';
+import '../components/ai_analysis_display_alert.dart';
 import '../components/horse_detail_display_alert.dart';
 import '../components/horse_odds_ranking_display_alert.dart';
 import '../components/popularity_record_display_alert.dart';
-import '../components/similar_races_display_alert.dart';
+
+// import '../components/similar_races_display_alert.dart';
+//
+//
+
 import '../parts/odds_finder_dialog.dart';
 import '../parts/odds_up_down_icon.dart';
 import '../parts/race_top_three_widget.dart';
@@ -415,47 +420,55 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     return RaceTopThreeWidget(entries: entries, showTitle: true);
   }
 
-  ///
-  Widget _buildSimilarRaceButton(int raceIdx) {
-    if (raceIdx == -1) {
-      return const SizedBox.shrink();
-    }
-
-    final List<RaceModel>? races = widget.raceMap[widget.mapKey];
-    if (races == null || raceIdx >= races.length) {
-      return const SizedBox.shrink();
-    }
-
-    final RaceModel currentRace = races[raceIdx];
-    if (currentRace.popularityRatioTableIds.isEmpty) {
-      return const SizedBox.shrink();
-    }
-
-    return Material(
-      color: Colors.transparent,
-      borderRadius: BorderRadius.circular(10),
-      child: InkWell(
-        onTap: () => OddsFinderDialog(
-          context: context,
-          widget: SimilarRacesDisplayAlert(raceModel: currentRace),
-        ),
-        borderRadius: BorderRadius.circular(10),
-        splashColor: const Color(0xFFFBB6CE).withValues(alpha: 0.35),
-        highlightColor: const Color(0xFFFBB6CE).withValues(alpha: 0.1),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 10),
-          decoration: BoxDecoration(
-            border: Border.all(color: const Color(0xFFFBB6CE)),
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: const Text(
-            '類似の過去レース',
-            style: TextStyle(fontSize: 10, color: Color(0xFFFBB6CE), fontWeight: FontWeight.bold),
-          ),
-        ),
-      ),
-    );
-  }
+  //
+  //
+  //
+  //
+  // ///
+  // Widget _buildSimilarRaceButton(int raceIdx) {
+  //   if (raceIdx == -1) {
+  //     return const SizedBox.shrink();
+  //   }
+  //
+  //   final List<RaceModel>? races = widget.raceMap[widget.mapKey];
+  //   if (races == null || raceIdx >= races.length) {
+  //     return const SizedBox.shrink();
+  //   }
+  //
+  //   final RaceModel currentRace = races[raceIdx];
+  //   if (currentRace.popularityRatioTableIds.isEmpty) {
+  //     return const SizedBox.shrink();
+  //   }
+  //
+  //   return Material(
+  //     color: Colors.transparent,
+  //     borderRadius: BorderRadius.circular(10),
+  //     child: InkWell(
+  //       onTap: () => OddsFinderDialog(
+  //         context: context,
+  //         widget: SimilarRacesDisplayAlert(raceModel: currentRace),
+  //       ),
+  //       borderRadius: BorderRadius.circular(10),
+  //       splashColor: const Color(0xFFFBB6CE).withValues(alpha: 0.35),
+  //       highlightColor: const Color(0xFFFBB6CE).withValues(alpha: 0.1),
+  //       child: Container(
+  //         padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 10),
+  //         decoration: BoxDecoration(
+  //           border: Border.all(color: const Color(0xFFFBB6CE)),
+  //           borderRadius: BorderRadius.circular(10),
+  //         ),
+  //         child: const Text(
+  //           '類似の過去レース',
+  //           style: TextStyle(fontSize: 10, color: Color(0xFFFBB6CE), fontWeight: FontWeight.bold),
+  //         ),
+  //       ),
+  //     ),
+  //   );
+  // }
+  //
+  //
+  //
+  //
 
   ///
   Widget _buildControlButtons({required int raceIdx}) {
@@ -1452,8 +1465,8 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
         allOddsForRace.any((OddsModel e) => e.minutesBeforeStart == 999) &&
         allOddsForRace.any((OddsModel e) => e.minutesBeforeStart == 3);
 
-    final bool hasPopularityRatioData =
-        raceIdx != -1 && raceIdx < races.length && races[raceIdx].popularityRatioTableIds.isNotEmpty;
+    // final bool hasPopularityRatioData =
+    //     raceIdx != -1 && raceIdx < races.length && races[raceIdx].popularityRatioTableIds.isNotEmpty;
 
     final Map<int, RaceResultModel> raceResultByRank = Map<int, RaceResultModel>.fromEntries(
       (widget.raceResultMap[widget.mapKey] ?? <RaceResultModel>[])
@@ -1525,82 +1538,106 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
 
         const SizedBox(height: 5),
 
-        Row(
-          children: <Widget>[
-            ///
-            Material(
-              color: Colors.transparent,
-              borderRadius: BorderRadius.circular(10),
-              child: InkWell(
-                onTap: () {},
+        if (hasBothTimings) ...<Widget>[
+          Row(
+            children: <Widget>[
+              Material(
+                key: _analysisButtonKey,
+                color: Colors.transparent,
                 borderRadius: BorderRadius.circular(10),
-                splashColor: const Color(0xFFFFD700).withValues(alpha: 0.35),
-                highlightColor: const Color(0xFFFFD700).withValues(alpha: 0.1),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 10),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: const Color(0xFFFFD700)),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Text(
-                    'AI予想',
-                    style: TextStyle(fontSize: 10, color: Color(0xFFFFD700), fontWeight: FontWeight.bold),
-                  ),
-                ),
-              ),
-            ),
-
-            ///
-            if (hasPopularityRatioData) ...<Widget>[
-              const SizedBox(width: 10),
-
-              if (hasBothTimings) ...<Widget>[
-                Material(
-                  key: _analysisButtonKey,
-                  color: Colors.transparent,
-                  borderRadius: BorderRadius.circular(10),
-                  child: InkWell(
-                    onTap: () async {
-                      final BuildContext ctx = context;
-                      final bool found = await _fetchAnalysis();
-                      if (!found && ctx.mounted) {
-                        final RenderBox? renderBox =
-                            _analysisButtonKey.currentContext?.findRenderObject() as RenderBox?;
-                        if (renderBox != null) {
-                          final Offset offset = renderBox.localToGlobal(Offset.zero);
-                          widgetDisplayOverlay(
-                            context: ctx,
-                            tapPosition: Offset(offset.dx, offset.dy - 10),
-                            displayDuration: const Duration(seconds: 3),
-                            child: const Text('合致がありません', style: TextStyle(fontSize: 12, color: Colors.yellowAccent)),
-                          );
-                        }
+                child: InkWell(
+                  onTap: () async {
+                    final BuildContext ctx = context;
+                    final bool found = await _fetchAnalysis();
+                    if (!found && ctx.mounted) {
+                      final RenderBox? renderBox = _analysisButtonKey.currentContext?.findRenderObject() as RenderBox?;
+                      if (renderBox != null) {
+                        final Offset offset = renderBox.localToGlobal(Offset.zero);
+                        widgetDisplayOverlay(
+                          context: ctx,
+                          tapPosition: Offset(offset.dx, offset.dy - 10),
+                          displayDuration: const Duration(seconds: 3),
+                          child: const Text('合致がありません', style: TextStyle(fontSize: 12, color: Colors.yellowAccent)),
+                        );
                       }
-                    },
-                    borderRadius: BorderRadius.circular(10),
-                    splashColor: Colors.yellowAccent.withValues(alpha: 0.35),
-                    highlightColor: Colors.yellowAccent.withValues(alpha: 0.1),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 10),
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.yellowAccent),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: const Text(
-                        '過去データからの分析',
-                        style: TextStyle(fontSize: 10, color: Colors.yellowAccent, fontWeight: FontWeight.bold),
-                      ),
+                    }
+                  },
+                  borderRadius: BorderRadius.circular(10),
+                  splashColor: Colors.yellowAccent.withValues(alpha: 0.35),
+                  highlightColor: Colors.yellowAccent.withValues(alpha: 0.1),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 10),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.yellowAccent),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Text(
+                      '過去データからの分析',
+                      style: TextStyle(fontSize: 10, color: Colors.yellowAccent, fontWeight: FontWeight.bold),
                     ),
                   ),
                 ),
-              ],
+              ),
 
               const SizedBox(width: 10),
 
-              _buildSimilarRaceButton(raceIdx),
+              Material(
+                color: Colors.transparent,
+                borderRadius: BorderRadius.circular(10),
+                child: InkWell(
+                  onTap: () {
+                    OddsFinderDialog(
+                      context: context,
+                      widget: AiAnalysisDisplayAlert(raceNumber: widget.raceNumber),
+                    );
+                  },
+                  borderRadius: BorderRadius.circular(10),
+                  splashColor: const Color(0xFFFFD700).withValues(alpha: 0.35),
+                  highlightColor: const Color(0xFFFFD700).withValues(alpha: 0.1),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 10),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: const Color(0xFFFFD700)),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Text(
+                      'AI予想',
+                      style: TextStyle(fontSize: 10, color: Color(0xFFFFD700), fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ),
+              ),
+
+              const SizedBox(width: 10),
+
+              Material(
+                color: Colors.transparent,
+                borderRadius: BorderRadius.circular(10),
+                child: InkWell(
+                  onTap: () {},
+                  borderRadius: BorderRadius.circular(10),
+                  splashColor: const Color(0xFFFBB6CE).withValues(alpha: 0.35),
+                  highlightColor: const Color(0xFFFBB6CE).withValues(alpha: 0.1),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 10),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: const Color(0xFFFBB6CE)),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Text(
+                      '予想総括',
+                      style: TextStyle(fontSize: 10, color: Color(0xFFFBB6CE), fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ),
+              ),
+
+              // const SizedBox(width: 10),
+
+              // _buildSimilarRaceButton(raceIdx),
             ],
-          ],
-        ),
+          ),
+        ],
 
         Divider(color: Colors.white.withValues(alpha: 0.5)),
 
