@@ -244,6 +244,7 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
                   }
                 }
                 final bool isInHighlight = maxRank > 0 && popularity >= highlightStart && popularity <= highlightEnd;
+                final bool isMaxUpset = popularity == maxRank;
 
                 return Stack(
                   children: <Widget>[
@@ -310,7 +311,11 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
                                   upsetScore,
                                   style: TextStyle(
                                     fontSize: 12,
-                                    color: isInHighlight ? Colors.yellowAccent : Colors.white,
+                                    color: isMaxUpset
+                                        ? Colors.lightGreenAccent
+                                        : isInHighlight
+                                            ? Colors.yellowAccent
+                                            : Colors.white,
                                     fontWeight: isInHighlight ? FontWeight.bold : FontWeight.normal,
                                   ),
                                 ),
