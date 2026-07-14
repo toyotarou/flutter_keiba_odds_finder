@@ -27,6 +27,7 @@ import '../components/popularity_record_display_alert.dart';
 //
 //
 
+import '../components/total_forecast_display_alert.dart';
 import '../parts/odds_finder_dialog.dart';
 import '../parts/odds_up_down_icon.dart';
 import '../parts/race_top_three_widget.dart';
@@ -1458,6 +1459,18 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
 
     final List<OddsModel> displayList = _buildDisplayList();
 
+    final Map<int, HorseModel> horseModelMap = <int, HorseModel>{
+      for (final HorseModel e in (widget.horseMap[widget.mapKey] ?? <HorseModel>[])
+          .where((HorseModel e) => e.race == widget.raceNumber))
+        e.num: e,
+    };
+
+    final Map<int, int> numToRankMap = <int, int>{
+      for (final RaceResultModel r in (widget.raceResultMap[widget.mapKey] ?? <RaceResultModel>[])
+          .where((RaceResultModel r) => r.race == widget.raceNumber && r.result <= 3))
+        r.num: r.result,
+    };
+
     final List<OddsModel> allOddsForRace = (widget.oddsMap[widget.mapKey] ?? <OddsModel>[])
         .where((OddsModel e) => e.race == widget.raceNumber)
         .toList();
@@ -1614,7 +1627,17 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                 color: Colors.transparent,
                 borderRadius: BorderRadius.circular(10),
                 child: InkWell(
-                  onTap: () {},
+                  onTap: () {
+                    OddsFinderDialog(
+                      context: context,
+                      widget: TotalForecastDisplayAlert(
+                        displayList: displayList,
+                        horseModelMap: horseModelMap,
+                        numToRankMap: numToRankMap,
+                        raceNumber: widget.raceNumber,
+                      ),
+                    );
+                  },
                   borderRadius: BorderRadius.circular(10),
                   splashColor: const Color(0xFFFBB6CE).withValues(alpha: 0.35),
                   highlightColor: const Color(0xFFFBB6CE).withValues(alpha: 0.1),
