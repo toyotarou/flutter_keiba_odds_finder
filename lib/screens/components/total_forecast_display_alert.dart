@@ -30,6 +30,7 @@ class TotalForecastDisplayAlert extends ConsumerStatefulWidget {
 
 class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplayAlert>
     with ControllersMixin<TotalForecastDisplayAlert> {
+  bool _isLoading = true;
   Set<int> _highProbabilityPopularities = <int>{};
   Set<int> _aiPickupNums = <int>{};
 
@@ -39,10 +40,15 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _fetchHighProbabilityHorses();
-      _fetchAiPickup();
-    });
+    WidgetsBinding.instance.addPostFrameCallback((_) => _fetchAll());
+  }
+
+  Future<void> _fetchAll() async {
+    await Future.wait(<Future<void>>[
+      _fetchHighProbabilityHorses(),
+      _fetchAiPickup(),
+    ]);
+    if (mounted) setState(() => _isLoading = false);
   }
 
   Future<void> _fetchHighProbabilityHorses() async {
@@ -53,19 +59,18 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
     final String basho = kbdParts.length > 1 ? kbdParts[1] : '';
     final String day = kbdParts.length > 2 ? kbdParts[2] : '';
     try {
-      final dynamic response = await ref
-          .read(httpClientProvider)
-          .get(
-            path: APIPath.getHorseOddsFinderHighProbabilityHorses,
-            queryParameters: <String, dynamic>{
-              'date': date,
-              'kaisuu': kaisuu,
-              'basho': basho,
-              'day': day,
-              'race': race.toString(),
-            },
-          );
-      final List<dynamic> dataList = (response as Map<String, dynamic>)['data'] as List<dynamic>? ?? <dynamic>[];
+      final dynamic response = await ref.read(httpClientProvider).get(
+        path: APIPath.getHorseOddsFinderHighProbabilityHorses,
+        queryParameters: <String, dynamic>{
+          'date': date,
+          'kaisuu': kaisuu,
+          'basho': basho,
+          'day': day,
+          'race': race.toString(),
+        },
+      );
+      final List<dynamic> dataList =
+          (response as Map<String, dynamic>)['data'] as List<dynamic>? ?? <dynamic>[];
       final Set<int> popularities = <int>{};
       for (final dynamic item in dataList) {
         final RaceAnalysisModel model = RaceAnalysisModel.fromJson(item as Map<String, dynamic>);
@@ -77,7 +82,7 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
           }
         }
       }
-      if (mounted) setState(() => _highProbabilityPopularities = popularities);
+      _highProbabilityPopularities = popularities;
     } catch (e) {
       debugPrint('[TotalForecast] _fetchHighProbabilityHorses error: $e');
     }
@@ -91,18 +96,16 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
     final String basho = kbdParts.length > 1 ? kbdParts[1] : '';
     final String day = kbdParts.length > 2 ? kbdParts[2] : '';
     try {
-      final dynamic response = await ref
-          .read(httpClientProvider)
-          .get(
-            path: APIPath.getHorseOddsFinderAiAnalysis,
-            queryParameters: <String, dynamic>{
-              'date': date,
-              'kaisuu': kaisuu,
-              'basho': basho,
-              'day': day,
-              'race': race.toString(),
-            },
-          );
+      final dynamic response = await ref.read(httpClientProvider).get(
+        path: APIPath.getHorseOddsFinderAiAnalysis,
+        queryParameters: <String, dynamic>{
+          'date': date,
+          'kaisuu': kaisuu,
+          'basho': basho,
+          'day': day,
+          'race': race.toString(),
+        },
+      );
       final Map<String, dynamic> data =
           (response as Map<String, dynamic>)['data'] as Map<String, dynamic>? ?? <String, dynamic>{};
       final String pickupRaw = (data['pickup_horse'] as String?) ?? '';
@@ -118,7 +121,7 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
         final String analysisText = (data['analysis_text'] as String?) ?? '';
         nums = _parsePickupFromAnalysis(analysisText);
       }
-      if (mounted) setState(() => _aiPickupNums = nums);
+      _aiPickupNums = nums;
     } catch (e) {
       debugPrint('[TotalForecast] _fetchAiPickup error: $e');
     }
@@ -142,6 +145,12 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Center(
+        child: CircularProgressIndicator(color: Colors.yellowAccent),
+      );
+    }
+
     double maxUpsetScore = 0;
     int maxRank = 0;
     for (int i = 0; i < widget.displayList.length; i++) {
