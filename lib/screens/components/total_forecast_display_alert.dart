@@ -8,7 +8,10 @@ import '../../extensions/extensions.dart';
 import '../../models/horse_model.dart';
 import '../../models/odds_model.dart';
 import '../../models/race_analysis_model.dart';
+import '../../models/race_model.dart';
 import '../../utility/functions.dart';
+import '../parts/odds_finder_dialog.dart';
+import 'similar_races_display_alert.dart';
 
 class TotalForecastDisplayAlert extends ConsumerStatefulWidget {
   const TotalForecastDisplayAlert({
@@ -18,6 +21,7 @@ class TotalForecastDisplayAlert extends ConsumerStatefulWidget {
     required this.numToRankMap,
     required this.raceNumber,
     required this.raceName,
+    this.raceModel,
   });
 
   final List<OddsModel> displayList;
@@ -25,6 +29,7 @@ class TotalForecastDisplayAlert extends ConsumerStatefulWidget {
   final Map<int, int> numToRankMap;
   final int raceNumber;
   final String raceName;
+  final RaceModel? raceModel;
 
   @override
   ConsumerState<TotalForecastDisplayAlert> createState() => _TotalForecastDisplayAlertState();
@@ -36,20 +41,25 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
   Set<int> _highProbabilityPopularities = <int>{};
   Set<int> _aiPickupNums = <int>{};
 
-  static const double _w0 = 40;
+  static const double _w0 = 60;
   static const double _w1 = 40;
 
+  ///
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) => _fetchAll());
   }
 
+  ///
   Future<void> _fetchAll() async {
     await Future.wait(<Future<void>>[_fetchHighProbabilityHorses(), _fetchAiPickup()]);
-    if (mounted) setState(() => _isLoading = false);
+    if (mounted) {
+      setState(() => _isLoading = false);
+    }
   }
 
+  ///
   Future<void> _fetchHighProbabilityHorses() async {
     final String date = appParamState.selectedScheduleDate;
     final int race = widget.raceNumber;
@@ -88,6 +98,7 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
     }
   }
 
+  ///
   Future<void> _fetchAiPickup() async {
     final String date = appParamState.selectedScheduleDate;
     final int race = widget.raceNumber;
@@ -115,9 +126,13 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
       if (pickupRaw.isNotEmpty) {
         for (final String part in pickupRaw.split('/')) {
           final String trimmed = part.trim();
-          if (trimmed.isEmpty) continue;
+          if (trimmed.isEmpty) {
+            continue;
+          }
           final int? num = int.tryParse(trimmed.split('|').first.trim());
-          if (num != null) nums.add(num);
+          if (num != null) {
+            nums.add(num);
+          }
         }
       } else {
         final String analysisText = (data['analysis_text'] as String?) ?? '';
@@ -129,10 +144,13 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
     }
   }
 
+  ///
   Set<int> _parsePickupFromAnalysis(String analysisText) {
     final int sec1Start = analysisText.indexOf('## 1.');
     final int sec2Start = analysisText.indexOf('## 2.');
-    if (sec1Start == -1) return <int>{};
+    if (sec1Start == -1) {
+      return <int>{};
+    }
     final String section1 = sec2Start != -1
         ? analysisText.substring(sec1Start, sec2Start)
         : analysisText.substring(sec1Start);
@@ -140,11 +158,14 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
     final Set<int> nums = <int>{};
     for (final RegExpMatch m in numPattern.allMatches(section1)) {
       final int? num = int.tryParse(m.group(1) ?? '');
-      if (num != null) nums.add(num);
+      if (num != null) {
+        nums.add(num);
+      }
     }
     return nums;
   }
 
+  ///
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
@@ -175,243 +196,320 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
 
     return Scaffold(
       body: SafeArea(
-        child: Container(
-          margin: const EdgeInsets.all(20),
-          padding: const EdgeInsets.all(5),
+        child: Column(
+          children: <Widget>[
+            Expanded(
+              ///HHH
+              child: Container(
+                margin: const EdgeInsets.all(20),
+                padding: const EdgeInsets.all(5),
 
-          decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.5)),
+                decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.5)),
 
-          child: DefaultTextStyle(
-            style: TextStyle(fontSize: 12),
-            child: Column(
-              children: <Widget>[
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: <Widget>[
-                    Text(appParamState.selectedScheduleDate),
-                    Text(appParamState.selectedScheduleKaisuuBashoDayName),
-                  ],
-                ),
-                Row(
-                  children: <Widget>[
-                    Text('R${widget.raceNumber}'),
-                    const SizedBox(width: 10),
-                    Expanded(child: Text(widget.raceName, overflow: TextOverflow.ellipsis, maxLines: 1)),
-                  ],
-                ),
-
-                Divider(color: Colors.white.withValues(alpha: 0.5), thickness: 5),
-
-                // Header
-                Container(
-                  padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 12),
-
-                  child: const Row(
+                child: DefaultTextStyle(
+                  style: const TextStyle(fontSize: 12),
+                  child: Column(
                     children: <Widget>[
-                      Expanded(
-                        child: Text(
-                          'オッズ',
-                          style: TextStyle(fontSize: 11, color: Colors.white54, fontWeight: FontWeight.bold),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: <Widget>[
+                          Text(appParamState.selectedScheduleDate),
+                          Text(appParamState.selectedScheduleKaisuuBashoDayName),
+                        ],
+                      ),
+                      Row(
+                        children: <Widget>[
+                          Text('R${widget.raceNumber}'),
+                          const SizedBox(width: 10),
+                          Expanded(child: Text(widget.raceName, overflow: TextOverflow.ellipsis, maxLines: 1)),
+                        ],
+                      ),
+
+                      Divider(color: Colors.white.withValues(alpha: 0.5), thickness: 5),
+
+                      // Header
+                      Container(
+                        padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 12),
+
+                        child: const Row(
+                          children: <Widget>[
+                            Expanded(
+                              child: Text(
+                                'オッズ',
+                                style: TextStyle(fontSize: 11, color: Colors.white54, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                            Expanded(
+                              child: Text(
+                                '期待数値',
+                                style: TextStyle(fontSize: 11, color: Colors.white54, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                            Expanded(
+                              child: Text(
+                                'AI',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(fontSize: 11, color: Colors.white54, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                            Expanded(
+                              child: Text(
+                                '過去',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(fontSize: 11, color: Colors.white54, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
+
+                      Divider(color: Colors.white.withValues(alpha: 0.5), thickness: 2),
+
+                      // Records
                       Expanded(
-                        child: Text(
-                          '期待数値',
-                          style: TextStyle(fontSize: 11, color: Colors.white54, fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                      Expanded(
-                        child: Text(
-                          'AI',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(fontSize: 11, color: Colors.white54, fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                      Expanded(
-                        child: Text(
-                          '過去',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(fontSize: 11, color: Colors.white54, fontWeight: FontWeight.bold),
+                        child: ListView.builder(
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          itemCount: widget.displayList.length,
+                          itemBuilder: (BuildContext context, int index) {
+                            final OddsModel item = widget.displayList[index];
+                            final int popularity = index + 1;
+                            final String horseName = widget.horseModelMap[item.num]?.name ?? '';
+                            final int? rank = widget.numToRankMap[item.num];
+                            final bool isAiPickup = _aiPickupNums.contains(item.num);
+                            final bool hasAnalysis = _highProbabilityPopularities.contains(popularity);
+
+                            String upsetScore = '';
+                            double upsetScoreVal = 0;
+                            final String? avg = appParamState.keepPopularityRankOddsAverageMap[popularity]?.oddsAverage;
+                            if (avg != null) {
+                              final double oddsVal = item.odds.toDouble();
+                              if (oddsVal != 0) {
+                                upsetScoreVal = avg.toDouble() / oddsVal;
+                                upsetScore = upsetScoreVal.toStringAsFixed(2);
+                              }
+                            }
+                            final bool isInHighlight =
+                                maxRank > 0 && popularity >= highlightStart && popularity <= highlightEnd;
+                            final bool isMaxUpset = popularity == maxRank;
+
+                            String faultRatio = '';
+                            if (index + 1 < widget.displayList.length) {
+                              final double currentOdds = item.odds.toDouble();
+                              final double nextOdds = widget.displayList[index + 1].odds.toDouble();
+                              if (currentOdds != 0) {
+                                faultRatio = (nextOdds / currentOdds).toStringAsFixed(2);
+                              }
+                            }
+
+                            return Stack(
+                              children: <Widget>[
+                                if (rank != null) ...<Widget>[
+                                  Positioned(
+                                    top: 5,
+                                    right: 5,
+
+                                    child: Container(
+                                      width: 32,
+                                      height: 18,
+                                      alignment: Alignment.center,
+                                      decoration: BoxDecoration(
+                                        color: raceRankColor(rank),
+                                        borderRadius: BorderRadius.circular(3),
+                                      ),
+                                      child: Text(
+                                        '$rank着',
+                                        style: const TextStyle(
+                                          fontSize: 10,
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: <Widget>[
+                                    // Row 1: 人気・馬番・馬名（馬名は残り幅すべてをスパン）
+                                    Container(
+                                      width: double.infinity,
+                                      padding: const EdgeInsets.only(top: 6),
+                                      child: Row(
+                                        children: <Widget>[
+                                          SizedBox(
+                                            width: _w0,
+                                            child: Text(
+                                              '$popularity番人気',
+                                              style: const TextStyle(fontSize: 11, color: Colors.white),
+                                            ),
+                                          ),
+                                          SizedBox(
+                                            width: _w1,
+                                            child: Text(
+                                              '${item.num}番',
+                                              style: const TextStyle(fontSize: 11, color: Colors.white),
+                                            ),
+                                          ),
+                                          Expanded(
+                                            child: Text(
+                                              horseName,
+                                              style: const TextStyle(fontSize: 13, color: Colors.white),
+                                              overflow: TextOverflow.ellipsis,
+                                              maxLines: 1,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+
+                                    // Row 2: オッズ・upset・AI・合致
+                                    Padding(
+                                      padding: const EdgeInsets.only(top: 2, bottom: 6),
+                                      child: Row(
+                                        children: <Widget>[
+                                          Expanded(
+                                            child: Text(
+                                              item.odds,
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                color: Colors.white.withValues(alpha: 0.7),
+                                              ),
+                                            ),
+                                          ),
+                                          Expanded(
+                                            child: Text(
+                                              upsetScore,
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                color: isMaxUpset
+                                                    ? Colors.lightGreenAccent
+                                                    : isInHighlight
+                                                    ? Colors.yellowAccent
+                                                    : Colors.white,
+                                                fontWeight: isInHighlight ? FontWeight.bold : FontWeight.normal,
+                                              ),
+                                            ),
+                                          ),
+
+                                          Expanded(
+                                            child: isAiPickup
+                                                ? Center(
+                                                    child: Container(
+                                                      padding: const EdgeInsets.symmetric(vertical: 1, horizontal: 3),
+                                                      decoration: BoxDecoration(
+                                                        border: Border.all(color: const Color(0xFFFFD700)),
+                                                        borderRadius: BorderRadius.circular(3),
+                                                      ),
+                                                      child: const Text(
+                                                        'AI',
+                                                        style: TextStyle(
+                                                          fontSize: 9,
+                                                          color: Color(0xFFFFD700),
+                                                          fontWeight: FontWeight.bold,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  )
+                                                : const SizedBox.shrink(),
+                                          ),
+                                          Expanded(
+                                            child: hasAnalysis
+                                                ? Center(
+                                                    child: Container(
+                                                      padding: const EdgeInsets.symmetric(vertical: 1, horizontal: 4),
+                                                      decoration: BoxDecoration(
+                                                        border: Border.all(
+                                                          color: Colors.yellowAccent.withValues(alpha: 0.7),
+                                                        ),
+                                                        borderRadius: BorderRadius.circular(3),
+                                                      ),
+                                                      child: const Text(
+                                                        '過去',
+                                                        style: TextStyle(
+                                                          fontSize: 9,
+                                                          color: Colors.yellowAccent,
+                                                          fontWeight: FontWeight.bold,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  )
+                                                : const SizedBox.shrink(),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+
+                                    if (faultRatio.isNotEmpty) ...<Widget>[
+                                      Padding(
+                                        padding: const EdgeInsets.symmetric(vertical: 10),
+                                        child: Text(
+                                          '$faultRatio（オッズ断層）',
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            color: (double.tryParse(faultRatio) ?? 0) > 2.0
+                                                ? const Color(0xFFFBB6CE)
+                                                : Colors.grey,
+
+                                            fontWeight: (double.tryParse(faultRatio) ?? 0) > 2.0
+                                                ? FontWeight.bold
+                                                : FontWeight.normal,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ],
+                            );
+                          },
                         ),
                       ),
                     ],
                   ),
                 ),
-
-                Divider(color: Colors.white.withValues(alpha: 0.5), thickness: 2),
-
-                // Records
-                Expanded(
-                  child: ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    itemCount: widget.displayList.length,
-                    itemBuilder: (BuildContext context, int index) {
-                      final OddsModel item = widget.displayList[index];
-                      final int popularity = index + 1;
-                      final String horseName = widget.horseModelMap[item.num]?.name ?? '';
-                      final int? rank = widget.numToRankMap[item.num];
-                      final bool isAiPickup = _aiPickupNums.contains(item.num);
-                      final bool hasAnalysis = _highProbabilityPopularities.contains(popularity);
-
-                      String upsetScore = '';
-                      double upsetScoreVal = 0;
-                      final String? avg = appParamState.keepPopularityRankOddsAverageMap[popularity]?.oddsAverage;
-                      if (avg != null) {
-                        final double oddsVal = item.odds.toDouble();
-                        if (oddsVal != 0) {
-                          upsetScoreVal = avg.toDouble() / oddsVal;
-                          upsetScore = upsetScoreVal.toStringAsFixed(2);
-                        }
-                      }
-                      final bool isInHighlight =
-                          maxRank > 0 && popularity >= highlightStart && popularity <= highlightEnd;
-                      final bool isMaxUpset = popularity == maxRank;
-
-                      return Stack(
-                        children: <Widget>[
-                          if (rank != null) ...<Widget>[
-                            Positioned(
-                              top: 5,
-                              right: 5,
-
-                              child: Container(
-                                width: 32,
-                                height: 18,
-                                alignment: Alignment.center,
-                                decoration: BoxDecoration(
-                                  color: raceRankColor(rank),
-                                  borderRadius: BorderRadius.circular(3),
-                                ),
-                                child: Text(
-                                  '$rank着',
-                                  style: const TextStyle(
-                                    fontSize: 10,
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: <Widget>[
-                              // Row 1: 人気・馬番・馬名（馬名は残り幅すべてをスパン）
-                              Container(
-                                width: double.infinity,
-                                padding: const EdgeInsets.only(top: 6),
-                                child: Row(
-                                  children: <Widget>[
-                                    SizedBox(
-                                      width: _w0,
-                                      child: Text(
-                                        '$popularity',
-                                        style: const TextStyle(fontSize: 11, color: Colors.white),
-                                      ),
-                                    ),
-                                    SizedBox(
-                                      width: _w1,
-                                      child: Text(
-                                        '${item.num}番',
-                                        style: const TextStyle(fontSize: 11, color: Colors.white),
-                                      ),
-                                    ),
-                                    Expanded(
-                                      child: Text(
-                                        horseName,
-                                        style: const TextStyle(fontSize: 13, color: Colors.white),
-                                        overflow: TextOverflow.ellipsis,
-                                        maxLines: 1,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-
-                              // Row 2: オッズ・upset・AI・合致
-                              Padding(
-                                padding: const EdgeInsets.only(top: 2, bottom: 6),
-                                child: Row(
-                                  children: <Widget>[
-                                    Expanded(
-                                      child: Text(
-                                        item.odds,
-                                        style: TextStyle(fontSize: 12, color: Colors.white.withValues(alpha: 0.7)),
-                                      ),
-                                    ),
-                                    Expanded(
-                                      child: Text(
-                                        upsetScore,
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          color: isMaxUpset
-                                              ? Colors.lightGreenAccent
-                                              : isInHighlight
-                                              ? Colors.yellowAccent
-                                              : Colors.white,
-                                          fontWeight: isInHighlight ? FontWeight.bold : FontWeight.normal,
-                                        ),
-                                      ),
-                                    ),
-
-                                    Expanded(
-                                      child: isAiPickup
-                                          ? Center(
-                                              child: Container(
-                                                padding: const EdgeInsets.symmetric(vertical: 1, horizontal: 3),
-                                                decoration: BoxDecoration(
-                                                  border: Border.all(color: const Color(0xFFFFD700)),
-                                                  borderRadius: BorderRadius.circular(3),
-                                                ),
-                                                child: const Text(
-                                                  'AI',
-                                                  style: TextStyle(
-                                                    fontSize: 9,
-                                                    color: Color(0xFFFFD700),
-                                                    fontWeight: FontWeight.bold,
-                                                  ),
-                                                ),
-                                              ),
-                                            )
-                                          : const SizedBox.shrink(),
-                                    ),
-                                    Expanded(
-                                      child: hasAnalysis
-                                          ? Center(
-                                              child: Container(
-                                                padding: const EdgeInsets.symmetric(vertical: 1, horizontal: 4),
-                                                decoration: BoxDecoration(
-                                                  border: Border.all(color: Colors.yellowAccent.withValues(alpha: 0.7)),
-                                                  borderRadius: BorderRadius.circular(3),
-                                                ),
-                                                child: const Text(
-                                                  '過去',
-                                                  style: TextStyle(
-                                                    fontSize: 9,
-                                                    color: Colors.yellowAccent,
-                                                    fontWeight: FontWeight.bold,
-                                                  ),
-                                                ),
-                                              ),
-                                            )
-                                          : const SizedBox.shrink(),
-                                    ),
-                                  ],
-                                ),
-                              ),
-
-                              Divider(color: Colors.white.withValues(alpha: 0.5)),
-                            ],
-                          ),
-                        ],
-                      );
-                    },
-                  ),
-                ),
-              ],
+              ),
             ),
-          ),
+
+            if (widget.raceModel != null && widget.raceModel!.popularityRatioTableIds.isNotEmpty) ...<Widget>[
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: <Widget>[
+                  const SizedBox.shrink(),
+
+                  Padding(
+                    padding: const EdgeInsets.only(right: 20),
+                    child: Material(
+                      color: Colors.transparent,
+                      borderRadius: BorderRadius.circular(10),
+                      child: InkWell(
+                        onTap: () => OddsFinderDialog(
+                          context: context,
+                          widget: SimilarRacesDisplayAlert(raceModel: widget.raceModel!),
+                        ),
+                        borderRadius: BorderRadius.circular(10),
+                        splashColor: const Color(0xFFFBB6CE).withValues(alpha: 0.35),
+                        highlightColor: const Color(0xFFFBB6CE).withValues(alpha: 0.1),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 10),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: const Color(0xFFFBB6CE)),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Text(
+                            '類似の過去レース',
+                            style: TextStyle(fontSize: 10, color: Color(0xFFFBB6CE), fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 20),
+            ],
+          ],
         ),
       ),
     );

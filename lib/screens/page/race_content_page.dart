@@ -22,11 +22,6 @@ import '../components/ai_analysis_display_alert.dart';
 import '../components/horse_detail_display_alert.dart';
 import '../components/horse_odds_ranking_display_alert.dart';
 import '../components/popularity_record_display_alert.dart';
-
-// import '../components/similar_races_display_alert.dart';
-//
-//
-
 import '../components/total_forecast_display_alert.dart';
 import '../parts/odds_finder_dialog.dart';
 import '../parts/odds_up_down_icon.dart';
@@ -90,7 +85,6 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
   final GlobalKey _harandoKey = GlobalKey();
   final GlobalKey _analysisButtonKey = GlobalKey();
   Map<int, String> _analysisMap = <int, String>{};
-
 
   ///
   @override
@@ -422,56 +416,6 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
 
     return RaceTopThreeWidget(entries: entries, showTitle: true);
   }
-
-  //
-  //
-  //
-  //
-  // ///
-  // Widget _buildSimilarRaceButton(int raceIdx) {
-  //   if (raceIdx == -1) {
-  //     return const SizedBox.shrink();
-  //   }
-  //
-  //   final List<RaceModel>? races = widget.raceMap[widget.mapKey];
-  //   if (races == null || raceIdx >= races.length) {
-  //     return const SizedBox.shrink();
-  //   }
-  //
-  //   final RaceModel currentRace = races[raceIdx];
-  //   if (currentRace.popularityRatioTableIds.isEmpty) {
-  //     return const SizedBox.shrink();
-  //   }
-  //
-  //   return Material(
-  //     color: Colors.transparent,
-  //     borderRadius: BorderRadius.circular(10),
-  //     child: InkWell(
-  //       onTap: () => OddsFinderDialog(
-  //         context: context,
-  //         widget: SimilarRacesDisplayAlert(raceModel: currentRace),
-  //       ),
-  //       borderRadius: BorderRadius.circular(10),
-  //       splashColor: const Color(0xFFFBB6CE).withValues(alpha: 0.35),
-  //       highlightColor: const Color(0xFFFBB6CE).withValues(alpha: 0.1),
-  //       child: Container(
-  //         padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 10),
-  //         decoration: BoxDecoration(
-  //           border: Border.all(color: const Color(0xFFFBB6CE)),
-  //           borderRadius: BorderRadius.circular(10),
-  //         ),
-  //         child: const Text(
-  //           '類似の過去レース',
-  //           style: TextStyle(fontSize: 10, color: Color(0xFFFBB6CE), fontWeight: FontWeight.bold),
-  //         ),
-  //       ),
-  //     ),
-  //   );
-  // }
-  //
-  //
-  //
-  //
 
   ///
   Widget _buildControlButtons({required int raceIdx}) {
@@ -1442,12 +1386,13 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
 
     String raceName = '';
     String startTime = '--:--';
+    RaceModel? currentRaceModel;
 
     if (raceIdx != -1) {
-      final RaceModel race = races[raceIdx];
-      raceName = race.raceName;
-      final int colonIdx = race.startTime.lastIndexOf(':');
-      startTime = colonIdx > 0 ? race.startTime.substring(0, colonIdx) : race.startTime;
+      currentRaceModel = races[raceIdx];
+      raceName = currentRaceModel.raceName;
+      final int colonIdx = currentRaceModel.startTime.lastIndexOf(':');
+      startTime = colonIdx > 0 ? currentRaceModel.startTime.substring(0, colonIdx) : currentRaceModel.startTime;
     }
 
     if (startTime != _lastStartTime) {
@@ -1481,9 +1426,6 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     final bool hasBothTimings =
         allOddsForRace.any((OddsModel e) => e.minutesBeforeStart == 999) &&
         allOddsForRace.any((OddsModel e) => e.minutesBeforeStart == 3);
-
-    // final bool hasPopularityRatioData =
-    //     raceIdx != -1 && raceIdx < races.length && races[raceIdx].popularityRatioTableIds.isNotEmpty;
 
     final Map<int, RaceResultModel> raceResultByRank = Map<int, RaceResultModel>.fromEntries(
       (widget.raceResultMap[widget.mapKey] ?? <RaceResultModel>[])
@@ -1639,6 +1581,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                       numToRankMap: numToRankMap,
                       raceNumber: widget.raceNumber,
                       raceName: raceName,
+                      raceModel: currentRaceModel,
                     ),
                   ),
                   borderRadius: BorderRadius.circular(10),
@@ -1657,10 +1600,6 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                   ),
                 ),
               ),
-
-              // const SizedBox(width: 10),
-
-              // _buildSimilarRaceButton(raceIdx),
             ],
           ),
         ],
