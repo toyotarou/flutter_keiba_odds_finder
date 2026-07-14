@@ -6,6 +6,7 @@ import '../../data/http/client.dart';
 import '../../data/http/path.dart';
 import '../../models/horse_model.dart';
 import '../../models/odds_model.dart';
+import '../../models/race_analysis_model.dart';
 
 class TotalForecastDisplayAlert extends ConsumerStatefulWidget {
   const TotalForecastDisplayAlert({
@@ -28,6 +29,7 @@ class TotalForecastDisplayAlert extends ConsumerStatefulWidget {
 class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplayAlert>
     with ControllersMixin<TotalForecastDisplayAlert> {
   Set<int> _aiPickupNums = <int>{};
+  Set<int> _highProbabilityPopularities = <int>{};
 
   static const Map<int, Color> _rankColors = <int, Color>{
     1: Color(0xFFFFD700),
@@ -38,7 +40,10 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _fetchAiPickup());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _fetchAiPickup();
+      _fetchHighProbabilityHorses();
+    });
   }
 
   Future<void> _fetchAiPickup() async {
@@ -102,6 +107,44 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
     }
   }
 
+  Future<void> _fetchHighProbabilityHorses() async {
+    final String date = appParamState.selectedScheduleDate;
+    final int race = widget.raceNumber;
+    final List<String> kbdParts = appParamState.selectedScheduleKaisuuBashoDay.split('_');
+    final String kaisuu = kbdParts.isNotEmpty ? kbdParts[0] : '';
+    final String basho = kbdParts.length > 1 ? kbdParts[1] : '';
+    final String day = kbdParts.length > 2 ? kbdParts[2] : '';
+    try {
+      final dynamic response = await ref
+          .read(httpClientProvider)
+          .get(
+            path: APIPath.getHorseOddsFinderHighProbabilityHorses,
+            queryParameters: <String, dynamic>{
+              'date': date,
+              'kaisuu': kaisuu,
+              'basho': basho,
+              'day': day,
+              'race': race.toString(),
+            },
+          );
+      final List<dynamic> dataList = (response as Map<String, dynamic>)['data'] as List<dynamic>? ?? <dynamic>[];
+      final Set<int> popularities = <int>{};
+      for (final dynamic item in dataList) {
+        final RaceAnalysisModel model = RaceAnalysisModel.fromJson(item as Map<String, dynamic>);
+        if (model.race == race && model.kaisuu == kaisuu && model.basho == basho && model.day == day) {
+          for (final HorseOddsFinderSimilarRaceHorseModel horse in model.horses) {
+            if (horse.analysis.isNotEmpty) {
+              popularities.add(horse.popularityRank);
+            }
+          }
+        }
+      }
+      if (mounted) {
+        setState(() => _highProbabilityPopularities = popularities);
+      }
+    } catch (_) {}
+  }
+
   Set<int> _parsePickupFromAnalysis(String analysisText) {
     final int sec1Start = analysisText.indexOf('## 1.');
     final int sec2Start = analysisText.indexOf('## 2.');
@@ -134,6 +177,7 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
           final String horseName = widget.horseModelMap[item.num]?.name ?? '';
           final int? rank = widget.numToRankMap[item.num];
           final bool isAiPickup = _aiPickupNums.contains(item.num);
+          final bool hasAnalysis = _highProbabilityPopularities.contains(popularity);
 
           return Padding(
             padding: const EdgeInsets.symmetric(vertical: 4),
@@ -177,6 +221,20 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
                           )
                         : const SizedBox.shrink(),
                   ),
+
+                  if (hasAnalysis) ...<Widget>[
+                    Container(
+                      padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 6),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.yellowAccent.withValues(alpha: 0.7)),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: const Text(
+                        '合致',
+                        style: TextStyle(fontSize: 10, color: Colors.yellowAccent, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),

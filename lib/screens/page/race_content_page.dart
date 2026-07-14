@@ -1460,14 +1460,16 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     final List<OddsModel> displayList = _buildDisplayList();
 
     final Map<int, HorseModel> horseModelMap = <int, HorseModel>{
-      for (final HorseModel e in (widget.horseMap[widget.mapKey] ?? <HorseModel>[])
-          .where((HorseModel e) => e.race == widget.raceNumber))
+      for (final HorseModel e in (widget.horseMap[widget.mapKey] ?? <HorseModel>[]).where(
+        (HorseModel e) => e.race == widget.raceNumber,
+      ))
         e.num: e,
     };
 
     final Map<int, int> numToRankMap = <int, int>{
-      for (final RaceResultModel r in (widget.raceResultMap[widget.mapKey] ?? <RaceResultModel>[])
-          .where((RaceResultModel r) => r.race == widget.raceNumber && r.result <= 3))
+      for (final RaceResultModel r in (widget.raceResultMap[widget.mapKey] ?? <RaceResultModel>[]).where(
+        (RaceResultModel r) => r.race == widget.raceNumber && r.result <= 3,
+      ))
         r.num: r.result,
     };
 
