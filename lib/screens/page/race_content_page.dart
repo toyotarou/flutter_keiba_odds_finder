@@ -1638,6 +1638,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                       horseModelMap: horseModelMap,
                       numToRankMap: numToRankMap,
                       raceNumber: widget.raceNumber,
+                      raceName: raceName,
                     ),
                   ),
                   borderRadius: BorderRadius.circular(10),
