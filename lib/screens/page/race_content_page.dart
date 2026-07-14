@@ -91,6 +91,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
   final GlobalKey _analysisButtonKey = GlobalKey();
   Map<int, String> _analysisMap = <int, String>{};
 
+
   ///
   @override
   void dispose() {
@@ -142,6 +143,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     }
   }
 
+  ///
   ///
   void _startCountdown(String startTime, String raceDate) {
     _countdownTimer?.cancel();
@@ -1629,17 +1631,15 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                 color: Colors.transparent,
                 borderRadius: BorderRadius.circular(10),
                 child: InkWell(
-                  onTap: () {
-                    OddsFinderDialog(
-                      context: context,
-                      widget: TotalForecastDisplayAlert(
-                        displayList: displayList,
-                        horseModelMap: horseModelMap,
-                        numToRankMap: numToRankMap,
-                        raceNumber: widget.raceNumber,
-                      ),
-                    );
-                  },
+                  onTap: () => OddsFinderDialog(
+                    context: context,
+                    widget: TotalForecastDisplayAlert(
+                      displayList: displayList,
+                      horseModelMap: horseModelMap,
+                      numToRankMap: numToRankMap,
+                      raceNumber: widget.raceNumber,
+                    ),
+                  ),
                   borderRadius: BorderRadius.circular(10),
                   splashColor: const Color(0xFFFBB6CE).withValues(alpha: 0.35),
                   highlightColor: const Color(0xFFFBB6CE).withValues(alpha: 0.1),

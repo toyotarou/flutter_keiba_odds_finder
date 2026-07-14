@@ -30,65 +30,19 @@ class TotalForecastDisplayAlert extends ConsumerStatefulWidget {
 
 class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplayAlert>
     with ControllersMixin<TotalForecastDisplayAlert> {
-  Set<int> _aiPickupNums = <int>{};
   Set<int> _highProbabilityPopularities = <int>{};
+  Set<int> _aiPickupNums = <int>{};
 
-  static const double _w0 = 40; // 人気（Row 1）
-  static const double _w1 = 40; // 馬番（Row 1）
+  static const double _w0 = 40;
+  static const double _w1 = 40;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _fetchAiPickup();
       _fetchHighProbabilityHorses();
+      _fetchAiPickup();
     });
-  }
-
-  Future<void> _fetchAiPickup() async {
-    final String date = appParamState.selectedScheduleDate;
-    final List<String> kbdParts = appParamState.selectedScheduleKaisuuBashoDay.split('_');
-    final String kaisuu = kbdParts.isNotEmpty ? kbdParts[0] : '';
-    final String basho = kbdParts.length > 1 ? kbdParts[1] : '';
-    final String day = kbdParts.length > 2 ? kbdParts[2] : '';
-    try {
-      final dynamic response = await ref
-          .read(httpClientProvider)
-          .get(
-            path: APIPath.getHorseOddsFinderAiAnalysis,
-            queryParameters: <String, dynamic>{
-              'date': date,
-              'kaisuu': kaisuu,
-              'basho': basho,
-              'day': day,
-              'race': widget.raceNumber.toString(),
-            },
-          );
-      final Map<String, dynamic> data =
-          (response as Map<String, dynamic>)['data'] as Map<String, dynamic>? ?? <String, dynamic>{};
-      final String pickupRaw = (data['pickup_horse'] as String?) ?? '';
-      Set<int> nums = <int>{};
-      if (pickupRaw.isNotEmpty) {
-        for (final String part in pickupRaw.split('/')) {
-          final String trimmed = part.trim();
-          if (trimmed.isEmpty) {
-            continue;
-          }
-          final int? num = int.tryParse(trimmed.split('|').first.trim());
-          if (num != null) {
-            nums.add(num);
-          }
-        }
-      } else {
-        final String analysisText = (data['analysis_text'] as String?) ?? '';
-        nums = _parsePickupFromAnalysis(analysisText);
-      }
-      if (mounted) {
-        setState(() => _aiPickupNums = nums);
-      }
-    } catch (e) {
-      debugPrint('[TotalForecast] error: $e');
-    }
   }
 
   Future<void> _fetchHighProbabilityHorses() async {
@@ -123,18 +77,57 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
           }
         }
       }
-      if (mounted) {
-        setState(() => _highProbabilityPopularities = popularities);
+      if (mounted) setState(() => _highProbabilityPopularities = popularities);
+    } catch (e) {
+      debugPrint('[TotalForecast] _fetchHighProbabilityHorses error: $e');
+    }
+  }
+
+  Future<void> _fetchAiPickup() async {
+    final String date = appParamState.selectedScheduleDate;
+    final int race = widget.raceNumber;
+    final List<String> kbdParts = appParamState.selectedScheduleKaisuuBashoDay.split('_');
+    final String kaisuu = kbdParts.isNotEmpty ? kbdParts[0] : '';
+    final String basho = kbdParts.length > 1 ? kbdParts[1] : '';
+    final String day = kbdParts.length > 2 ? kbdParts[2] : '';
+    try {
+      final dynamic response = await ref
+          .read(httpClientProvider)
+          .get(
+            path: APIPath.getHorseOddsFinderAiAnalysis,
+            queryParameters: <String, dynamic>{
+              'date': date,
+              'kaisuu': kaisuu,
+              'basho': basho,
+              'day': day,
+              'race': race.toString(),
+            },
+          );
+      final Map<String, dynamic> data =
+          (response as Map<String, dynamic>)['data'] as Map<String, dynamic>? ?? <String, dynamic>{};
+      final String pickupRaw = (data['pickup_horse'] as String?) ?? '';
+      Set<int> nums = <int>{};
+      if (pickupRaw.isNotEmpty) {
+        for (final String part in pickupRaw.split('/')) {
+          final String trimmed = part.trim();
+          if (trimmed.isEmpty) continue;
+          final int? num = int.tryParse(trimmed.split('|').first.trim());
+          if (num != null) nums.add(num);
+        }
+      } else {
+        final String analysisText = (data['analysis_text'] as String?) ?? '';
+        nums = _parsePickupFromAnalysis(analysisText);
       }
-    } catch (_) {}
+      if (mounted) setState(() => _aiPickupNums = nums);
+    } catch (e) {
+      debugPrint('[TotalForecast] _fetchAiPickup error: $e');
+    }
   }
 
   Set<int> _parsePickupFromAnalysis(String analysisText) {
     final int sec1Start = analysisText.indexOf('## 1.');
     final int sec2Start = analysisText.indexOf('## 2.');
-    if (sec1Start == -1) {
-      return <int>{};
-    }
+    if (sec1Start == -1) return <int>{};
     final String section1 = sec2Start != -1
         ? analysisText.substring(sec1Start, sec2Start)
         : analysisText.substring(sec1Start);
@@ -142,9 +135,7 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
     final Set<int> nums = <int>{};
     for (final RegExpMatch m in numPattern.allMatches(section1)) {
       final int? num = int.tryParse(m.group(1) ?? '');
-      if (num != null) {
-        nums.add(num);
-      }
+      if (num != null) nums.add(num);
     }
     return nums;
   }
