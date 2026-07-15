@@ -710,78 +710,98 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
               border: Border.all(
                 color: (analysis != null && analysis.isNotEmpty)
                     ? Colors.yellowAccent.withValues(alpha: 0.5)
-                    : Colors.transparent,
+                    : Colors.white.withValues(alpha: 0.3),
               ),
             ),
-            child: ExpansionTile(
-              key: ValueKey<String>('horse_${element.num}_${appParamState.allExpanded}'),
-              initiallyExpanded: appParamState.allExpanded,
-              tilePadding: const EdgeInsets.symmetric(horizontal: 8),
-              childrenPadding: const EdgeInsets.symmetric(horizontal: 8),
-              expandedAlignment: Alignment.centerLeft,
-              expandedCrossAxisAlignment: CrossAxisAlignment.start,
-              title: Stack(
-                children: <Widget>[
-                  if (raceRank != null && raceRank <= 3) ...<Widget>[
-                    Positioned(
-                      top: (context.screenSize.height * 0.08) * -1,
-                      right: (context.screenSize.width * 0.08) * -1,
-                      child: CustomPaint(
-                        painter: RankBadgePainter(color: raceRankColor(raceRank, alpha: 0.3)),
-                        child: SizedBox(
-                          width: context.screenSize.width * 0.2,
-                          height: context.screenSize.height * 0.15,
-                          child: Align(
-                            alignment: Alignment.bottomLeft,
-                            child: Padding(
-                              padding: const EdgeInsets.only(bottom: 30, left: 25),
-                              child: Text(
-                                '$raceRank着',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.white.withValues(alpha: 0.8),
-                                  fontWeight: FontWeight.bold,
+
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: <Widget>[
+                Column(
+                  children: <Widget>[
+                    if (analysis != null && analysis.isNotEmpty) ...<Widget>[
+                      Container(
+                        margin: const EdgeInsets.all(8),
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.3)),
+                        child: Text(
+                          analysis,
+                          style: TextStyle(fontSize: 10, color: Colors.yellowAccent.withValues(alpha: 0.8)),
+                        ),
+                      ),
+                    ],
+
+                    ExpansionTile(
+                      key: ValueKey<String>('horse_${element.num}_${appParamState.allExpanded}'),
+                      initiallyExpanded: appParamState.allExpanded,
+                      tilePadding: const EdgeInsets.symmetric(horizontal: 8),
+                      childrenPadding: const EdgeInsets.symmetric(horizontal: 8),
+                      expandedAlignment: Alignment.centerLeft,
+                      expandedCrossAxisAlignment: CrossAxisAlignment.start,
+                      title: Stack(
+                        children: <Widget>[
+                          DefaultTextStyle(
+                            style: const TextStyle(fontSize: 10),
+                            child: Column(
+                              children: <Widget>[
+                                _buildHorseItemHeader(
+                                  popularity: popularity,
+                                  fukuRank: fukuRank,
+                                  timeline: oddsTimeline,
                                 ),
+                                const SizedBox(height: 10),
+                                _buildHorseNameRow(
+                                  element: element,
+                                  horse: horse,
+                                  horseWakuColorMap: horseWakuColorMap,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      children: <Widget>[
+                        if (oddsTimeline != null) ...<Widget>[
+                          const SizedBox(height: 20),
+                          _buildOddsTimelineRow(
+                            timeline: oddsTimeline,
+                            activeTimingKey: activeTimingKey,
+                            selectedTiming: selectedTiming,
+                            fukuMinList: fukuMinTimeline,
+                            fukuMaxList: fukuMaxTimeline,
+                            nextTimeline: nextOddsTimeline,
+                          ),
+                        ],
+                      ],
+                    ),
+                  ],
+                ),
+
+                if (raceRank != null && raceRank <= 3) ...<Widget>[
+                  Positioned(
+                    top: 2,
+                    right: 2,
+                    child: CustomPaint(
+                      painter: RankBadgePainter(color: raceRankColor(raceRank, alpha: 0.3)),
+                      child: SizedBox(
+                        width: context.screenSize.width * 0.15,
+                        height: context.screenSize.height * 0.05,
+                        child: Align(
+                          alignment: Alignment.bottomLeft,
+                          child: Padding(
+                            padding: const EdgeInsets.only(bottom: 20, left: 25),
+                            child: Text(
+                              '$raceRank着',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.white.withValues(alpha: 0.8),
+                                fontWeight: FontWeight.bold,
                               ),
                             ),
                           ),
                         ),
                       ),
-                    ),
-                  ],
-
-                  DefaultTextStyle(
-                    style: const TextStyle(fontSize: 10),
-                    child: Column(
-                      children: <Widget>[
-                        _buildHorseItemHeader(popularity: popularity, fukuRank: fukuRank, timeline: oddsTimeline),
-                        const SizedBox(height: 10),
-                        _buildHorseNameRow(element: element, horse: horse, horseWakuColorMap: horseWakuColorMap),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-
-              children: <Widget>[
-                if (oddsTimeline != null) ...<Widget>[
-                  const SizedBox(height: 20),
-                  _buildOddsTimelineRow(
-                    timeline: oddsTimeline,
-                    activeTimingKey: activeTimingKey,
-                    selectedTiming: selectedTiming,
-                    fukuMinList: fukuMinTimeline,
-                    fukuMaxList: fukuMaxTimeline,
-                    nextTimeline: nextOddsTimeline,
-                  ),
-                ],
-
-                if (analysis != null && analysis.isNotEmpty) ...<Widget>[
-                  Padding(
-                    padding: const EdgeInsets.all(8),
-                    child: Text(
-                      analysis,
-                      style: TextStyle(fontSize: 10, color: Colors.yellowAccent.withValues(alpha: 0.8)),
                     ),
                   ),
                 ],

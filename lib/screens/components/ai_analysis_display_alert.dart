@@ -156,22 +156,27 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
           //
           //
           Expanded(
-            child: Markdown(
-              data: _analysisText,
-              padding: EdgeInsets.zero,
-              styleSheet: MarkdownStyleSheet(
-                h1: const TextStyle(fontSize: 15, color: Colors.white, fontWeight: FontWeight.bold),
-                h2: const TextStyle(fontSize: 13, color: Colors.greenAccent, fontWeight: FontWeight.bold),
-                h3: const TextStyle(fontSize: 12, color: Colors.yellowAccent, fontWeight: FontWeight.bold),
-                p: const TextStyle(fontSize: 11, color: Colors.white),
-                strong: const TextStyle(fontSize: 11, color: Colors.yellowAccent, fontWeight: FontWeight.bold),
-                em: const TextStyle(fontSize: 11, color: Colors.white70, fontStyle: FontStyle.italic),
-                listBullet: const TextStyle(fontSize: 11, color: Colors.white70),
-                blockquoteDecoration: BoxDecoration(color: Colors.white10, borderRadius: BorderRadius.circular(4)),
-                horizontalRuleDecoration: const BoxDecoration(
-                  border: Border(bottom: BorderSide(color: Colors.white24)),
+            child: Container(
+              padding: const EdgeInsets.all(5),
+              decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.4)),
+
+              child: Markdown(
+                data: _analysisText,
+                padding: EdgeInsets.zero,
+                styleSheet: MarkdownStyleSheet(
+                  h1: const TextStyle(fontSize: 15, color: Colors.white, fontWeight: FontWeight.bold),
+                  h2: const TextStyle(fontSize: 13, color: Colors.greenAccent, fontWeight: FontWeight.bold),
+                  h3: const TextStyle(fontSize: 12, color: Colors.yellowAccent, fontWeight: FontWeight.bold),
+                  p: const TextStyle(fontSize: 11, color: Colors.white),
+                  strong: const TextStyle(fontSize: 11, color: Colors.yellowAccent, fontWeight: FontWeight.bold),
+                  em: const TextStyle(fontSize: 11, color: Colors.white70, fontStyle: FontStyle.italic),
+                  listBullet: const TextStyle(fontSize: 11, color: Colors.white70),
+                  blockquoteDecoration: BoxDecoration(color: Colors.white10, borderRadius: BorderRadius.circular(4)),
+                  horizontalRuleDecoration: const BoxDecoration(
+                    border: Border(bottom: BorderSide(color: Colors.white24)),
+                  ),
+                  codeblockDecoration: BoxDecoration(color: Colors.black38, borderRadius: BorderRadius.circular(4)),
                 ),
-                codeblockDecoration: BoxDecoration(color: Colors.black38, borderRadius: BorderRadius.circular(4)),
               ),
             ),
           ),
