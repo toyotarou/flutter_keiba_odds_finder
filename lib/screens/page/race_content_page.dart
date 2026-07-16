@@ -25,6 +25,7 @@ import '../components/horse_detail_display_alert.dart';
 import '../components/horse_odds_ranking_display_alert.dart';
 import '../components/popularity_record_display_alert.dart';
 import '../components/total_forecast_display_alert.dart';
+import '../parts/dashed_line_painter.dart';
 import '../parts/odds_finder_dialog.dart';
 import '../parts/odds_up_down_icon.dart';
 import '../parts/race_top_three_widget.dart';
@@ -60,27 +61,6 @@ class RaceContentPage extends ConsumerStatefulWidget {
 
   @override
   ConsumerState<RaceContentPage> createState() => _RaceContentPageState();
-}
-
-class _DashedLinePainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    const double dashWidth = 8;
-    const double dashSpace = 5;
-    final Paint paint = Paint()
-      ..color = Colors.red.withValues(alpha: 0.5)
-      ..strokeWidth = 5
-      ..strokeCap = StrokeCap.butt;
-    double x = 0;
-    final double y = size.height / 2;
-    while (x < size.width) {
-      canvas.drawLine(Offset(x, y), Offset(x + dashWidth, y), paint);
-      x += dashWidth + dashSpace;
-    }
-  }
-
-  @override
-  bool shouldRepaint(CustomPainter oldDelegate) => false;
 }
 
 class _TriangleClipper extends CustomClipper<Path> {
@@ -874,104 +854,19 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                           ),
 
                           children: <Widget>[
-                            if (horse != null && _shutsubaHistoryMap[horse.name] != null) ...<Widget>[
-                              DefaultTextStyle(
-                                style: const TextStyle(fontSize: 10, color: Colors.white),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: <Widget>[
-                                    const Text('過去の出走（直近4R）'),
-                                    const SizedBox(height: 5),
+                            //////////////////////
+                            _ShutsubaHistorySection(
+                              historyList: horse != null ? _shutsubaHistoryMap[horse.name] : null,
+                            ),
 
-                                    Padding(
-                                      padding: const EdgeInsets.symmetric(horizontal: 10),
-                                      child: Row(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: <Widget>[
-                                          Expanded(
-                                            child: Column(
-                                              children:
-                                                  (_shutsubaHistoryMap[horse.name]!.toList()..sort(
-                                                        (ShutsubaHistoryModel a, ShutsubaHistoryModel b) =>
-                                                            b.date.compareTo(a.date),
-                                                      ))
-                                                      .take(4)
-                                                      .map((ShutsubaHistoryModel e) {
-                                                        return Container(
-                                                          decoration: BoxDecoration(
-                                                            border: Border(
-                                                              bottom: BorderSide(
-                                                                color: Colors.white.withValues(alpha: 0.3),
-                                                              ),
-                                                            ),
-                                                          ),
-                                                          child: Row(
-                                                            children: <Widget>[
-                                                              Text(e.date),
-
-                                                              const SizedBox(width: 10),
-
-                                                              Expanded(
-                                                                child: Text(
-                                                                  e.raceName,
-                                                                  maxLines: 1,
-                                                                  overflow: TextOverflow.ellipsis,
-                                                                ),
-                                                              ),
-
-                                                              const SizedBox(width: 10),
-
-                                                              Text(
-                                                                (e.finishingPosition > 0)
-                                                                    ? e.finishingPosition.toString()
-                                                                    : '着順なし',
-                                                                style: TextStyle(
-                                                                  fontWeight: FontWeight.bold,
-                                                                  color: raceRankColor(
-                                                                    e.finishingPosition > 0
-                                                                        ? e.finishingPosition
-                                                                        : null,
-                                                                    alpha: 1.0,
-                                                                    fallback: Colors.white.withValues(alpha: 0.5),
-                                                                  ),
-                                                                ),
-                                                              ),
-                                                            ],
-                                                          ),
-                                                        );
-                                                      })
-                                                      .toList(),
-                                            ),
-                                          ),
-
-                                          if (_hasEnoughChartData(horse.name)) ...<Widget>[
-                                            const SizedBox(width: 10),
-
-                                            Container(
-                                              width: 120,
-                                              height: 80,
-                                              decoration: BoxDecoration(
-                                                border: Border.all(color: Colors.white.withValues(alpha: 0.4)),
-                                              ),
-                                              child: _buildFinishingPositionChart(horse.name),
-                                            ),
-                                          ],
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ] else ...<Widget>[
-                              const Text('過去の出走はありません。', style: TextStyle(fontSize: 9, color: Colors.yellowAccent)),
-                            ],
-
+                            //////////////////////
                             if (oddsTimeline != null) ...<Widget>[
                               const SizedBox(height: 20),
-                              _buildOddsTimelineRow(
+                              _OddsTimelineRow(
                                 timeline: oddsTimeline,
                                 activeTimingKey: activeTimingKey,
                                 selectedTiming: selectedTiming,
+                                oddsGetTiming: widget.oddsGetTiming,
                                 fukuMinList: fukuMinTimeline,
                                 fukuMaxList: fukuMaxTimeline,
                                 nextTimeline: nextOddsTimeline,
@@ -1021,7 +916,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
             SizedBox(
               width: double.infinity,
               height: 5,
-              child: CustomPaint(painter: _DashedLinePainter()),
+              child: CustomPaint(painter: DashedLinePainter()),
             ),
 
             const SizedBox(height: 10),
@@ -1067,97 +962,6 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
             Text((judged['description'] as String?) ?? ''),
           ],
         ),
-      ),
-    );
-  }
-
-  ///
-  bool _hasEnoughChartData(String horseName) {
-    final List<ShutsubaHistoryModel> sorted = (_shutsubaHistoryMap[horseName] ?? <ShutsubaHistoryModel>[]).toList()
-      ..sort((ShutsubaHistoryModel a, ShutsubaHistoryModel b) => b.date.compareTo(a.date));
-    final int plottable = sorted.take(4).where((ShutsubaHistoryModel h) => h.finishingPosition > 0).length;
-    return plottable >= 2;
-  }
-
-  Widget _buildFinishingPositionChart(String horseName) {
-    final List<ShutsubaHistoryModel> sorted = (_shutsubaHistoryMap[horseName] ?? <ShutsubaHistoryModel>[]).toList()
-      ..sort((ShutsubaHistoryModel a, ShutsubaHistoryModel b) => b.date.compareTo(a.date));
-    final List<ShutsubaHistoryModel> recent = sorted.take(4).toList().reversed.toList();
-
-    // Y軸上が1になるよう値を反転（表示値 = 19 - 着順）
-    final List<FlSpot> spots = <FlSpot>[];
-    for (int i = 0; i < recent.length; i++) {
-      final int pos = recent[i].finishingPosition;
-      if (pos > 0) {
-        spots.add(FlSpot(i.toDouble(), (19 - pos).toDouble()));
-      }
-    }
-
-    if (spots.isEmpty) {
-      return const SizedBox.shrink();
-    }
-
-    final LineChartBarData barData = LineChartBarData(
-      spots: spots,
-      color: Colors.white,
-      barWidth: 1.5,
-      dotData: FlDotData(
-        getDotPainter: (FlSpot spot, double xPercentage, LineChartBarData bar, int index) {
-          final int pos = (19 - spot.y).round();
-          final Color dotColor = raceRankColor(pos, alpha: 1.0, fallback: Colors.white);
-          return FlDotCirclePainter(radius: 3, color: dotColor, strokeColor: Colors.transparent);
-        },
-      ),
-    );
-
-    return LineChart(
-      LineChartData(
-        lineTouchData: LineTouchData(
-          enabled: false,
-          touchTooltipData: LineTouchTooltipData(
-            fitInsideHorizontally: true,
-            fitInsideVertically: true,
-            tooltipPadding: EdgeInsets.zero,
-            tooltipMargin: -18,
-            getTooltipColor: (_) => Colors.transparent,
-            getTooltipItems: (List<LineBarSpot> touchedSpots) => touchedSpots.map((LineBarSpot s) {
-              final int pos = (19 - s.y).round();
-              return LineTooltipItem(
-                '$pos',
-                TextStyle(
-                  fontSize: 8,
-                  fontWeight: FontWeight.bold,
-                  color: raceRankColor(pos, alpha: 1.0, fallback: Colors.white),
-                ),
-              );
-            }).toList(),
-          ),
-        ),
-        showingTooltipIndicators: List<ShowingTooltipIndicators>.generate(
-          spots.length,
-          (int i) => ShowingTooltipIndicators(<LineBarSpot>[LineBarSpot(barData, 0, spots[i])]),
-        ),
-        minY: 1,
-        maxY: 18,
-        minX: 0,
-        maxX: (recent.length - 1).toDouble(),
-        clipData: const FlClipData.all(),
-        gridData: const FlGridData(show: false),
-        borderData: FlBorderData(show: false),
-        rangeAnnotations: RangeAnnotations(
-          horizontalRangeAnnotations: <HorizontalRangeAnnotation>[
-            HorizontalRangeAnnotation(y1: 17.5, y2: 18.5, color: const Color(0xFFFFD700).withValues(alpha: 0.6)),
-            HorizontalRangeAnnotation(y1: 16.5, y2: 17.5, color: const Color(0xFFC0C0C0).withValues(alpha: 0.6)),
-            HorizontalRangeAnnotation(y1: 15.5, y2: 16.5, color: const Color(0xFFCD7F32).withValues(alpha: 0.6)),
-          ],
-        ),
-        titlesData: const FlTitlesData(
-          leftTitles: AxisTitles(),
-          rightTitles: AxisTitles(),
-          topTitles: AxisTitles(),
-          bottomTitles: AxisTitles(),
-        ),
-        lineBarsData: <LineChartBarData>[barData],
       ),
     );
   }
@@ -1495,236 +1299,6 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
   }
 
   ///
-  Widget _buildOddsTimelineRow({
-    required List<String> timeline,
-    required String activeTimingKey,
-    required String selectedTiming,
-    List<String>? fukuMinList,
-    List<String>? fukuMaxList,
-    List<String>? nextTimeline,
-  }) {
-    final List<String> timingKeys = widget.oddsGetTiming.split('|');
-
-    int oddsEdgeNum = 0;
-    if (nextTimeline != null) {
-      for (final MapEntry<int, String> entry in timeline.asMap().entries) {
-        if (entry.value.isNotEmpty && entry.key < nextTimeline.length) {
-          final double? next = double.tryParse(nextTimeline[entry.key]);
-          final double? current = double.tryParse(entry.value);
-          if (next != null && current != null && current != 0) {
-            oddsEdgeNum = (next / current).toInt();
-          }
-        }
-      }
-    }
-
-    return Stack(
-      children: <Widget>[
-        Positioned(
-          top: 145,
-          left: 0,
-          child: Stack(
-            children: <Widget>[
-              Container(
-                height: 100,
-                margin: const EdgeInsets.only(top: 10, right: 15),
-                child: const Text('オッズ断層数値', style: TextStyle(fontSize: 10, color: Color(0xFFFBB6CE))),
-              ),
-              if (oddsEdgeNum > 1)
-                const Positioned(
-                  top: 0,
-                  right: 0,
-                  child: Icon(Icons.circle_outlined, size: 30, color: Color(0xFFFBB6CE)),
-                ),
-            ],
-          ),
-        ),
-
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: timeline.asMap().entries.map((MapEntry<int, String> entry) {
-            if (entry.value.isEmpty) {
-              return Expanded(
-                child: Container(
-                  height: 150,
-                  margin: const EdgeInsets.only(top: 8),
-                  decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.2)),
-                ),
-              );
-            }
-
-            final String entryTimingKey = entry.key < timingKeys.length ? timingKeys[entry.key] : '';
-
-            final Color circleColor = (selectedTiming == entryTimingKey)
-                ? Colors.greenAccent
-                : (selectedTiming.isEmpty && entryTimingKey == activeTimingKey)
-                ? Colors.red
-                : Colors.white;
-
-            final String circleMinute = entry.key == 0
-                ? '24'
-                : entry.key == timingKeys.length - 1
-                ? '0'
-                : entryTimingKey;
-
-            final String fukuMin = fukuMinList?[entry.key] ?? '';
-            final String fukuMax = fukuMaxList?[entry.key] ?? '';
-
-            final double? nextVal = (nextTimeline != null && entry.key < nextTimeline.length)
-                ? double.tryParse(nextTimeline[entry.key])
-                : null;
-            final double? currentVal = double.tryParse(entry.value);
-            final bool hasRatio = nextVal != null && currentVal != null && currentVal != 0;
-            final double ratio = hasRatio ? nextVal / currentVal : 0;
-
-            return Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 3),
-                child: Column(
-                  children: <Widget>[
-                    Stack(
-                      children: <Widget>[
-                        Container(
-                          width: double.infinity,
-                          height: 120,
-                          decoration: BoxDecoration(
-                            color: Colors.greenAccent.withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(3),
-                          ),
-                          margin: const EdgeInsets.only(top: 8),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.only(top: 35),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: <Widget>[
-                              const Padding(
-                                padding: EdgeInsets.symmetric(horizontal: 4),
-                                child: Text('単勝', style: TextStyle(fontSize: 8, color: Colors.white)),
-                              ),
-                              const SizedBox(height: 5),
-                              Text(
-                                entry.value,
-                                style: const TextStyle(fontSize: 10, color: Colors.white),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              const SizedBox(height: 10),
-                              if (fukuMin.isNotEmpty || fukuMax.isNotEmpty) ...<Widget>[
-                                Stack(
-                                  children: <Widget>[
-                                    Container(
-                                      width: double.infinity,
-                                      margin: const EdgeInsets.only(top: 8, right: 3, left: 3),
-                                      padding: const EdgeInsets.symmetric(vertical: 5),
-                                      decoration: BoxDecoration(
-                                        color: Colors.black.withValues(alpha: 0.2),
-                                        borderRadius: BorderRadius.circular(3),
-                                      ),
-                                      child: Column(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: <Widget>[
-                                          Text(
-                                            fukuMin,
-                                            style: const TextStyle(fontSize: 10, color: Colors.white),
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                          const SizedBox(height: 1),
-                                          Container(width: 1, height: 5, color: Colors.white),
-                                          const SizedBox(height: 1),
-                                          Text(
-                                            fukuMax,
-                                            style: const TextStyle(fontSize: 10, color: Colors.white),
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    const Padding(
-                                      padding: EdgeInsets.symmetric(horizontal: 4),
-                                      child: Text('複勝', style: TextStyle(fontSize: 8, color: Colors.white)),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ],
-                          ),
-                        ),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: <Widget>[
-                            Container(
-                              decoration: BoxDecoration(color: circleColor, shape: BoxShape.circle),
-                              width: 12,
-                              height: 12,
-                              child: Center(
-                                child: Text(
-                                  circleMinute,
-                                  style: TextStyle(
-                                    fontSize: 9,
-                                    color: circleColor == Colors.red ? Colors.white : Colors.black,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            OddsUpDownIcon(
-                              current: entry.value,
-                              prev: () {
-                                for (int i = entry.key - 1; i >= 0; i--) {
-                                  if (timeline[i].isNotEmpty) {
-                                    return timeline[i];
-                                  }
-                                }
-                                return null;
-                              }(),
-                              label: '単',
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-
-                    if (nextTimeline != null) ...<Widget>[
-                      const SizedBox(height: 50),
-                      Container(
-                        width: double.infinity,
-                        height: 50,
-                        decoration: BoxDecoration(
-                          border: Border.all(color: const Color(0xFFFBB6CE).withValues(alpha: 0.4)),
-                          borderRadius: BorderRadius.circular(3),
-                        ),
-                        child: Column(
-                          children: <Widget>[
-                            const Spacer(),
-                            Text(
-                              hasRatio ? ratio.toStringAsFixed(2) : '',
-                              style: TextStyle(
-                                fontSize: 10,
-                                color: hasRatio && ratio >= 2.0
-                                    ? const Color(0xFFFBB6CE)
-                                    : Colors.white.withValues(alpha: 0.5),
-                              ),
-                            ),
-                            const Spacer(),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            );
-          }).toList(),
-        ),
-      ],
-    );
-  }
-
-  ///
   @override
   Widget build(BuildContext context) {
     final List<RaceModel> races = widget.raceMap[widget.mapKey] ?? <RaceModel>[];
@@ -1957,6 +1531,419 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
 
         const SizedBox(height: 5),
         Expanded(child: _displayRaceHorseList()),
+      ],
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Page-private widgets
+// ---------------------------------------------------------------------------
+
+class _ShutsubaHistorySection extends StatelessWidget {
+  const _ShutsubaHistorySection({required this.historyList});
+
+  final List<ShutsubaHistoryModel>? historyList;
+
+  @override
+  Widget build(BuildContext context) {
+    if (historyList == null) {
+      return const Text('過去の出走はありません。', style: TextStyle(fontSize: 9, color: Colors.yellowAccent));
+    }
+
+    final List<ShutsubaHistoryModel> sorted = historyList!.toList()
+      ..sort((ShutsubaHistoryModel a, ShutsubaHistoryModel b) => b.date.compareTo(a.date));
+    final List<ShutsubaHistoryModel> recent = sorted.take(4).toList();
+
+    final int plottable = recent.where((ShutsubaHistoryModel h) => h.finishingPosition > 0).length;
+
+    return DefaultTextStyle(
+      style: const TextStyle(fontSize: 10, color: Colors.white),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          const Text('過去の出走（直近4R）'),
+          const SizedBox(height: 5),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Expanded(
+                  child: Column(
+                    children: recent.map((ShutsubaHistoryModel e) {
+                      return Container(
+                        decoration: BoxDecoration(
+                          border: Border(bottom: BorderSide(color: Colors.white.withValues(alpha: 0.3))),
+                        ),
+                        child: Row(
+                          children: <Widget>[
+                            Text(e.date),
+                            const SizedBox(width: 10),
+                            Expanded(child: Text(e.raceName, maxLines: 1, overflow: TextOverflow.ellipsis)),
+                            const SizedBox(width: 10),
+                            Text(
+                              e.finishingPosition > 0 ? e.finishingPosition.toString() : '着順なし',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: raceRankColor(
+                                  e.finishingPosition > 0 ? e.finishingPosition : null,
+                                  alpha: 1.0,
+                                  fallback: Colors.white.withValues(alpha: 0.5),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ),
+                if (plottable >= 2) ...<Widget>[
+                  const SizedBox(width: 10),
+                  Container(
+                    width: 120,
+                    height: 80,
+                    decoration: BoxDecoration(border: Border.all(color: Colors.white.withValues(alpha: 0.4))),
+                    child: _FinishingPositionChart(historyList: historyList!),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FinishingPositionChart extends StatelessWidget {
+  const _FinishingPositionChart({required this.historyList});
+
+  final List<ShutsubaHistoryModel> historyList;
+
+  @override
+  Widget build(BuildContext context) {
+    final List<ShutsubaHistoryModel> sorted = historyList.toList()
+      ..sort((ShutsubaHistoryModel a, ShutsubaHistoryModel b) => b.date.compareTo(a.date));
+    final List<ShutsubaHistoryModel> recent = sorted.take(4).toList().reversed.toList();
+
+    final List<FlSpot> spots = <FlSpot>[];
+    for (int i = 0; i < recent.length; i++) {
+      final int pos = recent[i].finishingPosition;
+      if (pos > 0) {
+        spots.add(FlSpot(i.toDouble(), (19 - pos).toDouble()));
+      }
+    }
+
+    if (spots.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    final LineChartBarData barData = LineChartBarData(
+      spots: spots,
+      color: Colors.white,
+      barWidth: 1.5,
+      dotData: FlDotData(
+        getDotPainter: (FlSpot spot, double xPercentage, LineChartBarData bar, int index) {
+          final int pos = (19 - spot.y).round();
+          return FlDotCirclePainter(
+            radius: 3,
+            color: raceRankColor(pos, alpha: 1.0, fallback: Colors.white),
+            strokeColor: Colors.transparent,
+          );
+        },
+      ),
+    );
+
+    return LineChart(
+      LineChartData(
+        lineTouchData: LineTouchData(
+          enabled: false,
+          touchTooltipData: LineTouchTooltipData(
+            fitInsideHorizontally: true,
+            fitInsideVertically: true,
+            tooltipPadding: EdgeInsets.zero,
+            tooltipMargin: -18,
+            getTooltipColor: (_) => Colors.transparent,
+            getTooltipItems: (List<LineBarSpot> touchedSpots) => touchedSpots.map((LineBarSpot s) {
+              final int pos = (19 - s.y).round();
+              return LineTooltipItem(
+                '$pos',
+                TextStyle(
+                  fontSize: 8,
+                  fontWeight: FontWeight.bold,
+                  color: raceRankColor(pos, alpha: 1.0, fallback: Colors.white),
+                ),
+              );
+            }).toList(),
+          ),
+        ),
+        showingTooltipIndicators: List<ShowingTooltipIndicators>.generate(
+          spots.length,
+          (int i) => ShowingTooltipIndicators(<LineBarSpot>[LineBarSpot(barData, 0, spots[i])]),
+        ),
+        minY: 1,
+        maxY: 18,
+        minX: 0,
+        maxX: (recent.length - 1).toDouble(),
+        clipData: const FlClipData.all(),
+        gridData: const FlGridData(show: false),
+        borderData: FlBorderData(show: false),
+        rangeAnnotations: RangeAnnotations(
+          horizontalRangeAnnotations: <HorizontalRangeAnnotation>[
+            HorizontalRangeAnnotation(y1: 17.5, y2: 18.5, color: const Color(0xFFFFD700).withValues(alpha: 0.6)),
+            HorizontalRangeAnnotation(y1: 16.5, y2: 17.5, color: const Color(0xFFC0C0C0).withValues(alpha: 0.6)),
+            HorizontalRangeAnnotation(y1: 15.5, y2: 16.5, color: const Color(0xFFCD7F32).withValues(alpha: 0.6)),
+          ],
+        ),
+        titlesData: const FlTitlesData(
+          leftTitles: AxisTitles(),
+          rightTitles: AxisTitles(),
+          topTitles: AxisTitles(),
+          bottomTitles: AxisTitles(),
+        ),
+        lineBarsData: <LineChartBarData>[barData],
+      ),
+    );
+  }
+}
+
+class _OddsTimelineRow extends StatelessWidget {
+  const _OddsTimelineRow({
+    required this.timeline,
+    required this.activeTimingKey,
+    required this.selectedTiming,
+    required this.oddsGetTiming,
+    this.fukuMinList,
+    this.fukuMaxList,
+    this.nextTimeline,
+  });
+
+  final List<String> timeline;
+  final String activeTimingKey;
+  final String selectedTiming;
+  final String oddsGetTiming;
+  final List<String>? fukuMinList;
+  final List<String>? fukuMaxList;
+  final List<String>? nextTimeline;
+
+  @override
+  Widget build(BuildContext context) {
+    final List<String> timingKeys = oddsGetTiming.split('|');
+
+    int oddsEdgeNum = 0;
+    if (nextTimeline != null) {
+      for (final MapEntry<int, String> entry in timeline.asMap().entries) {
+        if (entry.value.isNotEmpty && entry.key < nextTimeline!.length) {
+          final double? next = double.tryParse(nextTimeline![entry.key]);
+          final double? current = double.tryParse(entry.value);
+          if (next != null && current != null && current != 0) {
+            oddsEdgeNum = (next / current).toInt();
+          }
+        }
+      }
+    }
+
+    return Stack(
+      children: <Widget>[
+        Positioned(
+          top: 145,
+          left: 0,
+          child: Stack(
+            children: <Widget>[
+              Container(
+                height: 100,
+                margin: const EdgeInsets.only(top: 10, right: 15),
+                child: const Text('オッズ断層数値', style: TextStyle(fontSize: 10, color: Color(0xFFFBB6CE))),
+              ),
+              if (oddsEdgeNum > 1)
+                const Positioned(
+                  top: 0,
+                  right: 0,
+                  child: Icon(Icons.circle_outlined, size: 30, color: Color(0xFFFBB6CE)),
+                ),
+            ],
+          ),
+        ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: timeline.asMap().entries.map((MapEntry<int, String> entry) {
+            if (entry.value.isEmpty) {
+              return Expanded(
+                child: Container(
+                  height: 150,
+                  margin: const EdgeInsets.only(top: 8),
+                  decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.2)),
+                ),
+              );
+            }
+
+            final String entryTimingKey = entry.key < timingKeys.length ? timingKeys[entry.key] : '';
+            final Color circleColor = (selectedTiming == entryTimingKey)
+                ? Colors.greenAccent
+                : (selectedTiming.isEmpty && entryTimingKey == activeTimingKey)
+                ? Colors.red
+                : Colors.white;
+
+            final String circleMinute = entry.key == 0
+                ? '24'
+                : entry.key == timingKeys.length - 1
+                ? '0'
+                : entryTimingKey;
+
+            final String fukuMin = fukuMinList?[entry.key] ?? '';
+            final String fukuMax = fukuMaxList?[entry.key] ?? '';
+
+            final double? nextVal = (nextTimeline != null && entry.key < nextTimeline!.length)
+                ? double.tryParse(nextTimeline![entry.key])
+                : null;
+            final double? currentVal = double.tryParse(entry.value);
+            final bool hasRatio = nextVal != null && currentVal != null && currentVal != 0;
+            final double ratio = hasRatio ? nextVal / currentVal : 0;
+
+            return Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 3),
+                child: Column(
+                  children: <Widget>[
+                    Stack(
+                      children: <Widget>[
+                        Container(
+                          width: double.infinity,
+                          height: 120,
+                          decoration: BoxDecoration(
+                            color: Colors.greenAccent.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(3),
+                          ),
+                          margin: const EdgeInsets.only(top: 8),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.only(top: 35),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: <Widget>[
+                              const Padding(
+                                padding: EdgeInsets.symmetric(horizontal: 4),
+                                child: Text('単勝', style: TextStyle(fontSize: 8, color: Colors.white)),
+                              ),
+                              const SizedBox(height: 5),
+                              Text(
+                                entry.value,
+                                style: const TextStyle(fontSize: 10, color: Colors.white),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 10),
+                              if (fukuMin.isNotEmpty || fukuMax.isNotEmpty) ...<Widget>[
+                                Stack(
+                                  children: <Widget>[
+                                    Container(
+                                      width: double.infinity,
+                                      margin: const EdgeInsets.only(top: 8, right: 3, left: 3),
+                                      padding: const EdgeInsets.symmetric(vertical: 5),
+                                      decoration: BoxDecoration(
+                                        color: Colors.black.withValues(alpha: 0.2),
+                                        borderRadius: BorderRadius.circular(3),
+                                      ),
+                                      child: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: <Widget>[
+                                          Text(
+                                            fukuMin,
+                                            style: const TextStyle(fontSize: 10, color: Colors.white),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                          const SizedBox(height: 1),
+                                          Container(width: 1, height: 5, color: Colors.white),
+                                          const SizedBox(height: 1),
+                                          Text(
+                                            fukuMax,
+                                            style: const TextStyle(fontSize: 10, color: Colors.white),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    const Padding(
+                                      padding: EdgeInsets.symmetric(horizontal: 4),
+                                      child: Text('複勝', style: TextStyle(fontSize: 8, color: Colors.white)),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: <Widget>[
+                            Container(
+                              decoration: BoxDecoration(color: circleColor, shape: BoxShape.circle),
+                              width: 12,
+                              height: 12,
+                              child: Center(
+                                child: Text(
+                                  circleMinute,
+                                  style: TextStyle(
+                                    fontSize: 9,
+                                    color: circleColor == Colors.red ? Colors.white : Colors.black,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            OddsUpDownIcon(
+                              current: entry.value,
+                              prev: () {
+                                for (int i = entry.key - 1; i >= 0; i--) {
+                                  if (timeline[i].isNotEmpty) {
+                                    return timeline[i];
+                                  }
+                                }
+                                return null;
+                              }(),
+                              label: '単',
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    if (nextTimeline != null) ...<Widget>[
+                      const SizedBox(height: 50),
+                      Container(
+                        width: double.infinity,
+                        height: 50,
+                        decoration: BoxDecoration(
+                          border: Border.all(color: const Color(0xFFFBB6CE).withValues(alpha: 0.4)),
+                          borderRadius: BorderRadius.circular(3),
+                        ),
+                        child: Column(
+                          children: <Widget>[
+                            const Spacer(),
+                            Text(
+                              hasRatio ? ratio.toStringAsFixed(2) : '',
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: hasRatio && ratio >= 2.0
+                                    ? const Color(0xFFFBB6CE)
+                                    : Colors.white.withValues(alpha: 0.5),
+                              ),
+                            ),
+                            const Spacer(),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            );
+          }).toList(),
+        ),
       ],
     );
   }
