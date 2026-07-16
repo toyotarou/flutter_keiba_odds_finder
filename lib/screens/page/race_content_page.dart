@@ -832,75 +832,88 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
   ///
   Widget _buildHorseItemHeader({required int popularity, int? fukuRank, HorseModel? horse}) {
     return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Stack(
-          children: <Widget>[
-            Container(
-              margin: const EdgeInsets.only(top: 10, left: 10),
-              padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 5),
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.greenAccent.withValues(alpha: 0.5)),
-                borderRadius: BorderRadius.circular(3),
-              ),
-              child: Row(
-                children: <Widget>[
-                  SizedBox(
-                    width: 20,
-                    child: Text(popularity.toString(), style: TextStyle(color: Colors.green[500])),
+        Row(
+          children: [
+            Stack(
+              children: <Widget>[
+                Container(
+                  margin: const EdgeInsets.only(top: 10, left: 10),
+                  padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 5),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.greenAccent.withValues(alpha: 0.5)),
+                    borderRadius: BorderRadius.circular(3),
                   ),
-                  Text('番人気', style: TextStyle(color: Colors.green[500])),
+                  child: Row(
+                    children: <Widget>[
+                      SizedBox(
+                        width: 20,
+                        child: Text(popularity.toString(), style: TextStyle(color: Colors.green[500])),
+                      ),
+                      Text('番人気', style: TextStyle(color: Colors.green[500])),
+                    ],
+                  ),
+                ),
+                Positioned(
+                  left: 15,
+                  child: Text('単勝', style: TextStyle(fontSize: 10, color: Colors.green[500])),
+                ),
+              ],
+            ),
+
+            if (fukuRank != null) ...<Widget>[
+              Stack(
+                children: <Widget>[
+                  Container(
+                    margin: const EdgeInsets.only(top: 10, left: 10),
+                    padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 5),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.lightBlueAccent.withValues(alpha: 0.5)),
+                      borderRadius: BorderRadius.circular(3),
+                    ),
+                    child: Row(
+                      children: <Widget>[
+                        const SizedBox(width: 6),
+                        SizedBox(
+                          width: 20,
+                          child: Text(fukuRank.toString(), style: const TextStyle(color: Colors.lightBlueAccent)),
+                        ),
+                        const Text('番人気', style: TextStyle(color: Colors.lightBlueAccent)),
+                      ],
+                    ),
+                  ),
+                  const Positioned(
+                    left: 15,
+                    child: Text('複勝', style: TextStyle(fontSize: 10, color: Colors.lightBlueAccent)),
+                  ),
                 ],
               ),
-            ),
-            Positioned(
-              left: 15,
-              child: Text('単勝', style: TextStyle(fontSize: 10, color: Colors.green[500])),
-            ),
+            ],
           ],
         ),
 
-        if (fukuRank != null) ...<Widget>[
-          Stack(
-            children: <Widget>[
-              Container(
-                margin: const EdgeInsets.only(top: 10, left: 10),
-                padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 5),
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.lightBlueAccent.withValues(alpha: 0.5)),
-                  borderRadius: BorderRadius.circular(3),
-                ),
-                child: Row(
-                  children: <Widget>[
-                    const SizedBox(width: 6),
-                    SizedBox(
-                      width: 20,
-                      child: Text(fukuRank.toString(), style: const TextStyle(color: Colors.lightBlueAccent)),
-                    ),
-                    const Text('番人気', style: TextStyle(color: Colors.lightBlueAccent)),
-                  ],
-                ),
-              ),
-              const Positioned(
-                left: 15,
-                child: Text('複勝', style: TextStyle(fontSize: 10, color: Colors.lightBlueAccent)),
-              ),
-            ],
-          ),
-        ],
+        Row(
+          children: [
+            Text('fff'),
 
-        GestureDetector(
-          onTap: () {
-            if (horse == null) {
-              return;
-            }
-            final List<String> exUrl = horse.horseUrl.split('=');
-            final String horseId = exUrl.length > 1 ? exUrl[1] : '';
-            if (horseId.isNotEmpty) {
-              horseNotifier.fetchHorseDetail(horseId: horseId);
-              OddsFinderDialog(context: context, widget: const HorseDetailDisplayAlert());
-            }
-          },
-          child: Icon(FontAwesomeIcons.horse, size: 20, color: Colors.green[500]!.withValues(alpha: 0.6)),
+            GestureDetector(
+              onTap: () {
+                if (horse == null) {
+                  return;
+                }
+                final List<String> exUrl = horse.horseUrl.split('=');
+                final String horseId = exUrl.length > 1 ? exUrl[1] : '';
+                if (horseId.isNotEmpty) {
+                  horseNotifier.fetchHorseDetail(horseId: horseId);
+                  OddsFinderDialog(context: context, widget: const HorseDetailDisplayAlert());
+                }
+              },
+              child: Icon(FontAwesomeIcons.horse, size: 20, color: Colors.green[500]!.withValues(alpha: 0.6)),
+            ),
+
+            SizedBox(width: 10),
+          ],
         ),
       ],
     );
