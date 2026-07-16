@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -879,12 +880,13 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: <Widget>[
-                                    const Text('過去の出走（直近順）'),
+                                    const Text('過去の出走（直近4R）'),
                                     const SizedBox(height: 5),
 
                                     Padding(
                                       padding: const EdgeInsets.symmetric(horizontal: 10),
                                       child: Row(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
                                         children: <Widget>[
                                           Expanded(
                                             child: Column(
@@ -893,6 +895,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                                                         (ShutsubaHistoryModel a, ShutsubaHistoryModel b) =>
                                                             b.date.compareTo(a.date),
                                                       ))
+                                                      .take(4)
                                                       .map((ShutsubaHistoryModel e) {
                                                         return Container(
                                                           decoration: BoxDecoration(
@@ -903,13 +906,35 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                                                             ),
                                                           ),
                                                           child: Row(
-                                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                                             children: <Widget>[
                                                               Text(e.date),
+
+                                                              const SizedBox(width: 10),
+
+                                                              Expanded(
+                                                                child: Text(
+                                                                  e.raceName,
+                                                                  maxLines: 1,
+                                                                  overflow: TextOverflow.ellipsis,
+                                                                ),
+                                                              ),
+
+                                                              const SizedBox(width: 10),
+
                                                               Text(
                                                                 (e.finishingPosition > 0)
                                                                     ? e.finishingPosition.toString()
                                                                     : '着順なし',
+                                                                style: TextStyle(
+                                                                  fontWeight: FontWeight.bold,
+                                                                  color: raceRankColor(
+                                                                    e.finishingPosition > 0
+                                                                        ? e.finishingPosition
+                                                                        : null,
+                                                                    alpha: 1.0,
+                                                                    fallback: Colors.white.withValues(alpha: 0.5),
+                                                                  ),
+                                                                ),
                                                               ),
                                                             ],
                                                           ),
@@ -919,13 +944,18 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                                             ),
                                           ),
 
-                                          const SizedBox(width: 10),
+                                          if (_hasEnoughChartData(horse.name)) ...<Widget>[
+                                            const SizedBox(width: 10),
 
-                                          Container(
-                                            width: 120,
-                                            height: 50,
-                                            decoration: const BoxDecoration(color: Colors.purpleAccent),
-                                          ),
+                                            Container(
+                                              width: 120,
+                                              height: 80,
+                                              decoration: BoxDecoration(
+                                                border: Border.all(color: Colors.white.withValues(alpha: 0.4)),
+                                              ),
+                                              child: _buildFinishingPositionChart(horse.name),
+                                            ),
+                                          ],
                                         ],
                                       ),
                                     ),
@@ -1042,6 +1072,96 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
   }
 
   ///
+  bool _hasEnoughChartData(String horseName) {
+    final List<ShutsubaHistoryModel> sorted = (_shutsubaHistoryMap[horseName] ?? <ShutsubaHistoryModel>[]).toList()
+      ..sort((ShutsubaHistoryModel a, ShutsubaHistoryModel b) => b.date.compareTo(a.date));
+    final int plottable = sorted.take(4).where((ShutsubaHistoryModel h) => h.finishingPosition > 0).length;
+    return plottable >= 2;
+  }
+
+  Widget _buildFinishingPositionChart(String horseName) {
+    final List<ShutsubaHistoryModel> sorted = (_shutsubaHistoryMap[horseName] ?? <ShutsubaHistoryModel>[]).toList()
+      ..sort((ShutsubaHistoryModel a, ShutsubaHistoryModel b) => b.date.compareTo(a.date));
+    final List<ShutsubaHistoryModel> recent = sorted.take(4).toList().reversed.toList();
+
+    // Y軸上が1になるよう値を反転（表示値 = 19 - 着順）
+    final List<FlSpot> spots = <FlSpot>[];
+    for (int i = 0; i < recent.length; i++) {
+      final int pos = recent[i].finishingPosition;
+      if (pos > 0) {
+        spots.add(FlSpot(i.toDouble(), (19 - pos).toDouble()));
+      }
+    }
+
+    if (spots.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    final LineChartBarData barData = LineChartBarData(
+      spots: spots,
+      color: Colors.white,
+      barWidth: 1.5,
+      dotData: FlDotData(
+        getDotPainter: (FlSpot spot, double xPercentage, LineChartBarData bar, int index) {
+          final int pos = (19 - spot.y).round();
+          final Color dotColor = raceRankColor(pos, alpha: 1.0, fallback: Colors.white);
+          return FlDotCirclePainter(radius: 3, color: dotColor, strokeColor: Colors.transparent);
+        },
+      ),
+    );
+
+    return LineChart(
+      LineChartData(
+        lineTouchData: LineTouchData(
+          enabled: false,
+          touchTooltipData: LineTouchTooltipData(
+            fitInsideHorizontally: true,
+            fitInsideVertically: true,
+            tooltipPadding: EdgeInsets.zero,
+            tooltipMargin: -18,
+            getTooltipColor: (_) => Colors.transparent,
+            getTooltipItems: (List<LineBarSpot> touchedSpots) => touchedSpots.map((LineBarSpot s) {
+              final int pos = (19 - s.y).round();
+              return LineTooltipItem(
+                '$pos',
+                TextStyle(
+                  fontSize: 8,
+                  fontWeight: FontWeight.bold,
+                  color: raceRankColor(pos, alpha: 1.0, fallback: Colors.white),
+                ),
+              );
+            }).toList(),
+          ),
+        ),
+        showingTooltipIndicators: List<ShowingTooltipIndicators>.generate(
+          spots.length,
+          (int i) => ShowingTooltipIndicators(<LineBarSpot>[LineBarSpot(barData, 0, spots[i])]),
+        ),
+        minY: 1,
+        maxY: 18,
+        minX: 0,
+        maxX: (recent.length - 1).toDouble(),
+        clipData: const FlClipData.all(),
+        gridData: const FlGridData(show: false),
+        borderData: FlBorderData(show: false),
+        rangeAnnotations: RangeAnnotations(
+          horizontalRangeAnnotations: <HorizontalRangeAnnotation>[
+            HorizontalRangeAnnotation(y1: 17.5, y2: 18.5, color: const Color(0xFFFFD700).withValues(alpha: 0.6)),
+            HorizontalRangeAnnotation(y1: 16.5, y2: 17.5, color: const Color(0xFFC0C0C0).withValues(alpha: 0.6)),
+            HorizontalRangeAnnotation(y1: 15.5, y2: 16.5, color: const Color(0xFFCD7F32).withValues(alpha: 0.6)),
+          ],
+        ),
+        titlesData: const FlTitlesData(
+          leftTitles: AxisTitles(),
+          rightTitles: AxisTitles(),
+          topTitles: AxisTitles(),
+          bottomTitles: AxisTitles(),
+        ),
+        lineBarsData: <LineChartBarData>[barData],
+      ),
+    );
+  }
+
   Widget _buildHorseItemHeader({required int popularity, int? fukuRank, HorseModel? horse}) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
