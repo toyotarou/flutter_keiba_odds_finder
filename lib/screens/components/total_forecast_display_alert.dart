@@ -22,6 +22,7 @@ class TotalForecastDisplayAlert extends ConsumerStatefulWidget {
     required this.raceNumber,
     required this.raceName,
     this.raceModel,
+    this.pickupHorse = '',
   });
 
   final List<OddsModel> displayList;
@@ -30,6 +31,7 @@ class TotalForecastDisplayAlert extends ConsumerStatefulWidget {
   final int raceNumber;
   final String raceName;
   final RaceModel? raceModel;
+  final String pickupHorse;
 
   @override
   ConsumerState<TotalForecastDisplayAlert> createState() => _TotalForecastDisplayAlertState();
@@ -40,6 +42,7 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
   bool _isLoading = true;
   Set<int> _highProbabilityPopularities = <int>{};
   Set<int> _aiPickupNums = <int>{};
+  Map<int, String> _aiPickupScores = <int, String>{};
 
   static const double _w0 = 60;
   static const double _w1 = 40;
@@ -100,6 +103,13 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
 
   ///
   Future<void> _fetchAiPickup() async {
+    // 親から pickup_horse が渡されていれば API 呼び出し不要
+    if (widget.pickupHorse.isNotEmpty) {
+      _aiPickupNums = _parsePickupRaw(widget.pickupHorse);
+      _aiPickupScores = _parsePickupScores(widget.pickupHorse);
+      return;
+    }
+
     final String date = appParamState.selectedScheduleDate;
     final int race = widget.raceNumber;
     final List<String> kbdParts = appParamState.selectedScheduleKaisuuBashoDay.split('_');
@@ -122,26 +132,47 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
       final Map<String, dynamic> data =
           (response as Map<String, dynamic>)['data'] as Map<String, dynamic>? ?? <String, dynamic>{};
       final String pickupRaw = (data['pickup_horse'] as String?) ?? '';
-      Set<int> nums = <int>{};
       if (pickupRaw.isNotEmpty) {
-        for (final String part in pickupRaw.split('/')) {
-          final String trimmed = part.trim();
-          if (trimmed.isEmpty) {
-            continue;
-          }
-          final int? num = int.tryParse(trimmed.split('|').first.trim());
-          if (num != null) {
-            nums.add(num);
-          }
-        }
+        _aiPickupNums = _parsePickupRaw(pickupRaw);
+        _aiPickupScores = _parsePickupScores(pickupRaw);
       } else {
         final String analysisText = (data['analysis_text'] as String?) ?? '';
-        nums = _parsePickupFromAnalysis(analysisText);
+        _aiPickupNums = _parsePickupFromAnalysis(analysisText);
       }
-      _aiPickupNums = nums;
     } catch (e) {
       debugPrint('[TotalForecast] _fetchAiPickup error: $e');
     }
+  }
+
+  ///
+  static Set<int> _parsePickupRaw(String pickupRaw) {
+    final Set<int> nums = <int>{};
+    for (final String part in pickupRaw.split('/')) {
+      final String trimmed = part.trim();
+      if (trimmed.isEmpty) {
+        continue;
+      }
+      final int? num = int.tryParse(trimmed.split('|').first.trim());
+      if (num != null) {
+        nums.add(num);
+      }
+    }
+    return nums;
+  }
+
+  static Map<int, String> _parsePickupScores(String pickupRaw) {
+    final Map<int, String> scores = <int, String>{};
+    for (final String part in pickupRaw.split('/')) {
+      final List<String> fields = part.trim().split('|');
+      if (fields.length < 3) {
+        continue;
+      }
+      final int? num = int.tryParse(fields[0].trim());
+      if (num != null) {
+        scores[num] = fields[2].trim();
+      }
+    }
+    return scores;
   }
 
   ///
@@ -369,7 +400,10 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
                                       child: Row(
                                         children: <Widget>[
                                           Expanded(
-                                            child: Text(item.odds, style: const TextStyle(fontSize: 12, color: Colors.white)),
+                                            child: Text(
+                                              item.odds,
+                                              style: const TextStyle(fontSize: 12, color: Colors.white),
+                                            ),
                                           ),
                                           Expanded(
                                             child: Text(
@@ -389,20 +423,50 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
                                           Expanded(
                                             child: isAiPickup
                                                 ? Center(
-                                                    child: Container(
-                                                      padding: const EdgeInsets.symmetric(vertical: 1, horizontal: 3),
-                                                      decoration: BoxDecoration(
-                                                        border: Border.all(color: const Color(0xFFFFD700)),
-                                                        borderRadius: BorderRadius.circular(3),
-                                                      ),
-                                                      child: const Text(
-                                                        'AI',
-                                                        style: TextStyle(
-                                                          fontSize: 9,
-                                                          color: Color(0xFFFFD700),
-                                                          fontWeight: FontWeight.bold,
+                                                    child: Stack(
+                                                      children: <Widget>[
+                                                        Container(
+                                                          margin: const EdgeInsets.only(
+                                                            top: 5,
+                                                            right: 15,
+                                                            left: 5,
+                                                            bottom: 5,
+                                                          ),
+                                                          padding: const EdgeInsets.symmetric(
+                                                            vertical: 3,
+                                                            horizontal: 10,
+                                                          ),
+                                                          decoration: BoxDecoration(
+                                                            border: Border.all(color: const Color(0xFFFFD700)),
+                                                            borderRadius: BorderRadius.circular(3),
+                                                          ),
+
+                                                          child: const Text(
+                                                            'AI',
+                                                            style: TextStyle(
+                                                              fontSize: 9,
+                                                              color: Color(0xFFFFD700),
+                                                              fontWeight: FontWeight.bold,
+                                                            ),
+                                                          ),
                                                         ),
-                                                      ),
+
+                                                        ///MMM
+                                                        if (_aiPickupScores[item.num] != null) ...<Widget>[
+                                                          Positioned(
+                                                            right: 0,
+                                                            bottom: 0,
+                                                            child: Text(
+                                                              '${_aiPickupScores[item.num]} %',
+                                                              style: const TextStyle(
+                                                                fontSize: 12,
+                                                                color: Colors.white,
+                                                                fontWeight: FontWeight.bold,
+                                                              ),
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ],
                                                     ),
                                                   )
                                                 : const SizedBox.shrink(),
@@ -411,7 +475,7 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
                                             child: hasAnalysis
                                                 ? Center(
                                                     child: Container(
-                                                      padding: const EdgeInsets.symmetric(vertical: 1, horizontal: 4),
+                                                      padding: const EdgeInsets.symmetric(vertical: 3, horizontal: 10),
                                                       decoration: BoxDecoration(
                                                         border: Border.all(
                                                           color: Colors.yellowAccent.withValues(alpha: 0.7),

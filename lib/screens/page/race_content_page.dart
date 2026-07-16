@@ -85,6 +85,20 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
   final GlobalKey _harandoKey = GlobalKey();
   final GlobalKey _analysisButtonKey = GlobalKey();
   Map<int, String> _analysisMap = <int, String>{};
+  Set<int> _aiPickupNums = <int>{};
+  Map<int, String> _aiPickupScores = <int, String>{};
+  String _aiPickupHorse = '';
+
+  ///
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _fetchAiPickup();
+      }
+    });
+  }
 
   ///
   @override
@@ -93,6 +107,71 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     _remainingSecondsNotifier.dispose();
     _horseListScrollController.dispose();
     super.dispose();
+  }
+
+  ///
+  Future<void> _fetchAiPickup() async {
+    final String date = appParamState.selectedScheduleDate;
+    final int race = widget.raceNumber;
+    final List<String> kbdParts = appParamState.selectedScheduleKaisuuBashoDay.split('_');
+    final String kaisuu = kbdParts.isNotEmpty ? kbdParts[0] : '';
+    final String basho = kbdParts.length > 1 ? kbdParts[1] : '';
+    final String day = kbdParts.length > 2 ? kbdParts[2] : '';
+    try {
+      final dynamic response = await ref
+          .read(httpClientProvider)
+          .get(
+            path: APIPath.getHorseOddsFinderAiAnalysis,
+            queryParameters: <String, dynamic>{
+              'date': date,
+              'kaisuu': kaisuu,
+              'basho': basho,
+              'day': day,
+              'race': race.toString(),
+            },
+          );
+      final Map<String, dynamic> data =
+          (response as Map<String, dynamic>)['data'] as Map<String, dynamic>? ?? <String, dynamic>{};
+      final String pickupRaw = (data['pickup_horse'] as String?) ?? '';
+      if (mounted) {
+        setState(() {
+          _aiPickupHorse = pickupRaw;
+          _aiPickupNums = _parsePickupHorse(pickupRaw);
+          _aiPickupScores = _parsePickupScores(pickupRaw);
+        });
+      }
+    } catch (_) {}
+  }
+
+  ///
+  static Set<int> _parsePickupHorse(String pickupRaw) {
+    final Set<int> nums = <int>{};
+    for (final String part in pickupRaw.split('/')) {
+      final String trimmed = part.trim();
+      if (trimmed.isEmpty) {
+        continue;
+      }
+      final int? num = int.tryParse(trimmed.split('|').first.trim());
+      if (num != null) {
+        nums.add(num);
+      }
+    }
+    return nums;
+  }
+
+  static Map<int, String> _parsePickupScores(String pickupRaw) {
+    final Map<int, String> scores = <int, String>{};
+    for (final String part in pickupRaw.split('/')) {
+      final List<String> fields = part.trim().split('|');
+      if (fields.length < 3) {
+        continue;
+      }
+      final int? num = int.tryParse(fields[0].trim());
+      if (num != null) {
+        scores[num] = fields[2].trim();
+      }
+    }
+    return scores;
   }
 
   ///
@@ -833,9 +912,9 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
   Widget _buildHorseItemHeader({required int popularity, int? fukuRank, HorseModel? horse}) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
+      children: <Widget>[
         Row(
-          children: [
+          children: <Widget>[
             Stack(
               children: <Widget>[
                 Container(
@@ -894,8 +973,39 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
         ),
 
         Row(
-          children: [
-            Text('fff'),
+          children: <Widget>[
+            if (horse != null && _aiPickupNums.contains(horse.num)) ...<Widget>[
+              Stack(
+                children: <Widget>[
+                  Container(
+                    margin: const EdgeInsets.only(top: 5, right: 15, left: 5, bottom: 5),
+                    padding: const EdgeInsets.symmetric(vertical: 3, horizontal: 10),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: const Color(0xFFFFD700)),
+                      borderRadius: BorderRadius.circular(3),
+                    ),
+
+                    child: const Text(
+                      'AI',
+                      style: TextStyle(fontSize: 9, color: Color(0xFFFFD700), fontWeight: FontWeight.bold),
+                    ),
+                  ),
+
+                  if (_aiPickupScores[horse.num] != null) ...<Widget>[
+                    Positioned(
+                      right: 0,
+                      bottom: 0,
+                      child: Text(
+                        '${_aiPickupScores[horse.num]} %',
+                        style: const TextStyle(fontSize: 12, color: Colors.white, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ],
+
+            const SizedBox(width: 20),
 
             GestureDetector(
               onTap: () {
@@ -912,7 +1022,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
               child: Icon(FontAwesomeIcons.horse, size: 20, color: Colors.green[500]!.withValues(alpha: 0.6)),
             ),
 
-            SizedBox(width: 10),
+            const SizedBox(width: 10),
           ],
         ),
       ],
@@ -1565,6 +1675,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                       raceNumber: widget.raceNumber,
                       raceName: raceName,
                       raceModel: currentRaceModel,
+                      pickupHorse: _aiPickupHorse,
                     ),
                   ),
                   borderRadius: BorderRadius.circular(10),
