@@ -725,21 +725,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                     ],
 
                     if (oddsTimeline != null && oddsTimeline.isNotEmpty) ...<Widget>[
-                      /// judge結果（この馬1頭からの判断）
-
-                      /*
-                      'message': '本命急落 → 買い推奨',
-                      'description': '発走3分前に30%以上オッズが下がった、5倍未満の馬です。過去データでは$rateHonmei%が3着以内に入っています。',
-
-                      'message': '中穴急落 → 様子見',
-                      'description': '発走3分前に30%以上オッズが下がった、5〜15倍の馬です。過去データでは$rateChuAna%が3着以内に入っています。',
-                      */
-                      Container(
-                        margin: const EdgeInsets.all(8),
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.3)),
-                        child: _buildJudgeOddsSection(oddsTimeline),
-                      ),
+                      _buildJudgeOddsSection(oddsTimeline),
                     ],
 
                     ExpansionTile(
@@ -759,6 +745,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                                   popularity: popularity,
                                   fukuRank: fukuRank,
                                   timeline: oddsTimeline,
+                                  horse: horse,
                                 ),
                                 const SizedBox(height: 10),
                                 _buildHorseNameRow(
@@ -847,79 +834,99 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     }
 
     // as String? でクラッシュを防止（APIが稀にnullを返す）
-    return DefaultTextStyle(
-      style: const TextStyle(fontSize: 10, color: Colors.greenAccent),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[Text((judged['message'] as String?) ?? ''), Text((judged['description'] as String?) ?? '')],
+    return Container(
+      margin: const EdgeInsets.all(8),
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.3)),
+      child: DefaultTextStyle(
+        style: const TextStyle(fontSize: 10, color: Colors.greenAccent),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Text((judged['message'] as String?) ?? ''),
+            Text((judged['description'] as String?) ?? ''),
+          ],
+        ),
       ),
     );
   }
 
   ///
-  Widget _buildHorseItemHeader({required int popularity, int? fukuRank, List<String>? timeline}) {
+  Widget _buildHorseItemHeader({required int popularity, int? fukuRank, List<String>? timeline, HorseModel? horse}) {
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: <Widget>[
-        SizedBox(
-          width: context.screenSize.width * 0.4,
-          child: Row(
-            children: <Widget>[
+      children: [
+        Row(
+          children: [
+            Stack(
+              children: <Widget>[
+                Container(
+                  margin: const EdgeInsets.only(top: 10, left: 10),
+                  padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 5),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.greenAccent.withValues(alpha: 0.5)),
+                    borderRadius: BorderRadius.circular(3),
+                  ),
+                  child: Row(
+                    children: <Widget>[
+                      SizedBox(
+                        width: 20,
+                        child: Text(popularity.toString(), style: TextStyle(color: Colors.green[500])),
+                      ),
+                      Text('番人気', style: TextStyle(color: Colors.green[500])),
+                    ],
+                  ),
+                ),
+                Positioned(
+                  left: 15,
+                  child: Text('単勝', style: TextStyle(fontSize: 10, color: Colors.green[500])),
+                ),
+              ],
+            ),
+
+            if (fukuRank != null) ...<Widget>[
               Stack(
                 children: <Widget>[
                   Container(
                     margin: const EdgeInsets.only(top: 10, left: 10),
                     padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 5),
                     decoration: BoxDecoration(
-                      border: Border.all(color: Colors.greenAccent.withValues(alpha: 0.5)),
+                      border: Border.all(color: Colors.lightBlueAccent.withValues(alpha: 0.5)),
                       borderRadius: BorderRadius.circular(3),
                     ),
                     child: Row(
                       children: <Widget>[
+                        const SizedBox(width: 6),
                         SizedBox(
                           width: 20,
-                          child: Text(popularity.toString(), style: TextStyle(color: Colors.green[500])),
+                          child: Text(fukuRank.toString(), style: const TextStyle(color: Colors.lightBlueAccent)),
                         ),
-                        Text('番人気', style: TextStyle(color: Colors.green[500])),
+                        const Text('番人気', style: TextStyle(color: Colors.lightBlueAccent)),
                       ],
                     ),
                   ),
-                  Positioned(
+                  const Positioned(
                     left: 15,
-                    child: Text('単勝', style: TextStyle(fontSize: 10, color: Colors.green[500])),
+                    child: Text('複勝', style: TextStyle(fontSize: 10, color: Colors.lightBlueAccent)),
                   ),
                 ],
               ),
-              if (fukuRank != null) ...<Widget>[
-                Stack(
-                  children: <Widget>[
-                    Container(
-                      margin: const EdgeInsets.only(top: 10, left: 10),
-                      padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 5),
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.lightBlueAccent.withValues(alpha: 0.5)),
-                        borderRadius: BorderRadius.circular(3),
-                      ),
-                      child: Row(
-                        children: <Widget>[
-                          const SizedBox(width: 6),
-                          SizedBox(
-                            width: 20,
-                            child: Text(fukuRank.toString(), style: const TextStyle(color: Colors.lightBlueAccent)),
-                          ),
-                          const Text('番人気', style: TextStyle(color: Colors.lightBlueAccent)),
-                        ],
-                      ),
-                    ),
-                    const Positioned(
-                      left: 15,
-                      child: Text('複勝', style: TextStyle(fontSize: 10, color: Colors.lightBlueAccent)),
-                    ),
-                  ],
-                ),
-              ],
             ],
-          ),
+          ],
+        ),
+
+        GestureDetector(
+          onTap: () {
+            if (horse == null) {
+              return;
+            }
+            final List<String> exUrl = horse.horseUrl.split('=');
+            final String horseId = exUrl.length > 1 ? exUrl[1] : '';
+            if (horseId.isNotEmpty) {
+              horseNotifier.fetchHorseDetail(horseId: horseId);
+              OddsFinderDialog(context: context, widget: const HorseDetailDisplayAlert());
+            }
+          },
+          child: Icon(FontAwesomeIcons.horse, size: 20, color: Colors.green[500]!.withValues(alpha: 0.6)),
         ),
       ],
     );
@@ -1139,28 +1146,6 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                 Expanded(child: Text(horse.name, maxLines: 1, overflow: TextOverflow.ellipsis)),
               ],
             ],
-          ),
-
-          Positioned(
-            right: 0,
-            child: Transform(
-              alignment: Alignment.center,
-              transform: Matrix4.identity()..scale(-1.0, 1.0),
-              child: GestureDetector(
-                onTap: () {
-                  if (horse == null) {
-                    return;
-                  }
-                  final List<String> exUrl = horse.horseUrl.split('=');
-                  final String horseId = exUrl.length > 1 ? exUrl[1] : '';
-                  if (horseId.isNotEmpty) {
-                    horseNotifier.fetchHorseDetail(horseId: horseId);
-                    OddsFinderDialog(context: context, widget: const HorseDetailDisplayAlert());
-                  }
-                },
-                child: Icon(FontAwesomeIcons.horse, size: 20, color: Colors.green[500]!.withValues(alpha: 0.6)),
-              ),
-            ),
           ),
         ],
       ),
