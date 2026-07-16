@@ -16,6 +16,7 @@ import '../../models/odds_model.dart';
 import '../../models/race_analysis_model.dart';
 import '../../models/race_model.dart';
 import '../../models/race_result_model.dart';
+import '../../models/shutsuba_history_model.dart';
 import '../../utility/functions.dart';
 import '../../utility/utility.dart';
 import '../components/ai_analysis_display_alert.dart';
@@ -109,6 +110,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
   Set<int> _aiPickupNums = <int>{};
   Map<int, String> _aiPickupScores = <int, String>{};
   String _aiPickupHorse = '';
+  Map<String, List<ShutsubaHistoryModel>> _shutsubaHistoryMap = <String, List<ShutsubaHistoryModel>>{};
 
   ///
   @override
@@ -117,6 +119,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         _fetchAiPickup();
+        _fetchShutsubaHistory();
       }
     });
   }
@@ -160,6 +163,31 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
           _aiPickupNums = _parsePickupHorse(pickupRaw);
           _aiPickupScores = _parsePickupScores(pickupRaw);
         });
+      }
+    } catch (_) {}
+  }
+
+  ///
+  Future<void> _fetchShutsubaHistory() async {
+    final List<HorseModel> horses = (widget.horseMap[widget.mapKey] ?? <HorseModel>[])
+        .where((HorseModel h) => h.race == widget.raceNumber)
+        .toList();
+    if (horses.isEmpty) {
+      return;
+    }
+    final String names = horses.map((HorseModel h) => h.name).join('/');
+    try {
+      final dynamic response = await ref
+          .read(httpClientProvider)
+          .get(path: APIPath.getHorseOddsFinderShutsubaHistory, queryParameters: <String, dynamic>{'names': names});
+      final List<dynamic> dataList = (response as Map<String, dynamic>)['data'] as List<dynamic>? ?? <dynamic>[];
+      final Map<String, List<ShutsubaHistoryModel>> map = <String, List<ShutsubaHistoryModel>>{};
+      for (final dynamic item in dataList) {
+        final ShutsubaHistoryModel model = ShutsubaHistoryModel.fromJson(item as Map<String, dynamic>);
+        map.putIfAbsent(model.name, () => <ShutsubaHistoryModel>[]).add(model);
+      }
+      if (mounted) {
+        setState(() => _shutsubaHistoryMap = map);
       }
     } catch (_) {}
   }
@@ -845,6 +873,69 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                           ),
 
                           children: <Widget>[
+                            if (horse != null && _shutsubaHistoryMap[horse.name] != null) ...<Widget>[
+                              DefaultTextStyle(
+                                style: const TextStyle(fontSize: 10, color: Colors.white),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: <Widget>[
+                                    const Text('過去の出走（直近順）'),
+                                    const SizedBox(height: 5),
+
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                                      child: Row(
+                                        children: <Widget>[
+                                          Expanded(
+                                            child: Column(
+                                              children:
+                                                  (_shutsubaHistoryMap[horse.name]!.toList()..sort(
+                                                        (ShutsubaHistoryModel a, ShutsubaHistoryModel b) =>
+                                                            b.date.compareTo(a.date),
+                                                      ))
+                                                      .map((ShutsubaHistoryModel e) {
+                                                        return Container(
+                                                          decoration: BoxDecoration(
+                                                            border: Border(
+                                                              bottom: BorderSide(
+                                                                color: Colors.white.withValues(alpha: 0.3),
+                                                              ),
+                                                            ),
+                                                          ),
+                                                          child: Row(
+                                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                            children: <Widget>[
+                                                              Text(e.date),
+                                                              Text(
+                                                                (e.finishingPosition > 0)
+                                                                    ? e.finishingPosition.toString()
+                                                                    : '着順なし',
+                                                              ),
+                                                            ],
+                                                          ),
+                                                        );
+                                                      })
+                                                      .toList(),
+                                            ),
+                                          ),
+
+                                          const SizedBox(width: 10),
+
+                                          Container(
+                                            width: 120,
+                                            height: 50,
+                                            decoration: const BoxDecoration(color: Colors.purpleAccent),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ] else ...<Widget>[
+                              const Text('過去の出走はありません。', style: TextStyle(fontSize: 9, color: Colors.yellowAccent)),
+                            ],
+
                             if (oddsTimeline != null) ...<Widget>[
                               const SizedBox(height: 20),
                               _buildOddsTimelineRow(
