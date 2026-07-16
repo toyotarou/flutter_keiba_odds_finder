@@ -451,7 +451,6 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
                                                           ),
                                                         ),
 
-                                                        ///MMM
                                                         if (_aiPickupScores[item.num] != null) ...<Widget>[
                                                           Positioned(
                                                             right: 0,

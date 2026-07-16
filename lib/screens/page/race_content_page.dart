@@ -60,6 +60,27 @@ class RaceContentPage extends ConsumerStatefulWidget {
   ConsumerState<RaceContentPage> createState() => _RaceContentPageState();
 }
 
+class _DashedLinePainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    const double dashWidth = 8;
+    const double dashSpace = 5;
+    final Paint paint = Paint()
+      ..color = Colors.red.withValues(alpha: 0.5)
+      ..strokeWidth = 5
+      ..strokeCap = StrokeCap.butt;
+    double x = 0;
+    final double y = size.height / 2;
+    while (x < size.width) {
+      canvas.drawLine(Offset(x, y), Offset(x + dashWidth, y), paint);
+      x += dashWidth + dashSpace;
+    }
+  }
+
+  @override
+  bool shouldRepaint(CustomPainter oldDelegate) => false;
+}
+
 class _TriangleClipper extends CustomClipper<Path> {
   @override
   Path getClip(Size size) => Path()
@@ -159,6 +180,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     return nums;
   }
 
+  ///
   static Map<int, String> _parsePickupScores(String pickupRaw) {
     final Map<int, String> scores = <int, String>{};
     for (final String part in pickupRaw.split('/')) {
@@ -216,7 +238,6 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     }
   }
 
-  ///
   ///
   void _startCountdown(String startTime, String raceDate) {
     _countdownTimer?.cancel();
@@ -355,6 +376,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     return validValues.isNotEmpty ? validValues.first : null;
   }
 
+  ///
   static String _filterMinutesToTimingKey(int? filterMinutes) => switch (filterMinutes) {
     null => '',
     999 => '24',
@@ -751,118 +773,138 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
 
     return Padding(
       padding: const EdgeInsets.only(top: 5),
-      child: Stack(
+      child: Column(
         children: <Widget>[
-          if (analysis != null && analysis.isNotEmpty && analysisRank != null) ...<Widget>[
-            Container(
-              width: 40,
-              height: 20,
-              decoration: BoxDecoration(color: Colors.yellowAccent.withValues(alpha: 0.3)),
-              child: Center(
-                child: Text(
-                  '$analysisRank/$analysisTotalCount',
-                  style: const TextStyle(fontSize: 10, color: Colors.white),
+          Stack(
+            children: <Widget>[
+              if (analysis != null && analysis.isNotEmpty && analysisRank != null) ...<Widget>[
+                Container(
+                  width: 40,
+                  height: 20,
+                  decoration: BoxDecoration(color: Colors.yellowAccent.withValues(alpha: 0.3)),
+                  child: Center(
+                    child: Text(
+                      '$analysisRank/$analysisTotalCount',
+                      style: const TextStyle(fontSize: 10, color: Colors.white),
+                    ),
+                  ),
                 ),
-              ),
-            ),
-          ],
+              ],
 
-          Container(
-            decoration: BoxDecoration(
-              border: Border.all(
-                color: (analysis != null && analysis.isNotEmpty)
-                    ? Colors.yellowAccent.withValues(alpha: 0.5)
-                    : Colors.white.withValues(alpha: 0.3),
-              ),
-            ),
+              Container(
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: (analysis != null && analysis.isNotEmpty)
+                        ? Colors.yellowAccent.withValues(alpha: 0.5)
+                        : Colors.white.withValues(alpha: 0.3),
+                  ),
+                ),
 
-            child: Stack(
-              clipBehavior: Clip.none,
-              children: <Widget>[
-                Column(
+                child: Stack(
+                  clipBehavior: Clip.none,
                   children: <Widget>[
-                    if (analysis != null && analysis.isNotEmpty) ...<Widget>[
-                      /// 分析結果（過去データからの判断）
-                      Container(
-                        margin: const EdgeInsets.all(8),
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.3)),
-                        child: Text(
-                          analysis,
-                          style: TextStyle(fontSize: 10, color: Colors.yellowAccent.withValues(alpha: 0.8)),
-                        ),
-                      ),
-                    ],
-
-                    if (oddsTimeline != null && oddsTimeline.isNotEmpty) ...<Widget>[
-                      _buildJudgeOddsSection(oddsTimeline),
-                    ],
-
-                    ExpansionTile(
-                      key: ValueKey<String>('horse_${element.num}_${appParamState.allExpanded}'),
-                      initiallyExpanded: appParamState.allExpanded,
-                      tilePadding: const EdgeInsets.symmetric(horizontal: 8),
-                      childrenPadding: const EdgeInsets.symmetric(horizontal: 8),
-                      expandedAlignment: Alignment.centerLeft,
-                      expandedCrossAxisAlignment: CrossAxisAlignment.start,
-                      title: DefaultTextStyle(
-                        style: const TextStyle(fontSize: 10),
-                        child: Column(
-                          children: <Widget>[
-                            _buildHorseItemHeader(popularity: popularity, fukuRank: fukuRank, horse: horse),
-                            const SizedBox(height: 10),
-                            _buildHorseNameRow(element: element, horse: horse, horseWakuColorMap: horseWakuColorMap),
-                          ],
-                        ),
-                      ),
-
+                    Column(
                       children: <Widget>[
-                        if (oddsTimeline != null) ...<Widget>[
-                          const SizedBox(height: 20),
-                          _buildOddsTimelineRow(
-                            timeline: oddsTimeline,
-                            activeTimingKey: activeTimingKey,
-                            selectedTiming: selectedTiming,
-                            fukuMinList: fukuMinTimeline,
-                            fukuMaxList: fukuMaxTimeline,
-                            nextTimeline: nextOddsTimeline,
+                        if (analysis != null && analysis.isNotEmpty) ...<Widget>[
+                          /// 分析結果（過去データからの判断）
+                          Container(
+                            margin: const EdgeInsets.all(8),
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.3)),
+                            child: Text(
+                              analysis,
+                              style: TextStyle(fontSize: 10, color: Colors.yellowAccent.withValues(alpha: 0.8)),
+                            ),
                           ),
                         ],
+
+                        if (oddsTimeline != null && oddsTimeline.isNotEmpty) ...<Widget>[
+                          _buildJudgeOddsSection(oddsTimeline),
+                        ],
+
+                        ExpansionTile(
+                          key: ValueKey<String>('horse_${element.num}_${appParamState.allExpanded}'),
+                          initiallyExpanded: appParamState.allExpanded,
+                          tilePadding: const EdgeInsets.symmetric(horizontal: 8),
+                          childrenPadding: const EdgeInsets.symmetric(horizontal: 8),
+                          expandedAlignment: Alignment.centerLeft,
+                          expandedCrossAxisAlignment: CrossAxisAlignment.start,
+                          title: DefaultTextStyle(
+                            style: const TextStyle(fontSize: 10),
+                            child: Column(
+                              children: <Widget>[
+                                _buildHorseItemHeader(popularity: popularity, fukuRank: fukuRank, horse: horse),
+                                const SizedBox(height: 10),
+                                _buildHorseNameRow(
+                                  element: element,
+                                  horse: horse,
+                                  horseWakuColorMap: horseWakuColorMap,
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          children: <Widget>[
+                            if (oddsTimeline != null) ...<Widget>[
+                              const SizedBox(height: 20),
+                              _buildOddsTimelineRow(
+                                timeline: oddsTimeline,
+                                activeTimingKey: activeTimingKey,
+                                selectedTiming: selectedTiming,
+                                fukuMinList: fukuMinTimeline,
+                                fukuMaxList: fukuMaxTimeline,
+                                nextTimeline: nextOddsTimeline,
+                              ),
+                            ],
+                          ],
+                        ),
                       ],
                     ),
-                  ],
-                ),
 
-                if (raceRank != null && raceRank <= 3) ...<Widget>[
-                  Positioned(
-                    top: 2,
-                    right: 2,
-                    child: CustomPaint(
-                      painter: RankBadgePainter(color: raceRankColor(raceRank, alpha: 0.3)),
-                      child: SizedBox(
-                        width: context.screenSize.width * 0.15,
-                        height: context.screenSize.height * 0.05,
-                        child: Align(
-                          alignment: Alignment.bottomLeft,
-                          child: Padding(
-                            padding: const EdgeInsets.only(bottom: 20, left: 25),
-                            child: Text(
-                              '$raceRank着',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.white.withValues(alpha: 0.8),
-                                fontWeight: FontWeight.bold,
+                    if (raceRank != null && raceRank <= 3) ...<Widget>[
+                      Positioned(
+                        top: 2,
+                        right: 2,
+                        child: CustomPaint(
+                          painter: RankBadgePainter(color: raceRankColor(raceRank, alpha: 0.3)),
+                          child: SizedBox(
+                            width: context.screenSize.width * 0.15,
+                            height: context.screenSize.height * 0.05,
+                            child: Align(
+                              alignment: Alignment.bottomLeft,
+                              child: Padding(
+                                padding: const EdgeInsets.only(bottom: 20, left: 25),
+                                child: Text(
+                                  '$raceRank着',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.white.withValues(alpha: 0.8),
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
                               ),
                             ),
                           ),
                         ),
                       ),
-                    ),
-                  ),
-                ],
-              ],
-            ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
           ),
+
+          if (popularity == 6) ...<Widget>[
+            const SizedBox(height: 10),
+
+            SizedBox(
+              width: double.infinity,
+              height: 5,
+              child: CustomPaint(painter: _DashedLinePainter()),
+            ),
+
+            const SizedBox(height: 10),
+          ],
         ],
       ),
     );
