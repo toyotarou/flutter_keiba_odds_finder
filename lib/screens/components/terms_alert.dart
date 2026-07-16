@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../parts/odds_finder_dialog.dart';
 import '../parts/terms_chapter.dart';
+import 'ai_analysis_explain_alert.dart';
 import 'precaution_analysis.dart';
 
 class TermsAlert extends ConsumerStatefulWidget {
@@ -138,7 +139,7 @@ class _TermsAlertState extends ConsumerState<TermsAlert> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              const Text('注意事項'),
+              const Text('注意事項', style: TextStyle(fontSize: 12, color: Colors.white)),
               SizedBox(
                 height: 50,
                 child: SingleChildScrollView(
@@ -163,6 +164,28 @@ class _TermsAlertState extends ConsumerState<TermsAlert> {
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: const Text('過去データからの分析について', style: TextStyle(fontSize: 10)),
+                          ),
+                        ),
+                      ),
+
+                      Material(
+                        color: Colors.transparent,
+                        borderRadius: BorderRadius.circular(10),
+                        child: InkWell(
+                          onTap: () {
+                            OddsFinderDialog(context: context, widget: const AiAnalysisExplainAlert());
+                          },
+                          borderRadius: BorderRadius.circular(10),
+                          splashColor: Colors.white.withValues(alpha: 0.2),
+                          highlightColor: Colors.white.withValues(alpha: 0.1),
+                          child: Container(
+                            margin: const EdgeInsets.all(3),
+                            padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 20),
+                            decoration: BoxDecoration(
+                              border: Border.all(color: Colors.white.withValues(alpha: 0.4)),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Text('AI予想について', style: TextStyle(fontSize: 10)),
                           ),
                         ),
                       ),
