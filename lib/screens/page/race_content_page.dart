@@ -683,14 +683,6 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
       padding: const EdgeInsets.only(top: 5),
       child: Stack(
         children: <Widget>[
-          Positioned(
-            top: 5,
-            right: 30,
-            child: oddsTimeline != null && oddsTimeline.isNotEmpty
-                ? SizedBox(width: 150, child: _buildJudgeOddsSection(oddsTimeline))
-                : const SizedBox.shrink(),
-          ),
-
           if (analysis != null && analysis.isNotEmpty && analysisRank != null) ...<Widget>[
             Container(
               width: 40,
@@ -720,6 +712,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                 Column(
                   children: <Widget>[
                     if (analysis != null && analysis.isNotEmpty) ...<Widget>[
+                      /// 分析結果（過去データからの判断）
                       Container(
                         margin: const EdgeInsets.all(8),
                         padding: const EdgeInsets.all(8),
@@ -728,6 +721,24 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                           analysis,
                           style: TextStyle(fontSize: 10, color: Colors.yellowAccent.withValues(alpha: 0.8)),
                         ),
+                      ),
+                    ],
+
+                    if (oddsTimeline != null && oddsTimeline.isNotEmpty) ...<Widget>[
+                      /// judge結果（この馬1頭からの判断）
+
+                      /*
+                      'message': '本命急落 → 買い推奨',
+                      'description': '発走3分前に30%以上オッズが下がった、5倍未満の馬です。過去データでは$rateHonmei%が3着以内に入っています。',
+
+                      'message': '中穴急落 → 様子見',
+                      'description': '発走3分前に30%以上オッズが下がった、5〜15倍の馬です。過去データでは$rateChuAna%が3着以内に入っています。',
+                      */
+                      Container(
+                        margin: const EdgeInsets.all(8),
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.3)),
+                        child: _buildJudgeOddsSection(oddsTimeline),
                       ),
                     ],
 
@@ -837,7 +848,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
 
     // as String? でクラッシュを防止（APIが稀にnullを返す）
     return DefaultTextStyle(
-      style: const TextStyle(fontSize: 10, color: Colors.yellowAccent),
+      style: const TextStyle(fontSize: 10, color: Colors.greenAccent),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[Text((judged['message'] as String?) ?? ''), Text((judged['description'] as String?) ?? '')],
