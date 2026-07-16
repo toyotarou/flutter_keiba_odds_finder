@@ -238,7 +238,7 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
                 decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.5)),
 
                 child: DefaultTextStyle(
-                  style: const TextStyle(fontSize: 12),
+                  style: const TextStyle(fontSize: 12, color: Colors.white),
                   child: Column(
                     children: <Widget>[
                       Row(
@@ -385,7 +385,7 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
                                           Expanded(
                                             child: Text(
                                               horseName,
-                                              style: const TextStyle(fontSize: 13, color: Colors.white),
+                                              style: const TextStyle(fontSize: 12, color: Colors.white),
                                               overflow: TextOverflow.ellipsis,
                                               maxLines: 1,
                                             ),
