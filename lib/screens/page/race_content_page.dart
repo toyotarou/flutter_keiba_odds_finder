@@ -336,9 +336,8 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
           child: Stack(
             children: <Widget>[
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                mainAxisAlignment: MainAxisAlignment.end,
                 children: <Widget>[
-                  const SizedBox(),
                   Column(
                     children: <Widget>[
                       Text('$startTime 出走', style: const TextStyle(fontSize: 12, color: Colors.greenAccent)),
@@ -352,31 +351,23 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                 ],
               ),
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: <Widget>[
-                  Expanded(
-                    child: Row(
-                      children: <Widget>[
-                        GestureDetector(
-                          onTap: () => appParamNotifier.setIsShowUpperBox(flag: !appParamState.isShowUpperBox),
-                          child: Icon(
-                            appParamState.isShowUpperBox ? Icons.arrow_circle_up : Icons.arrow_circle_down,
-                            color: Colors.green[500],
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Text(
-                            raceName,
-                            overflow: TextOverflow.ellipsis,
-                            maxLines: 1,
-                            style: const TextStyle(fontSize: 14, color: Colors.white),
-                          ),
-                        ),
-                      ],
+                  GestureDetector(
+                    onTap: () => appParamNotifier.setIsShowUpperBox(flag: !appParamState.isShowUpperBox),
+                    child: Icon(
+                      appParamState.isShowUpperBox ? Icons.arrow_circle_up : Icons.arrow_circle_down,
+                      color: Colors.green[500],
                     ),
                   ),
-                  const SizedBox(),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      raceName,
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                      style: const TextStyle(fontSize: 14, color: Colors.white),
+                    ),
+                  ),
                 ],
               ),
             ],
@@ -735,28 +726,15 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                       childrenPadding: const EdgeInsets.symmetric(horizontal: 8),
                       expandedAlignment: Alignment.centerLeft,
                       expandedCrossAxisAlignment: CrossAxisAlignment.start,
-                      title: Stack(
-                        children: <Widget>[
-                          DefaultTextStyle(
-                            style: const TextStyle(fontSize: 10),
-                            child: Column(
-                              children: <Widget>[
-                                _buildHorseItemHeader(
-                                  popularity: popularity,
-                                  fukuRank: fukuRank,
-                                  timeline: oddsTimeline,
-                                  horse: horse,
-                                ),
-                                const SizedBox(height: 10),
-                                _buildHorseNameRow(
-                                  element: element,
-                                  horse: horse,
-                                  horseWakuColorMap: horseWakuColorMap,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
+                      title: DefaultTextStyle(
+                        style: const TextStyle(fontSize: 10),
+                        child: Column(
+                          children: <Widget>[
+                            _buildHorseItemHeader(popularity: popularity, fukuRank: fukuRank, horse: horse),
+                            const SizedBox(height: 10),
+                            _buildHorseNameRow(element: element, horse: horse, horseWakuColorMap: horseWakuColorMap),
+                          ],
+                        ),
                       ),
 
                       children: <Widget>[
@@ -852,67 +830,63 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
   }
 
   ///
-  Widget _buildHorseItemHeader({required int popularity, int? fukuRank, List<String>? timeline, HorseModel? horse}) {
+  Widget _buildHorseItemHeader({required int popularity, int? fukuRank, HorseModel? horse}) {
     return Row(
       children: [
-        Row(
-          children: [
-            Stack(
-              children: <Widget>[
-                Container(
-                  margin: const EdgeInsets.only(top: 10, left: 10),
-                  padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 5),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.greenAccent.withValues(alpha: 0.5)),
-                    borderRadius: BorderRadius.circular(3),
-                  ),
-                  child: Row(
-                    children: <Widget>[
-                      SizedBox(
-                        width: 20,
-                        child: Text(popularity.toString(), style: TextStyle(color: Colors.green[500])),
-                      ),
-                      Text('番人気', style: TextStyle(color: Colors.green[500])),
-                    ],
-                  ),
-                ),
-                Positioned(
-                  left: 15,
-                  child: Text('単勝', style: TextStyle(fontSize: 10, color: Colors.green[500])),
-                ),
-              ],
-            ),
-
-            if (fukuRank != null) ...<Widget>[
-              Stack(
+        Stack(
+          children: <Widget>[
+            Container(
+              margin: const EdgeInsets.only(top: 10, left: 10),
+              padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 5),
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.greenAccent.withValues(alpha: 0.5)),
+                borderRadius: BorderRadius.circular(3),
+              ),
+              child: Row(
                 children: <Widget>[
-                  Container(
-                    margin: const EdgeInsets.only(top: 10, left: 10),
-                    padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 5),
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.lightBlueAccent.withValues(alpha: 0.5)),
-                      borderRadius: BorderRadius.circular(3),
-                    ),
-                    child: Row(
-                      children: <Widget>[
-                        const SizedBox(width: 6),
-                        SizedBox(
-                          width: 20,
-                          child: Text(fukuRank.toString(), style: const TextStyle(color: Colors.lightBlueAccent)),
-                        ),
-                        const Text('番人気', style: TextStyle(color: Colors.lightBlueAccent)),
-                      ],
-                    ),
+                  SizedBox(
+                    width: 20,
+                    child: Text(popularity.toString(), style: TextStyle(color: Colors.green[500])),
                   ),
-                  const Positioned(
-                    left: 15,
-                    child: Text('複勝', style: TextStyle(fontSize: 10, color: Colors.lightBlueAccent)),
-                  ),
+                  Text('番人気', style: TextStyle(color: Colors.green[500])),
                 ],
               ),
-            ],
+            ),
+            Positioned(
+              left: 15,
+              child: Text('単勝', style: TextStyle(fontSize: 10, color: Colors.green[500])),
+            ),
           ],
         ),
+
+        if (fukuRank != null) ...<Widget>[
+          Stack(
+            children: <Widget>[
+              Container(
+                margin: const EdgeInsets.only(top: 10, left: 10),
+                padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 5),
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.lightBlueAccent.withValues(alpha: 0.5)),
+                  borderRadius: BorderRadius.circular(3),
+                ),
+                child: Row(
+                  children: <Widget>[
+                    const SizedBox(width: 6),
+                    SizedBox(
+                      width: 20,
+                      child: Text(fukuRank.toString(), style: const TextStyle(color: Colors.lightBlueAccent)),
+                    ),
+                    const Text('番人気', style: TextStyle(color: Colors.lightBlueAccent)),
+                  ],
+                ),
+              ),
+              const Positioned(
+                left: 15,
+                child: Text('複勝', style: TextStyle(fontSize: 10, color: Colors.lightBlueAccent)),
+              ),
+            ],
+          ),
+        ],
 
         GestureDetector(
           onTap: () {
@@ -1112,41 +1086,33 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
   }) {
     return DefaultTextStyle(
       style: const TextStyle(fontSize: 12, color: Colors.white),
-      child: Stack(
+      child: Row(
         children: <Widget>[
-          Row(
-            children: <Widget>[
-              const SizedBox(width: 20),
-              if (horse != null) ...<Widget>[
-                Container(
-                  padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
-                  decoration: BoxDecoration(
-                    color: (horseWakuColorMap[horse.waku] != null)
-                        ? horseWakuColorMap[horse.waku]!.withValues(alpha: 0.2)
-                        : Colors.white.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(3),
-                  ),
-                  child: Row(
-                    children: <Widget>[
-                      SizedBox(width: 15, child: Text(horse.waku.toString())),
-                      const Text('枠'),
-                    ],
-                  ),
-                ),
-              ],
-              const SizedBox(width: 20),
-              Row(
+          const SizedBox(width: 20),
+          if (horse != null) ...<Widget>[
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
+              decoration: BoxDecoration(
+                color: (horseWakuColorMap[horse.waku] != null)
+                    ? horseWakuColorMap[horse.waku]!.withValues(alpha: 0.2)
+                    : Colors.white.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(3),
+              ),
+              child: Row(
                 children: <Widget>[
-                  SizedBox(width: 20, child: Text(element.num.toString())),
-                  const Text('番'),
+                  SizedBox(width: 15, child: Text(horse.waku.toString())),
+                  const Text('枠'),
                 ],
               ),
-              const SizedBox(width: 20),
-              if (horse != null) ...<Widget>[
-                Expanded(child: Text(horse.name, maxLines: 1, overflow: TextOverflow.ellipsis)),
-              ],
-            ],
-          ),
+            ),
+          ],
+          const SizedBox(width: 20),
+          SizedBox(width: 20, child: Text(element.num.toString())),
+          const Text('番'),
+          const SizedBox(width: 20),
+          if (horse != null) ...<Widget>[
+            Expanded(child: Text(horse.name, maxLines: 1, overflow: TextOverflow.ellipsis)),
+          ],
         ],
       ),
     );
@@ -1258,13 +1224,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                             children: <Widget>[
                               const Padding(
                                 padding: EdgeInsets.symmetric(horizontal: 4),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: <Widget>[
-                                    Text('単勝', style: TextStyle(fontSize: 8, color: Colors.white)),
-                                    SizedBox.shrink(),
-                                  ],
-                                ),
+                                child: Text('単勝', style: TextStyle(fontSize: 8, color: Colors.white)),
                               ),
                               const SizedBox(height: 5),
                               Text(
@@ -1308,13 +1268,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                                     ),
                                     const Padding(
                                       padding: EdgeInsets.symmetric(horizontal: 4),
-                                      child: Row(
-                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                        children: <Widget>[
-                                          Text('複勝', style: TextStyle(fontSize: 8, color: Colors.white)),
-                                          SizedBox.shrink(),
-                                        ],
-                                      ),
+                                      child: Text('複勝', style: TextStyle(fontSize: 8, color: Colors.white)),
                                     ),
                                   ],
                                 ),
