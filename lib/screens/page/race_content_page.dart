@@ -423,7 +423,12 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
   }
 
   ///
-  Widget _buildRaceInfoBar(String startTime, String raceName) {
+  Widget _buildRaceInfoBar({
+    required String startTime,
+    required String raceName,
+    required String course,
+    required int dist,
+  }) {
     return Stack(
       children: <Widget>[
         if (!appParamState.isShowUpperBox) ...<Widget>[
@@ -471,11 +476,23 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                   ),
                   const SizedBox(width: 10),
                   Expanded(
-                    child: Text(
-                      raceName,
-                      overflow: TextOverflow.ellipsis,
-                      maxLines: 1,
-                      style: const TextStyle(fontSize: 14, color: Colors.white),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        Text(
+                          raceName,
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                          style: const TextStyle(fontSize: 14, color: Colors.white),
+                        ),
+
+                        if (course != '' && dist > 0) ...<Widget>[
+                          Text(
+                            '$course ${dist.toString().toCurrency()}m',
+                            style: const TextStyle(fontSize: 10, color: Colors.white),
+                          ),
+                        ],
+                      ],
                     ),
                   ),
                 ],
@@ -828,7 +845,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                         ],
 
                         if (oddsTimeline != null && oddsTimeline.isNotEmpty) ...<Widget>[
-                          _buildJudgeOddsSection(oddsTimeline),
+                          _buildJudgeOddsSection(timeline: oddsTimeline),
                         ],
 
                         ExpansionTile(
@@ -927,7 +944,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
   }
 
   ///
-  Widget _buildJudgeOddsSection(List<String> timeline) {
+  Widget _buildJudgeOddsSection({required List<String> timeline}) {
     final List<String> timingParts = widget.oddsGetTiming.split('|');
     final String odds24 = timeline[0];
     final int idx3 = timingParts.indexOf('3');
@@ -1308,9 +1325,16 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     String startTime = '--:--';
     RaceModel? currentRaceModel;
 
+    String course = '';
+    int dist = 0;
+
     if (raceIdx != -1) {
       currentRaceModel = races[raceIdx];
       raceName = currentRaceModel.raceName;
+
+      course = currentRaceModel.course;
+      dist = currentRaceModel.dist;
+
       final int colonIdx = currentRaceModel.startTime.lastIndexOf(':');
       startTime = colonIdx > 0 ? currentRaceModel.startTime.substring(0, colonIdx) : currentRaceModel.startTime;
     }
@@ -1343,6 +1367,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     final List<OddsModel> allOddsForRace = (widget.oddsMap[widget.mapKey] ?? <OddsModel>[])
         .where((OddsModel e) => e.race == widget.raceNumber)
         .toList();
+
     final bool hasBothTimings =
         allOddsForRace.any((OddsModel e) => e.minutesBeforeStart == 999) &&
         allOddsForRace.any((OddsModel e) => e.minutesBeforeStart == 3);
@@ -1356,7 +1381,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        _buildRaceInfoBar(startTime, raceName),
+        _buildRaceInfoBar(startTime: startTime, raceName: raceName, course: course, dist: dist),
 
         _buildControlButtons(raceIdx: raceIdx),
 

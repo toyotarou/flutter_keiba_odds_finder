@@ -13,6 +13,9 @@ class RaceModel {
     required this.popularityRatio,
     required this.popularityRatioTableIds,
     required this.popularityRatioMatchPercent,
+
+    required this.course,
+    required this.dist,
   });
 
   factory RaceModel.fromJson(Map<String, dynamic> json) {
@@ -30,6 +33,9 @@ class RaceModel {
       popularityRatio: (json['popularity_ratio'] as String?) ?? '',
       popularityRatioTableIds: (json['popularity_ratio_table_ids'] as String?) ?? '',
       popularityRatioMatchPercent: (json['popularity_ratio_match_percent'] as String?) ?? '',
+
+      course: (json['course'] as String?) ?? '',
+      dist: (json['dist'] as int?) ?? 0,
     );
   }
 
@@ -46,4 +52,7 @@ class RaceModel {
   final String popularityRatio;
   final String popularityRatioTableIds;
   final String popularityRatioMatchPercent;
+
+  final String course;
+  final int dist;
 }
