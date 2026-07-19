@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../const/const.dart';
 import '../../controllers/controllers_mixin.dart';
 import '../../models/odds_model.dart';
 import '../../models/race_result_model.dart';
@@ -61,7 +62,7 @@ class _HorseRaceResultDisplayAlertState extends ConsumerState<HorseRaceResultDis
           m.oddsTanBefore15,
           m.oddsTanBefore18,
           m.oddsTanBefore21,
-          m.oddsTanBefore24,
+          m.oddsTanBefore30,
         ].nonNulls.firstOrNull ??
         '-';
   }
@@ -78,7 +79,9 @@ class _HorseRaceResultDisplayAlertState extends ConsumerState<HorseRaceResultDis
 
     final List<OddsModel> eRecordOdds =
         (appParamState.keepOddsMap[mapKey] ?? <OddsModel>[])
-            .where((OddsModel o) => o.race == appParamState.selectedRaceNumber && o.minutesBeforeStart == -999)
+            .where(
+              (OddsModel o) => o.race == appParamState.selectedRaceNumber && o.minutesBeforeStart == kOddsTimingLast,
+            )
             .toList()
           ..sort((OddsModel a, OddsModel b) => (double.tryParse(a.odds) ?? 0).compareTo(double.tryParse(b.odds) ?? 0));
 

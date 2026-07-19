@@ -7,6 +7,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:scroll_to_index/scroll_to_index.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../const/const.dart';
 import '../../controllers/controllers_mixin.dart';
 import '../../data/http/client.dart';
 import '../../data/http/path.dart';
@@ -355,30 +356,30 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     return List<int>.generate(
       timingParts.length,
       (int i) => switch (i) {
-        0 => 999,
-        _ when timingParts[i] == '0' => -999,
+        0 => kOddsTimingFirst,
+        _ when timingParts[i] == '0' => kOddsTimingLast,
         _ => int.tryParse(timingParts[i]) ?? 0,
       },
     );
   }
 
   ///
-  static int? _resolveFilterMinutes(String selectedTiming, List<OddsModel> oddsModelList) {
+  static int? _resolveFilterMinutes(String selectedTiming, List<OddsModel> oddsModelList, int firstTiming) {
     if (selectedTiming.isNotEmpty) {
       if (selectedTiming == '0') {
-        return -999;
+        return kOddsTimingLast;
       }
       final int parsed = int.tryParse(selectedTiming) ?? 0;
-      if (parsed == 24) {
-        return oddsModelList.any((OddsModel e) => e.minutesBeforeStart == 24) ? 24 : 999;
+      if (parsed == firstTiming) {
+        return oddsModelList.any((OddsModel e) => e.minutesBeforeStart == firstTiming) ? firstTiming : kOddsTimingFirst;
       }
       return parsed;
     }
-    if (oddsModelList.any((OddsModel e) => e.minutesBeforeStart == -999)) {
-      return -999;
+    if (oddsModelList.any((OddsModel e) => e.minutesBeforeStart == kOddsTimingLast)) {
+      return kOddsTimingLast;
     }
-    if (oddsModelList.isNotEmpty && oddsModelList.every((OddsModel e) => e.minutesBeforeStart == 999)) {
-      return 999;
+    if (oddsModelList.isNotEmpty && oddsModelList.every((OddsModel e) => e.minutesBeforeStart == kOddsTimingFirst)) {
+      return kOddsTimingFirst;
     }
     final List<int> validValues =
         oddsModelList.map((OddsModel e) => e.minutesBeforeStart).where((int v) => v >= 0).toList()..sort();
@@ -386,21 +387,23 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
   }
 
   ///
-  static String _filterMinutesToTimingKey(int? filterMinutes) => switch (filterMinutes) {
-    null => '',
-    999 => '24',
-    -999 => '0',
-    _ => filterMinutes.toString(),
-  };
+  static String _filterMinutesToTimingKey(int? filterMinutes, String firstTimingKey, String lastTimingKey) =>
+      switch (filterMinutes) {
+        null => '',
+        kOddsTimingFirst => firstTimingKey,
+        kOddsTimingLast => lastTimingKey,
+        _ => filterMinutes.toString(),
+      };
 
   ///
-  static String _resolveMinTiming(List<OddsModel> oddsModelList) {
-    if (oddsModelList.any((OddsModel e) => e.minutesBeforeStart == -999)) {
-      return '0';
+  static String _resolveMinTiming(List<OddsModel> oddsModelList, String firstTimingKey, String lastTimingKey) {
+    if (oddsModelList.any((OddsModel e) => e.minutesBeforeStart == kOddsTimingLast)) {
+      return lastTimingKey;
     }
-    if (oddsModelList.isNotEmpty && oddsModelList.every((OddsModel e) => e.minutesBeforeStart == 999)) {
-      return '24';
+    if (oddsModelList.isNotEmpty && oddsModelList.every((OddsModel e) => e.minutesBeforeStart == kOddsTimingFirst)) {
+      return firstTimingKey;
     }
+
     final List<OddsModel> validList = oddsModelList.where((OddsModel e) => e.minutesBeforeStart >= 0).toList()
       ..sort((OddsModel a, OddsModel b) => a.minutesBeforeStart.compareTo(b.minutesBeforeStart));
     return validList.isNotEmpty ? validList.first.minutesBeforeStart.toString() : '';
@@ -412,7 +415,9 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
         .where((OddsModel e) => e.race == widget.raceNumber)
         .toList();
 
-    final int? filterMinutes = _resolveFilterMinutes(appParamState.selectedTiming, allOdds);
+    final String config = appParamState.configOddsGetTiming;
+    final int firstTiming = config.isEmpty ? 0 : (int.tryParse(config.split('|').first) ?? 0);
+    final int? filterMinutes = _resolveFilterMinutes(appParamState.selectedTiming, allOdds, firstTiming);
 
     return (filterMinutes != null
             ? allOdds.where((OddsModel e) => e.minutesBeforeStart == filterMinutes).toList()
@@ -512,7 +517,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
 
     final List<OddsModel> eRecordOdds =
         (widget.oddsMap[widget.mapKey] ?? <OddsModel>[])
-            .where((OddsModel o) => o.race == widget.raceNumber && o.minutesBeforeStart == -999)
+            .where((OddsModel o) => o.race == widget.raceNumber && o.minutesBeforeStart == kOddsTimingLast)
             .toList()
           ..sort((OddsModel a, OddsModel b) => (double.tryParse(a.odds) ?? 0).compareTo(double.tryParse(b.odds) ?? 0));
 
@@ -619,7 +624,10 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
         .where((OddsModel e) => e.race == widget.raceNumber)
         .toList();
 
-    final String minTiming = _resolveMinTiming(oddsModelList);
+    final List<String> timingParts = appParamState.configOddsGetTiming.split('|');
+    final String firstKey = timingParts.isNotEmpty ? timingParts.first : '';
+    final String lastKey = timingParts.isNotEmpty ? timingParts.last : '';
+    final String minTiming = _resolveMinTiming(oddsModelList, firstKey, lastKey);
 
     if (appParamState.selectedTiming.isEmpty && minTiming.isNotEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -630,7 +638,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     }
 
     return Row(
-      children: appParamState.configOddsGetTiming.split('|').map((String e) {
+      children: timingParts.map((String e) {
         return Expanded(
           child: GestureDetector(
             onTap: () => appParamNotifier.setSelectedTiming(timing: appParamState.selectedTiming == e ? '' : e),
@@ -712,8 +720,11 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
       );
     }
 
-    final int? filterMinutes = _resolveFilterMinutes(selectedTiming, displayList);
-    final String activeTimingKey = _filterMinutesToTimingKey(filterMinutes);
+    final List<String> configParts = appParamState.configOddsGetTiming.split('|');
+    final int firstTiming = int.tryParse(configParts.isNotEmpty ? configParts.first : '') ?? 0;
+    final int? filterMinutes = _resolveFilterMinutes(selectedTiming, displayList, firstTiming);
+    final String lastTimingKey = configParts.isNotEmpty ? configParts.last : '';
+    final String activeTimingKey = _filterMinutesToTimingKey(filterMinutes, firstTiming.toString(), lastTimingKey);
 
     _displayListLength = displayList.length;
 
@@ -946,16 +957,16 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
   ///
   Widget _buildJudgeOddsSection({required List<String> timeline}) {
     final List<String> timingParts = widget.oddsGetTiming.split('|');
-    final String odds24 = timeline[0];
+    final String odds30 = timeline[0];
     final int idx3 = timingParts.indexOf('3');
     final String odds3 = idx3 != -1 && idx3 < timeline.length ? timeline[idx3] : '';
 
-    if (odds24.isEmpty || odds3.isEmpty) {
+    if (odds30.isEmpty || odds3.isEmpty) {
       return const SizedBox.shrink();
     }
 
     final Map<String, dynamic> judged = _utility.judgeOdds(
-      before24: double.tryParse(odds24) ?? 0,
+      before30: double.tryParse(odds30) ?? 0,
       before3: double.tryParse(odds3) ?? 0,
       rateHonmei: double.tryParse(appParamState.configOddsDropRateHonmei) ?? 0,
       rateChuAna: double.tryParse(appParamState.configOddsDropRateChuana) ?? 0,
@@ -1369,7 +1380,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
         .toList();
 
     final bool hasBothTimings =
-        allOddsForRace.any((OddsModel e) => e.minutesBeforeStart == 999) &&
+        allOddsForRace.any((OddsModel e) => e.minutesBeforeStart == kOddsTimingFirst) &&
         allOddsForRace.any((OddsModel e) => e.minutesBeforeStart == 3);
 
     final Map<int, RaceResultModel> raceResultByRank = Map<int, RaceResultModel>.fromEntries(
@@ -1811,12 +1822,6 @@ class _OddsTimelineRow extends StatelessWidget {
                 ? Colors.red
                 : Colors.white;
 
-            final String circleMinute = entry.key == 0
-                ? '24'
-                : entry.key == timingKeys.length - 1
-                ? '0'
-                : entryTimingKey;
-
             final String fukuMin = fukuMinList?[entry.key] ?? '';
             final String fukuMax = fukuMaxList?[entry.key] ?? '';
 
@@ -1912,7 +1917,7 @@ class _OddsTimelineRow extends StatelessWidget {
                               height: 12,
                               child: Center(
                                 child: Text(
-                                  circleMinute,
+                                  entryTimingKey,
                                   style: TextStyle(
                                     fontSize: 9,
                                     color: circleColor == Colors.red ? Colors.white : Colors.black,

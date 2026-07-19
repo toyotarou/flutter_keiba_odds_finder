@@ -48,7 +48,21 @@ class _HorseOddsRecordDisplayAlertState extends ConsumerState<HorseOddsRecordDis
   Widget _displayOddsRecordList() {
     final List<Widget> list = <Widget>[];
 
-    const List<String> timingLabels = <String>['24', '21', '18', '15', '12', '9', '6', '3', '0'];
+    final List<String> timingLabels = appParamState.configOddsGetTiming.isEmpty
+        ? <String>[]
+        : appParamState.configOddsGetTiming.split('|');
+
+    final Map<String, String Function(SummaryModel)> oddsGetterByLabel = <String, String Function(SummaryModel)>{
+      '30': (SummaryModel m) => m.oddsTanBefore30,
+      '21': (SummaryModel m) => m.oddsTanBefore21,
+      '18': (SummaryModel m) => m.oddsTanBefore18,
+      '15': (SummaryModel m) => m.oddsTanBefore15,
+      '12': (SummaryModel m) => m.oddsTanBefore12,
+      '9': (SummaryModel m) => m.oddsTanBefore9,
+      '6': (SummaryModel m) => m.oddsTanBefore6,
+      '3': (SummaryModel m) => m.oddsTanBefore3,
+      '0': (SummaryModel m) => m.oddsTanBefore0,
+    };
 
     final List<SummaryModel> matched =
         appParamState.keepSummaryMap.values
@@ -58,17 +72,9 @@ class _HorseOddsRecordDisplayAlertState extends ConsumerState<HorseOddsRecordDis
           ..sort((SummaryModel a, SummaryModel b) => b.date.compareTo(a.date));
 
     for (final SummaryModel element in matched) {
-      final List<String> odds = <String>[
-        element.oddsTanBefore24,
-        element.oddsTanBefore21,
-        element.oddsTanBefore18,
-        element.oddsTanBefore15,
-        element.oddsTanBefore12,
-        element.oddsTanBefore9,
-        element.oddsTanBefore6,
-        element.oddsTanBefore3,
-        element.oddsTanBefore0,
-      ];
+      final List<String> odds = timingLabels
+          .map((String label) => (oddsGetterByLabel[label] ?? (SummaryModel _) => '')(element))
+          .toList();
 
       list.add(
         DefaultTextStyle(

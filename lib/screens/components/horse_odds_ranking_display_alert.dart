@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../const/const.dart';
 import '../../controllers/app_param/app_param.dart';
 import '../../controllers/controllers_mixin.dart';
 import '../../extensions/extensions.dart';
@@ -27,12 +28,9 @@ const Color _changedBgColor3 = Color(0xFF5A1A1A);
 const Color _droppedBgColor = Color(0xFF4A1A6A);
 const Color _defaultBgColor = Colors.transparent;
 
-const List<int> _kSummaryTimingMinutes = <int>[24, 21, 18, 15, 12, 9, 6, 3, 0];
-
-const List<String> _kSummaryTimingLabels = <String>['24', '21', '18', '15', '12', '9', '6', '3', '0'];
-
+/////(3)
 final Map<int, String Function(SummaryModel)> _kOddsGetters = <int, String Function(SummaryModel)>{
-  24: (SummaryModel m) => m.oddsTanBefore24,
+  30: (SummaryModel m) => m.oddsTanBefore30,
   21: (SummaryModel m) => m.oddsTanBefore21,
   18: (SummaryModel m) => m.oddsTanBefore18,
   15: (SummaryModel m) => m.oddsTanBefore15,
@@ -42,6 +40,7 @@ final Map<int, String Function(SummaryModel)> _kOddsGetters = <int, String Funct
   3: (SummaryModel m) => m.oddsTanBefore3,
   0: (SummaryModel m) => m.oddsTanBefore0,
 };
+/////
 
 class HorseOddsRankingDisplayAlert extends ConsumerStatefulWidget {
   const HorseOddsRankingDisplayAlert({super.key, this.mode = RankingMode.live});
@@ -228,7 +227,13 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
     if (widget.mode == RankingMode.summary) {
       return GestureDetector(
         onTap: () {
-          final Map<int, int> popularityRank = _computeLatestPopularityRank(summaryState.oneRaceSummaryList);
+          final List<int> timingMinutes = appParamState.configOddsGetTiming.isEmpty
+              ? <int>[]
+              : appParamState.configOddsGetTiming.split('|').map(int.parse).toList();
+          final Map<int, int> popularityRank = _computeLatestPopularityRank(
+            summaryState.oneRaceSummaryList,
+            timingMinutes,
+          );
           OddsFinderDialog(
             context: context,
             widget: HorseRaceResultDisplayAlert(from: ResultDisplayFrom.summary, numToPopularityRank: popularityRank),
@@ -306,8 +311,8 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
   }
 
   ///
-  static Map<int, int> _computeLatestPopularityRank(List<SummaryModel> horses) {
-    for (final int minutes in _kSummaryTimingMinutes.reversed) {
+  static Map<int, int> _computeLatestPopularityRank(List<SummaryModel> horses, List<int> timingMinutes) {
+    for (final int minutes in timingMinutes.reversed) {
       final List<SummaryModel> sorted = _sortSummaryByOdds(horses, minutes);
       if (sorted.isNotEmpty) {
         return <int, int>{for (int i = 0; i < sorted.length; i++) sorted[i].num: i + 1};
@@ -321,11 +326,11 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
   static List<int> _computeTimingOrder(List<String> timingParts) {
     return List<int>.generate(timingParts.length, (int i) {
       if (i == 0) {
-        return 999;
+        return kOddsTimingFirst;
       }
 
       if (timingParts[i] == '0') {
-        return -999;
+        return kOddsTimingLast;
       }
 
       return int.parse(timingParts[i]);
@@ -397,13 +402,17 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
 
     final int horseNum = horses.length;
 
-    final List<List<SummaryModel>> perTiming = _kSummaryTimingMinutes
+    final List<int> summaryTimingMinutes = appParamState.configOddsGetTiming.isEmpty
+        ? <int>[]
+        : appParamState.configOddsGetTiming.split('|').map(int.parse).toList();
+
+    final List<List<SummaryModel>> perTiming = summaryTimingMinutes
         .map((int m) => _sortSummaryByOdds(horses, m))
         .toList();
 
     final RankingGrid grid = <int, List<int?>>{
       for (int rank = 1; rank <= horseNum; rank++)
-        rank: _kSummaryTimingMinutes.asMap().entries.map((MapEntry<int, int> e) {
+        rank: summaryTimingMinutes.asMap().entries.map((MapEntry<int, int> e) {
           final List<SummaryModel> sorted = perTiming[e.key];
 
           return rank - 1 < sorted.length ? sorted[rank - 1].num : null;
@@ -412,7 +421,7 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
 
     return (
       grid: grid,
-      timingParts: _kSummaryTimingLabels,
+      timingParts: summaryTimingMinutes.map((int m) => m.toString()).toList(),
       horseNum: horseNum,
       horseToStartRank: _buildHorseToStartRank(grid, horseNum),
     );

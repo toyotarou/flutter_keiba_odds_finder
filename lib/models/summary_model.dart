@@ -11,7 +11,7 @@ class SummaryModel {
     required this.raceName,
     required this.waku,
     required this.num,
-    required this.oddsTanBefore24,
+    required this.oddsTanBefore30,
     required this.oddsTanBefore21,
     required this.oddsTanBefore18,
     required this.oddsTanBefore15,
@@ -36,7 +36,7 @@ class SummaryModel {
       raceName: (json['race_name'] as String?) ?? '',
       waku: (json['waku'] as int?) ?? 0,
       num: (json['num'] as int?) ?? 0,
-      oddsTanBefore24: (json['odds_tan_before_24'] as String?) ?? '',
+      oddsTanBefore30: (json['odds_tan_before_24'] as String?) ?? '',
       oddsTanBefore21: (json['odds_tan_before_21'] as String?) ?? '',
       oddsTanBefore18: (json['odds_tan_before_18'] as String?) ?? '',
       oddsTanBefore15: (json['odds_tan_before_15'] as String?) ?? '',
@@ -60,7 +60,7 @@ class SummaryModel {
   final String raceName;
   final int waku;
   final int num;
-  final String oddsTanBefore24;
+  final String oddsTanBefore30;
   final String oddsTanBefore21;
   final String oddsTanBefore18;
   final String oddsTanBefore15;

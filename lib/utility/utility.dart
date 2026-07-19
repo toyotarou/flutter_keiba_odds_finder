@@ -26,12 +26,12 @@ class Utility {
 
   ///
   Map<String, dynamic> judgeOdds({
-    required double before24,
+    required double before30,
     required double before3,
     required double rateHonmei,
     required double rateChuAna,
   }) {
-    if (before3 / before24 >= 0.7) {
+    if (before3 / before30 >= 0.7) {
       return <String, dynamic>{'display': false, 'message': '急落なし', 'description': '', 'flag': -1};
     }
 
