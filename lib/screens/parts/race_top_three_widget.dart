@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../const/const.dart';
 import '../../utility/functions.dart';
 
 class RaceTopThreeEntry {
@@ -38,7 +39,7 @@ class RaceTopThreeWidget extends StatelessWidget {
 
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: <int>[1, 2, 3].map((int rank) {
+              children: List<int>.generate(kRaceTopFinishers, (int i) => i + 1).map((int rank) {
                 final RaceTopThreeEntry? h = entries[rank];
                 return Container(
                   decoration: BoxDecoration(

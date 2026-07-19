@@ -94,6 +94,9 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
   String _aiPickupHorse = '';
   Map<String, List<ShutsubaHistoryModel>> _shutsubaHistoryMap = <String, List<ShutsubaHistoryModel>>{};
 
+  Map<int, int> get _numToRankMap =>
+      _utility.buildNumToRankMap(widget.raceResultMap[widget.mapKey] ?? <RaceResultModel>[], widget.raceNumber);
+
   ///
   @override
   void initState() {
@@ -357,7 +360,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
       timingParts.length,
       (int i) => switch (i) {
         0 => kOddsTimingFirst,
-        _ when timingParts[i] == '0' => kOddsTimingLast,
+        _ when timingParts[i] == kOddsTimingLastLabel => kOddsTimingLast,
         _ => int.tryParse(timingParts[i]) ?? 0,
       },
     );
@@ -366,7 +369,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
   ///
   static int? _resolveFilterMinutes(String selectedTiming, List<OddsModel> oddsModelList, int firstTiming) {
     if (selectedTiming.isNotEmpty) {
-      if (selectedTiming == '0') {
+      if (selectedTiming == kOddsTimingLastLabel) {
         return kOddsTimingLast;
       }
       final int parsed = int.tryParse(selectedTiming) ?? 0;
@@ -740,12 +743,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
       for (int i = 0; i < fukuSortable.length; i++) fukuSortable[i].key: i + 1,
     };
 
-    final Map<int, int> numToRankMap = <int, int>{
-      for (final RaceResultModel r in (widget.raceResultMap[widget.mapKey] ?? <RaceResultModel>[]).where(
-        (RaceResultModel r) => r.race == widget.raceNumber && r.result <= 3,
-      ))
-        r.num: r.result,
-    };
+    final Map<int, int> numToRankMap = _numToRankMap;
 
     final List<int> sortedAnalysisKeys = _analysisMap.keys.toList()..sort();
     final int analysisTotalCount = sortedAnalysisKeys.length;
@@ -958,16 +956,16 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
   Widget _buildJudgeOddsSection({required List<String> timeline}) {
     final List<String> timingParts = widget.oddsGetTiming.split('|');
     final String odds30 = timeline[0];
-    final int idx3 = timingParts.indexOf('3');
-    final String odds3 = idx3 != -1 && idx3 < timeline.length ? timeline[idx3] : '';
+    final int idx6 = timingParts.indexOf(kOddsJudgeTimingLabel);
+    final String odds6 = idx6 != -1 && idx6 < timeline.length ? timeline[idx6] : '';
 
-    if (odds30.isEmpty || odds3.isEmpty) {
+    if (odds30.isEmpty || odds6.isEmpty) {
       return const SizedBox.shrink();
     }
 
     final Map<String, dynamic> judged = _utility.judgeOdds(
       before30: double.tryParse(odds30) ?? 0,
-      before3: double.tryParse(odds3) ?? 0,
+      before6: double.tryParse(odds6) ?? 0,
       rateHonmei: double.tryParse(appParamState.configOddsDropRateHonmei) ?? 0,
       rateChuAna: double.tryParse(appParamState.configOddsDropRateChuana) ?? 0,
     );
@@ -1116,12 +1114,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
 
   ///
   Widget _buildPopularityHorseRow({required List<OddsModel> displayList}) {
-    final Map<int, int> numToRankMap = <int, int>{
-      for (final RaceResultModel r in (widget.raceResultMap[widget.mapKey] ?? <RaceResultModel>[]).where(
-        (RaceResultModel r) => r.race == widget.raceNumber && r.result <= 3,
-      ))
-        r.num: r.result,
-    };
+    final Map<int, int> numToRankMap = _numToRankMap;
 
     double maxUpsetScore = 0;
     int maxRank = 0;
@@ -1368,12 +1361,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
         e.num: e,
     };
 
-    final Map<int, int> numToRankMap = <int, int>{
-      for (final RaceResultModel r in (widget.raceResultMap[widget.mapKey] ?? <RaceResultModel>[]).where(
-        (RaceResultModel r) => r.race == widget.raceNumber && r.result <= 3,
-      ))
-        r.num: r.result,
-    };
+    final Map<int, int> numToRankMap = _numToRankMap;
 
     final List<OddsModel> allOddsForRace = (widget.oddsMap[widget.mapKey] ?? <OddsModel>[])
         .where((OddsModel e) => e.race == widget.raceNumber)
@@ -1381,7 +1369,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
 
     final bool hasBothTimings =
         allOddsForRace.any((OddsModel e) => e.minutesBeforeStart == kOddsTimingFirst) &&
-        allOddsForRace.any((OddsModel e) => e.minutesBeforeStart == 3);
+        allOddsForRace.any((OddsModel e) => e.minutesBeforeStart == kOddsJudgeTiming);
 
     final Map<int, RaceResultModel> raceResultByRank = Map<int, RaceResultModel>.fromEntries(
       (widget.raceResultMap[widget.mapKey] ?? <RaceResultModel>[])

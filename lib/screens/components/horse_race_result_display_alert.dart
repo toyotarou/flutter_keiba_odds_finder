@@ -108,7 +108,7 @@ class _HorseRaceResultDisplayAlertState extends ConsumerState<HorseRaceResultDis
     final List<SummaryModel> top3 =
         (<SummaryModel>[...summaryState.oneRaceSummaryList]
               ..sort((SummaryModel a, SummaryModel b) => a.result.compareTo(b.result)))
-            .where((SummaryModel e) => <int>[1, 2, 3].contains(e.result))
+            .where((SummaryModel e) => e.result <= kRaceTopFinishers)
             .toList();
 
     final Map<int, RaceTopThreeEntry> entries = <int, RaceTopThreeEntry>{

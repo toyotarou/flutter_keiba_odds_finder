@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../const/const.dart';
 import '../../controllers/controllers_mixin.dart';
 import '../../data/http/client.dart';
 import '../../data/http/path.dart';
@@ -373,7 +374,7 @@ class _PopularityRecordDisplayAlertState extends ConsumerState<PopularityRecordD
                       2: Color(0xFFC0C0C0),
                       3: Color(0xFFCD7F32),
                     };
-                    final List<int> positions = <int>[1, 2, 3].where((int p) => counts.containsKey(p)).toList();
+                    final List<int> positions = List<int>.generate(kRaceTopFinishers, (int i) => i + 1).where((int p) => counts.containsKey(p)).toList();
                     return Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: <Widget>[

@@ -329,7 +329,7 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
         return kOddsTimingFirst;
       }
 
-      if (timingParts[i] == '0') {
+      if (timingParts[i] == kOddsTimingLastLabel) {
         return kOddsTimingLast;
       }
 
