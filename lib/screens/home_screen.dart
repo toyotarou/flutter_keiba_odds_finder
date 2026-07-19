@@ -23,6 +23,7 @@ import 'components/history_race_record_display_alert.dart';
 import 'components/horse_name_initial_panel_alert.dart';
 import 'components/horse_odds_ranking_display_alert.dart';
 import 'components/terms_alert.dart';
+import 'components/weekend_race_calendar_alert.dart';
 import 'page/race_content_page.dart';
 import 'parts/error_confirm_dialog.dart';
 import 'parts/odds_finder_dialog.dart';
@@ -365,7 +366,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
               padding: const EdgeInsets.all(5),
               decoration: BoxDecoration(
                 border: Border.all(color: Colors.white.withValues(alpha: 0.4)),
-                color: (appParamState.selectedScheduleKaisuuBashoDayName == label)
+                color: (appParamState.selectedScheduleKaisuuBashoDay == '${e.kaisuu}_${e.basho}_${e.day}')
                     ? Colors.greenAccent.withValues(alpha: 0.3)
                     : Colors.transparent,
                 borderRadius: BorderRadius.circular(3),
@@ -497,6 +498,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                                   ),
                                 ),
                               ],
+
+                              const SizedBox(width: 10),
+
+                              Container(
+                                padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
+                                decoration: BoxDecoration(
+                                  color: Colors.blueGrey[900],
+                                  borderRadius: BorderRadius.circular(5),
+                                ),
+                                child: GestureDetector(
+                                  onTap: () {
+                                    OddsFinderDialog(context: context, widget: const WeekendRaceCalendarAlert());
+                                  },
+                                  child: const Text('週カレ', style: TextStyle(color: Colors.white)),
+                                ),
+                              ),
 
                               const SizedBox(width: 20),
 
