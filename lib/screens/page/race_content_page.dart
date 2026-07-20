@@ -95,6 +95,9 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
   String _aiPickupHorse = '';
   Map<String, List<ShutsubaHistoryModel>> _shutsubaHistoryMap = <String, List<ShutsubaHistoryModel>>{};
 
+  // 初回訪問時にmedianなし&期待数値タブ選択状態でパネルを自動クローズしたかどうか
+  bool _autoClosedPanel = false;
+
   Map<int, int> get _numToRankMap =>
       _utility.buildNumToRankMap(widget.raceResultMap[widget.mapKey] ?? <RaceResultModel>[], widget.raceNumber);
 
@@ -484,7 +487,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                               Expanded(
                                 child: Container(
                                   alignment: Alignment.topRight,
-                                  child: const Text('発走まで', style: TextStyle(fontSize: 11, color: Colors.white)),
+                                  child: const Text('発走まで', style: TextStyle(fontSize: 8, color: Colors.white)),
                                 ),
                               ),
 
@@ -517,7 +520,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                                   alignment: Alignment.topRight,
                                   child: const Text(
                                     '馬券締切まで',
-                                    style: TextStyle(fontSize: 11, color: Colors.orangeAccent),
+                                    style: TextStyle(fontSize: 8, color: Colors.orangeAccent),
                                   ),
                                 ),
                               ),
@@ -1211,15 +1214,10 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
   }
 
   ///
-  Widget _buildPopularityHorseRow({required List<OddsModel> displayList, PopularityRankOddsMedianModel? median}) {
-    if (median == null) {
-      return Container(
-        padding: const EdgeInsets.all(8),
-        alignment: Alignment.centerLeft,
-        child: const Text('過去の類似レースがないため、\n期待数値を表示できません。', style: TextStyle(fontSize: 11, color: Colors.grey)),
-      );
-    }
-
+  Widget _buildPopularityHorseRow({
+    required List<OddsModel> displayList,
+    required PopularityRankOddsMedianModel median,
+  }) {
     final Map<int, int> numToRankMap = _numToRankMap;
 
     final int pickupCount = displayList.length <= 8
@@ -1445,6 +1443,19 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
 
     final PopularityRankOddsMedianModel? median = _makeMedianList();
 
+    // 他レースで「期待数値」タブを開いたまま本レース（medianなし）に切り替えた場合、パネルを自動クローズ
+    if (!_autoClosedPanel &&
+        median == null &&
+        appParamState.isShowSideTabPanel &&
+        appParamState.selectedUpsetBoxNum == 0) {
+      _autoClosedPanel = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          appParamNotifier.setIsShowSideTabPanel(flag: false);
+        }
+      });
+    }
+
     String raceName = '';
     String startTime = '--:--';
     RaceModel? currentRaceModel;
@@ -1504,19 +1515,25 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
 
         _buildControlButtons(raceIdx: raceIdx),
 
-        if (displayList.isNotEmpty) ...<Widget>[
+        if (displayList.isNotEmpty && (median != null || raceResultByRank.isNotEmpty)) ...<Widget>[
           Stack(
             children: <Widget>[
-              if (appParamState.isShowSideTabPanel) ...<Widget>[
+              if (appParamState.isShowSideTabPanel && (median != null || raceResultByRank.isNotEmpty)) ...<Widget>[
                 SideTabPanel(
-                  tabLabels: raceResultByRank.isEmpty ? <String>['期待数値'] : <String>['期待数値', 'レース結果'],
+                  tabLabels: <String>[if (median != null) '期待数値', if (raceResultByRank.isNotEmpty) 'レース結果'],
+
                   tabWidth: 90,
                   tabGap: 0,
                   height: 100,
                   borderColor: Colors.white.withValues(alpha: 0.4),
-                  selectedIndex: raceResultByRank.isEmpty ? 0 : appParamState.selectedUpsetBoxNum,
+                  selectedIndex: (median != null && raceResultByRank.isNotEmpty)
+                      ? appParamState.selectedUpsetBoxNum
+                      : 0,
                   onSelected: (int i) => appParamNotifier.setSelectedUpsetBoxNum(num: i),
-                  panelChild: (raceResultByRank.isEmpty || appParamState.selectedUpsetBoxNum == 0)
+
+                  panelChild: median == null
+                      ? _buildRaceResultBox(raceResultByRank: raceResultByRank)
+                      : (raceResultByRank.isEmpty || appParamState.selectedUpsetBoxNum == 0)
                       ? _buildPopularityHorseRow(displayList: displayList, median: median)
                       : _buildRaceResultBox(raceResultByRank: raceResultByRank),
                 ),
@@ -1547,7 +1564,11 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                       child: Padding(
                         padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 12),
                         child: Text(
-                          '期待数値、レース結果の表示',
+                          median != null && raceResultByRank.isNotEmpty
+                              ? '期待数値、レース結果の表示'
+                              : median != null
+                              ? '期待数値の表示'
+                              : 'レース結果の表示',
                           style: TextStyle(fontSize: 10, color: Colors.white.withValues(alpha: 0.6)),
                         ),
                       ),
