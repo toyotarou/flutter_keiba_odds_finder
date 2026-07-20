@@ -25,11 +25,31 @@ class _WeekendRaceCalendarAlertState extends ConsumerState<WeekendRaceCalendarAl
   String _selectedDate = '';
 
   final ScrollController _gutterController = ScrollController();
+  final ScrollController _calendarScrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
-    _selectedDate = ref.read(appParamProvider).selectedScheduleDate;
+    final AppParamState appParam = ref.read(appParamProvider);
+    _selectedDate = appParam.selectedScheduleDate;
+    WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToSelectedRace(appParam));
+  }
+
+  void _scrollToSelectedRace(AppParamState appParam) {
+    if (!_calendarScrollController.hasClients) return;
+    final String key = '${appParam.selectedScheduleDate}_${appParam.selectedScheduleKaisuuBashoDay}';
+    final List<RaceModel> races = appParam.keepRaceMap[key] ?? <RaceModel>[];
+    final RaceModel? race = races.where((RaceModel r) => r.race == appParam.selectedRaceNumber).firstOrNull;
+    if (race == null) return;
+    final List<String> parts = race.startTime.split(':');
+    if (parts.length < 2) return;
+    final int startMinutes = int.parse(parts[0]) * 60 + int.parse(parts[1]);
+    const double blockH = 30 * _kPxPerMinute;
+    final double top = ((startMinutes - _kStartHour * 60) * _kPxPerMinute - blockH).clamp(
+      0.0,
+      _calendarScrollController.position.maxScrollExtent,
+    );
+    _calendarScrollController.animateTo(top, duration: const Duration(milliseconds: 300), curve: Curves.easeOut);
   }
 
   double get _gridHeight => (_kEndHour - _kStartHour) * 60 * _kPxPerMinute;
@@ -41,12 +61,19 @@ class _WeekendRaceCalendarAlertState extends ConsumerState<WeekendRaceCalendarAl
 
   String get _effectiveDate {
     final List<String> d = _dates;
-    if (d.isEmpty) return '';
+    if (d.isEmpty) {
+      return '';
+    }
     return d.contains(_selectedDate) ? _selectedDate : d.first;
   }
 
-  List<ScheduleModel> get _schedulesForDate =>
-      appParamState.keepScheduleDateBashoMap[_effectiveDate] ?? <ScheduleModel>[];
+  List<ScheduleModel> get _schedulesForDate {
+    final List<ScheduleModel> list = List<ScheduleModel>.from(
+      appParamState.keepScheduleDateBashoMap[_effectiveDate] ?? <ScheduleModel>[],
+    );
+    list.sort((ScheduleModel a, ScheduleModel b) => a.basho.compareTo(b.basho));
+    return list;
+  }
 
   List<RaceModel> _racesForSchedule(ScheduleModel schedule) {
     final String key = '${schedule.date}_${schedule.kaisuu}_${schedule.basho}_${schedule.day}';
@@ -56,6 +83,7 @@ class _WeekendRaceCalendarAlertState extends ConsumerState<WeekendRaceCalendarAl
   @override
   void dispose() {
     _gutterController.dispose();
+    _calendarScrollController.dispose();
     super.dispose();
   }
 
@@ -82,10 +110,10 @@ class _WeekendRaceCalendarAlertState extends ConsumerState<WeekendRaceCalendarAl
 
   Widget _buildDateButtons() {
     final List<String> dates = _dates;
-    final String appSelected = appParamState.selectedScheduleDate;
+    final String effective = _effectiveDate;
     return Row(
       children: dates.map((String date) {
-        final bool isAppSelected = date == appSelected;
+        final bool isAppSelected = date == effective;
         return Expanded(
           child: GestureDetector(
             onTap: () => setState(() => _selectedDate = date),
@@ -93,7 +121,7 @@ class _WeekendRaceCalendarAlertState extends ConsumerState<WeekendRaceCalendarAl
               margin: const EdgeInsets.symmetric(horizontal: 6),
               padding: const EdgeInsets.symmetric(vertical: 6),
               decoration: BoxDecoration(
-                color: isAppSelected ? Colors.greenAccent.withValues(alpha: 0.2) : Colors.black.withValues(alpha: 0.5),
+                color: isAppSelected ? Colors.green[800]!.withValues(alpha: 0.4) : Colors.black.withValues(alpha: 0.5),
                 border: Border.all(color: Colors.white.withValues(alpha: 0.4)),
                 borderRadius: BorderRadius.circular(4),
               ),
@@ -126,7 +154,7 @@ class _WeekendRaceCalendarAlertState extends ConsumerState<WeekendRaceCalendarAl
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
                 decoration: BoxDecoration(
                   color: isVenueSelected
-                      ? Colors.greenAccent.withValues(alpha: 0.2)
+                      ? Colors.green[800]!.withValues(alpha: 0.4)
                       : Colors.black.withValues(alpha: 0.5),
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -154,6 +182,7 @@ class _WeekendRaceCalendarAlertState extends ConsumerState<WeekendRaceCalendarAl
             return false;
           },
           child: SingleChildScrollView(
+            controller: _calendarScrollController,
             child: SizedBox(
               height: _gridHeight,
               child: Row(
@@ -239,7 +268,9 @@ class _WeekendRaceCalendarAlertState extends ConsumerState<WeekendRaceCalendarAl
 
       for (final RaceModel race in races) {
         final List<String> parts = race.startTime.split(':');
-        if (parts.length < 2) continue;
+        if (parts.length < 2) {
+          continue;
+        }
         final int startMinutes = int.parse(parts[0]) * 60 + int.parse(parts[1]);
 
         final double endTop = (startMinutes - _kStartHour * 60) * _kPxPerMinute;
@@ -278,39 +309,70 @@ class _RaceBlock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: isSelected ? Colors.greenAccent.withValues(alpha: 0.2) : Colors.black.withValues(alpha: 0.5),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
-        borderRadius: BorderRadius.circular(3),
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 2),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          Text(
-            '${race.race}R  ${race.startTime}',
-            style: const TextStyle(fontSize: 8, fontWeight: FontWeight.bold, color: Colors.white),
-            maxLines: 1,
-            overflow: TextOverflow.clip,
+    return Stack(
+      children: <Widget>[
+        Positioned(bottom: 5, right: 5, child: Text('${race.race}R')),
+
+        Positioned(
+          bottom: -2,
+          left: 0,
+          right: 0,
+          child: Column(
+            children: <Widget>[
+              const Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: <Widget>[
+                  Icon(Icons.arrow_downward, color: Colors.yellowAccent, size: 20),
+                  SizedBox.shrink(),
+                ],
+              ),
+              Container(height: 5, color: Colors.yellowAccent.withValues(alpha: 0.5)),
+            ],
           ),
-          Text(
-            '${race.course}${race.dist}m',
-            style: TextStyle(fontSize: 7, color: Colors.white.withValues(alpha: 0.85)),
-            maxLines: 1,
-            overflow: TextOverflow.clip,
+        ),
+
+        Container(
+          width: double.infinity,
+          height: double.infinity,
+
+          decoration: BoxDecoration(
+            color: isSelected ? Colors.green[800]!.withValues(alpha: 0.4) : Colors.black.withValues(alpha: 0.5),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
+            borderRadius: BorderRadius.circular(3),
           ),
-          Flexible(
-            child: Text(
-              race.raceName,
-              style: TextStyle(fontSize: 7, color: Colors.white.withValues(alpha: 0.7)),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
+
+          padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 2),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Text(
+                '${race.startTime.split(':')[0]}:${race.startTime.split(':')[1]}',
+
+                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
+                maxLines: 1,
+                overflow: TextOverflow.clip,
+              ),
+
+              Flexible(
+                child: Text(
+                  race.raceName,
+                  style: const TextStyle(fontSize: 10, color: Colors.white),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+
+              Text(
+                '${race.course}${race.dist}m',
+                style: const TextStyle(fontSize: 8, color: Colors.white),
+                maxLines: 1,
+                overflow: TextOverflow.clip,
+              ),
+            ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
@@ -332,22 +394,16 @@ class _RaceGridPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final Paint hourLine = Paint()
-      ..color = Colors.white.withValues(alpha: 0.2)
-      ..strokeWidth = 0.5;
-
-    final Paint majorLine = Paint()
-      ..color = Colors.yellowAccent.withValues(alpha: 0.3)
-      ..strokeWidth = 1.0;
+    final Paint majorLine = Paint()..color = Colors.transparent;
 
     for (int h = startHour; h <= endHour; h++) {
       final double y = (h - startHour) * 60 * pxPerMinute;
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), (h % 3 == 0) ? majorLine : hourLine);
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), (h % 3 == 0) ? majorLine : majorLine);
     }
 
     final Paint vertLine = Paint()
       ..color = Colors.white.withValues(alpha: 0.3)
-      ..strokeWidth = 0.5;
+      ..strokeWidth = 1;
 
     for (int i = 0; i <= columnCount; i++) {
       canvas.drawLine(Offset(i * columnWidth, 0), Offset(i * columnWidth, size.height), vertLine);
@@ -381,7 +437,7 @@ class _TimeGutter extends StatelessWidget {
             left: 2,
             child: Text(
               '${h.toString().padLeft(2, '0')}:00',
-              style: const TextStyle(fontSize: 9, color: Colors.white70),
+              style: const TextStyle(fontSize: 9, color: Colors.yellowAccent, fontWeight: FontWeight.bold),
             ),
           ),
       ],
@@ -410,7 +466,7 @@ class _NowIndicatorLine extends StatelessWidget {
       top: (nowMinutes - s) * pxPerMinute,
       left: 0,
       right: 0,
-      child: IgnorePointer(child: Container(height: 2, color: Colors.redAccent.withValues(alpha: 0.5))),
+      child: IgnorePointer(child: Container(height: 2, color: Colors.orangeAccent)),
     );
   }
 }
