@@ -11,6 +11,7 @@ import '../../models/odds_model.dart';
 //
 
 import '../../models/popularity_rank_odds_average_model.dart';
+import '../../models/popularity_rank_odds_median_model.dart';
 import '../../models/push_notifier_user_model.dart';
 import '../../models/race_model.dart';
 import '../../models/schedule_model.dart';
@@ -46,6 +47,9 @@ class AppParamState with _$AppParamState {
 
     @Default(<int, PopularityRankOddsAverageModel>{})
     Map<int, PopularityRankOddsAverageModel> keepPopularityRankOddsAverageMap,
+
+    @Default(<String, PopularityRankOddsMedianModel>{})
+    Map<String, PopularityRankOddsMedianModel> keepPopularityRankOddsMedianMap,
 
     ///
     @Default('') String configOddsGetTiming,
@@ -139,6 +143,10 @@ class AppParam extends _$AppParam {
   ///
   void setKeepPopularityRankOddsAverageMap({required Map<int, PopularityRankOddsAverageModel> map}) =>
       state = state.copyWith(keepPopularityRankOddsAverageMap: map);
+
+  ///
+  void setKeepPopularityRankOddsMedianMap({required Map<String, PopularityRankOddsMedianModel> map}) =>
+      state = state.copyWith(keepPopularityRankOddsMedianMap: map);
 
   //////////////
 

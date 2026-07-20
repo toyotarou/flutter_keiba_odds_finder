@@ -13,6 +13,7 @@ import '../models/odds_model.dart';
 //
 
 import '../models/popularity_rank_odds_average_model.dart';
+import '../models/popularity_rank_odds_median_model.dart';
 import '../models/push_notifier_user_model.dart';
 import '../models/race_model.dart';
 import '../models/race_result_model.dart';
@@ -61,6 +62,7 @@ class HomeScreen extends ConsumerStatefulWidget {
     required this.onLogout,
     required this.pushNotifierUserList,
     required this.popularityRankOddsAverageMap,
+    required this.popularityRankOddsMedianMap,
   });
 
   final Map<String, List<ScheduleModel>> scheduleDateBashoMap;
@@ -86,6 +88,7 @@ class HomeScreen extends ConsumerStatefulWidget {
   final Map<String, LoginUserModel> loginUserMap;
   final List<PushNotifierUserModel> pushNotifierUserList;
   final Map<int, PopularityRankOddsAverageModel> popularityRankOddsAverageMap;
+  final Map<String, PopularityRankOddsMedianModel> popularityRankOddsMedianMap;
 
   final String loggedInUserId;
   final VoidCallback onLogout;
@@ -124,6 +127,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
     loginUserNotifier.getAllLoginUserData();
     pushNotifierUserNotifier.getAllPushNotifierUserData();
     popularityRankOddsAverageNotifier.getAllPopularityRankOddsAverageData();
+    popularityRankOddsMedianNotifier.getAllPopularityRankOddsMedianData();
 
     WidgetsBinding.instance.addPostFrameCallback((_) => _syncAppParam());
     if (widget.isRankingDialogOpen) {
@@ -155,7 +159,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
         //
         //
         //
-        oldWidget.popularityRankOddsAverageMap != widget.popularityRankOddsAverageMap) {
+        oldWidget.popularityRankOddsAverageMap != widget.popularityRankOddsAverageMap ||
+        oldWidget.popularityRankOddsMedianMap != widget.popularityRankOddsMedianMap) {
       WidgetsBinding.instance.addPostFrameCallback((_) => _syncAppParam());
     }
   }
@@ -222,6 +227,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
     appParamNotifier.setKeepLoginUserMap(map: widget.loginUserMap);
     appParamNotifier.setKeepPushNotifierUserList(list: widget.pushNotifierUserList);
     appParamNotifier.setKeepPopularityRankOddsAverageMap(map: widget.popularityRankOddsAverageMap);
+    appParamNotifier.setKeepPopularityRankOddsMedianMap(map: widget.popularityRankOddsMedianMap);
   }
 
   ///

@@ -16,6 +16,7 @@ import 'odds_get_timing/odds_get_timing.dart';
 //
 
 import 'popularity_rank_odds_average/popularity_rank_odds_average.dart';
+import 'popularity_rank_odds_median/popularity_rank_odds_median.dart';
 import 'push_notifier_user/push_notifier_user.dart';
 import 'race/race.dart';
 import 'race_result/race_result.dart';
@@ -118,6 +119,12 @@ mixin ControllersMixin<T extends ConsumerStatefulWidget> on ConsumerState<T> {
 
   PopularityRankOddsAverage get popularityRankOddsAverageNotifier =>
       ref.read(popularityRankOddsAverageProvider.notifier);
+
+  //==========================================//
+
+  PopularityRankOddsMedianState get popularityRankOddsMedianState => ref.watch(popularityRankOddsMedianProvider);
+
+  PopularityRankOddsMedian get popularityRankOddsMedianNotifier => ref.read(popularityRankOddsMedianProvider.notifier);
 
   //==========================================//
 }

@@ -39,6 +39,8 @@ mixin _$AppParamState {
   Map<int, PopularityRankOddsAverageModel>
       get keepPopularityRankOddsAverageMap =>
           throw _privateConstructorUsedError;
+  Map<String, PopularityRankOddsMedianModel>
+      get keepPopularityRankOddsMedianMap => throw _privateConstructorUsedError;
 
   ///
   String get configOddsGetTiming => throw _privateConstructorUsedError;
@@ -90,6 +92,8 @@ abstract class $AppParamStateCopyWith<$Res> {
       Map<String, LoginUserModel> keepLoginUserMap,
       List<PushNotifierUserModel> keepPushNotifierUserList,
       Map<int, PopularityRankOddsAverageModel> keepPopularityRankOddsAverageMap,
+      Map<String, PopularityRankOddsMedianModel>
+          keepPopularityRankOddsMedianMap,
       String configOddsGetTiming,
       String configOddsDropRateHonmei,
       String configOddsDropRateChuana,
@@ -137,6 +141,7 @@ class _$AppParamStateCopyWithImpl<$Res, $Val extends AppParamState>
     Object? keepLoginUserMap = null,
     Object? keepPushNotifierUserList = null,
     Object? keepPopularityRankOddsAverageMap = null,
+    Object? keepPopularityRankOddsMedianMap = null,
     Object? configOddsGetTiming = null,
     Object? configOddsDropRateHonmei = null,
     Object? configOddsDropRateChuana = null,
@@ -198,6 +203,10 @@ class _$AppParamStateCopyWithImpl<$Res, $Val extends AppParamState>
           ? _value.keepPopularityRankOddsAverageMap
           : keepPopularityRankOddsAverageMap // ignore: cast_nullable_to_non_nullable
               as Map<int, PopularityRankOddsAverageModel>,
+      keepPopularityRankOddsMedianMap: null == keepPopularityRankOddsMedianMap
+          ? _value.keepPopularityRankOddsMedianMap
+          : keepPopularityRankOddsMedianMap // ignore: cast_nullable_to_non_nullable
+              as Map<String, PopularityRankOddsMedianModel>,
       configOddsGetTiming: null == configOddsGetTiming
           ? _value.configOddsGetTiming
           : configOddsGetTiming // ignore: cast_nullable_to_non_nullable
@@ -313,6 +322,8 @@ abstract class _$$AppParamStateImplCopyWith<$Res>
       Map<String, LoginUserModel> keepLoginUserMap,
       List<PushNotifierUserModel> keepPushNotifierUserList,
       Map<int, PopularityRankOddsAverageModel> keepPopularityRankOddsAverageMap,
+      Map<String, PopularityRankOddsMedianModel>
+          keepPopularityRankOddsMedianMap,
       String configOddsGetTiming,
       String configOddsDropRateHonmei,
       String configOddsDropRateChuana,
@@ -358,6 +369,7 @@ class __$$AppParamStateImplCopyWithImpl<$Res>
     Object? keepLoginUserMap = null,
     Object? keepPushNotifierUserList = null,
     Object? keepPopularityRankOddsAverageMap = null,
+    Object? keepPopularityRankOddsMedianMap = null,
     Object? configOddsGetTiming = null,
     Object? configOddsDropRateHonmei = null,
     Object? configOddsDropRateChuana = null,
@@ -419,6 +431,10 @@ class __$$AppParamStateImplCopyWithImpl<$Res>
           ? _value._keepPopularityRankOddsAverageMap
           : keepPopularityRankOddsAverageMap // ignore: cast_nullable_to_non_nullable
               as Map<int, PopularityRankOddsAverageModel>,
+      keepPopularityRankOddsMedianMap: null == keepPopularityRankOddsMedianMap
+          ? _value._keepPopularityRankOddsMedianMap
+          : keepPopularityRankOddsMedianMap // ignore: cast_nullable_to_non_nullable
+              as Map<String, PopularityRankOddsMedianModel>,
       configOddsGetTiming: null == configOddsGetTiming
           ? _value.configOddsGetTiming
           : configOddsGetTiming // ignore: cast_nullable_to_non_nullable
@@ -538,6 +554,8 @@ class _$AppParamStateImpl implements _AppParamState {
           const <PushNotifierUserModel>[],
       final Map<int, PopularityRankOddsAverageModel> keepPopularityRankOddsAverageMap =
           const <int, PopularityRankOddsAverageModel>{},
+      final Map<String, PopularityRankOddsMedianModel> keepPopularityRankOddsMedianMap =
+          const <String, PopularityRankOddsMedianModel>{},
       this.configOddsGetTiming = '',
       this.configOddsDropRateHonmei = '',
       this.configOddsDropRateChuana = '',
@@ -569,7 +587,8 @@ class _$AppParamStateImpl implements _AppParamState {
         _keepSummaryDateBashoMap = keepSummaryDateBashoMap,
         _keepLoginUserMap = keepLoginUserMap,
         _keepPushNotifierUserList = keepPushNotifierUserList,
-        _keepPopularityRankOddsAverageMap = keepPopularityRankOddsAverageMap;
+        _keepPopularityRankOddsAverageMap = keepPopularityRankOddsAverageMap,
+        _keepPopularityRankOddsMedianMap = keepPopularityRankOddsMedianMap;
 
   final Map<String, List<ScheduleModel>> _keepScheduleDateBashoMap;
   @override
@@ -668,6 +687,18 @@ class _$AppParamStateImpl implements _AppParamState {
     return EqualUnmodifiableMapView(_keepPopularityRankOddsAverageMap);
   }
 
+  final Map<String, PopularityRankOddsMedianModel>
+      _keepPopularityRankOddsMedianMap;
+  @override
+  @JsonKey()
+  Map<String, PopularityRankOddsMedianModel>
+      get keepPopularityRankOddsMedianMap {
+    if (_keepPopularityRankOddsMedianMap is EqualUnmodifiableMapView)
+      return _keepPopularityRankOddsMedianMap;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableMapView(_keepPopularityRankOddsMedianMap);
+  }
+
   ///
   @override
   @JsonKey()
@@ -743,7 +774,7 @@ class _$AppParamStateImpl implements _AppParamState {
 
   @override
   String toString() {
-    return 'AppParamState(keepScheduleDateBashoMap: $keepScheduleDateBashoMap, keepRaceMap: $keepRaceMap, keepHorseMap: $keepHorseMap, keepOddsMap: $keepOddsMap, keepSummaryMap: $keepSummaryMap, keepSummaryDateBashoMap: $keepSummaryDateBashoMap, keepLoginUserMap: $keepLoginUserMap, keepPushNotifierUserList: $keepPushNotifierUserList, keepPopularityRankOddsAverageMap: $keepPopularityRankOddsAverageMap, configOddsGetTiming: $configOddsGetTiming, configOddsDropRateHonmei: $configOddsDropRateHonmei, configOddsDropRateChuana: $configOddsDropRateChuana, configOddsDropRateDaiana: $configOddsDropRateDaiana, selectedScheduleDate: $selectedScheduleDate, selectedScheduleKaisuuBashoDay: $selectedScheduleKaisuuBashoDay, selectedScheduleKaisuuBashoDayName: $selectedScheduleKaisuuBashoDayName, selectedRaceNumber: $selectedRaceNumber, selectedTiming: $selectedTiming, selectedTiming2: $selectedTiming2, queryUser: $queryUser, isShowUpperBox: $isShowUpperBox, isShowUpperBox2: $isShowUpperBox2, selectedDrawerRace: $selectedDrawerRace, isZoomed: $isZoomed, selectedUpsetBoxNum: $selectedUpsetBoxNum, selectedPopularityRank: $selectedPopularityRank, selectedPopularityRankYear: $selectedPopularityRankYear, selectedHistoryYear: $selectedHistoryYear, selectedHorseNameChar1: $selectedHorseNameChar1, selectedHorseNameChar2: $selectedHorseNameChar2, allExpanded: $allExpanded, isShowSideTabPanel: $isShowSideTabPanel)';
+    return 'AppParamState(keepScheduleDateBashoMap: $keepScheduleDateBashoMap, keepRaceMap: $keepRaceMap, keepHorseMap: $keepHorseMap, keepOddsMap: $keepOddsMap, keepSummaryMap: $keepSummaryMap, keepSummaryDateBashoMap: $keepSummaryDateBashoMap, keepLoginUserMap: $keepLoginUserMap, keepPushNotifierUserList: $keepPushNotifierUserList, keepPopularityRankOddsAverageMap: $keepPopularityRankOddsAverageMap, keepPopularityRankOddsMedianMap: $keepPopularityRankOddsMedianMap, configOddsGetTiming: $configOddsGetTiming, configOddsDropRateHonmei: $configOddsDropRateHonmei, configOddsDropRateChuana: $configOddsDropRateChuana, configOddsDropRateDaiana: $configOddsDropRateDaiana, selectedScheduleDate: $selectedScheduleDate, selectedScheduleKaisuuBashoDay: $selectedScheduleKaisuuBashoDay, selectedScheduleKaisuuBashoDayName: $selectedScheduleKaisuuBashoDayName, selectedRaceNumber: $selectedRaceNumber, selectedTiming: $selectedTiming, selectedTiming2: $selectedTiming2, queryUser: $queryUser, isShowUpperBox: $isShowUpperBox, isShowUpperBox2: $isShowUpperBox2, selectedDrawerRace: $selectedDrawerRace, isZoomed: $isZoomed, selectedUpsetBoxNum: $selectedUpsetBoxNum, selectedPopularityRank: $selectedPopularityRank, selectedPopularityRankYear: $selectedPopularityRankYear, selectedHistoryYear: $selectedHistoryYear, selectedHorseNameChar1: $selectedHorseNameChar1, selectedHorseNameChar2: $selectedHorseNameChar2, allExpanded: $allExpanded, isShowSideTabPanel: $isShowSideTabPanel)';
   }
 
   @override
@@ -770,6 +801,9 @@ class _$AppParamStateImpl implements _AppParamState {
             const DeepCollectionEquality().equals(
                 other._keepPopularityRankOddsAverageMap,
                 _keepPopularityRankOddsAverageMap) &&
+            const DeepCollectionEquality().equals(
+                other._keepPopularityRankOddsMedianMap,
+                _keepPopularityRankOddsMedianMap) &&
             (identical(other.configOddsGetTiming, configOddsGetTiming) ||
                 other.configOddsGetTiming == configOddsGetTiming) &&
             (identical(other.configOddsDropRateHonmei, configOddsDropRateHonmei) ||
@@ -827,6 +861,7 @@ class _$AppParamStateImpl implements _AppParamState {
         const DeepCollectionEquality().hash(_keepLoginUserMap),
         const DeepCollectionEquality().hash(_keepPushNotifierUserList),
         const DeepCollectionEquality().hash(_keepPopularityRankOddsAverageMap),
+        const DeepCollectionEquality().hash(_keepPopularityRankOddsMedianMap),
         configOddsGetTiming,
         configOddsDropRateHonmei,
         configOddsDropRateChuana,
@@ -871,6 +906,8 @@ abstract class _AppParamState implements AppParamState {
       final List<PushNotifierUserModel> keepPushNotifierUserList,
       final Map<int, PopularityRankOddsAverageModel>
           keepPopularityRankOddsAverageMap,
+      final Map<String, PopularityRankOddsMedianModel>
+          keepPopularityRankOddsMedianMap,
       final String configOddsGetTiming,
       final String configOddsDropRateHonmei,
       final String configOddsDropRateChuana,
@@ -917,6 +954,9 @@ abstract class _AppParamState implements AppParamState {
   List<PushNotifierUserModel> get keepPushNotifierUserList;
   @override
   Map<int, PopularityRankOddsAverageModel> get keepPopularityRankOddsAverageMap;
+  @override
+  Map<String, PopularityRankOddsMedianModel>
+      get keepPopularityRankOddsMedianMap;
   @override
 
   ///
