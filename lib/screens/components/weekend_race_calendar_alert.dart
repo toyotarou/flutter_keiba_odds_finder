@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../controllers/app_param/app_param.dart';
 import '../../controllers/controllers_mixin.dart';
+import '../../models/race_model.dart';
 import '../../models/schedule_model.dart';
 
 const int _kStartHour = 9;
 const int _kEndHour = 17;
 const double _kPxPerMinute = 2.0;
 const double _kGutterWidth = 38.0;
-const List<String> _kVenues = <String>['福島', '小倉', '函館'];
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
@@ -21,11 +22,36 @@ class WeekendRaceCalendarAlert extends ConsumerStatefulWidget {
 
 class _WeekendRaceCalendarAlertState extends ConsumerState<WeekendRaceCalendarAlert>
     with ControllersMixin<WeekendRaceCalendarAlert> {
-  String _selectedDate = '2026-07-19';
+  String _selectedDate = '';
 
   final ScrollController _gutterController = ScrollController();
 
+  @override
+  void initState() {
+    super.initState();
+    _selectedDate = ref.read(appParamProvider).selectedScheduleDate;
+  }
+
   double get _gridHeight => (_kEndHour - _kStartHour) * 60 * _kPxPerMinute;
+
+  List<String> get _dates {
+    final List<String> list = appParamState.keepScheduleDateBashoMap.keys.toList()..sort();
+    return list;
+  }
+
+  String get _effectiveDate {
+    final List<String> d = _dates;
+    if (d.isEmpty) return '';
+    return d.contains(_selectedDate) ? _selectedDate : d.first;
+  }
+
+  List<ScheduleModel> get _schedulesForDate =>
+      appParamState.keepScheduleDateBashoMap[_effectiveDate] ?? <ScheduleModel>[];
+
+  List<RaceModel> _racesForSchedule(ScheduleModel schedule) {
+    final String key = '${schedule.date}_${schedule.kaisuu}_${schedule.basho}_${schedule.day}';
+    return appParamState.keepRaceMap[key] ?? <RaceModel>[];
+  }
 
   @override
   void dispose() {
@@ -55,9 +81,11 @@ class _WeekendRaceCalendarAlertState extends ConsumerState<WeekendRaceCalendarAl
   }
 
   Widget _buildDateButtons() {
+    final List<String> dates = _dates;
+    final String appSelected = appParamState.selectedScheduleDate;
     return Row(
-      children: <String>['2026-07-18', '2026-07-19'].map((String date) {
-        final bool selected = _selectedDate == date;
+      children: dates.map((String date) {
+        final bool isAppSelected = date == appSelected;
         return Expanded(
           child: GestureDetector(
             onTap: () => setState(() => _selectedDate = date),
@@ -65,7 +93,7 @@ class _WeekendRaceCalendarAlertState extends ConsumerState<WeekendRaceCalendarAl
               margin: const EdgeInsets.symmetric(horizontal: 6),
               padding: const EdgeInsets.symmetric(vertical: 6),
               decoration: BoxDecoration(
-                color: selected ? Colors.greenAccent.withValues(alpha: 0.3) : Colors.black.withValues(alpha: 0.3),
+                color: isAppSelected ? Colors.greenAccent.withValues(alpha: 0.2) : Colors.black.withValues(alpha: 0.5),
                 border: Border.all(color: Colors.white.withValues(alpha: 0.4)),
                 borderRadius: BorderRadius.circular(4),
               ),
@@ -79,10 +107,14 @@ class _WeekendRaceCalendarAlertState extends ConsumerState<WeekendRaceCalendarAl
   }
 
   Widget _buildVenueHeader() {
+    final List<ScheduleModel> schedules = _schedulesForDate;
     return Row(
       children: <Widget>[
         const SizedBox(width: _kGutterWidth),
-        ..._kVenues.map((String venue) {
+        ...schedules.map((ScheduleModel s) {
+          final bool isVenueSelected =
+              s.date == appParamState.selectedScheduleDate &&
+              '${s.kaisuu}_${s.basho}_${s.day}' == appParamState.selectedScheduleKaisuuBashoDay;
           return Expanded(
             child: Container(
               alignment: Alignment.center,
@@ -90,9 +122,18 @@ class _WeekendRaceCalendarAlertState extends ConsumerState<WeekendRaceCalendarAl
               decoration: BoxDecoration(
                 border: Border(bottom: BorderSide(color: Colors.white.withValues(alpha: 0.3))),
               ),
-              child: Text(
-                venue,
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.white),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                decoration: BoxDecoration(
+                  color: isVenueSelected
+                      ? Colors.greenAccent.withValues(alpha: 0.2)
+                      : Colors.black.withValues(alpha: 0.5),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  s.bashoName,
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.white),
+                ),
               ),
             ),
           );
@@ -102,6 +143,7 @@ class _WeekendRaceCalendarAlertState extends ConsumerState<WeekendRaceCalendarAl
   }
 
   Widget _buildCalendar() {
+    final List<ScheduleModel> schedules = _schedulesForDate;
     return Stack(
       children: <Widget>[
         NotificationListener<ScrollNotification>(
@@ -121,7 +163,8 @@ class _WeekendRaceCalendarAlertState extends ConsumerState<WeekendRaceCalendarAl
                   Expanded(
                     child: LayoutBuilder(
                       builder: (BuildContext ctx, BoxConstraints constraints) {
-                        final double colW = constraints.maxWidth / 3;
+                        final int count = schedules.isEmpty ? 1 : schedules.length;
+                        final double colW = constraints.maxWidth / count;
                         return Stack(
                           children: <Widget>[
                             CustomPaint(
@@ -131,9 +174,10 @@ class _WeekendRaceCalendarAlertState extends ConsumerState<WeekendRaceCalendarAl
                                 endHour: _kEndHour,
                                 pxPerMinute: _kPxPerMinute,
                                 columnWidth: colW,
+                                columnCount: count,
                               ),
                             ),
-                            ..._buildRaceBlocks(colW),
+                            ..._buildRaceBlocks(colW, schedules),
                             const _NowIndicatorLine(
                               startHour: _kStartHour,
                               endHour: _kEndHour,
@@ -170,50 +214,54 @@ class _WeekendRaceCalendarAlertState extends ConsumerState<WeekendRaceCalendarAl
     );
   }
 
-  void _onRaceTap(_RaceEntry entry) {
-    final List<ScheduleModel>? schedules = appParamState.keepScheduleDateBashoMap[entry.date];
-    final ScheduleModel? schedule = schedules?.where((ScheduleModel s) => s.bashoName == entry.venue).firstOrNull;
-    if (schedule == null) {
-      return;
-    }
-    appParamNotifier.setSelectedScheduleDate(date: entry.date);
+  void _onRaceTap(RaceModel race) {
+    appParamNotifier.setSelectedScheduleDate(date: race.date);
     appParamNotifier.setSelectedScheduleKaisuuBashoDay(
-      kbd: '${schedule.kaisuu}_${schedule.basho}_${schedule.day}',
-      name: '${schedule.kaisuu}回 ${schedule.bashoName} ${schedule.day}日',
+      kbd: '${race.kaisuu}_${race.basho}_${race.day}',
+      name: '${race.kaisuu}回 ${race.bashoName} ${race.day}日',
     );
-    appParamNotifier.setSelectedRaceNumber(num: entry.race);
+    appParamNotifier.setSelectedRaceNumber(num: race.race);
     appParamNotifier.setSelectedTiming(timing: '');
     Navigator.pop(context);
   }
 
-  List<Widget> _buildRaceBlocks(double colW) {
+  List<Widget> _buildRaceBlocks(double colW, List<ScheduleModel> schedules) {
     final List<Widget> widgets = <Widget>[];
     const double blockH = 30 * _kPxPerMinute;
 
-    final List<_RaceEntry> races = _kRaces.where((_RaceEntry e) => e.date == _selectedDate).toList();
+    final String appDate = appParamState.selectedScheduleDate;
+    final String appKbd = appParamState.selectedScheduleKaisuuBashoDay;
+    final int appRaceNum = appParamState.selectedRaceNumber;
 
-    for (final _RaceEntry entry in races) {
-      final int venueIndex = _kVenues.indexOf(entry.venue);
-      if (venueIndex < 0) {
-        continue;
-      }
+    for (int i = 0; i < schedules.length; i++) {
+      final ScheduleModel schedule = schedules[i];
+      final List<RaceModel> races = _racesForSchedule(schedule);
 
-      final double endTop = (entry.startMinutes - _kStartHour * 60) * _kPxPerMinute;
-      final double top = (endTop - blockH).clamp(0.0, _gridHeight - blockH);
-      final double left = venueIndex * colW;
+      for (final RaceModel race in races) {
+        final List<String> parts = race.startTime.split(':');
+        if (parts.length < 2) continue;
+        final int startMinutes = int.parse(parts[0]) * 60 + int.parse(parts[1]);
 
-      widgets.add(
-        Positioned(
-          top: top,
-          left: left + 2,
-          width: colW - 4,
-          height: blockH,
-          child: GestureDetector(
-            onTap: () => _onRaceTap(entry),
-            child: _RaceBlock(entry: entry),
+        final double endTop = (startMinutes - _kStartHour * 60) * _kPxPerMinute;
+        final double top = (endTop - blockH).clamp(0.0, _gridHeight - blockH);
+        final double left = i * colW;
+
+        final bool isSelected =
+            race.date == appDate && '${race.kaisuu}_${race.basho}_${race.day}' == appKbd && race.race == appRaceNum;
+
+        widgets.add(
+          Positioned(
+            top: top,
+            left: left + 2,
+            width: colW - 4,
+            height: blockH,
+            child: GestureDetector(
+              onTap: () => _onRaceTap(race),
+              child: _RaceBlock(race: race, isSelected: isSelected),
+            ),
           ),
-        ),
-      );
+        );
+      }
     }
 
     return widgets;
@@ -223,18 +271,17 @@ class _WeekendRaceCalendarAlertState extends ConsumerState<WeekendRaceCalendarAl
 /////////////////////////////////////////////////////////////////////////////////////////
 
 class _RaceBlock extends StatelessWidget {
-  const _RaceBlock({required this.entry});
+  const _RaceBlock({required this.race, required this.isSelected});
 
-  final _RaceEntry entry;
+  final RaceModel race;
+  final bool isSelected;
 
   @override
   Widget build(BuildContext context) {
-    final Color color = entry.surface == '芝' ? Colors.green : Colors.amber;
-
     return Container(
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.25),
-        border: Border.all(color: color.withValues(alpha: 0.6)),
+        color: isSelected ? Colors.greenAccent.withValues(alpha: 0.2) : Colors.black.withValues(alpha: 0.5),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
         borderRadius: BorderRadius.circular(3),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 2),
@@ -243,20 +290,20 @@ class _RaceBlock extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
           Text(
-            '${entry.race}R  ${entry.startTime}',
+            '${race.race}R  ${race.startTime}',
             style: const TextStyle(fontSize: 8, fontWeight: FontWeight.bold, color: Colors.white),
             maxLines: 1,
             overflow: TextOverflow.clip,
           ),
           Text(
-            '${entry.surface}${entry.distance}m',
+            '${race.course}${race.dist}m',
             style: TextStyle(fontSize: 7, color: Colors.white.withValues(alpha: 0.85)),
             maxLines: 1,
             overflow: TextOverflow.clip,
           ),
           Flexible(
             child: Text(
-              entry.name,
+              race.raceName,
               style: TextStyle(fontSize: 7, color: Colors.white.withValues(alpha: 0.7)),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -276,10 +323,12 @@ class _RaceGridPainter extends CustomPainter {
     required this.endHour,
     required this.pxPerMinute,
     required this.columnWidth,
+    required this.columnCount,
   });
 
   final int startHour, endHour;
   final double pxPerMinute, columnWidth;
+  final int columnCount;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -300,7 +349,7 @@ class _RaceGridPainter extends CustomPainter {
       ..color = Colors.white.withValues(alpha: 0.3)
       ..strokeWidth = 0.5;
 
-    for (int i = 0; i <= 3; i++) {
+    for (int i = 0; i <= columnCount; i++) {
       canvas.drawLine(Offset(i * columnWidth, 0), Offset(i * columnWidth, size.height), vertLine);
     }
   }
@@ -310,7 +359,8 @@ class _RaceGridPainter extends CustomPainter {
       old.startHour != startHour ||
       old.endHour != endHour ||
       old.pxPerMinute != pxPerMinute ||
-      old.columnWidth != columnWidth;
+      old.columnWidth != columnWidth ||
+      old.columnCount != columnCount;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -364,618 +414,3 @@ class _NowIndicatorLine extends StatelessWidget {
     );
   }
 }
-
-/////////////////////////////////////////////////////////////////////////////////////////
-
-class _RaceEntry {
-  const _RaceEntry({
-    required this.date,
-    required this.venue,
-    required this.race,
-    required this.name,
-    required this.surface,
-    required this.distance,
-    required this.startTime,
-  });
-
-  final String date;
-  final String venue;
-  final int race;
-  final String name;
-  final String surface;
-  final int distance;
-  final String startTime;
-
-  int get startMinutes {
-    final List<String> parts = startTime.split(':');
-    return int.parse(parts[0]) * 60 + int.parse(parts[1]);
-  }
-}
-
-/////////////////////////////////////////////////////////////////////////////////////////
-
-// ignore: prefer_const_declarations
-const List<_RaceEntry> _kRaces = <_RaceEntry>[
-  // 2026-07-18 函館
-  _RaceEntry(
-    date: '2026-07-18',
-    venue: '函館',
-    race: 1,
-    name: '2歳未勝利（混合）［指定］',
-    surface: '芝',
-    distance: 1800,
-    startTime: '09:50',
-  ),
-  _RaceEntry(
-    date: '2026-07-18',
-    venue: '函館',
-    race: 2,
-    name: '3歳未勝利牝［指定］',
-    surface: 'ダート',
-    distance: 1000,
-    startTime: '10:20',
-  ),
-  _RaceEntry(
-    date: '2026-07-18',
-    venue: '函館',
-    race: 3,
-    name: '3歳未勝利（混合）［指定］',
-    surface: 'ダート',
-    distance: 2400,
-    startTime: '10:50',
-  ),
-  _RaceEntry(
-    date: '2026-07-18',
-    venue: '函館',
-    race: 4,
-    name: '3歳未勝利[指定]',
-    surface: '芝',
-    distance: 1200,
-    startTime: '11:20',
-  ),
-  _RaceEntry(
-    date: '2026-07-18',
-    venue: '函館',
-    race: 5,
-    name: '3歳未勝利[指定]',
-    surface: 'ダート',
-    distance: 1700,
-    startTime: '12:10',
-  ),
-  _RaceEntry(
-    date: '2026-07-18',
-    venue: '函館',
-    race: 6,
-    name: '3歳未勝利[指定]',
-    surface: '芝',
-    distance: 1800,
-    startTime: '12:40',
-  ),
-  _RaceEntry(
-    date: '2026-07-18',
-    venue: '函館',
-    race: 7,
-    name: '3歳以上1勝クラス（混合）［指定］',
-    surface: 'ダート',
-    distance: 1700,
-    startTime: '13:10',
-  ),
-  _RaceEntry(
-    date: '2026-07-18',
-    venue: '函館',
-    race: 8,
-    name: '3歳以上1勝クラス（混合）（特指）',
-    surface: '芝',
-    distance: 2600,
-    startTime: '13:40',
-  ),
-  _RaceEntry(date: '2026-07-18', venue: '函館', race: 9, name: '湯浜特別', surface: '芝', distance: 1800, startTime: '14:10'),
-  _RaceEntry(date: '2026-07-18', venue: '函館', race: 10, name: '潮騒特別', surface: '芝', distance: 1200, startTime: '14:45'),
-  _RaceEntry(
-    date: '2026-07-18',
-    venue: '函館',
-    race: 11,
-    name: 'マリーンステークス',
-    surface: 'ダート',
-    distance: 1700,
-    startTime: '15:20',
-  ),
-  _RaceEntry(
-    date: '2026-07-18',
-    venue: '函館',
-    race: 12,
-    name: '3歳以上1勝クラス牝［指定］',
-    surface: '芝',
-    distance: 1200,
-    startTime: '16:05',
-  ),
-  // 2026-07-18 小倉
-  _RaceEntry(
-    date: '2026-07-18',
-    venue: '小倉',
-    race: 1,
-    name: '障害3歳以上未勝利（混合）',
-    surface: '芝',
-    distance: 2860,
-    startTime: '09:55',
-  ),
-  _RaceEntry(
-    date: '2026-07-18',
-    venue: '小倉',
-    race: 2,
-    name: '2歳未勝利（混合）［指定］',
-    surface: '芝',
-    distance: 1800,
-    startTime: '10:30',
-  ),
-  _RaceEntry(
-    date: '2026-07-18',
-    venue: '小倉',
-    race: 3,
-    name: '3歳未勝利（混合）［指定］',
-    surface: 'ダート',
-    distance: 1000,
-    startTime: '11:00',
-  ),
-  _RaceEntry(
-    date: '2026-07-18',
-    venue: '小倉',
-    race: 4,
-    name: 'ソレイユジャンプS',
-    surface: '芝',
-    distance: 3390,
-    startTime: '11:30',
-  ),
-  _RaceEntry(
-    date: '2026-07-18',
-    venue: '小倉',
-    race: 5,
-    name: 'メイクデビュー小倉',
-    surface: '芝',
-    distance: 1200,
-    startTime: '12:20',
-  ),
-  _RaceEntry(
-    date: '2026-07-18',
-    venue: '小倉',
-    race: 6,
-    name: '3歳未勝利[指定]',
-    surface: 'ダート',
-    distance: 1700,
-    startTime: '12:50',
-  ),
-  _RaceEntry(
-    date: '2026-07-18',
-    venue: '小倉',
-    race: 7,
-    name: '3歳未勝利（混合）［指定］',
-    surface: '芝',
-    distance: 1800,
-    startTime: '13:20',
-  ),
-  _RaceEntry(
-    date: '2026-07-18',
-    venue: '小倉',
-    race: 8,
-    name: '3歳以上1勝クラス[指定]',
-    surface: '芝',
-    distance: 2000,
-    startTime: '13:50',
-  ),
-  _RaceEntry(date: '2026-07-18', venue: '小倉', race: 9, name: 'ひまわり賞', surface: '芝', distance: 1200, startTime: '14:20'),
-  _RaceEntry(
-    date: '2026-07-18',
-    venue: '小倉',
-    race: 10,
-    name: '熊本城特別',
-    surface: 'ダート',
-    distance: 1700,
-    startTime: '14:55',
-  ),
-  _RaceEntry(date: '2026-07-18', venue: '小倉', race: 11, name: 'テレQ杯', surface: '芝', distance: 1200, startTime: '15:30'),
-  _RaceEntry(
-    date: '2026-07-18',
-    venue: '小倉',
-    race: 12,
-    name: '3歳以上1勝クラス（混合）［指定］',
-    surface: 'ダート',
-    distance: 1700,
-    startTime: '16:15',
-  ),
-  // 2026-07-18 福島
-  _RaceEntry(
-    date: '2026-07-18',
-    venue: '福島',
-    race: 1,
-    name: '2歳未勝利（混合）［指定］',
-    surface: '芝',
-    distance: 1200,
-    startTime: '10:05',
-  ),
-  _RaceEntry(
-    date: '2026-07-18',
-    venue: '福島',
-    race: 2,
-    name: '2歳未勝利[指定]',
-    surface: '芝',
-    distance: 1800,
-    startTime: '10:40',
-  ),
-  _RaceEntry(
-    date: '2026-07-18',
-    venue: '福島',
-    race: 3,
-    name: '3歳未勝利[指定]',
-    surface: 'ダート',
-    distance: 1150,
-    startTime: '11:10',
-  ),
-  _RaceEntry(
-    date: '2026-07-18',
-    venue: '福島',
-    race: 4,
-    name: '3歳未勝利（混合）［指定］',
-    surface: '芝',
-    distance: 1200,
-    startTime: '11:40',
-  ),
-  _RaceEntry(
-    date: '2026-07-18',
-    venue: '福島',
-    race: 5,
-    name: 'メイクデビュー福島',
-    surface: '芝',
-    distance: 1800,
-    startTime: '12:30',
-  ),
-  _RaceEntry(
-    date: '2026-07-18',
-    venue: '福島',
-    race: 6,
-    name: '3歳未勝利[指定]',
-    surface: 'ダート',
-    distance: 1700,
-    startTime: '13:00',
-  ),
-  _RaceEntry(
-    date: '2026-07-18',
-    venue: '福島',
-    race: 7,
-    name: '3歳未勝利（混合）［指定］',
-    surface: '芝',
-    distance: 2000,
-    startTime: '13:30',
-  ),
-  _RaceEntry(
-    date: '2026-07-18',
-    venue: '福島',
-    race: 8,
-    name: '3歳以上1勝クラス（混合）［指定］',
-    surface: '芝',
-    distance: 1200,
-    startTime: '14:00',
-  ),
-  _RaceEntry(date: '2026-07-18', venue: '福島', race: 9, name: '開成山特別', surface: '芝', distance: 2600, startTime: '14:35'),
-  _RaceEntry(
-    date: '2026-07-18',
-    venue: '福島',
-    race: 10,
-    name: '米沢特別',
-    surface: 'ダート',
-    distance: 1700,
-    startTime: '15:10',
-  ),
-  _RaceEntry(
-    date: '2026-07-18',
-    venue: '福島',
-    race: 11,
-    name: '阿武隈ステークス',
-    surface: '芝',
-    distance: 1800,
-    startTime: '15:45',
-  ),
-  _RaceEntry(
-    date: '2026-07-18',
-    venue: '福島',
-    race: 12,
-    name: '3歳以上1勝クラス（混合）［指定］',
-    surface: 'ダート',
-    distance: 1150,
-    startTime: '16:30',
-  ),
-  // 2026-07-19 函館
-  _RaceEntry(
-    date: '2026-07-19',
-    venue: '函館',
-    race: 1,
-    name: '2歳未勝利（混合）［指定］',
-    surface: '芝',
-    distance: 1200,
-    startTime: '09:50',
-  ),
-  _RaceEntry(
-    date: '2026-07-19',
-    venue: '函館',
-    race: 2,
-    name: '3歳未勝利[指定]',
-    surface: 'ダート',
-    distance: 1000,
-    startTime: '10:20',
-  ),
-  _RaceEntry(
-    date: '2026-07-19',
-    venue: '函館',
-    race: 3,
-    name: '3歳未勝利[指定]',
-    surface: 'ダート',
-    distance: 1700,
-    startTime: '10:50',
-  ),
-  _RaceEntry(
-    date: '2026-07-19',
-    venue: '函館',
-    race: 4,
-    name: '3歳未勝利（混合）［指定］',
-    surface: '芝',
-    distance: 2000,
-    startTime: '11:20',
-  ),
-  _RaceEntry(
-    date: '2026-07-19',
-    venue: '函館',
-    race: 5,
-    name: 'メイクデビュー函館',
-    surface: '芝',
-    distance: 1800,
-    startTime: '12:10',
-  ),
-  _RaceEntry(
-    date: '2026-07-19',
-    venue: '函館',
-    race: 6,
-    name: '3歳未勝利（混合）［指定］',
-    surface: '芝',
-    distance: 1200,
-    startTime: '12:40',
-  ),
-  _RaceEntry(
-    date: '2026-07-19',
-    venue: '函館',
-    race: 7,
-    name: '3歳以上1勝クラス牝［指定］',
-    surface: 'ダート',
-    distance: 1700,
-    startTime: '13:10',
-  ),
-  _RaceEntry(
-    date: '2026-07-19',
-    venue: '函館',
-    race: 8,
-    name: '3歳以上1勝クラス[指定]',
-    surface: 'ダート',
-    distance: 1000,
-    startTime: '13:40',
-  ),
-  _RaceEntry(
-    date: '2026-07-19',
-    venue: '函館',
-    race: 9,
-    name: 'かもめ島特別',
-    surface: '芝',
-    distance: 1800,
-    startTime: '14:10',
-  ),
-  _RaceEntry(
-    date: '2026-07-19',
-    venue: '函館',
-    race: 10,
-    name: '駒場特別',
-    surface: 'ダート',
-    distance: 1700,
-    startTime: '14:45',
-  ),
-  _RaceEntry(
-    date: '2026-07-19',
-    venue: '函館',
-    race: 11,
-    name: '函館2歳ステークス',
-    surface: '芝',
-    distance: 1200,
-    startTime: '15:20',
-  ),
-  _RaceEntry(
-    date: '2026-07-19',
-    venue: '函館',
-    race: 12,
-    name: '3歳以上1勝クラス（混合）（特指）',
-    surface: '芝',
-    distance: 1200,
-    startTime: '16:05',
-  ),
-  // 2026-07-19 小倉
-  _RaceEntry(
-    date: '2026-07-19',
-    venue: '小倉',
-    race: 1,
-    name: '障害3歳以上未勝利',
-    surface: '芝',
-    distance: 2860,
-    startTime: '10:05',
-  ),
-  _RaceEntry(
-    date: '2026-07-19',
-    venue: '小倉',
-    race: 2,
-    name: '3歳未勝利[指定]',
-    surface: '芝',
-    distance: 1200,
-    startTime: '10:40',
-  ),
-  _RaceEntry(
-    date: '2026-07-19',
-    venue: '小倉',
-    race: 3,
-    name: '3歳未勝利牝［指定］',
-    surface: 'ダート',
-    distance: 1700,
-    startTime: '11:10',
-  ),
-  _RaceEntry(
-    date: '2026-07-19',
-    venue: '小倉',
-    race: 4,
-    name: '3歳未勝利[指定]',
-    surface: '芝',
-    distance: 2000,
-    startTime: '11:40',
-  ),
-  _RaceEntry(
-    date: '2026-07-19',
-    venue: '小倉',
-    race: 5,
-    name: 'メイクデビュー小倉',
-    surface: '芝',
-    distance: 1800,
-    startTime: '12:30',
-  ),
-  _RaceEntry(
-    date: '2026-07-19',
-    venue: '小倉',
-    race: 6,
-    name: '3歳未勝利（混合）［指定］',
-    surface: 'ダート',
-    distance: 1700,
-    startTime: '13:00',
-  ),
-  _RaceEntry(
-    date: '2026-07-19',
-    venue: '小倉',
-    race: 7,
-    name: '3歳以上1勝クラス（混合）［指定］',
-    surface: '芝',
-    distance: 1200,
-    startTime: '13:30',
-  ),
-  _RaceEntry(
-    date: '2026-07-19',
-    venue: '小倉',
-    race: 8,
-    name: '3歳以上1勝クラス（混合）［指定］',
-    surface: 'ダート',
-    distance: 1000,
-    startTime: '14:00',
-  ),
-  _RaceEntry(date: '2026-07-19', venue: '小倉', race: 9, name: '不知火特別', surface: '芝', distance: 1800, startTime: '14:35'),
-  _RaceEntry(
-    date: '2026-07-19',
-    venue: '小倉',
-    race: 10,
-    name: '宮崎ステークス',
-    surface: 'ダート',
-    distance: 1700,
-    startTime: '15:10',
-  ),
-  _RaceEntry(date: '2026-07-19', venue: '小倉', race: 11, name: '小倉記念', surface: '芝', distance: 2000, startTime: '15:45'),
-  _RaceEntry(date: '2026-07-19', venue: '小倉', race: 12, name: '筑紫特別', surface: '芝', distance: 1800, startTime: '16:30'),
-  // 2026-07-19 福島
-  _RaceEntry(
-    date: '2026-07-19',
-    venue: '福島',
-    race: 1,
-    name: '2歳未勝利（混合）［指定］',
-    surface: 'ダート',
-    distance: 1150,
-    startTime: '09:55',
-  ),
-  _RaceEntry(
-    date: '2026-07-19',
-    venue: '福島',
-    race: 2,
-    name: '3歳未勝利牝［指定］',
-    surface: '芝',
-    distance: 2000,
-    startTime: '10:30',
-  ),
-  _RaceEntry(
-    date: '2026-07-19',
-    venue: '福島',
-    race: 3,
-    name: '3歳未勝利[指定]',
-    surface: '芝',
-    distance: 1800,
-    startTime: '11:00',
-  ),
-  _RaceEntry(
-    date: '2026-07-19',
-    venue: '福島',
-    race: 4,
-    name: '3歳未勝利牝［指定］',
-    surface: 'ダート',
-    distance: 1700,
-    startTime: '11:30',
-  ),
-  _RaceEntry(
-    date: '2026-07-19',
-    venue: '福島',
-    race: 5,
-    name: 'メイクデビュー福島',
-    surface: '芝',
-    distance: 2000,
-    startTime: '12:20',
-  ),
-  _RaceEntry(
-    date: '2026-07-19',
-    venue: '福島',
-    race: 6,
-    name: 'メイクデビュー福島',
-    surface: '芝',
-    distance: 1200,
-    startTime: '12:50',
-  ),
-  _RaceEntry(
-    date: '2026-07-19',
-    venue: '福島',
-    race: 7,
-    name: '3歳未勝利（混合）［指定］',
-    surface: 'ダート',
-    distance: 1700,
-    startTime: '13:20',
-  ),
-  _RaceEntry(
-    date: '2026-07-19',
-    venue: '福島',
-    race: 8,
-    name: '3歳以上1勝クラス[指定]',
-    surface: '芝',
-    distance: 1800,
-    startTime: '13:50',
-  ),
-  _RaceEntry(date: '2026-07-19', venue: '福島', race: 9, name: '南相馬特別', surface: '芝', distance: 1200, startTime: '14:20'),
-  _RaceEntry(
-    date: '2026-07-19',
-    venue: '福島',
-    race: 10,
-    name: '猪苗代特別',
-    surface: '芝',
-    distance: 2000,
-    startTime: '14:55',
-  ),
-  _RaceEntry(
-    date: '2026-07-19',
-    venue: '福島',
-    race: 11,
-    name: '福島テレビ賞',
-    surface: 'ダート',
-    distance: 1150,
-    startTime: '15:30',
-  ),
-  _RaceEntry(
-    date: '2026-07-19',
-    venue: '福島',
-    race: 12,
-    name: '3歳以上1勝クラス[指定]',
-    surface: 'ダート',
-    distance: 1700,
-    startTime: '16:15',
-  ),
-];
