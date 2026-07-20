@@ -499,20 +499,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                                 ),
                               ],
 
-                              const SizedBox(width: 10),
+                              const SizedBox(width: 20),
 
-                              Container(
-                                padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
-                                decoration: BoxDecoration(
-                                  color: Colors.blueGrey[900],
-                                  borderRadius: BorderRadius.circular(5),
-                                ),
-                                child: GestureDetector(
-                                  onTap: () {
-                                    OddsFinderDialog(context: context, widget: const WeekendRaceCalendarAlert());
-                                  },
-                                  child: const Text('週カレ', style: TextStyle(color: Colors.white)),
-                                ),
+                              GestureDetector(
+                                onTap: () =>
+                                    OddsFinderDialog(context: context, widget: const WeekendRaceCalendarAlert()),
+                                child: Icon(Icons.timelapse, color: Colors.green[500]),
                               ),
 
                               const SizedBox(width: 20),

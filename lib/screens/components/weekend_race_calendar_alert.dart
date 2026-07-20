@@ -21,72 +21,37 @@ class WeekendRaceCalendarAlert extends ConsumerStatefulWidget {
 }
 
 class _WeekendRaceCalendarAlertState extends ConsumerState<WeekendRaceCalendarAlert>
-    with ControllersMixin<WeekendRaceCalendarAlert> {
-  String _selectedDate = '';
+    with ControllersMixin<WeekendRaceCalendarAlert>, SingleTickerProviderStateMixin {
+  late TabController _tabController;
+  late List<String> _tabDates;
 
-  final ScrollController _gutterController = ScrollController();
-  final ScrollController _calendarScrollController = ScrollController();
-
+  ///
   @override
   void initState() {
     super.initState();
     final AppParamState appParam = ref.read(appParamProvider);
-    _selectedDate = appParam.selectedScheduleDate;
-    WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToSelectedRace(appParam));
-  }
+    final List<String> allDates = appParam.keepScheduleDateBashoMap.keys.toList()..sort();
+    _tabDates = allDates;
 
-  void _scrollToSelectedRace(AppParamState appParam) {
-    if (!_calendarScrollController.hasClients) return;
-    final String key = '${appParam.selectedScheduleDate}_${appParam.selectedScheduleKaisuuBashoDay}';
-    final List<RaceModel> races = appParam.keepRaceMap[key] ?? <RaceModel>[];
-    final RaceModel? race = races.where((RaceModel r) => r.race == appParam.selectedRaceNumber).firstOrNull;
-    if (race == null) return;
-    final List<String> parts = race.startTime.split(':');
-    if (parts.length < 2) return;
-    final int startMinutes = int.parse(parts[0]) * 60 + int.parse(parts[1]);
-    const double blockH = 30 * _kPxPerMinute;
-    final double top = ((startMinutes - _kStartHour * 60) * _kPxPerMinute - blockH).clamp(
-      0.0,
-      _calendarScrollController.position.maxScrollExtent,
+    final int initialIndex = _tabDates.contains(appParam.selectedScheduleDate)
+        ? _tabDates.indexOf(appParam.selectedScheduleDate)
+        : 0;
+
+    _tabController = TabController(
+      length: _tabDates.isEmpty ? 1 : _tabDates.length,
+      vsync: this,
+      initialIndex: initialIndex,
     );
-    _calendarScrollController.animateTo(top, duration: const Duration(milliseconds: 300), curve: Curves.easeOut);
   }
 
-  double get _gridHeight => (_kEndHour - _kStartHour) * 60 * _kPxPerMinute;
-
-  List<String> get _dates {
-    final List<String> list = appParamState.keepScheduleDateBashoMap.keys.toList()..sort();
-    return list;
-  }
-
-  String get _effectiveDate {
-    final List<String> d = _dates;
-    if (d.isEmpty) {
-      return '';
-    }
-    return d.contains(_selectedDate) ? _selectedDate : d.first;
-  }
-
-  List<ScheduleModel> get _schedulesForDate {
-    final List<ScheduleModel> list = List<ScheduleModel>.from(
-      appParamState.keepScheduleDateBashoMap[_effectiveDate] ?? <ScheduleModel>[],
-    );
-    list.sort((ScheduleModel a, ScheduleModel b) => a.basho.compareTo(b.basho));
-    return list;
-  }
-
-  List<RaceModel> _racesForSchedule(ScheduleModel schedule) {
-    final String key = '${schedule.date}_${schedule.kaisuu}_${schedule.basho}_${schedule.day}';
-    return appParamState.keepRaceMap[key] ?? <RaceModel>[];
-  }
-
+  ///
   @override
   void dispose() {
-    _gutterController.dispose();
-    _calendarScrollController.dispose();
+    _tabController.dispose();
     super.dispose();
   }
 
+  ///
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -97,43 +62,130 @@ class _WeekendRaceCalendarAlertState extends ConsumerState<WeekendRaceCalendarAl
           child: Column(
             children: <Widget>[
               const SizedBox(height: 8),
-              _buildDateButtons(),
-              const SizedBox(height: 4),
-              _buildVenueHeader(),
-              Expanded(child: _buildCalendar()),
+              TabBar(
+                controller: _tabController,
+                tabs: _tabDates.map((String date) => Tab(text: date)).toList(),
+                labelColor: Colors.white,
+                unselectedLabelColor: Colors.white54,
+                indicatorColor: Colors.greenAccent,
+                labelStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                unselectedLabelStyle: const TextStyle(fontSize: 12),
+                dividerColor: Colors.white.withValues(alpha: 0.2),
+              ),
+              Expanded(
+                child: TabBarView(
+                  controller: _tabController,
+                  children: _tabDates.map((String date) => _DateCalendarView(date: date)).toList(),
+                ),
+              ),
             ],
           ),
         ),
       ),
     );
   }
+}
 
-  Widget _buildDateButtons() {
-    final List<String> dates = _dates;
-    final String effective = _effectiveDate;
-    return Row(
-      children: dates.map((String date) {
-        final bool isAppSelected = date == effective;
-        return Expanded(
-          child: GestureDetector(
-            onTap: () => setState(() => _selectedDate = date),
-            child: Container(
-              margin: const EdgeInsets.symmetric(horizontal: 6),
-              padding: const EdgeInsets.symmetric(vertical: 6),
-              decoration: BoxDecoration(
-                color: isAppSelected ? Colors.green[800]!.withValues(alpha: 0.4) : Colors.black.withValues(alpha: 0.5),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.4)),
-                borderRadius: BorderRadius.circular(4),
-              ),
-              alignment: Alignment.center,
-              child: Text(date, style: const TextStyle(fontSize: 12, color: Colors.white)),
-            ),
-          ),
-        );
-      }).toList(),
+/////////////////////////////////////////////////////////////////////////////////////////
+
+class _DateCalendarView extends ConsumerStatefulWidget {
+  const _DateCalendarView({required this.date});
+
+  final String date;
+
+  @override
+  ConsumerState<_DateCalendarView> createState() => _DateCalendarViewState();
+}
+
+class _DateCalendarViewState extends ConsumerState<_DateCalendarView> with ControllersMixin<_DateCalendarView> {
+  final ScrollController _gutterController = ScrollController();
+  final ScrollController _calendarScrollController = ScrollController();
+
+  ///
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToSelectedRace());
+  }
+
+  ///
+  void _scrollToSelectedRace() {
+    if (!_calendarScrollController.hasClients) {
+      return;
+    }
+    final AppParamState appParam = ref.read(appParamProvider);
+    if (appParam.selectedScheduleDate != widget.date) {
+      return;
+    }
+    final String key = '${appParam.selectedScheduleDate}_${appParam.selectedScheduleKaisuuBashoDay}';
+    final List<RaceModel> races = appParam.keepRaceMap[key] ?? <RaceModel>[];
+    final RaceModel? race = races.where((RaceModel r) => r.race == appParam.selectedRaceNumber).firstOrNull;
+    if (race == null) {
+      return;
+    }
+    final List<String> parts = race.startTime.split(':');
+    if (parts.length < 2) {
+      return;
+    }
+    final int startMinutes = int.parse(parts[0]) * 60 + int.parse(parts[1]);
+    const double blockH = 30 * _kPxPerMinute;
+    final double top = ((startMinutes - _kStartHour * 60) * _kPxPerMinute - blockH).clamp(
+      0.0,
+      _calendarScrollController.position.maxScrollExtent,
+    );
+    _calendarScrollController.animateTo(top, duration: const Duration(milliseconds: 300), curve: Curves.easeOut);
+  }
+
+  ///
+  @override
+  void dispose() {
+    _gutterController.dispose();
+    _calendarScrollController.dispose();
+    super.dispose();
+  }
+
+  ///
+  double get _gridHeight => (_kEndHour - _kStartHour) * 60 * _kPxPerMinute;
+
+  ///
+  List<ScheduleModel> get _schedulesForDate {
+    final List<ScheduleModel> list = List<ScheduleModel>.from(
+      appParamState.keepScheduleDateBashoMap[widget.date] ?? <ScheduleModel>[],
+    );
+    list.sort((ScheduleModel a, ScheduleModel b) => a.basho.compareTo(b.basho));
+    return list;
+  }
+
+  ///
+  List<RaceModel> _racesForSchedule(ScheduleModel schedule) {
+    final String key = '${schedule.date}_${schedule.kaisuu}_${schedule.basho}_${schedule.day}';
+    return appParamState.keepRaceMap[key] ?? <RaceModel>[];
+  }
+
+  ///
+  void _onRaceTap(RaceModel race) {
+    appParamNotifier.setSelectedScheduleDate(date: race.date);
+    appParamNotifier.setSelectedScheduleKaisuuBashoDay(
+      kbd: '${race.kaisuu}_${race.basho}_${race.day}',
+      name: '${race.kaisuu}回 ${race.bashoName} ${race.day}日',
+    );
+    appParamNotifier.setSelectedRaceNumber(num: race.race);
+    appParamNotifier.setSelectedTiming(timing: '');
+    Navigator.pop(context);
+  }
+
+  ///
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: <Widget>[
+        _buildVenueHeader(),
+        Expanded(child: _buildCalendar()),
+      ],
     );
   }
 
+  ///
   Widget _buildVenueHeader() {
     final List<ScheduleModel> schedules = _schedulesForDate;
     return Row(
@@ -170,6 +222,7 @@ class _WeekendRaceCalendarAlertState extends ConsumerState<WeekendRaceCalendarAl
     );
   }
 
+  ///
   Widget _buildCalendar() {
     final List<ScheduleModel> schedules = _schedulesForDate;
     return Stack(
@@ -243,17 +296,7 @@ class _WeekendRaceCalendarAlertState extends ConsumerState<WeekendRaceCalendarAl
     );
   }
 
-  void _onRaceTap(RaceModel race) {
-    appParamNotifier.setSelectedScheduleDate(date: race.date);
-    appParamNotifier.setSelectedScheduleKaisuuBashoDay(
-      kbd: '${race.kaisuu}_${race.basho}_${race.day}',
-      name: '${race.kaisuu}回 ${race.bashoName} ${race.day}日',
-    );
-    appParamNotifier.setSelectedRaceNumber(num: race.race);
-    appParamNotifier.setSelectedTiming(timing: '');
-    Navigator.pop(context);
-  }
-
+  ///
   List<Widget> _buildRaceBlocks(double colW, List<ScheduleModel> schedules) {
     final List<Widget> widgets = <Widget>[];
     const double blockH = 30 * _kPxPerMinute;
@@ -307,6 +350,7 @@ class _RaceBlock extends StatelessWidget {
   final RaceModel race;
   final bool isSelected;
 
+  ///
   @override
   Widget build(BuildContext context) {
     return Stack(
@@ -334,13 +378,11 @@ class _RaceBlock extends StatelessWidget {
         Container(
           width: double.infinity,
           height: double.infinity,
-
           decoration: BoxDecoration(
             color: isSelected ? Colors.green[800]!.withValues(alpha: 0.4) : Colors.black.withValues(alpha: 0.5),
             border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
             borderRadius: BorderRadius.circular(3),
           ),
-
           padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 2),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -348,12 +390,10 @@ class _RaceBlock extends StatelessWidget {
             children: <Widget>[
               Text(
                 '${race.startTime.split(':')[0]}:${race.startTime.split(':')[1]}',
-
                 style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
                 maxLines: 1,
                 overflow: TextOverflow.clip,
               ),
-
               Flexible(
                 child: Text(
                   race.raceName,
@@ -362,7 +402,6 @@ class _RaceBlock extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
-
               Text(
                 '${race.course}${race.dist}m',
                 style: const TextStyle(fontSize: 8, color: Colors.white),
@@ -392,15 +431,9 @@ class _RaceGridPainter extends CustomPainter {
   final double pxPerMinute, columnWidth;
   final int columnCount;
 
+  ///
   @override
   void paint(Canvas canvas, Size size) {
-    final Paint majorLine = Paint()..color = Colors.transparent;
-
-    for (int h = startHour; h <= endHour; h++) {
-      final double y = (h - startHour) * 60 * pxPerMinute;
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), (h % 3 == 0) ? majorLine : majorLine);
-    }
-
     final Paint vertLine = Paint()
       ..color = Colors.white.withValues(alpha: 0.3)
       ..strokeWidth = 1;
@@ -410,6 +443,7 @@ class _RaceGridPainter extends CustomPainter {
     }
   }
 
+  ///
   @override
   bool shouldRepaint(covariant _RaceGridPainter old) =>
       old.startHour != startHour ||
@@ -427,6 +461,7 @@ class _TimeGutter extends StatelessWidget {
   final int startHour, endHour;
   final double pxPerMinute;
 
+  ///
   @override
   Widget build(BuildContext context) {
     return Stack(
@@ -453,6 +488,7 @@ class _NowIndicatorLine extends StatelessWidget {
   final int startHour, endHour;
   final double pxPerMinute;
 
+  ///
   @override
   Widget build(BuildContext context) {
     final TimeOfDay now = TimeOfDay.now();
