@@ -459,20 +459,89 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
           child: Stack(
             children: <Widget>[
               Row(
-                mainAxisAlignment: MainAxisAlignment.end,
                 children: <Widget>[
-                  Column(
-                    children: <Widget>[
-                      Text('$startTime 出走', style: const TextStyle(fontSize: 12, color: Colors.greenAccent)),
-                      ValueListenableBuilder<int>(
-                        valueListenable: _remainingSecondsNotifier,
-                        builder: (BuildContext context, int seconds, Widget? _) =>
-                            Text(_formatCountdown(seconds), style: const TextStyle(fontSize: 13, color: Colors.white)),
-                      ),
-                    ],
+                  SizedBox(width: context.screenSize.width * 0.6),
+
+                  Expanded(
+                    child: Column(
+                      children: <Widget>[
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: <Widget>[
+                            const SizedBox.shrink(),
+                            Text('$startTime 出走', style: const TextStyle(fontSize: 12, color: Colors.greenAccent)),
+                          ],
+                        ),
+
+                        Container(
+                          decoration: BoxDecoration(
+                            border: Border(bottom: BorderSide(color: Colors.white.withValues(alpha: 0.5))),
+                          ),
+
+                          child: Row(
+                            children: <Widget>[
+                              Expanded(
+                                child: Container(
+                                  alignment: Alignment.topRight,
+                                  child: const Text('発走まで', style: TextStyle(fontSize: 11, color: Colors.white)),
+                                ),
+                              ),
+
+                              SizedBox(
+                                width: context.screenSize.width * 0.15,
+                                child: Container(
+                                  alignment: Alignment.topRight,
+                                  child: ValueListenableBuilder<int>(
+                                    valueListenable: _remainingSecondsNotifier,
+                                    builder: (BuildContext context, int seconds, Widget? _) => Text(
+                                      _formatCountdown(seconds),
+                                      style: const TextStyle(fontSize: 13, color: Colors.white),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        Container(
+                          decoration: BoxDecoration(
+                            border: Border(bottom: BorderSide(color: Colors.orangeAccent.withValues(alpha: 0.5))),
+                          ),
+
+                          child: Row(
+                            children: <Widget>[
+                              Expanded(
+                                child: Container(
+                                  alignment: Alignment.topRight,
+                                  child: const Text(
+                                    '馬券締切まで',
+                                    style: TextStyle(fontSize: 11, color: Colors.orangeAccent),
+                                  ),
+                                ),
+                              ),
+                              SizedBox(
+                                width: context.screenSize.width * 0.15,
+                                child: Container(
+                                  alignment: Alignment.topRight,
+                                  child: ValueListenableBuilder<int>(
+                                    valueListenable: _remainingSecondsNotifier,
+                                    builder: (BuildContext context, int seconds, Widget? _) => Text(
+                                      _formatCountdown(seconds > 180 ? seconds - 180 : 0),
+                                      style: const TextStyle(fontSize: 13, color: Colors.orangeAccent),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
+
               Row(
                 children: <Widget>[
                   GestureDetector(
