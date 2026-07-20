@@ -8,7 +8,6 @@ import '../../controllers/controllers_mixin.dart';
 import '../../data/http/client.dart';
 import '../../data/http/path.dart';
 import '../../extensions/extensions.dart';
-import '../../models/popularity_rank_odds_average_model.dart';
 import '../../models/race_result_history_model.dart';
 import '../../utility/functions.dart';
 import '../parts/error_confirm_dialog.dart';
@@ -109,7 +108,6 @@ class _PopularityRecordDisplayAlertState extends ConsumerState<PopularityRecordD
   Widget build(BuildContext context) {
     final int selectedRank = appParamState.selectedPopularityRank;
     final String selectedYear = appParamState.selectedPopularityRankYear;
-    final PopularityRankOddsAverageModel? averageModel = appParamState.keepPopularityRankOddsAverageMap[selectedRank];
     final List<int> yearList = List<int>.generate(DateTime.now().year - 2022, (int i) => 2023 + i);
 
     return Scaffold(
@@ -124,7 +122,7 @@ class _PopularityRecordDisplayAlertState extends ConsumerState<PopularityRecordD
               children: <Widget>[
                 const Text('過去オッズレコード', style: TextStyle(fontSize: 12)),
                 Divider(color: Colors.white.withValues(alpha: 0.4), thickness: 5),
-                _buildTopPanel(context, selectedRank, selectedYear, averageModel),
+                _buildTopPanel(context, selectedRank, selectedYear),
 
                 const SizedBox(height: 10),
 
@@ -141,7 +139,7 @@ class _PopularityRecordDisplayAlertState extends ConsumerState<PopularityRecordD
                 ),
 
                 _buildYearSelector(selectedRank, selectedYear, yearList),
-                Expanded(child: _buildHistoryList(averageModel)),
+                Expanded(child: _buildHistoryList()),
               ],
             ),
           ),
@@ -155,11 +153,9 @@ class _PopularityRecordDisplayAlertState extends ConsumerState<PopularityRecordD
     BuildContext context,
     int selectedRank,
     String selectedYear,
-    PopularityRankOddsAverageModel? averageModel,
   ) {
     return Container(
       width: double.infinity,
-      height: context.screenSize.height * 0.2,
       decoration: BoxDecoration(
         border: Border.all(color: Colors.white.withValues(alpha: 0.4)),
         borderRadius: BorderRadius.circular(5),
@@ -180,7 +176,6 @@ class _PopularityRecordDisplayAlertState extends ConsumerState<PopularityRecordD
             ],
           ),
           _buildRankSelector(selectedRank, selectedYear),
-          Expanded(child: _buildAverageDisplay(averageModel)),
         ],
       ),
     );
@@ -213,33 +208,6 @@ class _PopularityRecordDisplayAlertState extends ConsumerState<PopularityRecordD
   }
 
   ///
-  Widget _buildAverageDisplay(PopularityRankOddsAverageModel? model) {
-    return Stack(
-      children: <Widget>[
-        Positioned(
-          top: 5,
-          left: 5,
-          child: Text(model != null ? '${model.count}回の平均' : '', style: const TextStyle(color: Colors.grey)),
-        ),
-        Positioned(
-          bottom: 5,
-          right: 5,
-          child: Text(
-            model != null ? '${model.startDate} 〜 ${model.endDate}' : '',
-            style: const TextStyle(color: Colors.grey),
-          ),
-        ),
-        Center(
-          child: Text(
-            model != null ? (double.tryParse(model.oddsAverage)?.toStringAsFixed(1) ?? model.oddsAverage) : '-----',
-            style: const TextStyle(fontSize: 50, color: Colors.grey),
-          ),
-        ),
-      ],
-    );
-  }
-
-  ///
   Widget _buildYearSelector(int selectedRank, String selectedYear, List<int> yearList) {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
@@ -258,18 +226,7 @@ class _PopularityRecordDisplayAlertState extends ConsumerState<PopularityRecordD
   }
 
   ///
-  Widget _dispUpDownIcon({required double tan, required double average}) {
-    if (tan > average) {
-      return Icon(Icons.arrow_upward, color: Colors.greenAccent.withValues(alpha: 0.5), size: 40);
-    } else if (tan < average) {
-      return Icon(Icons.arrow_downward, color: Colors.redAccent.withValues(alpha: 0.5), size: 40);
-    } else {
-      return Icon(Icons.remove, color: Colors.blueAccent.withValues(alpha: 0.5), size: 40);
-    }
-  }
-
-  ///
-  Widget _buildHistoryList(PopularityRankOddsAverageModel? averageModel) {
+  Widget _buildHistoryList() {
     return FutureBuilder<List<RaceResultHistoryModel>>(
       future: _future,
       builder: (BuildContext context, AsyncSnapshot<List<RaceResultHistoryModel>> snapshot) {
@@ -319,16 +276,7 @@ class _PopularityRecordDisplayAlertState extends ConsumerState<PopularityRecordD
                             ? null
                             : tanValues.reduce((double a, double b) => a + b) / tanValues.length;
                         final String avgText = yearlyAvg == null ? '---' : yearlyAvg.toStringAsFixed(1);
-                        final double? overallAvg = double.tryParse(averageModel?.oddsAverage ?? '');
-
-                        return Stack(
-                          alignment: Alignment.center,
-                          children: <Widget>[
-                            if (yearlyAvg != null && overallAvg != null)
-                              _dispUpDownIcon(tan: yearlyAvg, average: overallAvg),
-                            Text('この年の平均: $avgText', style: const TextStyle(color: Colors.yellowAccent, fontSize: 11)),
-                          ],
-                        );
+                        return Text('この年の平均: $avgText', style: const TextStyle(color: Colors.yellowAccent, fontSize: 11));
                       },
                     ),
 
@@ -419,28 +367,11 @@ class _PopularityRecordDisplayAlertState extends ConsumerState<PopularityRecordD
                                 SizedBox(
                                   width: 50,
                                   height: 50,
-                                  child: Stack(
-                                    children: <Widget>[
-                                      Center(
-                                        child: Builder(
-                                          builder: (_) {
-                                            final double? tanVal = double.tryParse(item.tan);
-                                            final double? avgVal = double.tryParse(averageModel?.oddsAverage ?? '');
-                                            if (tanVal == null || avgVal == null) {
-                                              return const Icon(Icons.circle_outlined, color: Colors.white24, size: 40);
-                                            }
-                                            return _dispUpDownIcon(tan: tanVal, average: avgVal);
-                                          },
-                                        ),
-                                      ),
-
-                                      Center(
-                                        child: Text(
-                                          double.tryParse(item.tan)?.toStringAsFixed(1) ?? item.tan,
-                                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                                        ),
-                                      ),
-                                    ],
+                                  child: Center(
+                                    child: Text(
+                                      double.tryParse(item.tan)?.toStringAsFixed(1) ?? item.tan,
+                                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                                    ),
                                   ),
                                 ),
 

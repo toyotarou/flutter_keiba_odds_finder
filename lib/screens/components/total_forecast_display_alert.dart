@@ -7,6 +7,7 @@ import '../../data/http/path.dart';
 import '../../extensions/extensions.dart';
 import '../../models/horse_model.dart';
 import '../../models/odds_model.dart';
+import '../../models/popularity_rank_odds_median_model.dart';
 import '../../models/race_analysis_model.dart';
 import '../../models/race_model.dart';
 import '../../utility/functions.dart';
@@ -145,6 +146,34 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
   }
 
   ///
+  static String _medianByRank(PopularityRankOddsMedianModel model, int rank) {
+    final List<String> medians = <String>[
+      model.median01,
+      model.median02,
+      model.median03,
+      model.median04,
+      model.median05,
+      model.median06,
+      model.median07,
+      model.median08,
+      model.median09,
+      model.median10,
+      model.median11,
+      model.median12,
+      model.median13,
+      model.median14,
+      model.median15,
+      model.median16,
+      model.median17,
+      model.median18,
+    ];
+    if (rank < 1 || rank > medians.length) {
+      return '';
+    }
+    return medians[rank - 1];
+  }
+
+  ///
   static Set<int> _parsePickupRaw(String pickupRaw) {
     final Set<int> nums = <int>{};
     for (final String part in pickupRaw.split('/')) {
@@ -203,19 +232,30 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
       return const Center(child: CircularProgressIndicator(color: Colors.yellowAccent));
     }
 
+    final String mapKey = '${appParamState.selectedScheduleDate}_${appParamState.selectedScheduleKaisuuBashoDay}';
+    final PopularityRankOddsMedianModel? medianModel = () {
+      final List<PopularityRankOddsMedianModel> list =
+          appParamState.keepPopularityRankOddsMedianMap[mapKey] ?? <PopularityRankOddsMedianModel>[];
+      final List<PopularityRankOddsMedianModel> filtered = list
+          .where((PopularityRankOddsMedianModel e) => e.race == widget.raceNumber)
+          .toList();
+      return filtered.isNotEmpty ? filtered.first : null;
+    }();
     double maxUpsetScore = 0;
     int maxRank = 0;
-    for (int i = 0; i < widget.displayList.length; i++) {
-      final int idx = i + 1;
-      final OddsModel o = widget.displayList[i];
-      final String? avg = appParamState.keepPopularityRankOddsAverageMap[idx]?.oddsAverage;
-      if (avg != null) {
-        final double oddsVal = o.odds.toDouble();
-        if (oddsVal != 0) {
-          final double score = avg.toDouble() / oddsVal;
-          if (score > maxUpsetScore) {
-            maxUpsetScore = score;
-            maxRank = idx;
+    if (medianModel != null) {
+      for (int i = 0; i < widget.displayList.length; i++) {
+        final int idx = i + 1;
+        final OddsModel o = widget.displayList[i];
+        final double medianDouble = double.tryParse(_medianByRank(medianModel, idx)) ?? 0;
+        if (medianDouble > 0) {
+          final double oddsVal = o.odds.toDouble();
+          if (oddsVal != 0) {
+            final double score = medianDouble / oddsVal;
+            if (score > maxUpsetScore) {
+              maxUpsetScore = score;
+              maxRank = idx;
+            }
           }
         }
       }
@@ -311,12 +351,14 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
 
                             String upsetScore = '';
                             double upsetScoreVal = 0;
-                            final String? avg = appParamState.keepPopularityRankOddsAverageMap[popularity]?.oddsAverage;
-                            if (avg != null) {
-                              final double oddsVal = item.odds.toDouble();
-                              if (oddsVal != 0) {
-                                upsetScoreVal = avg.toDouble() / oddsVal;
-                                upsetScore = upsetScoreVal.toStringAsFixed(2);
+                            if (medianModel != null) {
+                              final double medianDouble = double.tryParse(_medianByRank(medianModel, popularity)) ?? 0;
+                              if (medianDouble > 0) {
+                                final double oddsVal = item.odds.toDouble();
+                                if (oddsVal != 0) {
+                                  upsetScoreVal = medianDouble / oddsVal;
+                                  upsetScore = upsetScoreVal.toStringAsFixed(2);
+                                }
                               }
                             }
                             final bool isInHighlight =

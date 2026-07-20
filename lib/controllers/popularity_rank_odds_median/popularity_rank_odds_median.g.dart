@@ -7,7 +7,7 @@ part of 'popularity_rank_odds_median.dart';
 // **************************************************************************
 
 String _$popularityRankOddsMedianHash() =>
-    r'd4e7e21cfb68a5a405eca75f48ece5f9ac325dea';
+    r'a4738972c726b94f0603337814e3dffed787d1c1';
 
 /// See also [PopularityRankOddsMedian].
 @ProviderFor(PopularityRankOddsMedian)

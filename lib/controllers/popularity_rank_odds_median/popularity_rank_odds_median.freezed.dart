@@ -18,8 +18,8 @@ final _privateConstructorUsedError = UnsupportedError(
 mixin _$PopularityRankOddsMedianState {
   List<PopularityRankOddsMedianModel> get popularityRankOddsMedianList =>
       throw _privateConstructorUsedError;
-  Map<String, PopularityRankOddsMedianModel> get popularityRankOddsMedianMap =>
-      throw _privateConstructorUsedError;
+  Map<String, List<PopularityRankOddsMedianModel>>
+      get popularityRankOddsMedianMap => throw _privateConstructorUsedError;
 
   @JsonKey(ignore: true)
   $PopularityRankOddsMedianStateCopyWith<PopularityRankOddsMedianState>
@@ -36,7 +36,8 @@ abstract class $PopularityRankOddsMedianStateCopyWith<$Res> {
   @useResult
   $Res call(
       {List<PopularityRankOddsMedianModel> popularityRankOddsMedianList,
-      Map<String, PopularityRankOddsMedianModel> popularityRankOddsMedianMap});
+      Map<String, List<PopularityRankOddsMedianModel>>
+          popularityRankOddsMedianMap});
 }
 
 /// @nodoc
@@ -64,7 +65,7 @@ class _$PopularityRankOddsMedianStateCopyWithImpl<$Res,
       popularityRankOddsMedianMap: null == popularityRankOddsMedianMap
           ? _value.popularityRankOddsMedianMap
           : popularityRankOddsMedianMap // ignore: cast_nullable_to_non_nullable
-              as Map<String, PopularityRankOddsMedianModel>,
+              as Map<String, List<PopularityRankOddsMedianModel>>,
     ) as $Val);
   }
 }
@@ -80,7 +81,8 @@ abstract class _$$PopularityRankOddsMedianStateImplCopyWith<$Res>
   @useResult
   $Res call(
       {List<PopularityRankOddsMedianModel> popularityRankOddsMedianList,
-      Map<String, PopularityRankOddsMedianModel> popularityRankOddsMedianMap});
+      Map<String, List<PopularityRankOddsMedianModel>>
+          popularityRankOddsMedianMap});
 }
 
 /// @nodoc
@@ -107,7 +109,7 @@ class __$$PopularityRankOddsMedianStateImplCopyWithImpl<$Res>
       popularityRankOddsMedianMap: null == popularityRankOddsMedianMap
           ? _value._popularityRankOddsMedianMap
           : popularityRankOddsMedianMap // ignore: cast_nullable_to_non_nullable
-              as Map<String, PopularityRankOddsMedianModel>,
+              as Map<String, List<PopularityRankOddsMedianModel>>,
     ));
   }
 }
@@ -119,8 +121,8 @@ class _$PopularityRankOddsMedianStateImpl
   const _$PopularityRankOddsMedianStateImpl(
       {final List<PopularityRankOddsMedianModel> popularityRankOddsMedianList =
           const <PopularityRankOddsMedianModel>[],
-      final Map<String, PopularityRankOddsMedianModel> popularityRankOddsMedianMap =
-          const <String, PopularityRankOddsMedianModel>{}})
+      final Map<String, List<PopularityRankOddsMedianModel>> popularityRankOddsMedianMap =
+          const <String, List<PopularityRankOddsMedianModel>>{}})
       : _popularityRankOddsMedianList = popularityRankOddsMedianList,
         _popularityRankOddsMedianMap = popularityRankOddsMedianMap;
 
@@ -134,10 +136,12 @@ class _$PopularityRankOddsMedianStateImpl
     return EqualUnmodifiableListView(_popularityRankOddsMedianList);
   }
 
-  final Map<String, PopularityRankOddsMedianModel> _popularityRankOddsMedianMap;
+  final Map<String, List<PopularityRankOddsMedianModel>>
+      _popularityRankOddsMedianMap;
   @override
   @JsonKey()
-  Map<String, PopularityRankOddsMedianModel> get popularityRankOddsMedianMap {
+  Map<String, List<PopularityRankOddsMedianModel>>
+      get popularityRankOddsMedianMap {
     if (_popularityRankOddsMedianMap is EqualUnmodifiableMapView)
       return _popularityRankOddsMedianMap;
     // ignore: implicit_dynamic_type
@@ -181,13 +185,14 @@ abstract class _PopularityRankOddsMedianState
     implements PopularityRankOddsMedianState {
   const factory _PopularityRankOddsMedianState(
       {final List<PopularityRankOddsMedianModel> popularityRankOddsMedianList,
-      final Map<String, PopularityRankOddsMedianModel>
+      final Map<String, List<PopularityRankOddsMedianModel>>
           popularityRankOddsMedianMap}) = _$PopularityRankOddsMedianStateImpl;
 
   @override
   List<PopularityRankOddsMedianModel> get popularityRankOddsMedianList;
   @override
-  Map<String, PopularityRankOddsMedianModel> get popularityRankOddsMedianMap;
+  Map<String, List<PopularityRankOddsMedianModel>>
+      get popularityRankOddsMedianMap;
   @override
   @JsonKey(ignore: true)
   _$$PopularityRankOddsMedianStateImplCopyWith<

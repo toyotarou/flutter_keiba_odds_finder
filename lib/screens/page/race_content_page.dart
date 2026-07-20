@@ -15,6 +15,7 @@ import '../../extensions/extensions.dart';
 import '../../main.dart';
 import '../../models/horse_model.dart';
 import '../../models/odds_model.dart';
+import '../../models/popularity_rank_odds_median_model.dart';
 import '../../models/race_analysis_model.dart';
 import '../../models/race_model.dart';
 import '../../models/race_result_model.dart';
@@ -1182,7 +1183,43 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
   }
 
   ///
-  Widget _buildPopularityHorseRow({required List<OddsModel> displayList}) {
+  static String _medianByRank(PopularityRankOddsMedianModel model, int rank) {
+    final List<String> medians = <String>[
+      model.median01,
+      model.median02,
+      model.median03,
+      model.median04,
+      model.median05,
+      model.median06,
+      model.median07,
+      model.median08,
+      model.median09,
+      model.median10,
+      model.median11,
+      model.median12,
+      model.median13,
+      model.median14,
+      model.median15,
+      model.median16,
+      model.median17,
+      model.median18,
+    ];
+    if (rank < 1 || rank > medians.length) {
+      return '';
+    }
+    return medians[rank - 1];
+  }
+
+  ///
+  Widget _buildPopularityHorseRow({required List<OddsModel> displayList, PopularityRankOddsMedianModel? median}) {
+    if (median == null) {
+      return Container(
+        padding: const EdgeInsets.all(8),
+        alignment: Alignment.centerLeft,
+        child: const Text('過去の類似レースがないため、\n期待数値を表示できません。', style: TextStyle(fontSize: 11, color: Colors.grey)),
+      );
+    }
+
     final Map<int, int> numToRankMap = _numToRankMap;
 
     final int pickupCount = displayList.length <= 8
@@ -1198,8 +1235,11 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
 
       double score = 0;
 
-      if (oddsVal != 0 && appParamState.keepPopularityRankOddsAverageMap[idx] != null) {
-        score = appParamState.keepPopularityRankOddsAverageMap[idx]!.oddsAverage.toDouble() / oddsVal;
+      if (oddsVal != 0) {
+        final double medianDouble = double.tryParse(_medianByRank(median, idx)) ?? 0;
+        if (medianDouble > 0) {
+          score = medianDouble / oddsVal;
+        }
       }
 
       return MapEntry<int, double>(idx, score);
@@ -1224,15 +1264,12 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                       final int index = entry.key + 1;
                       final OddsModel o = entry.value;
 
-                      String average = '';
                       String upsetScore = '';
-                      double upsetScoreVal = 0;
-                      if (appParamState.keepPopularityRankOddsAverageMap[index] != null) {
-                        average = appParamState.keepPopularityRankOddsAverageMap[index]!.oddsAverage;
+                      final double medianDouble = double.tryParse(_medianByRank(median, index)) ?? 0;
+                      if (medianDouble > 0) {
                         final double oddsVal = o.odds.toDouble();
                         if (oddsVal != 0) {
-                          upsetScoreVal = average.toDouble() / oddsVal;
-                          upsetScore = upsetScoreVal.toStringAsFixed(2);
+                          upsetScore = (medianDouble / oddsVal).toStringAsFixed(2);
                         }
                       }
 
@@ -1329,7 +1366,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: <Widget>[
-                            Text('2023年以降の人気順の平均オッズ（A）'),
+                            Text('「人気順間の比率の類似レース」の中央値オッズ（A）'),
                             Text('このレースの人気順のオッズ（B）'),
                             Text('「A / B」を行うことで、期待数値がわかります。'),
                             Text('人気順のどこに高い数値が出るかによって、レースの期待数値が決まります。'),
@@ -1406,6 +1443,8 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     final List<RaceModel> races = widget.raceMap[widget.mapKey] ?? <RaceModel>[];
     final int raceIdx = races.indexWhere((RaceModel e) => e.race == widget.raceNumber);
 
+    final PopularityRankOddsMedianModel? median = _makeMedianList();
+
     String raceName = '';
     String startTime = '--:--';
     RaceModel? currentRaceModel;
@@ -1478,7 +1517,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                   selectedIndex: raceResultByRank.isEmpty ? 0 : appParamState.selectedUpsetBoxNum,
                   onSelected: (int i) => appParamNotifier.setSelectedUpsetBoxNum(num: i),
                   panelChild: (raceResultByRank.isEmpty || appParamState.selectedUpsetBoxNum == 0)
-                      ? _buildPopularityHorseRow(displayList: displayList)
+                      ? _buildPopularityHorseRow(displayList: displayList, median: median)
                       : _buildRaceResultBox(raceResultByRank: raceResultByRank),
                 ),
               ],
@@ -1638,6 +1677,18 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
         Expanded(child: _displayRaceHorseList()),
       ],
     );
+  }
+
+  ///
+  PopularityRankOddsMedianModel? _makeMedianList() {
+    final List<PopularityRankOddsMedianModel> popularityRankOddsMedianModelList =
+        appParamState.keepPopularityRankOddsMedianMap[widget.mapKey] ?? <PopularityRankOddsMedianModel>[];
+
+    final List<PopularityRankOddsMedianModel> filtered = popularityRankOddsMedianModelList
+        .where((PopularityRankOddsMedianModel e) => e.race == widget.raceNumber)
+        .toList();
+
+    return filtered.isNotEmpty ? filtered.first : null;
   }
 }
 

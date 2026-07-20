@@ -16,8 +16,8 @@ class PopularityRankOddsMedianState with _$PopularityRankOddsMedianState {
   const factory PopularityRankOddsMedianState({
     @Default(<PopularityRankOddsMedianModel>[]) List<PopularityRankOddsMedianModel> popularityRankOddsMedianList,
 
-    @Default(<String, PopularityRankOddsMedianModel>{})
-    Map<String, PopularityRankOddsMedianModel> popularityRankOddsMedianMap,
+    @Default(<String, List<PopularityRankOddsMedianModel>>{})
+    Map<String, List<PopularityRankOddsMedianModel>> popularityRankOddsMedianMap,
   }) = _PopularityRankOddsMedianState;
 }
 
@@ -38,7 +38,7 @@ class PopularityRankOddsMedian extends _$PopularityRankOddsMedian {
     try {
       final List<PopularityRankOddsMedianModel> list = <PopularityRankOddsMedianModel>[];
 
-      final Map<String, PopularityRankOddsMedianModel> map = <String, PopularityRankOddsMedianModel>{};
+      final Map<String, List<PopularityRankOddsMedianModel>> map = <String, List<PopularityRankOddsMedianModel>>{};
 
       // ignore: always_specify_types
       await client.get(path: APIPath.getHorseOddsFinderPopularityRankMedian).then((value) {
@@ -51,7 +51,13 @@ class PopularityRankOddsMedian extends _$PopularityRankOddsMedian {
 
           list.add(val);
 
-          map['${val.date}_${val.kaisuu}_${val.basho}_${val.day}'] = val;
+          // map['${val.date}_${val.kaisuu}_${val.basho}_${val.day}'] = val;
+          //
+          //
+          //
+          //
+
+          (map['${val.date}_${val.kaisuu}_${val.basho}_${val.day}'] ??= <PopularityRankOddsMedianModel>[]).add(val);
         }
       });
 

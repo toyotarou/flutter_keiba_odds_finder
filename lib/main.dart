@@ -283,7 +283,6 @@ class _MyAppState extends ConsumerState<MyApp> with ControllersMixin<MyApp> {
                 raceResultMap: raceResultState.raceResultMap,
                 loginUserMap: loginUserState.loginUserMap,
                 pushNotifierUserList: pushNotifierUserState.pushNotifierUserList,
-                popularityRankOddsAverageMap: popularityRankOddsAverageState.popularityRankOddsAverageMap,
                 popularityRankOddsMedianMap: popularityRankOddsMedianState.popularityRankOddsMedianMap,
                 loggedInUserId: _loggedInUserId,
                 onLogout: () => setState(() => _loggedInUserId = ''),

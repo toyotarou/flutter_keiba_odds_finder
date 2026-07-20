@@ -10,7 +10,6 @@ import '../../models/odds_model.dart';
 //
 //
 
-import '../../models/popularity_rank_odds_average_model.dart';
 import '../../models/popularity_rank_odds_median_model.dart';
 import '../../models/push_notifier_user_model.dart';
 import '../../models/race_model.dart';
@@ -45,11 +44,8 @@ class AppParamState with _$AppParamState {
 
     @Default(<PushNotifierUserModel>[]) List<PushNotifierUserModel> keepPushNotifierUserList,
 
-    @Default(<int, PopularityRankOddsAverageModel>{})
-    Map<int, PopularityRankOddsAverageModel> keepPopularityRankOddsAverageMap,
-
-    @Default(<String, PopularityRankOddsMedianModel>{})
-    Map<String, PopularityRankOddsMedianModel> keepPopularityRankOddsMedianMap,
+    @Default(<String, List<PopularityRankOddsMedianModel>>{})
+    Map<String, List<PopularityRankOddsMedianModel>> keepPopularityRankOddsMedianMap,
 
     ///
     @Default('') String configOddsGetTiming,
@@ -141,11 +137,7 @@ class AppParam extends _$AppParam {
       state = state.copyWith(keepPushNotifierUserList: list);
 
   ///
-  void setKeepPopularityRankOddsAverageMap({required Map<int, PopularityRankOddsAverageModel> map}) =>
-      state = state.copyWith(keepPopularityRankOddsAverageMap: map);
-
-  ///
-  void setKeepPopularityRankOddsMedianMap({required Map<String, PopularityRankOddsMedianModel> map}) =>
+  void setKeepPopularityRankOddsMedianMap({required Map<String, List<PopularityRankOddsMedianModel>> map}) =>
       state = state.copyWith(keepPopularityRankOddsMedianMap: map);
 
   //////////////
