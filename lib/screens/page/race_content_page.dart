@@ -1185,113 +1185,125 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
   Widget _buildPopularityHorseRow({required List<OddsModel> displayList}) {
     final Map<int, int> numToRankMap = _numToRankMap;
 
-    double maxUpsetScore = 0;
-    int maxRank = 0;
-    for (int i = 0; i < displayList.length; i++) {
-      final int idx = i + 1;
-      final OddsModel o = displayList[i];
-      if (appParamState.keepPopularityRankOddsAverageMap[idx] != null) {
-        final double oddsVal = o.odds.toDouble();
-        if (oddsVal != 0) {
-          final double score = appParamState.keepPopularityRankOddsAverageMap[idx]!.oddsAverage.toDouble() / oddsVal;
-          if (score > maxUpsetScore) {
-            maxUpsetScore = score;
-            maxRank = idx;
-          }
-        }
-      }
-    }
+    final int pickupCount = displayList.length <= 8
+        ? 4
+        : displayList.length <= 13
+        ? 5
+        : 6;
 
-    final int cellCount = displayList.length <= 8 ? 4 : 5;
-    final int highlightStart = maxRank <= 5 ? maxRank : maxRank - cellCount + 1;
-    final int highlightEnd = maxRank <= 5 ? maxRank + cellCount - 1 : maxRank;
+    final List<MapEntry<int, double>> scoredEntries = displayList.asMap().entries.map((MapEntry<int, OddsModel> e) {
+      final int idx = e.key + 1;
+
+      final double oddsVal = e.value.odds.toDouble();
+
+      double score = 0;
+
+      if (oddsVal != 0 && appParamState.keepPopularityRankOddsAverageMap[idx] != null) {
+        score = appParamState.keepPopularityRankOddsAverageMap[idx]!.oddsAverage.toDouble() / oddsVal;
+      }
+
+      return MapEntry<int, double>(idx, score);
+    }).toList()..sort((MapEntry<int, double> a, MapEntry<int, double> b) => b.value.compareTo(a.value));
+
+    final Set<int> pickupIndexSet = scoredEntries.take(pickupCount).map((MapEntry<int, double> e) => e.key).toSet();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: <Widget>[
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Padding(
-            padding: const EdgeInsets.all(8),
-            child: Row(
-              children: displayList.asMap().entries.map((MapEntry<int, OddsModel> entry) {
-                final int index = entry.key + 1;
-                final OddsModel o = entry.value;
+        Row(
+          children: <Widget>[
+            const SizedBox(width: 5),
 
-                String average = '';
-                String upsetScore = '';
-                double upsetScoreVal = 0;
-                if (appParamState.keepPopularityRankOddsAverageMap[index] != null) {
-                  average = appParamState.keepPopularityRankOddsAverageMap[index]!.oddsAverage;
-                  final double oddsVal = o.odds.toDouble();
-                  if (oddsVal != 0) {
-                    upsetScoreVal = average.toDouble() / oddsVal;
-                    upsetScore = upsetScoreVal.toStringAsFixed(2);
-                  }
-                }
+            Expanded(
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: Row(
+                    children: displayList.asMap().entries.map((MapEntry<int, OddsModel> entry) {
+                      final int index = entry.key + 1;
+                      final OddsModel o = entry.value;
 
-                return Stack(
-                  clipBehavior: Clip.none,
-                  children: <Widget>[
-                    Container(
-                      width: 70,
-                      margin: const EdgeInsets.symmetric(horizontal: 2),
-                      decoration: BoxDecoration(
-                        color: maxUpsetScore > 0 && upsetScoreVal == maxUpsetScore
-                            ? Colors.yellowAccent.withValues(alpha: 0.2)
-                            : Colors.white.withValues(alpha: 0.05),
+                      String average = '';
+                      String upsetScore = '';
+                      double upsetScoreVal = 0;
+                      if (appParamState.keepPopularityRankOddsAverageMap[index] != null) {
+                        average = appParamState.keepPopularityRankOddsAverageMap[index]!.oddsAverage;
+                        final double oddsVal = o.odds.toDouble();
+                        if (oddsVal != 0) {
+                          upsetScoreVal = average.toDouble() / oddsVal;
+                          upsetScore = upsetScoreVal.toStringAsFixed(2);
+                        }
+                      }
 
-                        border: Border.all(
-                          color: maxRank > 0 && index >= highlightStart && index <= highlightEnd
-                              ? Colors.yellowAccent.withValues(alpha: 0.8)
-                              : Colors.white.withValues(alpha: 0.2),
-                        ),
-                        borderRadius: BorderRadius.circular(3),
-                      ),
-                      child: DefaultTextStyle(
-                        style: const TextStyle(fontSize: 12, color: Colors.white),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: <Widget>[
-                            Container(
-                              decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.3)),
-                              width: double.infinity,
-                              alignment: Alignment.center,
-                              child: Text('$index番人気'),
+                      return Stack(
+                        clipBehavior: Clip.none,
+                        children: <Widget>[
+                          Container(
+                            width: 70,
+                            margin: const EdgeInsets.symmetric(horizontal: 2),
+                            decoration: BoxDecoration(
+                              color: pickupIndexSet.contains(index)
+                                  ? Colors.yellowAccent.withValues(alpha: 0.2)
+                                  : Colors.white.withValues(alpha: 0.05),
+
+                              border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+
+                              borderRadius: BorderRadius.circular(3),
                             ),
-                            Text('馬番: ${o.num}'),
-                            const SizedBox(height: 3),
-                            Text(
-                              upsetScore,
-                              style: TextStyle(
-                                color: Colors.yellowAccent.withValues(alpha: 0.6),
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
+                            child: DefaultTextStyle(
+                              style: const TextStyle(fontSize: 12, color: Colors.white),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: <Widget>[
+                                  Container(
+                                    decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.3)),
+                                    width: double.infinity,
+                                    alignment: Alignment.center,
+                                    child: Text('$index番人気'),
+                                  ),
+                                  Text('馬番: ${o.num}'),
+                                  const SizedBox(height: 3),
+                                  Text(
+                                    upsetScore,
+                                    style: TextStyle(
+                                      color: Colors.yellowAccent.withValues(alpha: 0.6),
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 3),
+                                ],
                               ),
                             ),
-                            const SizedBox(height: 3),
-                          ],
-                        ),
-                      ),
-                    ),
+                          ),
 
-                    if (numToRankMap.containsKey(o.num))
-                      Positioned(
-                        right: -3,
-                        bottom: -3,
-                        child: Container(
-                          width: 22,
-                          height: 22,
-                          decoration: BoxDecoration(color: raceRankColor(numToRankMap[o.num]), shape: BoxShape.circle),
-                          child: const Icon(Icons.flag, size: 14, color: Colors.white),
-                        ),
-                      ),
-                  ],
-                );
-              }).toList(),
+                          if (numToRankMap.containsKey(o.num))
+                            Positioned(
+                              right: -3,
+                              bottom: -3,
+                              child: Container(
+                                width: 22,
+                                height: 22,
+                                decoration: BoxDecoration(
+                                  color: raceRankColor(numToRankMap[o.num]),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(Icons.flag, size: 14, color: Colors.white),
+                              ),
+                            ),
+                        ],
+                      );
+                    }).toList(),
+                  ),
+                ),
+              ),
             ),
-          ),
+
+            const SizedBox(width: 5),
+          ],
         ),
+
         Padding(
           padding: const EdgeInsets.only(right: 20),
           child: GestureDetector(
