@@ -22,6 +22,8 @@ import 'components/admin_menu_alert.dart';
 import 'components/history_race_record_display_alert.dart';
 import 'components/horse_name_initial_panel_alert.dart';
 import 'components/horse_odds_ranking_display_alert.dart';
+import 'components/past_race_odds_transition_alert.dart';
+import 'components/popularity_record_display_alert.dart';
 import 'components/terms_alert.dart';
 import 'components/weekend_race_calendar_alert.dart';
 import 'page/race_content_page.dart';
@@ -589,64 +591,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
   }
 
   ///
-  Widget _buildDrawerRaceRow({
-    required String date,
-    required List<SummaryModel> models,
-    required MapEntry<int, String> r,
-  }) {
-    return DefaultTextStyle(
-      style: const TextStyle(color: Colors.white70, fontSize: 11),
-
-      child: Container(
-        decoration: BoxDecoration(
-          border: Border(bottom: BorderSide(color: Colors.white.withOpacity(0.3))),
-        ),
-
-        padding: const EdgeInsets.symmetric(vertical: 5),
-
-        child: Row(
-          children: <Widget>[
-            Container(width: 20, alignment: Alignment.topRight, child: Text('${r.key}R')),
-            const SizedBox(width: 20),
-            Expanded(child: Text(r.value, maxLines: 1, overflow: TextOverflow.ellipsis)),
-
-            GestureDetector(
-              onTap: () {
-                appParamNotifier.setSelectedDrawerRace(
-                  race: '${date}_${models.first.kaisuu}_${models.first.basho}_${models.first.day}_${r.key}',
-                );
-
-                summaryNotifier.fetchRaceSummary(
-                  date: date,
-                  kaisuu: models.first.kaisuu,
-                  basho: models.first.basho,
-                  day: models.first.day,
-                  race: r.key,
-                );
-
-                appParamNotifier.setIsShowUpperBox2(flag: true);
-
-                OddsFinderDialog(
-                  context: context,
-                  widget: const HorseOddsRankingDisplayAlert(mode: RankingMode.summary),
-                );
-              },
-              child: Icon(
-                Icons.calendar_view_month,
-                color:
-                    ('${date}_${models.first.kaisuu}_${models.first.basho}_${models.first.day}_${r.key}' ==
-                        appParamState.selectedDrawerRace)
-                    ? Colors.yellowAccent.withValues(alpha: 0.4)
-                    : Colors.greenAccent.withValues(alpha: 0.4),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  ///
   Widget _dispDrawer() {
     return Drawer(
       backgroundColor: Colors.blueGrey.withOpacity(0.2),
@@ -657,110 +601,90 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
           children: <Widget>[
             const SizedBox(height: 60),
 
-            Row(
-              children: <Widget>[
-                Expanded(
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: GestureDetector(
+                onTap: () => OddsFinderDialog(context: context, widget: const HistoryRaceRecordDisplayAlert()),
+                child: Container(
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    border: Border(bottom: BorderSide(color: Colors.white.withValues(alpha: 0.5))),
+                  ),
                   child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: <Widget>[
-                      TextButton(
-                        onPressed: () =>
-                            OddsFinderDialog(context: context, widget: const HistoryRaceRecordDisplayAlert()),
-                        child: const Text('過去データ', style: TextStyle(color: Colors.white)),
-                      ),
-
-                      TextButton(
-                        onPressed: () {
-                          appParamNotifier.setSelectedHorseNameChar1(char: '');
-                          appParamNotifier.setSelectedHorseNameChar2(char: '');
-
-                          OddsFinderDialog(context: context, widget: const HorseNameInitialPanelAlert());
-                        },
-                        child: const Text('馬名リスト', style: TextStyle(color: Colors.white)),
-                      ),
-
-                      const SizedBox(width: 60),
+                      Image.asset('assets/images/jockey.png', width: 35),
+                      const SizedBox(width: 20),
+                      const Text('過去レースの勝者リスト', style: TextStyle(fontSize: 12)),
                     ],
                   ),
                 ),
-
-                const SizedBox(width: 10),
-              ],
+              ),
             ),
 
-            Expanded(
-              child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: widget.summaryDateBashoMap.entries.map((MapEntry<String, List<String>> e) {
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        Container(
-                          width: context.screenSize.width,
-                          padding: const EdgeInsets.all(5),
-                          margin: const EdgeInsets.only(top: 10),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: GestureDetector(
+                onTap: () => OddsFinderDialog(context: context, widget: const PastRaceOddsTransitionAlert()),
+                child: Container(
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    border: Border(bottom: BorderSide(color: Colors.white.withValues(alpha: 0.5))),
+                  ),
+                  child: Row(
+                    children: <Widget>[
+                      Image.asset('assets/images/jockey.png', width: 35),
+                      const SizedBox(width: 20),
+                      const Text('過去レースのオッズ遷移表', style: TextStyle(fontSize: 12)),
+                    ],
+                  ),
+                ),
+              ),
+            ),
 
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: <Color>[Colors.greenAccent.withOpacity(0.3), Colors.transparent],
-                              stops: const <double>[0.7, 1],
-                            ),
-                          ),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: GestureDetector(
+                onTap: () {
+                  appParamNotifier.setSelectedHorseNameChar1(char: '');
+                  appParamNotifier.setSelectedHorseNameChar2(char: '');
+                  OddsFinderDialog(context: context, widget: const HorseNameInitialPanelAlert());
+                },
+                child: Container(
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    border: Border(bottom: BorderSide(color: Colors.white.withValues(alpha: 0.5))),
+                  ),
+                  child: Row(
+                    children: <Widget>[
+                      Image.asset('assets/images/jockey.png', width: 35),
+                      const SizedBox(width: 20),
+                      const Text('馬名リスト', style: TextStyle(fontSize: 12)),
+                    ],
+                  ),
+                ),
+              ),
+            ),
 
-                          child: Text(e.key, style: const TextStyle(color: Colors.white)),
-                        ),
-
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: e.value.map((String e2) {
-                            final List<SummaryModel> models = widget.summaryMap['${e.key}_$e2'] ?? <SummaryModel>[];
-
-                            final Map<int, String> uniqueRaces = <int, String>{};
-
-                            for (final SummaryModel m in models) {
-                              uniqueRaces.putIfAbsent(m.race, () => m.raceName);
-                            }
-
-                            final List<MapEntry<int, String>> races = uniqueRaces.entries.toList()
-                              ..sort((MapEntry<int, String> a, MapEntry<int, String> b) => a.key.compareTo(b.key));
-
-                            if (models.isEmpty) {
-                              return const SizedBox.shrink();
-                            }
-
-                            return ExpansionTile(
-                              iconColor: Colors.greenAccent,
-                              collapsedIconColor: Colors.white70,
-
-                              title: Text(
-                                '${models.first.kaisuu}回 ${models.first.bashoName} ${models.first.day}日',
-                                style: const TextStyle(color: Colors.greenAccent, fontSize: 12),
-                              ),
-
-                              children: <Widget>[
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 20),
-
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: races
-                                        .map(
-                                          (MapEntry<int, String> r) =>
-                                              _buildDrawerRaceRow(date: e.key, models: models, r: r),
-                                        )
-                                        .toList(),
-                                  ),
-                                ),
-                              ],
-                            );
-                          }).toList(),
-                        ),
-
-                        const SizedBox(height: 30),
-                      ],
-                    );
-                  }).toList(),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: GestureDetector(
+                onTap: () {
+                  appParamNotifier.setSelectedPopularityRank(rank: 0);
+                  appParamNotifier.setSelectedPopularityRankYear(year: '');
+                  OddsFinderDialog(context: context, widget: const PopularityRecordDisplayAlert());
+                },
+                child: Container(
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    border: Border(bottom: BorderSide(color: Colors.white.withValues(alpha: 0.5))),
+                  ),
+                  child: Row(
+                    children: <Widget>[
+                      Image.asset('assets/images/jockey.png', width: 35),
+                      const SizedBox(width: 20),
+                      const Text('過去の人気順オッズリスト', style: TextStyle(fontSize: 12)),
+                    ],
+                  ),
                 ),
               ),
             ),

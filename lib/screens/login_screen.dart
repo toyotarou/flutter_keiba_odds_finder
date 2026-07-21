@@ -58,27 +58,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     SizedBox(height: context.screenSize.height * 0.38),
                     _buildInputCard(),
                     const SizedBox(height: 20),
-                    Row(
-                      children: <Widget>[
-                        ElevatedButton(
-                          onPressed: () {
-                            _userIdController.text = 'testuser';
-                            _passwordController.text = 'password123';
-                          },
-                          child: const Text('testuser'),
-                        ),
 
-                        const SizedBox(width: 10),
-
-                        ElevatedButton(
-                          onPressed: () {
-                            _userIdController.text = 'toyohide';
-                            _passwordController.text = 'hidechy4819';
-                          },
-                          child: const Text('toyoda'),
-                        ),
-                      ],
+                    ElevatedButton(
+                      onPressed: () {
+                        _userIdController.text = 'toyohide';
+                        _passwordController.text = 'hidechy4819';
+                      },
+                      child: const Text('toyoda'),
                     ),
+
                     const SizedBox(height: 20),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.end,

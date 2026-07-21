@@ -225,6 +225,8 @@ class _SimilarRacesDisplayAlertState extends ConsumerState<SimilarRacesDisplayAl
                   popularity: popularity,
                   matchPercent: matchPercent,
                   historyList: historyList,
+                  index: index,
+                  total: _payoutList.length,
                 );
               },
             ),
@@ -240,6 +242,8 @@ class _SimilarRacesDisplayAlertState extends ConsumerState<SimilarRacesDisplayAl
     RacesPopularityRatioModel? popularity,
     String matchPercent = '',
     List<RaceResultHistoryModel> historyList = const <RaceResultHistoryModel>[],
+    required int index,
+    required int total,
   }) {
     return Stack(
       children: <Widget>[
@@ -290,6 +294,20 @@ class _SimilarRacesDisplayAlertState extends ConsumerState<SimilarRacesDisplayAl
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
+                  Container(
+                    padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 20),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.yellowAccent.withValues(alpha: 0.5)),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      '${index + 1}/$total',
+                      style: const TextStyle(fontSize: 10, color: Colors.yellowAccent),
+                    ),
+                  ),
+
+                  const SizedBox(height: 10),
+
                   Text(
                     '${payout.date}　${payout.kaisuu}回${payout.basho}${payout.day}日',
                     style: const TextStyle(color: Colors.greenAccent, fontSize: 11),
@@ -357,8 +375,7 @@ class _SimilarRacesDisplayAlertState extends ConsumerState<SimilarRacesDisplayAl
 
                     final int? finishPos = horseNum != null ? finishPosByNum[horseNum] : null;
 
-                    final Color? numBgColor =
-                        (finishPos != null && finishPos <= 3) ? raceRankColor(finishPos) : null;
+                    final Color? numBgColor = (finishPos != null && finishPos <= 3) ? raceRankColor(finishPos) : null;
 
                     widgets.add(
                       Padding(

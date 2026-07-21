@@ -9,10 +9,7 @@ import '../../models/horse_model.dart';
 import '../../models/odds_model.dart';
 import '../../models/popularity_rank_odds_median_model.dart';
 import '../../models/race_analysis_model.dart';
-import '../../models/race_model.dart';
 import '../../utility/functions.dart';
-import '../parts/odds_finder_dialog.dart';
-import 'similar_races_display_alert.dart';
 
 class TotalForecastDisplayAlert extends ConsumerStatefulWidget {
   const TotalForecastDisplayAlert({
@@ -22,7 +19,6 @@ class TotalForecastDisplayAlert extends ConsumerStatefulWidget {
     required this.numToRankMap,
     required this.raceNumber,
     required this.raceName,
-    this.raceModel,
     this.pickupHorse = '',
   });
 
@@ -31,7 +27,6 @@ class TotalForecastDisplayAlert extends ConsumerStatefulWidget {
   final Map<int, int> numToRankMap;
   final int raceNumber;
   final String raceName;
-  final RaceModel? raceModel;
   final String pickupHorse;
 
   @override
@@ -270,9 +265,37 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
       body: SafeArea(
         child: Column(
           children: <Widget>[
+            Padding(
+              padding: const EdgeInsets.only(top: 20, right: 15, left: 15),
+              child: DefaultTextStyle(
+                style: const TextStyle(fontSize: 12),
+                child: Column(
+                  children: <Widget>[
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: <Widget>[
+                        Text(appParamState.selectedScheduleDate),
+                        Text(appParamState.selectedScheduleKaisuuBashoDayName),
+                      ],
+                    ),
+                    Row(
+                      children: <Widget>[
+                        Text('R${widget.raceNumber}'),
+                        const SizedBox(width: 10),
+                        Expanded(child: Text(widget.raceName, overflow: TextOverflow.ellipsis, maxLines: 1)),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            Divider(color: Colors.white.withValues(alpha: 0.5), thickness: 5),
+
             Expanded(
               child: Container(
-                margin: const EdgeInsets.all(20),
+                margin: const EdgeInsets.symmetric(horizontal: 10),
+
                 padding: const EdgeInsets.all(5),
 
                 decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.5)),
@@ -281,23 +304,6 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
                   style: const TextStyle(fontSize: 12, color: Colors.white),
                   child: Column(
                     children: <Widget>[
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: <Widget>[
-                          Text(appParamState.selectedScheduleDate),
-                          Text(appParamState.selectedScheduleKaisuuBashoDayName),
-                        ],
-                      ),
-                      Row(
-                        children: <Widget>[
-                          Text('R${widget.raceNumber}'),
-                          const SizedBox(width: 10),
-                          Expanded(child: Text(widget.raceName, overflow: TextOverflow.ellipsis, maxLines: 1)),
-                        ],
-                      ),
-
-                      Divider(color: Colors.white.withValues(alpha: 0.5), thickness: 5),
-
                       // Header
                       Container(
                         padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 12),
@@ -569,45 +575,6 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
                 ),
               ),
             ),
-
-            if (widget.raceModel != null && widget.raceModel!.popularityRatioTableIds.isNotEmpty) ...<Widget>[
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: <Widget>[
-                  const SizedBox.shrink(),
-
-                  Padding(
-                    padding: const EdgeInsets.only(right: 20),
-                    child: Material(
-                      color: Colors.transparent,
-                      borderRadius: BorderRadius.circular(10),
-                      child: InkWell(
-                        onTap: () => OddsFinderDialog(
-                          context: context,
-                          widget: SimilarRacesDisplayAlert(raceModel: widget.raceModel!),
-                        ),
-                        borderRadius: BorderRadius.circular(10),
-                        splashColor: const Color(0xFFFBB6CE).withValues(alpha: 0.35),
-                        highlightColor: const Color(0xFFFBB6CE).withValues(alpha: 0.1),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 10),
-                          decoration: BoxDecoration(
-                            border: Border.all(color: const Color(0xFFFBB6CE)),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: const Text(
-                            '類似の過去レース',
-                            style: TextStyle(fontSize: 10, color: Color(0xFFFBB6CE), fontWeight: FontWeight.bold),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 20),
-            ],
           ],
         ),
       ),

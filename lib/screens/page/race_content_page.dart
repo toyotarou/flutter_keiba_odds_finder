@@ -25,7 +25,13 @@ import '../../utility/utility.dart';
 import '../components/ai_analysis_display_alert.dart';
 import '../components/horse_detail_display_alert.dart';
 import '../components/horse_odds_ranking_display_alert.dart';
-import '../components/popularity_record_display_alert.dart';
+import '../components/similar_races_display_alert.dart';
+
+// import '../components/popularity_record_display_alert.dart';
+//
+//
+//
+
 import '../components/total_forecast_display_alert.dart';
 import '../parts/dashed_line_painter.dart';
 import '../parts/odds_finder_dialog.dart';
@@ -1217,6 +1223,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
   Widget _buildPopularityHorseRow({
     required List<OddsModel> displayList,
     required PopularityRankOddsMedianModel median,
+    RaceModel? raceModel,
   }) {
     final Map<int, int> numToRankMap = _numToRankMap;
 
@@ -1371,17 +1378,48 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                           ],
                         ),
                       ),
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: TextButton(
-                          onPressed: () {
-                            appParamNotifier.setSelectedPopularityRank(rank: 0);
-                            appParamNotifier.setSelectedPopularityRankYear(year: '');
-                            OddsFinderDialog(context: context, widget: const PopularityRecordDisplayAlert());
-                          },
-                          child: const Text('過去オッズレコード', style: TextStyle(fontSize: 10)),
+
+                      if (raceModel != null) ...<Widget>[
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: <Widget>[
+                            const SizedBox.shrink(),
+                            Padding(
+                              padding: const EdgeInsets.only(right: 20),
+                              child: Material(
+                                color: Colors.transparent,
+                                borderRadius: BorderRadius.circular(10),
+                                child: InkWell(
+                                  onTap: () => OddsFinderDialog(
+                                    context: context,
+                                    widget: SimilarRacesDisplayAlert(raceModel: raceModel),
+                                  ),
+                                  borderRadius: BorderRadius.circular(10),
+                                  splashColor: const Color(0xFFFBB6CE).withValues(alpha: 0.35),
+                                  highlightColor: const Color(0xFFFBB6CE).withValues(alpha: 0.1),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 10),
+                                    decoration: BoxDecoration(
+                                      border: Border.all(color: const Color(0xFFFBB6CE)),
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: const Text(
+                                      '過去の類似レース',
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        color: Color(0xFFFBB6CE),
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
+                      ],
+
+                      const SizedBox(height: 20),
                     ],
                   ),
                 ),
@@ -1534,7 +1572,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                   panelChild: median == null
                       ? _buildRaceResultBox(raceResultByRank: raceResultByRank)
                       : (raceResultByRank.isEmpty || appParamState.selectedUpsetBoxNum == 0)
-                      ? _buildPopularityHorseRow(displayList: displayList, median: median)
+                      ? _buildPopularityHorseRow(displayList: displayList, median: median, raceModel: currentRaceModel)
                       : _buildRaceResultBox(raceResultByRank: raceResultByRank),
                 ),
               ],
@@ -1666,7 +1704,6 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                       numToRankMap: numToRankMap,
                       raceNumber: widget.raceNumber,
                       raceName: raceName,
-                      raceModel: currentRaceModel,
                       pickupHorse: _aiPickupHorse,
                     ),
                   ),
