@@ -14,6 +14,7 @@ class ShutsubaHistoryModel {
     required this.popularity,
     required this.jockey,
     required this.burdenWeight,
+    required this.course,
     required this.dist,
     required this.time,
     required this.condition,
@@ -30,6 +31,7 @@ class ShutsubaHistoryModel {
   });
 
   factory ShutsubaHistoryModel.fromJson(Map<String, dynamic> json) {
+    final String distRaw = (json['dist'] as String?) ?? '';
     return ShutsubaHistoryModel(
       id: (json['id'] as int?) ?? 0,
       name: (json['name'] as String?) ?? '',
@@ -45,7 +47,8 @@ class ShutsubaHistoryModel {
       popularity: (json['popularity'] as int?) ?? 0,
       jockey: (json['jockey'] as String?) ?? '',
       burdenWeight: (json['burden_weight'] as String?) ?? '',
-      dist: (json['dist'] as String?) ?? '',
+      course: _parseCourse(distRaw),
+      dist: _parseDist(distRaw),
       time: (json['time'] as String?) ?? '',
       condition: (json['condition'] as String?) ?? '',
       horseWeight: (json['horse_weight'] as String?) ?? '',
@@ -59,6 +62,24 @@ class ShutsubaHistoryModel {
       createdAt: (json['created_at'] as String?) ?? '',
       updatedAt: (json['updated_at'] as String?) ?? '',
     );
+  }
+
+  // "1800芝" → "芝" / "1000ダ" → "ダート" / "2000障" → "障害"
+  static String _parseCourse(String raw) {
+    final String abbr = raw.replaceAll(RegExp(r'\d'), '').trim();
+    switch (abbr) {
+      case 'ダ':
+        return 'ダート';
+      case '障':
+        return '障害';
+      default:
+        return abbr; // "芝" はそのまま
+    }
+  }
+
+  // "1800芝" → 1800
+  static int _parseDist(String raw) {
+    return int.tryParse(raw.replaceAll(RegExp(r'\D'), '')) ?? 0;
   }
 
   final int id;
@@ -75,7 +96,8 @@ class ShutsubaHistoryModel {
   final int popularity;
   final String jockey;
   final String burdenWeight;
-  final String dist;
+  final String course;
+  final int dist;
   final String time;
   final String condition;
   final String horseWeight;
@@ -89,3 +111,39 @@ class ShutsubaHistoryModel {
   final String createdAt;
   final String updatedAt;
 }
+
+/*
+
+{
+    "data": [
+        {
+            "id": 3390,
+            "name": "グロスビーク",
+            "date": "2025-03-15",
+            "basho": "中山",
+            "basho_code": "06",
+            "race": 10,
+            "race_name": "未勝利",
+            "grade": "",
+            "finishing_position": 1,
+            "num_horses": 16,
+            "gate": 8,
+            "popularity": 1,
+            "jockey": "C.ルメール",
+            "burden_weight": "57.0kg",
+            "dist": "1800芝",
+            "time": "1:48.9",
+            "condition": "良",
+            "horse_weight": "470kg",
+            "corner_1": 7,
+            "corner_2": 5,
+            "corner_3": 6,
+            "corner_4": 6,
+            "last_3f": "3F 35.1",
+            "fin_horse": "サトノシャルレーヌ",
+            "fin_time_diff": "0.3",
+            "created_at": "2026-07-17 22:00:39",
+            "updated_at": "2026-07-17 22:00:39"
+        },
+
+*/

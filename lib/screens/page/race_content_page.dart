@@ -746,7 +746,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
   }
 
   ///
-  Widget _displayRaceHorseList() {
+  Widget _displayRaceHorseList({required String course, required int dist}) {
     final List<OddsModel> oddsModelList = (widget.oddsMap[widget.mapKey] ?? <OddsModel>[])
         .where((OddsModel e) => e.race == widget.raceNumber)
         .toList();
@@ -855,6 +855,8 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
             analysis: _analysisMap[popularity],
             analysisRank: analysisRank,
             analysisTotalCount: analysisTotalCount,
+            course: course,
+            dist: dist,
           ),
         );
       },
@@ -872,6 +874,8 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     required Map<int, List<String>> fukuMaxTimelineMap,
     required String activeTimingKey,
     required String selectedTiming,
+    required String course,
+    required int dist,
     List<String>? nextOddsTimeline,
     int? fukuRank,
     int? raceRank,
@@ -962,6 +966,8 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                             //////////////////////
                             _ShutsubaHistorySection(
                               historyList: horse != null ? _shutsubaHistoryMap[horse.name] : null,
+                              course: course,
+                              dist: dist,
                             ),
 
                             //////////////////////
@@ -1732,7 +1738,9 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
         SizedBox(height: 40, child: _displayRaceMinutesRow()),
 
         const SizedBox(height: 5),
-        Expanded(child: _displayRaceHorseList()),
+        Expanded(
+          child: _displayRaceHorseList(course: course, dist: dist),
+        ),
       ],
     );
   }
@@ -1755,9 +1763,11 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
 // ---------------------------------------------------------------------------
 
 class _ShutsubaHistorySection extends StatelessWidget {
-  const _ShutsubaHistorySection({required this.historyList});
+  const _ShutsubaHistorySection({required this.historyList, required this.course, required this.dist});
 
   final List<ShutsubaHistoryModel>? historyList;
+  final String course;
+  final int dist;
 
   @override
   Widget build(BuildContext context) {
@@ -1790,22 +1800,37 @@ class _ShutsubaHistorySection extends StatelessWidget {
                         decoration: BoxDecoration(
                           border: Border(bottom: BorderSide(color: Colors.white.withValues(alpha: 0.3))),
                         ),
-                        child: Row(
+                        child: Stack(
                           children: <Widget>[
-                            Text(e.date),
-                            const SizedBox(width: 10),
-                            Expanded(child: Text(e.raceName, maxLines: 1, overflow: TextOverflow.ellipsis)),
-                            const SizedBox(width: 10),
-                            Text(
-                              e.finishingPosition > 0 ? e.finishingPosition.toString() : '着順なし',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: raceRankColor(
-                                  e.finishingPosition > 0 ? e.finishingPosition : null,
-                                  alpha: 1.0,
-                                  fallback: Colors.white.withValues(alpha: 0.5),
+                            ///BBB
+                            Positioned(
+                              right: 30,
+                              child: Text(
+                                '${e.course} ${e.dist.toString().toCurrency()}m',
+                                style: TextStyle(
+                                  color: (e.course == course && e.dist == dist) ? Colors.yellow : Colors.white,
                                 ),
                               ),
+                            ),
+
+                            Row(
+                              children: <Widget>[
+                                Text(e.date),
+                                const SizedBox(width: 10),
+                                Expanded(child: Text(e.raceName, maxLines: 1, overflow: TextOverflow.ellipsis)),
+                                const SizedBox(width: 10),
+                                Text(
+                                  e.finishingPosition > 0 ? e.finishingPosition.toString() : '着順なし',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: raceRankColor(
+                                      e.finishingPosition > 0 ? e.finishingPosition : null,
+                                      alpha: 1.0,
+                                      fallback: Colors.white.withValues(alpha: 0.5),
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),
