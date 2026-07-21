@@ -1377,15 +1377,17 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: <Widget>[
-                            Text('「人気順間の比率の類似レース」の中央値オッズ（A）'),
-                            Text('このレースの人気順のオッズ（B）'),
-                            Text('「A / B」を行うことで、期待数値がわかります。'),
-                            Text('人気順のどこに高い数値が出るかによって、レースの期待数値が決まります。'),
+                            Text('過去の似たレースと比べて、今のオッズが「お得かどうか」を数値化しています。高いほど割安感あり。'),
+                            Text(''),
+                            Text('出走頭数に応じて上位をピックアップ。'),
+                            Text('8頭以下：4頭 ／ 9〜13頭：5頭 ／ 14頭以上：6頭'),
                           ],
                         ),
                       ),
 
                       if (raceModel != null) ...<Widget>[
+                        const SizedBox(height: 10),
+
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: <Widget>[
@@ -1802,13 +1804,14 @@ class _ShutsubaHistorySection extends StatelessWidget {
                         ),
                         child: Stack(
                           children: <Widget>[
-                            ///BBB
                             Positioned(
                               right: 30,
                               child: Text(
                                 '${e.course} ${e.dist.toString().toCurrency()}m',
                                 style: TextStyle(
-                                  color: (e.course == course && e.dist == dist) ? Colors.yellow : Colors.white,
+                                  color: (e.course == course && e.dist == dist)
+                                      ? Colors.yellow.withValues(alpha: 0.8)
+                                      : Colors.white.withValues(alpha: 0.5),
                                 ),
                               ),
                             ),
@@ -1994,7 +1997,7 @@ class _OddsTimelineRow extends StatelessWidget {
               Container(
                 height: 100,
                 margin: const EdgeInsets.only(top: 10, right: 15),
-                child: const Text('オッズ断層数値', style: TextStyle(fontSize: 10, color: Color(0xFFFBB6CE))),
+                child: const Text('オッズ断層', style: TextStyle(fontSize: 10, color: Color(0xFFFBB6CE))),
               ),
               if (oddsEdgeNum > 1)
                 const Positioned(
@@ -2151,7 +2154,11 @@ class _OddsTimelineRow extends StatelessWidget {
                         width: double.infinity,
                         height: 50,
                         decoration: BoxDecoration(
-                          border: Border.all(color: const Color(0xFFFBB6CE).withValues(alpha: 0.4)),
+                          border: Border.all(
+                            color: hasRatio && ratio >= 2.0
+                                ? const Color(0xFFFBB6CE).withValues(alpha: 0.4)
+                                : Colors.white.withValues(alpha: 0.3),
+                          ),
                           borderRadius: BorderRadius.circular(3),
                         ),
                         child: Column(

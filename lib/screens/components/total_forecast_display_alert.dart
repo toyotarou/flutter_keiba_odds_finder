@@ -236,29 +236,30 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
           .toList();
       return filtered.isNotEmpty ? filtered.first : null;
     }();
-    double maxUpsetScore = 0;
-    int maxRank = 0;
+    final int pickupCount = widget.displayList.length <= 8
+        ? 4
+        : widget.displayList.length <= 13
+        ? 5
+        : 6;
+
+    Set<int> pickupPopularitySet = <int>{};
     if (medianModel != null) {
-      for (int i = 0; i < widget.displayList.length; i++) {
-        final int idx = i + 1;
-        final OddsModel o = widget.displayList[i];
-        final double medianDouble = double.tryParse(_medianByRank(medianModel, idx)) ?? 0;
-        if (medianDouble > 0) {
-          final double oddsVal = o.odds.toDouble();
-          if (oddsVal != 0) {
-            final double score = medianDouble / oddsVal;
-            if (score > maxUpsetScore) {
-              maxUpsetScore = score;
-              maxRank = idx;
-            }
+      final List<MapEntry<int, double>> scoredEntries = widget.displayList.asMap().entries.map((
+        MapEntry<int, OddsModel> e,
+      ) {
+        final int idx = e.key + 1;
+        final double oddsVal = e.value.odds.toDouble();
+        double score = 0;
+        if (oddsVal != 0) {
+          final double medianDouble = double.tryParse(_medianByRank(medianModel, idx)) ?? 0;
+          if (medianDouble > 0) {
+            score = medianDouble / oddsVal;
           }
         }
-      }
+        return MapEntry<int, double>(idx, score);
+      }).toList()..sort((MapEntry<int, double> a, MapEntry<int, double> b) => b.value.compareTo(a.value));
+      pickupPopularitySet = scoredEntries.take(pickupCount).map((MapEntry<int, double> e) => e.key).toSet();
     }
-
-    final int cellCount = widget.displayList.length <= 8 ? 4 : 5;
-    final int highlightStart = maxRank <= 5 ? maxRank : maxRank - cellCount + 1;
-    final int highlightEnd = maxRank <= 5 ? maxRank + cellCount - 1 : maxRank;
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -367,9 +368,7 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
                                 }
                               }
                             }
-                            final bool isInHighlight =
-                                maxRank > 0 && popularity >= highlightStart && popularity <= highlightEnd;
-                            final bool isMaxUpset = popularity == maxRank;
+                            final bool isInHighlight = pickupPopularitySet.contains(popularity);
 
                             String faultRatio = '';
                             if (index + 1 < widget.displayList.length) {
@@ -458,11 +457,7 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
                                               upsetScore,
                                               style: TextStyle(
                                                 fontSize: 12,
-                                                color: isMaxUpset
-                                                    ? Colors.lightGreenAccent
-                                                    : isInHighlight
-                                                    ? Colors.yellowAccent
-                                                    : Colors.grey,
+                                                color: isInHighlight ? Colors.yellowAccent : Colors.grey,
                                                 fontWeight: isInHighlight ? FontWeight.bold : FontWeight.normal,
                                               ),
                                             ),

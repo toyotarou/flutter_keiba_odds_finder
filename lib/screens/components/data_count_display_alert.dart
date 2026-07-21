@@ -134,7 +134,9 @@ class _DataCountDisplayAlertState extends ConsumerState<DataCountDisplayAlert> {
   ///
   void _showSql(Offset tapPosition, String key) {
     final String sql = dataCountSqlMap[key] ?? '';
-    if (sql.isEmpty) return;
+    if (sql.isEmpty) {
+      return;
+    }
     final double screenWidth = MediaQuery.of(context).size.width;
     widgetDisplayOverlay(
       context: context,

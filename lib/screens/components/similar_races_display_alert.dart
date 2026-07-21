@@ -434,15 +434,24 @@ class _SimilarRacesDisplayAlertState extends ConsumerState<SimilarRacesDisplayAl
                           : Colors.white.withValues(alpha: 0.5);
 
                       widgets.add(
-                        Container(
-                          decoration: BoxDecoration(
-                            border: Border.all(color: ratioColor),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
+                        Row(
+                          children: <Widget>[
+                            Container(
+                              decoration: BoxDecoration(
+                                border: Border.all(color: ratioColor),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
 
-                          margin: const EdgeInsets.only(top: 5, right: 3, bottom: 5, left: 5),
-                          padding: const EdgeInsets.symmetric(vertical: 3, horizontal: 10),
-                          child: Text(ratioText, style: TextStyle(color: ratioColor, fontSize: 10)),
+                              margin: const EdgeInsets.only(top: 5, right: 3, bottom: 5, left: 5),
+                              padding: const EdgeInsets.symmetric(vertical: 3, horizontal: 10),
+                              child: Text(ratioText, style: TextStyle(color: ratioColor, fontSize: 10)),
+                            ),
+
+                            if (ratioVal != null && ratioVal >= 2.0) ...<Widget>[
+                              const SizedBox(width: 10),
+                              const Text('オッズ断層', style: TextStyle(fontSize: 10, color: Color(0xFFFBB6CE))),
+                            ],
+                          ],
                         ),
                       );
                     }
