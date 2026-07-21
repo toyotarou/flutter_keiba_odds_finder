@@ -7,6 +7,8 @@ class DataCountModel {
     required this.historyFinishingPositionCount,
     required this.payoutCount,
     required this.ratioCount,
+    required this.medianCount,
+    required this.raceResultsCount,
   });
 
   factory DataCountModel.fromJson(Map<String, dynamic> json) {
@@ -18,6 +20,9 @@ class DataCountModel {
       historyFinishingPositionCount: (json['history_finishing_position_count'] as int?) ?? 0,
       payoutCount: (json['payout_count'] as int?) ?? 0,
       ratioCount: (json['ratio_count'] as int?) ?? 0,
+
+      medianCount: (json['median_count'] as int?) ?? 0,
+      raceResultsCount: (json['race_results_count'] as int?) ?? 0,
     );
   }
 
@@ -28,4 +33,7 @@ class DataCountModel {
   final int historyFinishingPositionCount;
   final int payoutCount;
   final int ratioCount;
+
+  final int medianCount;
+  final int raceResultsCount;
 }

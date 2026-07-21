@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../const/const.dart';
 import '../../data/http/client.dart';
 import '../../data/http/path.dart';
 import '../../models/data_count_model.dart';
+import '../parts/widget_display_overlay.dart';
 
 class DataCountDisplayAlert extends ConsumerStatefulWidget {
   const DataCountDisplayAlert({super.key});
@@ -130,6 +132,28 @@ class _DataCountDisplayAlertState extends ConsumerState<DataCountDisplayAlert> {
   }
 
   ///
+  void _showSql(Offset tapPosition, String key) {
+    final String sql = dataCountSqlMap[key] ?? '';
+    if (sql.isEmpty) return;
+    final double screenWidth = MediaQuery.of(context).size.width;
+    widgetDisplayOverlay(
+      context: context,
+      tapPosition: Offset(0, tapPosition.dy),
+      displayDuration: const Duration(seconds: 5),
+      child: Container(
+        width: screenWidth - 20,
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: Colors.black87,
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(color: Colors.white30),
+        ),
+        child: Text(sql.trim(), style: const TextStyle(color: Colors.white, fontSize: 10)),
+      ),
+    );
+  }
+
+  ///
   Widget _buildContent() {
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator(color: Colors.white));
@@ -181,22 +205,25 @@ class _DataCountDisplayAlertState extends ConsumerState<DataCountDisplayAlert> {
                   Row(
                     children: <Widget>[
                       Expanded(
-                        child: Container(
-                          margin: const EdgeInsets.symmetric(horizontal: 8),
-                          child: Column(
-                            children: <Widget>[
-                              Container(
-                                width: double.infinity,
-                                alignment: Alignment.center,
-                                padding: const EdgeInsets.symmetric(vertical: 3),
-                                decoration: BoxDecoration(color: Colors.yellowAccent.withValues(alpha: 0.1)),
-                                child: const Text('summary', style: TextStyle(fontSize: 10, color: Colors.white)),
-                              ),
+                        child: GestureDetector(
+                          onTapUp: (TapUpDetails d) => _showSql(d.globalPosition, 'summaryCount'),
+                          child: Container(
+                            margin: const EdgeInsets.symmetric(horizontal: 8),
+                            child: Column(
+                              children: <Widget>[
+                                Container(
+                                  width: double.infinity,
+                                  alignment: Alignment.center,
+                                  padding: const EdgeInsets.symmetric(vertical: 3),
+                                  decoration: BoxDecoration(color: Colors.yellowAccent.withValues(alpha: 0.1)),
+                                  child: const Text('summary', style: TextStyle(fontSize: 10, color: Colors.white)),
+                                ),
 
-                              const SizedBox(height: 3),
+                                const SizedBox(height: 3),
 
-                              Text(item.summaryCount.toString(), style: const TextStyle(color: Colors.white)),
-                            ],
+                                Text(item.summaryCount.toString(), style: const TextStyle(color: Colors.white)),
+                              ],
+                            ),
                           ),
                         ),
                       ),
@@ -210,70 +237,79 @@ class _DataCountDisplayAlertState extends ConsumerState<DataCountDisplayAlert> {
                   Row(
                     children: <Widget>[
                       Expanded(
-                        child: Container(
-                          margin: const EdgeInsets.symmetric(horizontal: 8),
-                          child: Column(
-                            children: <Widget>[
-                              Container(
-                                width: double.infinity,
-                                alignment: Alignment.center,
-                                padding: const EdgeInsets.symmetric(vertical: 3),
-                                decoration: BoxDecoration(color: Colors.yellowAccent.withValues(alpha: 0.1)),
-                                child: const Text('history', style: TextStyle(fontSize: 10, color: Colors.white)),
-                              ),
+                        child: GestureDetector(
+                          onTapUp: (TapUpDetails d) => _showSql(d.globalPosition, 'historyCount'),
+                          child: Container(
+                            margin: const EdgeInsets.symmetric(horizontal: 8),
+                            child: Column(
+                              children: <Widget>[
+                                Container(
+                                  width: double.infinity,
+                                  alignment: Alignment.center,
+                                  padding: const EdgeInsets.symmetric(vertical: 3),
+                                  decoration: BoxDecoration(color: Colors.yellowAccent.withValues(alpha: 0.1)),
+                                  child: const Text('history', style: TextStyle(fontSize: 10, color: Colors.white)),
+                                ),
 
-                              const SizedBox(height: 3),
+                                const SizedBox(height: 3),
 
-                              Text(item.historyCount.toString(), style: const TextStyle(color: Colors.white)),
-                            ],
+                                Text(item.historyCount.toString(), style: const TextStyle(color: Colors.white)),
+                              ],
+                            ),
                           ),
                         ),
                       ),
 
                       Expanded(
-                        child: Container(
-                          margin: const EdgeInsets.all(8.0),
-                          child: Column(
-                            children: <Widget>[
-                              Container(
-                                width: double.infinity,
-                                alignment: Alignment.center,
-                                padding: const EdgeInsets.symmetric(vertical: 3),
-                                decoration: BoxDecoration(color: Colors.yellowAccent.withValues(alpha: 0.1)),
-                                child: const Text('popularity', style: TextStyle(fontSize: 10, color: Colors.white)),
-                              ),
+                        child: GestureDetector(
+                          onTapUp: (TapUpDetails d) => _showSql(d.globalPosition, 'historyPopularityRankCount'),
+                          child: Container(
+                            margin: const EdgeInsets.all(8.0),
+                            child: Column(
+                              children: <Widget>[
+                                Container(
+                                  width: double.infinity,
+                                  alignment: Alignment.center,
+                                  padding: const EdgeInsets.symmetric(vertical: 3),
+                                  decoration: BoxDecoration(color: Colors.yellowAccent.withValues(alpha: 0.1)),
+                                  child: const Text('popularity', style: TextStyle(fontSize: 10, color: Colors.white)),
+                                ),
 
-                              const SizedBox(height: 3),
+                                const SizedBox(height: 3),
 
-                              Text(
-                                item.historyPopularityRankCount.toString(),
-                                style: const TextStyle(color: Colors.white),
-                              ),
-                            ],
+                                Text(
+                                  item.historyPopularityRankCount.toString(),
+                                  style: const TextStyle(color: Colors.white),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ),
 
                       Expanded(
-                        child: Container(
-                          margin: const EdgeInsets.all(8.0),
-                          child: Column(
-                            children: <Widget>[
-                              Container(
-                                width: double.infinity,
-                                alignment: Alignment.center,
-                                padding: const EdgeInsets.symmetric(vertical: 3),
-                                decoration: BoxDecoration(color: Colors.yellowAccent.withValues(alpha: 0.1)),
-                                child: const Text('finishing', style: TextStyle(fontSize: 10, color: Colors.white)),
-                              ),
+                        child: GestureDetector(
+                          onTapUp: (TapUpDetails d) => _showSql(d.globalPosition, 'historyFinishingPositionCount'),
+                          child: Container(
+                            margin: const EdgeInsets.all(8.0),
+                            child: Column(
+                              children: <Widget>[
+                                Container(
+                                  width: double.infinity,
+                                  alignment: Alignment.center,
+                                  padding: const EdgeInsets.symmetric(vertical: 3),
+                                  decoration: BoxDecoration(color: Colors.yellowAccent.withValues(alpha: 0.1)),
+                                  child: const Text('finishing', style: TextStyle(fontSize: 10, color: Colors.white)),
+                                ),
 
-                              const SizedBox(height: 3),
+                                const SizedBox(height: 3),
 
-                              Text(
-                                item.historyFinishingPositionCount.toString(),
-                                style: const TextStyle(color: Colors.white),
-                              ),
-                            ],
+                                Text(
+                                  item.historyFinishingPositionCount.toString(),
+                                  style: const TextStyle(color: Colors.white),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ),
@@ -283,43 +319,101 @@ class _DataCountDisplayAlertState extends ConsumerState<DataCountDisplayAlert> {
                   Row(
                     children: <Widget>[
                       Expanded(
-                        child: Container(
-                          margin: const EdgeInsets.symmetric(horizontal: 8),
-                          child: Column(
-                            children: <Widget>[
-                              Container(
-                                width: double.infinity,
-                                alignment: Alignment.center,
-                                padding: const EdgeInsets.symmetric(vertical: 3),
-                                decoration: BoxDecoration(color: Colors.yellowAccent.withValues(alpha: 0.1)),
-                                child: const Text('payout', style: TextStyle(fontSize: 10, color: Colors.white)),
-                              ),
+                        child: GestureDetector(
+                          onTapUp: (TapUpDetails d) => _showSql(d.globalPosition, 'payoutCount'),
+                          child: Container(
+                            margin: const EdgeInsets.symmetric(horizontal: 8),
+                            child: Column(
+                              children: <Widget>[
+                                Container(
+                                  width: double.infinity,
+                                  alignment: Alignment.center,
+                                  padding: const EdgeInsets.symmetric(vertical: 3),
+                                  decoration: BoxDecoration(color: Colors.yellowAccent.withValues(alpha: 0.1)),
+                                  child: const Text('payout', style: TextStyle(fontSize: 10, color: Colors.white)),
+                                ),
 
-                              const SizedBox(height: 3),
+                                const SizedBox(height: 3),
 
-                              Text(item.payoutCount.toString(), style: const TextStyle(color: Colors.white)),
-                            ],
+                                Text(item.payoutCount.toString(), style: const TextStyle(color: Colors.white)),
+                              ],
+                            ),
                           ),
                         ),
                       ),
 
                       Expanded(
-                        child: Container(
-                          margin: const EdgeInsets.all(8.0),
-                          child: Column(
-                            children: <Widget>[
-                              Container(
-                                width: double.infinity,
-                                alignment: Alignment.center,
-                                padding: const EdgeInsets.symmetric(vertical: 3),
-                                decoration: BoxDecoration(color: Colors.yellowAccent.withValues(alpha: 0.1)),
-                                child: const Text('ratio', style: TextStyle(fontSize: 10, color: Colors.white)),
-                              ),
+                        child: GestureDetector(
+                          onTapUp: (TapUpDetails d) => _showSql(d.globalPosition, 'ratioCount'),
+                          child: Container(
+                            margin: const EdgeInsets.all(8.0),
+                            child: Column(
+                              children: <Widget>[
+                                Container(
+                                  width: double.infinity,
+                                  alignment: Alignment.center,
+                                  padding: const EdgeInsets.symmetric(vertical: 3),
+                                  decoration: BoxDecoration(color: Colors.yellowAccent.withValues(alpha: 0.1)),
+                                  child: const Text('ratio', style: TextStyle(fontSize: 10, color: Colors.white)),
+                                ),
 
-                              const SizedBox(height: 3),
+                                const SizedBox(height: 3),
 
-                              Text(item.ratioCount.toString(), style: const TextStyle(color: Colors.white)),
-                            ],
+                                Text(item.ratioCount.toString(), style: const TextStyle(color: Colors.white)),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  Row(
+                    children: <Widget>[
+                      Expanded(
+                        child: GestureDetector(
+                          onTapUp: (TapUpDetails d) => _showSql(d.globalPosition, 'medianCount'),
+                          child: Container(
+                            margin: const EdgeInsets.symmetric(horizontal: 8),
+                            child: Column(
+                              children: <Widget>[
+                                Container(
+                                  width: double.infinity,
+                                  alignment: Alignment.center,
+                                  padding: const EdgeInsets.symmetric(vertical: 3),
+                                  decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.1)),
+                                  child: const Text('median', style: TextStyle(fontSize: 10, color: Colors.white)),
+                                ),
+
+                                const SizedBox(height: 3),
+
+                                Text(item.medianCount.toString(), style: const TextStyle(color: Colors.white)),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      Expanded(
+                        child: GestureDetector(
+                          onTapUp: (TapUpDetails d) => _showSql(d.globalPosition, 'raceResultsCount'),
+                          child: Container(
+                            margin: const EdgeInsets.all(8.0),
+                            child: Column(
+                              children: <Widget>[
+                                Container(
+                                  width: double.infinity,
+                                  alignment: Alignment.center,
+                                  padding: const EdgeInsets.symmetric(vertical: 3),
+                                  decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.1)),
+                                  child: const Text('raceResults', style: TextStyle(fontSize: 10, color: Colors.white)),
+                                ),
+
+                                const SizedBox(height: 3),
+
+                                Text(item.raceResultsCount.toString(), style: const TextStyle(color: Colors.white)),
+                              ],
+                            ),
                           ),
                         ),
                       ),
