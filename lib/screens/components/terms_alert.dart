@@ -5,6 +5,7 @@ import '../parts/odds_finder_dialog.dart';
 import '../parts/terms_chapter.dart';
 import 'ai_analysis_explain_alert.dart';
 import 'precaution_analysis.dart';
+import 'upset_score_explain_alert.dart';
 
 class TermsAlert extends ConsumerStatefulWidget {
   const TermsAlert({super.key});
@@ -186,6 +187,28 @@ class _TermsAlertState extends ConsumerState<TermsAlert> {
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: const Text('AI予想について', style: TextStyle(fontSize: 10)),
+                          ),
+                        ),
+                      ),
+
+                      Material(
+                        color: Colors.transparent,
+                        borderRadius: BorderRadius.circular(10),
+                        child: InkWell(
+                          onTap: () {
+                            OddsFinderDialog(context: context, widget: const UpsetScoreExplainAlert());
+                          },
+                          borderRadius: BorderRadius.circular(10),
+                          splashColor: Colors.white.withValues(alpha: 0.2),
+                          highlightColor: Colors.white.withValues(alpha: 0.1),
+                          child: Container(
+                            margin: const EdgeInsets.all(3),
+                            padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 20),
+                            decoration: BoxDecoration(
+                              border: Border.all(color: Colors.white.withValues(alpha: 0.4)),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Text('期待数値について', style: TextStyle(fontSize: 10)),
                           ),
                         ),
                       ),

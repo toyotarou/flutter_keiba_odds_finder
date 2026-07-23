@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-import '../parts/terms_chapter.dart';
 
 class PrecautionAnalysis extends ConsumerStatefulWidget {
   const PrecautionAnalysis({super.key});
@@ -11,18 +10,60 @@ class PrecautionAnalysis extends ConsumerStatefulWidget {
 }
 
 class _PrecautionAnalysisState extends ConsumerState<PrecautionAnalysis> {
-  static const List<TermsChapter> _chapters = <TermsChapter>[
-    TermsChapter(
-      '1',
-      '本日のレースの馬を人気順に並べ、隣り合う馬のオッズを割り算します。\n例えば「1番人気2.4倍・2番人気4.8倍」なら「4.8 ÷ 2.4 = 2.00」です。\nこれを全頭分計算します。\n馬眼力では「オッズ断層」と呼んでいます。',
-    ),
-    TermsChapter('2', 'オッズ断層を過去3年分のレースと1件ずつ見比べて、「オッズ断層の並び方が似ているレース」を探します。'),
-    TermsChapter('3', '似ている度合いが70%以上のレースを「類似レース」として取り出します。\nこの結果は「類似の過去レース」として、別途表示しています。'),
-    TermsChapter('4', '取り出した類似レースで、同じ人気順位の馬が実際に何回3着以内に入ったかを数えます。\n「3着以内の回数 ÷ 類似レース件数 × 100」が複勝率です。'),
-    //    TermsChapter('5', '同じように、類似レースでその人気順位の馬に100円ずつ賭け続けた場合の平均払戻額を単勝回収率・複勝回収率として表示しています。'),
-    TermsChapter('5', '類似レースが2件以上あり、複勝率が50%以上の馬だけを表示しています。\n類似レースの件数が多いほど信頼性が高くなります。'),
-    TermsChapter('6', 'オッズ変化率は「（直前オッズ - 計測開始前オッズ）÷ 計測開始前オッズ × 100」で計算しています。\nマイナスは計測開始前より人気が上がったことを意味します。'),
-  ];
+  static const String _markdownContent =
+      '## 過去データからの分析について\n'
+      '\n'
+      '---\n'
+      '\n'
+      '### ① オッズ断層の算出\n'
+      '\n'
+      '本日のレースの馬を人気順に並べ、隣り合う馬のオッズを割り算します。\n'
+      '\n'
+      '> 例）1番人気2.4倍・2番人気4.8倍 → 4.8 ÷ 2.4 ＝ 2.00\n'
+      '\n'
+      'これを全頭分計算します。馬眼力では「オッズ断層」と呼んでいます。\n'
+      '\n'
+      '---\n'
+      '\n'
+      '### ② 過去レースとの照合\n'
+      '\n'
+      'オッズ断層を過去3年分のレースと1件ずつ見比べて、「オッズ断層の並び方が似ているレース」を探します。\n'
+      '\n'
+      '---\n'
+      '\n'
+      '### ③ 類似レースの抽出\n'
+      '\n'
+      '似ている度合いが**70%以上**のレースを「類似レース」として取り出します。\n'
+      '\n'
+      'この結果は「類似の過去レース」として、別途表示しています。\n'
+      '\n'
+      '---\n'
+      '\n'
+      '### ④ 複勝率の算出\n'
+      '\n'
+      '取り出した類似レースで、同じ人気順位の馬が実際に何回3着以内に入ったかを数えます。\n'
+      '\n'
+      '```\n'
+      '複勝率 ＝ 3着以内の回数 ÷ 類似レース件数 × 100\n'
+      '```\n'
+      '\n'
+      '---\n'
+      '\n'
+      '### ⑤ 表示条件\n'
+      '\n'
+      '類似レースが**2件以上**あり、複勝率が**50%以上**の馬だけを表示しています。\n'
+      '\n'
+      '類似レースの件数が多いほど信頼性が高くなります。\n'
+      '\n'
+      '---\n'
+      '\n'
+      '### ⑥ オッズ変化率の算出\n'
+      '\n'
+      '```\n'
+      'オッズ変化率 ＝（直前オッズ - 計測開始前オッズ）÷ 計測開始前オッズ × 100\n'
+      '```\n'
+      '\n'
+      'マイナスは計測開始前より人気が上がったことを意味します。\n';
 
   ///
   @override
@@ -55,7 +96,6 @@ class _PrecautionAnalysisState extends ConsumerState<PrecautionAnalysis> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: <Widget>[
           Text('過去データからの分析について', style: TextStyle(color: Colors.white, fontSize: 12)),
-
           SizedBox.shrink(),
         ],
       ),
@@ -65,29 +105,35 @@ class _PrecautionAnalysisState extends ConsumerState<PrecautionAnalysis> {
   ///
   Widget _buildBody() {
     return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Container(
-            margin: const EdgeInsets.all(3),
-            padding: const EdgeInsets.all(3),
-            decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.5)),
-
-            child: Column(
-              children: _chapters
-                  .asMap()
-                  .entries
-                  .map(
-                    (MapEntry<int, TermsChapter> entry) => Padding(
-                      padding: const EdgeInsets.only(bottom: 24),
-                      child: TermsChapterTile(index: entry.key + 1, chapter: entry.value),
-                    ),
-                  )
-                  .toList(),
+      padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+      child: Container(
+        margin: const EdgeInsets.all(3),
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.5)),
+        child: MarkdownBody(
+          data: _markdownContent,
+          styleSheet: MarkdownStyleSheet(
+            h2: const TextStyle(fontSize: 13, color: Colors.greenAccent, fontWeight: FontWeight.bold),
+            h3: const TextStyle(fontSize: 12, color: Colors.yellowAccent, fontWeight: FontWeight.bold),
+            p: const TextStyle(fontSize: 11, color: Colors.white),
+            strong: const TextStyle(fontSize: 11, color: Colors.yellowAccent, fontWeight: FontWeight.bold),
+            listBullet: const TextStyle(fontSize: 11, color: Colors.white70),
+            horizontalRuleDecoration: const BoxDecoration(
+              border: Border(bottom: BorderSide(color: Colors.white24)),
             ),
+            codeblockDecoration: BoxDecoration(
+              color: Colors.black54,
+              borderRadius: BorderRadius.circular(4),
+              border: Border.all(color: Colors.white24),
+            ),
+            code: const TextStyle(fontSize: 10, color: Colors.white70, fontFamily: 'monospace'),
+            blockquoteDecoration: const BoxDecoration(
+              color: Colors.white10,
+              border: Border(left: BorderSide(color: Colors.white38, width: 4)),
+            ),
+            blockquote: const TextStyle(fontSize: 11, color: Colors.white70),
           ),
-        ],
+        ),
       ),
     );
   }

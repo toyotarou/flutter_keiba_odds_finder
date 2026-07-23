@@ -952,11 +952,12 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                             child: Column(
                               children: <Widget>[
                                 _buildHorseItemHeader(popularity: popularity, fukuRank: fukuRank, horse: horse),
-                                const SizedBox(height: 10),
+                                const SizedBox(height: 5),
                                 _buildHorseNameRow(
                                   element: element,
                                   horse: horse,
                                   horseWakuColorMap: horseWakuColorMap,
+                                  oddsTimeline: oddsTimeline,
                                 ),
                               ],
                             ),
@@ -1442,42 +1443,100 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
   }
 
   ///
+  double? _calcOddsDropRatio(List<String>? timeline) {
+    if (timeline == null || timeline.isEmpty) {
+      return null;
+    }
+    final String odds30Str = timeline[0];
+    final List<String> timingParts = widget.oddsGetTiming.split('|');
+    final int lastIdx = timingParts.indexOf(kOddsTimingLastLabel);
+    if (lastIdx == -1 || lastIdx >= timeline.length) {
+      return null;
+    }
+    final String lastOddsStr = timeline[lastIdx];
+    final double odds30 = double.tryParse(odds30Str) ?? 0;
+    final double lastOdds = double.tryParse(lastOddsStr) ?? 0;
+    if (odds30 <= 0 || lastOdds <= 0) {
+      return null;
+    }
+    final double ratio = lastOdds / odds30;
+    return ratio <= 0.8 ? ratio : null;
+  }
+
+  ///
   Widget _buildHorseNameRow({
     required OddsModel element,
     required HorseModel? horse,
     required Map<int, Color> horseWakuColorMap,
+    List<String>? oddsTimeline,
   }) {
-    return DefaultTextStyle(
-      style: const TextStyle(fontSize: 12, color: Colors.white),
-      child: Row(
-        children: <Widget>[
-          const SizedBox(width: 20),
-          if (horse != null) ...<Widget>[
-            Container(
-              padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
-              decoration: BoxDecoration(
-                color: (horseWakuColorMap[horse.waku] != null)
-                    ? horseWakuColorMap[horse.waku]!.withValues(alpha: 0.2)
-                    : Colors.white.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(3),
-              ),
-              child: Row(
-                children: <Widget>[
-                  SizedBox(width: 15, child: Text(horse.waku.toString())),
-                  const Text('枠'),
-                ],
-              ),
+    if (horse == null) {
+      return const SizedBox.shrink();
+    }
+
+    return Stack(
+      children: <Widget>[
+        Container(
+          margin: const EdgeInsets.only(top: 15),
+          child: DefaultTextStyle(
+            style: const TextStyle(fontSize: 12, color: Colors.white),
+            child: Row(
+              children: <Widget>[
+                const SizedBox(width: 20),
+                Container(
+                  padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
+                  decoration: BoxDecoration(
+                    color: (horseWakuColorMap[horse.waku] != null)
+                        ? horseWakuColorMap[horse.waku]!.withValues(alpha: 0.2)
+                        : Colors.white.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(3),
+                  ),
+                  child: Row(
+                    children: <Widget>[
+                      SizedBox(width: 15, child: Text(horse.waku.toString())),
+                      const Text('枠'),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 20),
+                SizedBox(width: 20, child: Text(element.num.toString())),
+                const Text('番'),
+                const SizedBox(width: 20),
+                Expanded(child: Text(horse.name, maxLines: 1, overflow: TextOverflow.ellipsis)),
+              ],
             ),
-          ],
-          const SizedBox(width: 20),
-          SizedBox(width: 20, child: Text(element.num.toString())),
-          const Text('番'),
-          const SizedBox(width: 20),
-          if (horse != null) ...<Widget>[
-            Expanded(child: Text(horse.name, maxLines: 1, overflow: TextOverflow.ellipsis)),
-          ],
+          ),
+        ),
+
+        if (_calcOddsDropRatio(oddsTimeline) != null) ...<Widget>[
+          Positioned(
+            left: 10,
+            child: Stack(
+              children: <Widget>[
+                Container(
+                  margin: const EdgeInsets.only(top: 10),
+                  width: 50,
+                  height: 14,
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.yellowAccent),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Center(
+                    child: Text(
+                      '+${((1 - _calcOddsDropRatio(oddsTimeline)!) * 100).toStringAsFixed(0)}%',
+                      style: const TextStyle(fontSize: 10, color: Colors.yellowAccent, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ),
+                const Text(
+                  'オッズ遷移',
+                  style: TextStyle(fontSize: 8, color: Colors.yellowAccent, fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+          ),
         ],
-      ),
+      ],
     );
   }
 
