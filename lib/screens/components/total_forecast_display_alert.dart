@@ -454,10 +454,10 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
                                           ),
                                           Expanded(
                                             child: Text(
-                                              upsetScore,
+                                              upsetScore.isEmpty ? '-' : upsetScore,
                                               style: TextStyle(
                                                 fontSize: 12,
-                                                color: isInHighlight ? Colors.yellowAccent : Colors.grey,
+                                                color: isInHighlight ? Colors.yellowAccent : Colors.white,
                                                 fontWeight: isInHighlight ? FontWeight.bold : FontWeight.normal,
                                               ),
                                             ),
