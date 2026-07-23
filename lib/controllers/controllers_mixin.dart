@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'app_param/app_param.dart';
 import 'horse/horse.dart';
+import 'horse_best_weight/horse_best_weight.dart';
 import 'laravel_config/laravel_config.dart';
 import 'login_user/login_user.dart';
 
@@ -118,6 +119,14 @@ mixin ControllersMixin<T extends ConsumerStatefulWidget> on ConsumerState<T> {
   PopularityRankOddsMedianState get popularityRankOddsMedianState => ref.watch(popularityRankOddsMedianProvider);
 
   PopularityRankOddsMedian get popularityRankOddsMedianNotifier => ref.read(popularityRankOddsMedianProvider.notifier);
+
+  //==========================================//
+
+  //==========================================//
+
+  HorseBestWeightState get horseBestWeightState => ref.watch(horseBestWeightProvider);
+
+  HorseBestWeight get horseBestWeightNotifier => ref.read(horseBestWeightProvider.notifier);
 
   //==========================================//
 }

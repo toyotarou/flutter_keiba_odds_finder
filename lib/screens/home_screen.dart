@@ -126,6 +126,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
     loginUserNotifier.getAllLoginUserData();
     pushNotifierUserNotifier.getAllPushNotifierUserData();
     popularityRankOddsMedianNotifier.getAllPopularityRankOddsMedianData();
+    horseBestWeightNotifier.getAllHorseBestWeightData();
 
     WidgetsBinding.instance.addPostFrameCallback((_) => _syncAppParam());
     if (widget.isRankingDialogOpen) {

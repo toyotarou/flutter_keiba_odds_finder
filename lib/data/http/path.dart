@@ -35,6 +35,7 @@ enum APIPath {
   getHorseOddsFinderAiAnalysis,
   getHorseOddsFinderShutsubaHistory,
   getHorseOddsFinderPopularityRankMedian,
+  getHorseOddsFinderBestHorseWeight,
 }
 
 extension APIPathExtension on APIPath {
@@ -131,6 +132,8 @@ extension APIPathExtension on APIPath {
         return 'getHorseOddsFinderShutsubaHistory';
       case APIPath.getHorseOddsFinderPopularityRankMedian:
         return 'getHorseOddsFinderPopularityRankMedian';
+      case APIPath.getHorseOddsFinderBestHorseWeight:
+        return 'getHorseOddsFinderBestHorseWeight';
     }
   }
 }

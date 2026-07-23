@@ -1502,7 +1502,21 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                 SizedBox(width: 20, child: Text(element.num.toString())),
                 const Text('番'),
                 const SizedBox(width: 20),
-                Expanded(child: Text(horse.name, maxLines: 1, overflow: TextOverflow.ellipsis)),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text(horse.name, maxLines: 1, overflow: TextOverflow.ellipsis),
+                      if (horseBestWeightState.horseBestWeightMap[horse.name] != null) ...<Widget>[
+                        const SizedBox(height: 3),
+                        Text(
+                          'Best Weight: ${horseBestWeightState.horseBestWeightMap[horse.name]!.horseWeight}',
+                          style: TextStyle(fontSize: 10, color: Colors.white.withValues(alpha: 0.6)),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
               ],
             ),
           ),
