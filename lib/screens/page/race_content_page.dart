@@ -479,7 +479,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: <Widget>[
                             const SizedBox.shrink(),
-                            Text('$startTime 出走', style: const TextStyle(fontSize: 12, color: Colors.greenAccent)),
+                            Text('$startTime 発走', style: const TextStyle(fontSize: 12, color: Colors.greenAccent)),
                           ],
                         ),
 
@@ -1895,16 +1895,28 @@ class _ShutsubaHistorySection extends StatelessWidget {
                                 const SizedBox(width: 10),
                                 Expanded(child: Text(e.raceName, maxLines: 1, overflow: TextOverflow.ellipsis)),
                                 const SizedBox(width: 10),
-                                Text(
-                                  e.finishingPosition > 0 ? e.finishingPosition.toString() : '着順なし',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: raceRankColor(
-                                      e.finishingPosition > 0 ? e.finishingPosition : null,
-                                      alpha: 1.0,
-                                      fallback: Colors.white.withValues(alpha: 0.5),
+                                Stack(
+                                  alignment: Alignment.center,
+                                  children: <Widget>[
+                                    Container(
+                                      width: 24,
+                                      height: 24,
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        border: Border.all(
+                                          color: raceRankColor(
+                                            e.finishingPosition > 0 ? e.finishingPosition : null,
+                                            alpha: 1.0,
+                                          ),
+                                        ),
+                                      ),
                                     ),
-                                  ),
+
+                                    Text(
+                                      e.finishingPosition > 0 ? e.finishingPosition.toString() : '着順なし',
+                                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),
