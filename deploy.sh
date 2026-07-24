@@ -3,7 +3,7 @@ set -e
 
 ZONE_ID="fd77fb9ef91474ee23580bdc5cfde584"
 CF_TOKEN=$(cat ~/cloudflare_token.txt)
-PROJECT_DIR="$HOME/Desktop/HIDEYUKI/flutter/keiba_odds_finder"
+PROJECT_DIR="$HOME/Documents/keiba_odds_finder"
 VERSION=$(date +%Y%m%d%H%M%S)
 
 cd "$PROJECT_DIR"

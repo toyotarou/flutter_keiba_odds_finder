@@ -481,33 +481,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
 
                           Row(
                             children: <Widget>[
-                              if (appParamState.keepLoginUserMap[widget.loggedInUserId] != null &&
-                                  appParamState.keepLoginUserMap[widget.loggedInUserId]!.isAdmin == 1) ...<Widget>[
-                                Container(
-                                  padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
-                                  decoration: BoxDecoration(
-                                    color: Colors.green[900],
-                                    borderRadius: BorderRadius.circular(5),
-                                  ),
-
-                                  child: GestureDetector(
-                                    onTap: () {
-                                      OddsFinderDialog(
-                                        context: context,
-                                        widget: AdminMenuAlert(loggedInUserId: widget.loggedInUserId),
-                                      );
-                                    },
-                                    child: const Text('管理', style: TextStyle(color: Colors.white)),
-                                  ),
-                                ),
-                              ],
-
                               const SizedBox(width: 20),
 
                               GestureDetector(
                                 onTap: () =>
                                     OddsFinderDialog(context: context, widget: const WeekendRaceCalendarAlert()),
-                                child: Icon(Icons.event_note, color: Colors.green[500]),
+                                child: const Icon(Icons.event_note, color: Colors.white),
                               ),
 
                               const SizedBox(width: 20),
@@ -518,14 +497,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
 
                                   _scaffoldKey.currentState!.openDrawer();
                                 },
-                                child: Icon(Icons.list, color: Colors.green[500]),
-                              ),
-
-                              const SizedBox(width: 20),
-
-                              GestureDetector(
-                                onTap: _confirmLogout,
-                                child: Icon(Icons.logout, color: Colors.white.withValues(alpha: 0.5)),
+                                child: const Icon(Icons.list, color: Colors.white),
                               ),
 
                               const SizedBox(width: 10),
@@ -601,6 +573,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
             const SizedBox(height: 60),
+
+            if (appParamState.keepLoginUserMap[widget.loggedInUserId] != null &&
+                appParamState.keepLoginUserMap[widget.loggedInUserId]!.isAdmin == 1) ...<Widget>[
+              ElevatedButton(
+                onPressed: () {
+                  OddsFinderDialog(
+                    context: context,
+                    widget: AdminMenuAlert(loggedInUserId: widget.loggedInUserId),
+                  );
+                },
+                child: const Text('管理'),
+              ),
+
+              const SizedBox(height: 20),
+            ],
 
             Padding(
               padding: const EdgeInsets.all(8.0),
@@ -689,6 +676,33 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                 ),
               ),
             ),
+
+            const Spacer(),
+
+            Divider(color: Colors.white.withValues(alpha: 0.5), thickness: 5),
+
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: GestureDetector(
+                onTap: () {
+                  _confirmLogout();
+                },
+
+                child: const SizedBox(
+                  width: double.infinity,
+
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: <Widget>[
+                      SizedBox.shrink(),
+                      Text('ログアウト', style: TextStyle(fontSize: 12)),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 100),
           ],
         ),
       ),

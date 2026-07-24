@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../controllers/controllers_mixin.dart';
+import '../../data/http/client.dart';
+import '../../data/http/path.dart';
 import '../../extensions/extensions.dart';
 import '../../models/horse_detail_model.dart';
-import '../parts/odds_finder_dialog.dart';
-import 'horse_odds_record_display_alert.dart';
+import '../../models/shutsuba_history_model.dart';
+import '../../utility/functions.dart';
 
 class HorseDetailDisplayAlert extends ConsumerStatefulWidget {
   const HorseDetailDisplayAlert({super.key});
@@ -16,10 +18,42 @@ class HorseDetailDisplayAlert extends ConsumerStatefulWidget {
 
 class _HorseDetailDisplayAlertState extends ConsumerState<HorseDetailDisplayAlert>
     with ControllersMixin<HorseDetailDisplayAlert> {
+  List<ShutsubaHistoryModel>? _shutsubaHistoryList;
+  String _fetchedHorseName = '';
+
+  ///
+  Future<void> _fetchShutsubaHistory(String horseName) async {
+    if (horseName.isEmpty) {
+      return;
+    }
+    try {
+      final dynamic response = await ref
+          .read(httpClientProvider)
+          .get(path: APIPath.getHorseOddsFinderShutsubaHistory, queryParameters: <String, dynamic>{'names': horseName});
+      final List<dynamic> dataList = (response as Map<String, dynamic>)['data'] as List<dynamic>? ?? <dynamic>[];
+      final List<ShutsubaHistoryModel> list = dataList
+          .map((dynamic item) => ShutsubaHistoryModel.fromJson(item as Map<String, dynamic>))
+          .where((ShutsubaHistoryModel m) => m.name == horseName)
+          .toList();
+      if (mounted) {
+        setState(() => _shutsubaHistoryList = list);
+      }
+    } catch (_) {}
+  }
+
   ///
   @override
   Widget build(BuildContext context) {
     final HorseDetailModel? detail = horseState.horseDetail;
+
+    if (detail != null && detail.horseName != _fetchedHorseName) {
+      _fetchedHorseName = detail.horseName;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _fetchShutsubaHistory(detail.horseName);
+        }
+      });
+    }
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -28,15 +62,17 @@ class _HorseDetailDisplayAlertState extends ConsumerState<HorseDetailDisplayAler
           style: const TextStyle(color: Colors.white),
           child: Padding(
             padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                if (detail != null)
-                  ..._buildContent(context, detail)
-                else
-                  const Text('詳細情報が取得できませんでした。', style: TextStyle(color: Colors.yellowAccent, fontSize: 12)),
-              ],
-            ),
+
+            child: (detail != null)
+                ? Container(
+                    decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.5)),
+                    padding: const EdgeInsets.all(10),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: _buildContent(context, detail),
+                    ),
+                  )
+                : const Text('詳細情報が取得できませんでした。', style: TextStyle(color: Colors.yellowAccent, fontSize: 12)),
           ),
         ),
       ),
@@ -64,7 +100,8 @@ class _HorseDetailDisplayAlertState extends ConsumerState<HorseDetailDisplayAler
       const SizedBox(height: 20),
       _buildRaceRecordHeader(title: '出走レース', detail: detail),
       const SizedBox(height: 5),
-      _buildRaceList(context, detail.races),
+
+      _displayShutsubaHistoryList(),
     ];
   }
 
@@ -169,32 +206,20 @@ class _HorseDetailDisplayAlertState extends ConsumerState<HorseDetailDisplayAler
     return Container(
       decoration: BoxDecoration(color: Colors.greenAccent.withValues(alpha: 0.2)),
       padding: const EdgeInsets.only(left: 10),
-      child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: <Widget>[Text(title), const SizedBox.shrink()]),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: <Widget>[Text(title), const SizedBox.shrink()],
+      ),
     );
   }
 
   ///
   Widget _buildRaceRecordHeader({required String title, required HorseDetailModel detail}) {
-    return Row(
-      children: <Widget>[
-        Expanded(
-          child: Container(
-            decoration: BoxDecoration(color: Colors.greenAccent.withValues(alpha: 0.2)),
-            padding: const EdgeInsets.only(left: 10),
-            child: Text(title),
-          ),
-        ),
-        const SizedBox(width: 30),
-        GestureDetector(
-          onTap: () {
-            OddsFinderDialog(
-              context: context,
-              widget: HorseOddsRecordDisplayAlert(horseName: detail.horseName),
-            );
-          },
-          child: const Icon(Icons.list, color: Colors.greenAccent),
-        ),
-      ],
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(color: Colors.greenAccent.withValues(alpha: 0.2)),
+      padding: const EdgeInsets.only(left: 10),
+      child: Text(title),
     );
   }
 
@@ -238,84 +263,186 @@ class _HorseDetailDisplayAlertState extends ConsumerState<HorseDetailDisplayAler
   }
 
   ///
-  Widget _buildRaceList(BuildContext context, List<HorseDetailRaceHistoryModel> races) {
-    return Expanded(
-      child: ListView.separated(
-        itemCount: races.length,
-        separatorBuilder: (_, __) => Divider(color: Colors.white.withValues(alpha: 0.5), height: 5),
-        itemBuilder: (_, int index) => _buildRaceItem(races[index]),
-      ),
-    );
-  }
+  Widget _displayShutsubaHistoryList() {
+    final List<Widget> list = <Widget>[];
 
-  ///
-  Widget _buildRaceItem(HorseDetailRaceHistoryModel e) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      child: DefaultTextStyle(
-        style: const TextStyle(color: Colors.white, fontSize: 11),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            // 日付・場・レース名
-            Row(
-              children: <Widget>[
-                Text(e.date, style: const TextStyle(color: Colors.white54, fontSize: 10)),
-                const SizedBox(width: 6),
-                Text(e.basho, style: const TextStyle(color: Colors.greenAccent, fontSize: 10)),
-                const SizedBox(width: 6),
-                Expanded(child: Text(e.raceName, maxLines: 1, overflow: TextOverflow.ellipsis)),
-              ],
+    if (_shutsubaHistoryList == null) {
+      list.add(const Text('読み込み中...', style: TextStyle(color: Colors.white54, fontSize: 11)));
+    } else if (_shutsubaHistoryList!.isEmpty) {
+      list.add(const Text('出走履歴がありません。', style: TextStyle(color: Colors.white54, fontSize: 11)));
+    } else {
+      for (final ShutsubaHistoryModel e in _shutsubaHistoryList!) {
+        list.add(
+          Container(
+            width: double.infinity,
+            margin: const EdgeInsets.all(5),
+            padding: const EdgeInsets.all(5),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(5),
             ),
-            const SizedBox(height: 3),
 
-            // 距離・馬場・頭数
-            Row(
-              children: <Widget>[
-                Text(e.distance),
-                const SizedBox(width: 6),
-                Text(e.baba),
-                const SizedBox(width: 6),
-                Text('${e.numHorses}頭'),
-              ],
-            ),
-            const SizedBox(height: 3),
-            // 着順・人気・騎手・タイム
-            Row(
-              children: <Widget>[
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                  decoration: BoxDecoration(color: Colors.greenAccent.withValues(alpha: 0.2)),
-                  child: Text('${e.chakujun}着'),
-                ),
-                const SizedBox(width: 6),
-                Text('${e.ninki}人気'),
-                const SizedBox(width: 6),
-                Expanded(child: Text(e.jockey, maxLines: 1, overflow: TextOverflow.ellipsis)),
-                Text(e.time, style: const TextStyle(color: Colors.white70)),
-              ],
-            ),
-            const SizedBox(height: 3),
-            // 斤量・馬体重・1着馬
-            Row(
-              children: <Widget>[
-                Text('${e.futan}kg'),
-                const SizedBox(width: 6),
-                Text('馬体重 ${e.bataiju}'),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: Text(
-                    e.chakuma,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(color: Colors.white54),
+            child: DefaultTextStyle(
+              style: const TextStyle(fontSize: 10, color: Colors.white),
+              child: Column(
+                children: <Widget>[
+                  Row(
+                    children: <Widget>[
+                      SizedBox(width: 60, child: Text(e.date)),
+
+                      SizedBox(width: 60, child: Text('${e.basho} ${e.race}R')),
+
+                      Expanded(
+                        child: Text(
+                          e.raceName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontSize: 12),
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-              ],
+
+                  const SizedBox(height: 5),
+
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Stack(
+                        children: <Widget>[
+                          Container(
+                            width: 50,
+                            margin: const EdgeInsets.only(top: 10, left: 10),
+                            padding: const EdgeInsets.all(3),
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(border: Border.all(color: Colors.white.withValues(alpha: 0.3))),
+                            child: Text('${e.popularity} / ${e.numHorses}'),
+                          ),
+
+                          const Text('人気度'),
+                        ],
+                      ),
+
+                      Stack(
+                        children: <Widget>[
+                          Container(
+                            width: 50,
+                            margin: const EdgeInsets.only(top: 10, left: 10),
+                            padding: const EdgeInsets.all(3),
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
+
+                              color: raceRankColor(e.finishingPosition > 0 ? e.finishingPosition : null, alpha: 0.3),
+                            ),
+                            child: Text('${e.finishingPosition} / ${e.numHorses}'),
+                          ),
+
+                          const Text('着順'),
+                        ],
+                      ),
+
+                      const SizedBox(width: 10),
+
+                      Expanded(
+                        child: Column(
+                          children: <Widget>[
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: <Widget>[
+                                Text('${e.course} ${e.dist}'),
+                                Text('${e.horseWeight} / ${e.condition}'),
+                              ],
+                            ),
+
+                            Row(
+                              children: <Widget>[
+                                Expanded(
+                                  child: Container(
+                                    margin: const EdgeInsets.symmetric(vertical: 1, horizontal: 2),
+                                    padding: const EdgeInsets.all(1),
+                                    alignment: Alignment.center,
+                                    decoration: BoxDecoration(
+                                      border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
+                                    ),
+                                    child: Text('${e.corner1}'),
+                                  ),
+                                ),
+
+                                Expanded(
+                                  child: Container(
+                                    margin: const EdgeInsets.symmetric(vertical: 1, horizontal: 2),
+                                    padding: const EdgeInsets.all(1),
+                                    alignment: Alignment.center,
+                                    decoration: BoxDecoration(
+                                      border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
+                                    ),
+                                    child: Text('${e.corner2}'),
+                                  ),
+                                ),
+
+                                Expanded(
+                                  child: Container(
+                                    margin: const EdgeInsets.symmetric(vertical: 1, horizontal: 2),
+                                    padding: const EdgeInsets.all(1),
+                                    alignment: Alignment.center,
+                                    decoration: BoxDecoration(
+                                      border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
+                                    ),
+                                    child: Text('${e.corner3}'),
+                                  ),
+                                ),
+
+                                Expanded(
+                                  child: Container(
+                                    margin: const EdgeInsets.symmetric(vertical: 1, horizontal: 2),
+                                    padding: const EdgeInsets.all(1),
+                                    alignment: Alignment.center,
+                                    decoration: BoxDecoration(
+                                      border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
+                                    ),
+                                    child: Text('${e.corner4}'),
+                                  ),
+                                ),
+                              ],
+                            ),
+
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: <Widget>[Text(e.time), Text(e.last3f)],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  if (e.finishingPosition == 1) ...<Widget>[
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: <Widget>[Text('2着: ${e.finHorse}'), Text('2着との差: ${e.finTimeDiff}')],
+                    ),
+                  ] else ...<Widget>[
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: <Widget>[Text('1着: ${e.finHorse}'), Text('1着との差: ${e.finTimeDiff}')],
+                    ),
+                  ],
+
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: <Widget>[Text('騎手: ${e.jockey}'), const SizedBox.shrink()],
+                  ),
+                ],
+              ),
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      }
+    }
+
+    return Expanded(
+      child: SingleChildScrollView(child: Column(children: list)),
     );
   }
 }
