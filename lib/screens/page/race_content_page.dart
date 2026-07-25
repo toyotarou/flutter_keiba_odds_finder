@@ -973,7 +973,12 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
 
                             //////////////////////
                             if (oddsTimeline != null) ...<Widget>[
-                              const SizedBox(height: 20),
+                              const SizedBox(height: 5),
+
+                              const Text('発走のX分前のオッズ:', style: TextStyle(color: Colors.grey, fontSize: 10)),
+
+                              const SizedBox(height: 3),
+
                               _OddsTimelineRow(
                                 timeline: oddsTimeline,
                                 activeTimingKey: activeTimingKey,
@@ -1507,7 +1512,8 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
                       Text(horse.name, maxLines: 1, overflow: TextOverflow.ellipsis),
-                      if (horseBestWeightState.horseBestWeightMap[horse.name] != null) ...<Widget>[
+                      if (horseBestWeightState.horseBestWeightMap[horse.name] != null &&
+                          horseBestWeightState.horseBestWeightMap[horse.name]!.horseWeight != '') ...<Widget>[
                         const SizedBox(height: 3),
                         Text(
                           'Best Weight: ${horseBestWeightState.horseBestWeightMap[horse.name]!.horseWeight}',
