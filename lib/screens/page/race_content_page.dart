@@ -137,6 +137,10 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     final String basho = kbdParts.length > 1 ? kbdParts[1] : '';
     final String day = kbdParts.length > 2 ? kbdParts[2] : '';
     try {
+      final PopularityRankOddsMedianModel? med = _makeMedianList();
+      final List<int>? pickupNums = med != null ? _calcPickupNums(_buildDisplayList(), med) : null;
+      print('pickupNums(HHH): $pickupNums');
+
       final dynamic response = await ref
           .read(httpClientProvider)
           .get(
@@ -149,6 +153,9 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
               'race': race.toString(),
             },
           );
+
+      //////////
+
       final Map<String, dynamic> data =
           (response as Map<String, dynamic>)['data'] as Map<String, dynamic>? ?? <String, dynamic>{};
       final String pickupRaw = (data['pickup_horse'] as String?) ?? '';
@@ -1610,6 +1617,8 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
 
     final List<OddsModel> displayList = _buildDisplayList();
 
+    final List<int>? pickupNums = median != null ? _calcPickupNums(displayList, median) : null;
+
     final Map<int, HorseModel> horseModelMap = <int, HorseModel>{
       for (final HorseModel e in (widget.horseMap[widget.mapKey] ?? <HorseModel>[]).where(
         (HorseModel e) => e.race == widget.raceNumber,
@@ -1754,12 +1763,11 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                 color: Colors.transparent,
                 borderRadius: BorderRadius.circular(10),
                 child: InkWell(
-                  onTap: () {
-                    OddsFinderDialog(
-                      context: context,
-                      widget: AiAnalysisDisplayAlert(raceNumber: widget.raceNumber),
-                    );
-                  },
+                  onTap: () => OddsFinderDialog(
+                    context: context,
+                    widget: AiAnalysisDisplayAlert(raceNumber: widget.raceNumber, pickupNums: pickupNums),
+                  ),
+
                   borderRadius: BorderRadius.circular(10),
                   splashColor: const Color(0xFFFFD700).withValues(alpha: 0.35),
                   highlightColor: const Color(0xFFFFD700).withValues(alpha: 0.1),
@@ -1783,17 +1791,21 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                 color: Colors.transparent,
                 borderRadius: BorderRadius.circular(10),
                 child: InkWell(
-                  onTap: () => OddsFinderDialog(
-                    context: context,
-                    widget: TotalForecastDisplayAlert(
-                      displayList: displayList,
-                      horseModelMap: horseModelMap,
-                      numToRankMap: numToRankMap,
-                      raceNumber: widget.raceNumber,
-                      raceName: raceName,
-                      pickupHorse: _aiPickupHorse,
-                    ),
-                  ),
+                  onTap: () {
+                    OddsFinderDialog(
+                      context: context,
+                      widget: TotalForecastDisplayAlert(
+                        displayList: displayList,
+                        horseModelMap: horseModelMap,
+                        numToRankMap: numToRankMap,
+                        raceNumber: widget.raceNumber,
+                        raceName: raceName,
+                        pickupHorse: _aiPickupHorse,
+
+                        pickupNums: pickupNums,
+                      ),
+                    );
+                  },
                   borderRadius: BorderRadius.circular(10),
                   splashColor: const Color(0xFFFBB6CE).withValues(alpha: 0.35),
                   highlightColor: const Color(0xFFFBB6CE).withValues(alpha: 0.1),
@@ -1836,6 +1848,28 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
         .toList();
 
     return filtered.isNotEmpty ? filtered.first : null;
+  }
+
+  ///
+  List<int> _calcPickupNums(List<OddsModel> displayList, PopularityRankOddsMedianModel median) {
+    final int pickupCount = displayList.length <= 8
+        ? 4
+        : displayList.length <= 13
+        ? 5
+        : 6;
+    final List<MapEntry<int, double>> scoredEntries = displayList.asMap().entries.map((MapEntry<int, OddsModel> e) {
+      final int idx = e.key + 1;
+      final double oddsVal = e.value.odds.toDouble();
+      double score = 0;
+      if (oddsVal != 0) {
+        final double medianDouble = double.tryParse(_medianByRank(median, idx)) ?? 0;
+        if (medianDouble > 0) {
+          score = medianDouble / oddsVal;
+        }
+      }
+      return MapEntry<int, double>(idx, score);
+    }).toList()..sort((MapEntry<int, double> a, MapEntry<int, double> b) => b.value.compareTo(a.value));
+    return scoredEntries.take(pickupCount).map((MapEntry<int, double> e) => displayList[e.key - 1].num).toList();
   }
 }
 

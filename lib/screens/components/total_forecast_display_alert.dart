@@ -20,6 +20,7 @@ class TotalForecastDisplayAlert extends ConsumerStatefulWidget {
     required this.raceNumber,
     required this.raceName,
     this.pickupHorse = '',
+    this.pickupNums,
   });
 
   final List<OddsModel> displayList;
@@ -28,6 +29,8 @@ class TotalForecastDisplayAlert extends ConsumerStatefulWidget {
   final int raceNumber;
   final String raceName;
   final String pickupHorse;
+
+  final List<int>? pickupNums;
 
   @override
   ConsumerState<TotalForecastDisplayAlert> createState() => _TotalForecastDisplayAlertState();
@@ -113,6 +116,8 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
     final String basho = kbdParts.length > 1 ? kbdParts[1] : '';
     final String day = kbdParts.length > 2 ? kbdParts[2] : '';
     try {
+      //////////
+
       final dynamic response = await ref
           .read(httpClientProvider)
           .get(
@@ -125,9 +130,14 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
               'race': race.toString(),
             },
           );
+
+      ///////////
+
       final Map<String, dynamic> data =
           (response as Map<String, dynamic>)['data'] as Map<String, dynamic>? ?? <String, dynamic>{};
+
       final String pickupRaw = (data['pickup_horse'] as String?) ?? '';
+
       if (pickupRaw.isNotEmpty) {
         _aiPickupNums = _parsePickupRaw(pickupRaw);
         _aiPickupScores = _parsePickupScores(pickupRaw);
