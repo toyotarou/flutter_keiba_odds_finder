@@ -7,7 +7,7 @@ import '../../models/race_model.dart';
 import '../../models/schedule_model.dart';
 
 const int _kStartHour = 9;
-const int _kEndHour = 17;
+const int _kEndHour = 19;
 const double _kPxPerMinute = 2.0;
 const double _kGutterWidth = 38.0;
 
@@ -309,7 +309,7 @@ class _DateCalendarViewState extends ConsumerState<_DateCalendarView> with Contr
       final ScheduleModel schedule = schedules[i];
       final List<RaceModel> races = _racesForSchedule(schedule);
 
-      for (final RaceModel race in races) {
+      for (final RaceModel race in races.reversed) {
         final List<String> parts = race.startTime.split(':');
         if (parts.length < 2) {
           continue;

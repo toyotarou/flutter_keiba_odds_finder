@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../controllers/app_param/app_param.dart';
 import '../controllers/controllers_mixin.dart';
 import '../extensions/extensions.dart';
 import '../models/horse_model.dart';
@@ -96,9 +97,11 @@ class HomeScreen extends ConsumerStatefulWidget {
   ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<HomeScreen> {
+class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<HomeScreen>, TickerProviderStateMixin {
   final List<RaceTabInfo> _raceTabs = <RaceTabInfo>[];
   TabController? _raceTabController;
+  TabController? _raceTabControllerPendingDispose;
+  String _raceTabMapKey = '';
 
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
@@ -168,6 +171,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
   void dispose() {
     try {
       _raceTabController?.removeListener(_onRaceTabChanged);
+      _raceTabController?.dispose();
+      _raceTabControllerPendingDispose?.removeListener(_onRaceTabChanged);
+      _raceTabControllerPendingDispose?.dispose();
     } catch (e) {
       debugPrint('dispose error: $e');
     }
@@ -272,6 +278,43 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
       }
     } catch (e) {
       debugPrint('_onRaceTabChanged error: $e');
+    }
+  }
+
+  ///
+  void _updateRaceTabController() {
+    final String currentMapKey = _mapKey;
+
+    final bool needsNewController =
+        _raceTabController == null || currentMapKey != _raceTabMapKey || _raceTabController!.length != _raceTabs.length;
+
+    if (needsNewController) {
+      // 会場変更またはレース数変化: 正しい initialIndex で新しいコントローラーを作成
+      _raceTabControllerPendingDispose = _raceTabController;
+
+      final int selected = appParamState.selectedRaceNumber;
+      int initialIdx = 0;
+      if (selected > 0 && _raceTabs.isNotEmpty) {
+        final int idx = _raceTabs.indexWhere((RaceTabInfo t) => t.raceNumber == selected);
+        if (idx >= 0) {
+          initialIdx = idx;
+        }
+      }
+
+      _raceTabController = TabController(
+        length: _raceTabs.isEmpty ? 1 : _raceTabs.length,
+        vsync: this,
+        initialIndex: initialIdx,
+      );
+      _raceTabController!.addListener(_onRaceTabChanged);
+      _raceTabMapKey = currentMapKey;
+
+      // 旧コントローラーを次フレーム後に破棄（現フレームはまだ旧コントローラーを使用中）
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _raceTabControllerPendingDispose?.removeListener(_onRaceTabChanged);
+        _raceTabControllerPendingDispose?.dispose();
+        _raceTabControllerPendingDispose = null;
+      });
     }
   }
 
@@ -385,76 +428,65 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
 
   ///
   Widget _buildRaceTabSection() {
-    return DefaultTabController(
-      key: ValueKey<String>(_mapKey),
-      length: _raceTabs.length,
-      child: Builder(
-        builder: (BuildContext tabScopeContext) {
-          try {
-            final TabController newController = DefaultTabController.of(tabScopeContext);
-            if (newController != _raceTabController) {
-              _raceTabController?.removeListener(_onRaceTabChanged);
-              _raceTabController = newController;
-              _raceTabController?.addListener(_onRaceTabChanged);
-
-              if (_raceTabs.isNotEmpty) {
-                final int index = _raceTabController!.index;
-                if (index >= 0 && index < _raceTabs.length) {
-                  final int raceNum = _raceTabs[index].raceNumber;
-                  Future<void>(() {
-                    if (!mounted) {
-                      return;
-                    }
-                    final int selected = appParamState.selectedRaceNumber;
-                    if (selected > 0) {
-                      final int targetIdx = _raceTabs.indexWhere((RaceTabInfo t) => t.raceNumber == selected);
-                      if (targetIdx > 0) {
-                        _raceTabController?.animateTo(targetIdx);
-                      }
-                    } else {
-                      appParamNotifier.setSelectedRaceNumber(num: raceNum);
-                    }
-                  });
-                }
-              }
-            }
-          } catch (e) {
-            debugPrint('TabController setup error: $e');
-          }
-
-          return Column(
-            children: <Widget>[
-              if (appParamState.isShowUpperBox) ...<Widget>[
-                const SizedBox(height: 5),
-                TabBar(
-                  isScrollable: true,
-                  tabAlignment: TabAlignment.start,
-                  indicatorColor: Colors.greenAccent,
-                  padding: EdgeInsets.zero,
-                  tabs: _raceTabs.map((RaceTabInfo tab) {
-                    return Tab(
-                      child: Text('${tab.raceNumber}R', style: const TextStyle(fontSize: 14, color: Colors.white)),
-                    );
-                  }).toList(),
-                ),
-                const SizedBox(height: 5),
-                Divider(color: Colors.white.withValues(alpha: 0.5)),
-              ],
-              Expanded(child: TabBarView(children: _raceTabs.map((RaceTabInfo tab) => tab.widget).toList())),
-            ],
-          );
-        },
-      ),
+    if (_raceTabController == null || _raceTabs.isEmpty) {
+      return const SizedBox.shrink();
+    }
+    return Column(
+      children: <Widget>[
+        if (appParamState.isShowUpperBox) ...<Widget>[
+          const SizedBox(height: 5),
+          TabBar(
+            controller: _raceTabController,
+            isScrollable: true,
+            tabAlignment: TabAlignment.start,
+            indicatorColor: Colors.greenAccent,
+            padding: EdgeInsets.zero,
+            tabs: _raceTabs.map((RaceTabInfo tab) {
+              return Tab(
+                child: Text('${tab.raceNumber}R', style: const TextStyle(fontSize: 14, color: Colors.white)),
+              );
+            }).toList(),
+          ),
+          const SizedBox(height: 5),
+          Divider(color: Colors.white.withValues(alpha: 0.5)),
+        ],
+        Expanded(
+          child: TabBarView(
+            controller: _raceTabController,
+            children: _raceTabs.map((RaceTabInfo tab) => tab.widget).toList(),
+          ),
+        ),
+      ],
     );
   }
 
   ///
   @override
   Widget build(BuildContext context) {
+    ref.listen<int>(appParamProvider.select((AppParamState s) => s.selectedRaceNumber), (int? prev, int next) {
+      if (next > 0) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted || _raceTabController == null || _raceTabs.isEmpty) {
+            return;
+          }
+          final int idx = _raceTabs.indexWhere((RaceTabInfo t) => t.raceNumber == next);
+          if (idx >= 0 && idx != _raceTabController!.index) {
+            _raceTabController!.animateTo(idx);
+          }
+        });
+      }
+    });
+
     try {
       _makeRaceTab();
     } catch (e) {
       debugPrint('_makeRaceTab error: $e');
+    }
+
+    try {
+      _updateRaceTabController();
+    } catch (e) {
+      debugPrint('_updateRaceTabController error: $e');
     }
 
     return Scaffold(
