@@ -7,10 +7,16 @@ import '../../data/http/client.dart';
 import '../../data/http/path.dart';
 
 class AiAnalysisDisplayAlert extends ConsumerStatefulWidget {
-  const AiAnalysisDisplayAlert({super.key, required this.raceNumber, required this.gapHorseNums});
+  const AiAnalysisDisplayAlert({
+    super.key,
+    required this.raceNumber,
+    required this.gapHorseNums,
+    required this.upsetPickupHorseNums,
+  });
 
   final int raceNumber;
   final List<int> gapHorseNums;
+  final List<int> upsetPickupHorseNums;
 
   @override
   ConsumerState<AiAnalysisDisplayAlert> createState() => _AiAnalysisDisplayAlertState();
@@ -57,6 +63,7 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
               'day': day,
               'race': widget.raceNumber.toString(),
               'gapHorseNums': widget.gapHorseNums.join(','),
+              'upsetPickupHorseNums': widget.upsetPickupHorseNums.join(','),
             },
           );
 

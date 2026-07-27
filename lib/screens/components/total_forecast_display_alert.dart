@@ -22,6 +22,7 @@ class TotalForecastDisplayAlert extends ConsumerStatefulWidget {
     this.pickupHorse = '',
     this.sixMinOddsMap,
     required this.gapHorseNums,
+    required this.upsetPickupHorseNums,
   });
 
   final List<OddsModel> displayList;
@@ -33,6 +34,7 @@ class TotalForecastDisplayAlert extends ConsumerStatefulWidget {
   final Map<int, String>? sixMinOddsMap;
 
   final List<int> gapHorseNums;
+  final List<int> upsetPickupHorseNums;
 
   @override
   ConsumerState<TotalForecastDisplayAlert> createState() => _TotalForecastDisplayAlertState();
@@ -129,6 +131,7 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
               'day': day,
               'race': race.toString(),
               'gapHorseNums': widget.gapHorseNums.join(','),
+              'upsetPickupHorseNums': widget.upsetPickupHorseNums.join(','),
             },
           );
 
