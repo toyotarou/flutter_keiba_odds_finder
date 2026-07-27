@@ -137,10 +137,6 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     final String basho = kbdParts.length > 1 ? kbdParts[1] : '';
     final String day = kbdParts.length > 2 ? kbdParts[2] : '';
     try {
-      final PopularityRankOddsMedianModel? med = _makeMedianList();
-      final List<int>? pickupNums = med != null ? _calcPickupNums(_buildDisplayList(), med) : null;
-      print('pickupNums(HHH): $pickupNums');
-
       final dynamic response = await ref
           .read(httpClientProvider)
           .get(
@@ -1211,34 +1207,6 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
   }
 
   ///
-  static String _medianByRank(PopularityRankOddsMedianModel model, int rank) {
-    final List<String> medians = <String>[
-      model.median01,
-      model.median02,
-      model.median03,
-      model.median04,
-      model.median05,
-      model.median06,
-      model.median07,
-      model.median08,
-      model.median09,
-      model.median10,
-      model.median11,
-      model.median12,
-      model.median13,
-      model.median14,
-      model.median15,
-      model.median16,
-      model.median17,
-      model.median18,
-    ];
-    if (rank < 1 || rank > medians.length) {
-      return '';
-    }
-    return medians[rank - 1];
-  }
-
-  ///
   Widget _buildPopularityHorseRow({
     required List<OddsModel> displayList,
     required PopularityRankOddsMedianModel median,
@@ -1252,24 +1220,24 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
         ? 5
         : 6;
 
-    final List<MapEntry<int, double>> scoredEntries = displayList.asMap().entries.map((MapEntry<int, OddsModel> e) {
-      final int idx = e.key + 1;
+    // 馬番 → 6分前オッズ のマップ。期待数値スコアの基準として使用する。
+    final Map<int, String> sixMinOddsMap = <int, String>{
+      for (final OddsModel o in (widget.oddsMap[widget.mapKey] ?? <OddsModel>[]).where(
+        (OddsModel e) => e.race == widget.raceNumber && e.minutesBeforeStart == kOddsJudgeTiming,
+      ))
+        o.num: o.odds,
+    };
 
-      final double oddsVal = e.value.odds.toDouble();
+    final Set<int> pickupIndexSet = calcPickupPopularitySet(
+      displayList,
+      median,
+      pickupCount,
+      sixMinOddsMap: sixMinOddsMap,
+    );
 
-      double score = 0;
-
-      if (oddsVal != 0) {
-        final double medianDouble = double.tryParse(_medianByRank(median, idx)) ?? 0;
-        if (medianDouble > 0) {
-          score = medianDouble / oddsVal;
-        }
-      }
-
-      return MapEntry<int, double>(idx, score);
-    }).toList()..sort((MapEntry<int, double> a, MapEntry<int, double> b) => b.value.compareTo(a.value));
-
-    final Set<int> pickupIndexSet = scoredEntries.take(pickupCount).map((MapEntry<int, double> e) => e.key).toSet();
+    // 6分前オッズを基準とした人気順位マップ。
+    // どのタイミングを選択していても期待数値が6分前基準で統一される。
+    final Map<int, int> sixMinRankMap = sixMinOddsMap.isNotEmpty ? buildSixMinRankMap(sixMinOddsMap) : <int, int>{};
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.end,
@@ -1288,11 +1256,18 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                       final int index = entry.key + 1;
                       final OddsModel o = entry.value;
 
+                      // 期待数値スコアを計算する。
+                      // ランクと使用オッズはともに6分前基準で統一する。
+                      // 6分前データがない馬は displayList のオッズにフォールバックする。
                       String upsetScore = '';
-                      final double medianDouble = double.tryParse(_medianByRank(median, index)) ?? 0;
+                      final int medianRank = sixMinRankMap[o.num] ?? index;
+                      final double medianDouble = double.tryParse(medianByRank(median, medianRank)) ?? 0;
                       if (medianDouble > 0) {
-                        final double oddsVal = o.odds.toDouble();
-                        if (oddsVal != 0) {
+                        final double? parsedSixMin = double.tryParse(sixMinOddsMap[o.num] ?? '');
+                        final double oddsVal = (parsedSixMin != null && parsedSixMin > 0)
+                            ? parsedSixMin
+                            : o.odds.toDouble();
+                        if (oddsVal > 0) {
                           upsetScore = (medianDouble / oddsVal).toStringAsFixed(2);
                         }
                       }
@@ -1632,6 +1607,12 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
         .where((OddsModel e) => e.race == widget.raceNumber)
         .toList();
 
+    // 馬番 → 6分前オッズ のマップ。TotalForecastDisplayAlert にも渡す。
+    final Map<int, String> sixMinOddsMap = <int, String>{
+      for (final OddsModel o in allOddsForRace.where((OddsModel e) => e.minutesBeforeStart == kOddsJudgeTiming))
+        o.num: o.odds,
+    };
+
     final bool hasBothTimings =
         allOddsForRace.any((OddsModel e) => e.minutesBeforeStart == kOddsTimingFirst) &&
         allOddsForRace.any((OddsModel e) => e.minutesBeforeStart == kOddsJudgeTiming);
@@ -1801,8 +1782,8 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                         raceNumber: widget.raceNumber,
                         raceName: raceName,
                         pickupHorse: _aiPickupHorse,
-
                         pickupNums: pickupNums,
+                        sixMinOddsMap: sixMinOddsMap,
                       ),
                     );
                   },
@@ -1862,7 +1843,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
       final double oddsVal = e.value.odds.toDouble();
       double score = 0;
       if (oddsVal != 0) {
-        final double medianDouble = double.tryParse(_medianByRank(median, idx)) ?? 0;
+        final double medianDouble = double.tryParse(medianByRank(median, idx)) ?? 0;
         if (medianDouble > 0) {
           score = medianDouble / oddsVal;
         }

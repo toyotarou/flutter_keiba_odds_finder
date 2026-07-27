@@ -21,6 +21,7 @@ class TotalForecastDisplayAlert extends ConsumerStatefulWidget {
     required this.raceName,
     this.pickupHorse = '',
     this.pickupNums,
+    this.sixMinOddsMap,
   });
 
   final List<OddsModel> displayList;
@@ -29,8 +30,9 @@ class TotalForecastDisplayAlert extends ConsumerStatefulWidget {
   final int raceNumber;
   final String raceName;
   final String pickupHorse;
-
   final List<int>? pickupNums;
+
+  final Map<int, String>? sixMinOddsMap;
 
   @override
   ConsumerState<TotalForecastDisplayAlert> createState() => _TotalForecastDisplayAlertState();
@@ -116,8 +118,6 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
     final String basho = kbdParts.length > 1 ? kbdParts[1] : '';
     final String day = kbdParts.length > 2 ? kbdParts[2] : '';
     try {
-      //////////
-
       final dynamic response = await ref
           .read(httpClientProvider)
           .get(
@@ -130,8 +130,6 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
               'race': race.toString(),
             },
           );
-
-      ///////////
 
       final Map<String, dynamic> data =
           (response as Map<String, dynamic>)['data'] as Map<String, dynamic>? ?? <String, dynamic>{};
@@ -148,34 +146,6 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
     } catch (e) {
       debugPrint('[TotalForecast] _fetchAiPickup error: $e');
     }
-  }
-
-  ///
-  static String _medianByRank(PopularityRankOddsMedianModel model, int rank) {
-    final List<String> medians = <String>[
-      model.median01,
-      model.median02,
-      model.median03,
-      model.median04,
-      model.median05,
-      model.median06,
-      model.median07,
-      model.median08,
-      model.median09,
-      model.median10,
-      model.median11,
-      model.median12,
-      model.median13,
-      model.median14,
-      model.median15,
-      model.median16,
-      model.median17,
-      model.median18,
-    ];
-    if (rank < 1 || rank > medians.length) {
-      return '';
-    }
-    return medians[rank - 1];
   }
 
   ///
@@ -246,30 +216,21 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
           .toList();
       return filtered.isNotEmpty ? filtered.first : null;
     }();
+    // 出走頭数に応じてハイライト頭数を決める（8頭以下→4頭、9〜13頭→5頭、14頭以上→6頭）
     final int pickupCount = widget.displayList.length <= 8
         ? 4
         : widget.displayList.length <= 13
         ? 5
         : 6;
 
-    Set<int> pickupPopularitySet = <int>{};
-    if (medianModel != null) {
-      final List<MapEntry<int, double>> scoredEntries = widget.displayList.asMap().entries.map((
-        MapEntry<int, OddsModel> e,
-      ) {
-        final int idx = e.key + 1;
-        final double oddsVal = e.value.odds.toDouble();
-        double score = 0;
-        if (oddsVal != 0) {
-          final double medianDouble = double.tryParse(_medianByRank(medianModel, idx)) ?? 0;
-          if (medianDouble > 0) {
-            score = medianDouble / oddsVal;
-          }
-        }
-        return MapEntry<int, double>(idx, score);
-      }).toList()..sort((MapEntry<int, double> a, MapEntry<int, double> b) => b.value.compareTo(a.value));
-      pickupPopularitySet = scoredEntries.take(pickupCount).map((MapEntry<int, double> e) => e.key).toSet();
-    }
+    final Set<int> pickupPopularitySet = medianModel != null
+        ? calcPickupPopularitySet(widget.displayList, medianModel, pickupCount, sixMinOddsMap: widget.sixMinOddsMap)
+        : <int>{};
+
+    // 期待数値スコアのランク参照を6分前基準に統一するためのマップ。
+    final Map<int, int> sixMinRankMap = (widget.sixMinOddsMap != null && widget.sixMinOddsMap!.isNotEmpty)
+        ? buildSixMinRankMap(widget.sixMinOddsMap!)
+        : <int, int>{};
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -366,13 +327,20 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
                             final bool isAiPickup = _aiPickupNums.contains(item.num);
                             final bool hasAnalysis = _highProbabilityPopularities.contains(popularity);
 
+                            // 期待数値スコアを計算する。
+                            // ランクと使用オッズはともに6分前基準（sixMinRankMap）で統一する。
+                            // 6分前データがない馬は displayList のオッズにフォールバックする。
                             String upsetScore = '';
                             double upsetScoreVal = 0;
                             if (medianModel != null) {
-                              final double medianDouble = double.tryParse(_medianByRank(medianModel, popularity)) ?? 0;
+                              final int medianRank = sixMinRankMap[item.num] ?? popularity;
+                              final double medianDouble = double.tryParse(medianByRank(medianModel, medianRank)) ?? 0;
                               if (medianDouble > 0) {
-                                final double oddsVal = item.odds.toDouble();
-                                if (oddsVal != 0) {
+                                final double? parsedSixMin = double.tryParse(widget.sixMinOddsMap?[item.num] ?? '');
+                                final double oddsVal = (parsedSixMin != null && parsedSixMin > 0)
+                                    ? parsedSixMin
+                                    : item.odds.toDouble();
+                                if (oddsVal > 0) {
                                   upsetScoreVal = medianDouble / oddsVal;
                                   upsetScore = upsetScoreVal.toStringAsFixed(2);
                                 }
