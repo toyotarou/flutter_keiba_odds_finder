@@ -130,8 +130,8 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
               'basho': basho,
               'day': day,
               'race': race.toString(),
-              'gapHorseNums': widget.gapHorseNums.join(','),
-              'upsetPickupHorseNums': widget.upsetPickupHorseNums.join(','),
+              'gapHorseNums': widget.gapHorseNums.join('|'),
+              'upsetPickupHorseNums': widget.upsetPickupHorseNums.join('|'),
             },
           );
 

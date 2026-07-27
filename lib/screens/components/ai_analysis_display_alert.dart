@@ -62,8 +62,8 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
               'basho': basho,
               'day': day,
               'race': widget.raceNumber.toString(),
-              'gapHorseNums': widget.gapHorseNums.join(','),
-              'upsetPickupHorseNums': widget.upsetPickupHorseNums.join(','),
+              'gapHorseNums': widget.gapHorseNums.join('|'),
+              'upsetPickupHorseNums': widget.upsetPickupHorseNums.join('|'),
             },
           );
 

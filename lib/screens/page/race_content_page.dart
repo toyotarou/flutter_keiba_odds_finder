@@ -189,8 +189,8 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
               'basho': basho,
               'day': day,
               'race': race.toString(),
-              'gapHorseNums': gapHorseNums.join(','),
-              'upsetPickupHorseNums': upsetPickupHorseNums.join(','),
+              'gapHorseNums': gapHorseNums.join('|'),
+              'upsetPickupHorseNums': upsetPickupHorseNums.join('|'),
             },
           );
 
