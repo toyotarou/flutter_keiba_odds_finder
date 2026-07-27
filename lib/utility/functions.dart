@@ -49,11 +49,11 @@ Map<int, int> buildSixMinRankMap(Map<int, String> sixMinOddsMap) {
   return <int, int>{for (int i = 0; i < sorted.length; i++) sorted[i].key: i + 1};
 }
 
-/// 期待数値スコア（過去中央値オッズ ÷ 6分前オッズ）の上位 pickupCount 頭の
+/// 期待数値スコア（過去中央値オッズ ÷ 現在オッズ）の上位 pickupCount 頭の
 /// displayList 内インデックス（1始まり）を Set で返す。
 ///
-/// ランクと使用オッズはともに 6分前基準で統一する。
-/// 6分前データがない馬は displayList のオッズにフォールバックする。
+/// sixMinOddsMap を渡すと 6分前オッズ基準でスコアを計算する（予想総括ダイアログ用）。
+/// 省略した場合は displayList のオッズと順位をそのまま使う（メイン行・選択タイミング基準）。
 /// score > 1.0 → 過去より割安、score < 1.0 → 過去より割高。
 Set<int> calcPickupPopularitySet(
   List<OddsModel> displayList,

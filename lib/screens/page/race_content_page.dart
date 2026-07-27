@@ -108,6 +108,36 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
       _utility.buildNumToRankMap(widget.raceResultMap[widget.mapKey] ?? <RaceResultModel>[], widget.raceNumber);
 
   ///
+  List<OddsModel> get _oddsForRace =>
+      (widget.oddsMap[widget.mapKey] ?? <OddsModel>[]).where((OddsModel e) => e.race == widget.raceNumber).toList();
+
+  ///
+  Map<int, HorseModel> get _horseModelMap => <int, HorseModel>{
+    for (final HorseModel e in (widget.horseMap[widget.mapKey] ?? <HorseModel>[]).where(
+      (HorseModel e) => e.race == widget.raceNumber,
+    ))
+      e.num: e,
+  };
+
+  ///
+  List<String> get _configTimingParts => appParamState.configOddsGetTiming.split('|');
+
+  ///
+  String get _configFirstKey {
+    final List<String> p = _configTimingParts;
+    return p.isNotEmpty ? p.first : '';
+  }
+
+  ///
+  String get _configLastKey {
+    final List<String> p = _configTimingParts;
+    return p.isNotEmpty ? p.last : '';
+  }
+
+  ///
+  String get _minTiming => _resolveMinTiming(_oddsForRace, _configFirstKey, _configLastKey);
+
+  ///
   @override
   void initState() {
     super.initState();
@@ -427,12 +457,8 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
 
   ///
   List<OddsModel> _buildDisplayList() {
-    final List<OddsModel> allOdds = (widget.oddsMap[widget.mapKey] ?? <OddsModel>[])
-        .where((OddsModel e) => e.race == widget.raceNumber)
-        .toList();
-
-    final String config = appParamState.configOddsGetTiming;
-    final int firstTiming = config.isEmpty ? 0 : (int.tryParse(config.split('|').first) ?? 0);
+    final List<OddsModel> allOdds = _oddsForRace;
+    final int firstTiming = int.tryParse(_configFirstKey) ?? 0;
     final int? filterMinutes = _resolveFilterMinutes(appParamState.selectedTiming, allOdds, firstTiming);
 
     return (filterMinutes != null
@@ -601,9 +627,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     }
 
     final List<OddsModel> eRecordOdds =
-        (widget.oddsMap[widget.mapKey] ?? <OddsModel>[])
-            .where((OddsModel o) => o.race == widget.raceNumber && o.minutesBeforeStart == kOddsTimingLast)
-            .toList()
+        _oddsForRace.where((OddsModel o) => o.minutesBeforeStart == kOddsTimingLast).toList()
           ..sort((OddsModel a, OddsModel b) => (double.tryParse(a.odds) ?? 0).compareTo(double.tryParse(b.odds) ?? 0));
 
     final Map<int, int> numToPopularityMap = <int, int>{
@@ -705,14 +729,8 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
 
   ///
   Widget _displayRaceMinutesRow() {
-    final List<OddsModel> oddsModelList = (widget.oddsMap[widget.mapKey] ?? <OddsModel>[])
-        .where((OddsModel e) => e.race == widget.raceNumber)
-        .toList();
-
-    final List<String> timingParts = appParamState.configOddsGetTiming.split('|');
-    final String firstKey = timingParts.isNotEmpty ? timingParts.first : '';
-    final String lastKey = timingParts.isNotEmpty ? timingParts.last : '';
-    final String minTiming = _resolveMinTiming(oddsModelList, firstKey, lastKey);
+    final List<String> timingParts = _configTimingParts;
+    final String minTiming = _minTiming;
 
     if (appParamState.selectedTiming.isEmpty && minTiming.isNotEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -750,16 +768,8 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
 
   ///
   Widget _displayRaceHorseList({required String course, required int dist}) {
-    final List<OddsModel> oddsModelList = (widget.oddsMap[widget.mapKey] ?? <OddsModel>[])
-        .where((OddsModel e) => e.race == widget.raceNumber)
-        .toList();
-
-    final Map<int, HorseModel> horseModelMap = <int, HorseModel>{
-      for (final HorseModel e in (widget.horseMap[widget.mapKey] ?? <HorseModel>[]).where(
-        (HorseModel e) => e.race == widget.raceNumber,
-      ))
-        e.num: e,
-    };
+    final List<OddsModel> oddsModelList = _oddsForRace;
+    final Map<int, HorseModel> horseModelMap = _horseModelMap;
 
     oddsModelList.sort((OddsModel a, OddsModel b) {
       final int cmp = a.num.compareTo(b.num);
@@ -805,10 +815,9 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
       );
     }
 
-    final List<String> configParts = appParamState.configOddsGetTiming.split('|');
-    final int firstTiming = int.tryParse(configParts.isNotEmpty ? configParts.first : '') ?? 0;
+    final int firstTiming = int.tryParse(_configFirstKey) ?? 0;
     final int? filterMinutes = _resolveFilterMinutes(selectedTiming, displayList, firstTiming);
-    final String lastTimingKey = configParts.isNotEmpty ? configParts.last : '';
+    final String lastTimingKey = _configLastKey;
     final String activeTimingKey = _filterMinutesToTimingKey(filterMinutes, firstTiming.toString(), lastTimingKey);
 
     _displayListLength = displayList.length;
@@ -1213,6 +1222,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     RaceModel? raceModel,
   }) {
     final Map<int, int> numToRankMap = _numToRankMap;
+    final String minTiming = _minTiming;
 
     final int pickupCount = displayList.length <= 8
         ? 4
@@ -1220,24 +1230,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
         ? 5
         : 6;
 
-    // 馬番 → 6分前オッズ のマップ。期待数値スコアの基準として使用する。
-    final Map<int, String> sixMinOddsMap = <int, String>{
-      for (final OddsModel o in (widget.oddsMap[widget.mapKey] ?? <OddsModel>[]).where(
-        (OddsModel e) => e.race == widget.raceNumber && e.minutesBeforeStart == kOddsJudgeTiming,
-      ))
-        o.num: o.odds,
-    };
-
-    final Set<int> pickupIndexSet = calcPickupPopularitySet(
-      displayList,
-      median,
-      pickupCount,
-      sixMinOddsMap: sixMinOddsMap,
-    );
-
-    // 6分前オッズを基準とした人気順位マップ。
-    // どのタイミングを選択していても期待数値が6分前基準で統一される。
-    final Map<int, int> sixMinRankMap = sixMinOddsMap.isNotEmpty ? buildSixMinRankMap(sixMinOddsMap) : <int, int>{};
+    final Set<int> pickupIndexSet = calcPickupPopularitySet(displayList, median, pickupCount);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.end,
@@ -1256,17 +1249,11 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                       final int index = entry.key + 1;
                       final OddsModel o = entry.value;
 
-                      // 期待数値スコアを計算する。
-                      // ランクと使用オッズはともに6分前基準で統一する。
-                      // 6分前データがない馬は displayList のオッズにフォールバックする。
+                      // 期待数値スコアを計算する（選択タイミングのオッズに従う）。
                       String upsetScore = '';
-                      final int medianRank = sixMinRankMap[o.num] ?? index;
-                      final double medianDouble = double.tryParse(medianByRank(median, medianRank)) ?? 0;
+                      final double medianDouble = double.tryParse(medianByRank(median, index)) ?? 0;
                       if (medianDouble > 0) {
-                        final double? parsedSixMin = double.tryParse(sixMinOddsMap[o.num] ?? '');
-                        final double oddsVal = (parsedSixMin != null && parsedSixMin > 0)
-                            ? parsedSixMin
-                            : o.odds.toDouble();
+                        final double oddsVal = o.odds.toDouble();
                         if (oddsVal > 0) {
                           upsetScore = (medianDouble / oddsVal).toStringAsFixed(2);
                         }
@@ -1341,89 +1328,101 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
         ),
 
         Padding(
-          padding: const EdgeInsets.only(right: 20),
-          child: GestureDetector(
-            key: _harandoKey,
-            onTap: () {
-              widgetDisplayOverlay(
-                context: context,
-                buttonKey: _harandoKey,
-                displayDuration: const Duration(seconds: 5),
-                child: Container(
-                  width: 300,
-                  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-                  decoration: BoxDecoration(
-                    color: Colors.black87.withValues(alpha: 0.7),
-                    borderRadius: BorderRadius.circular(6),
-                    border: Border.all(color: Colors.white30),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      const DefaultTextStyle(
-                        style: TextStyle(color: Colors.white, fontSize: 11),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: <Widget>[
-                            Text('過去の似たレースと比べて、今のオッズが「お得かどうか」を数値化しています。高いほど割安感あり。'),
-                            Text(''),
-                            Text('出走頭数に応じて上位をピックアップ。'),
-                            Text('8頭以下：4頭 ／ 9〜13頭：5頭 ／ 14頭以上：6頭'),
-                          ],
-                        ),
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: <Widget>[
+              ///////////
+              Text(minTiming, style: const TextStyle(fontSize: 10, color: Colors.white)),
+
+              Text(appParamState.selectedTiming),
+
+              /////////////
+              GestureDetector(
+                key: _harandoKey,
+                onTap: () {
+                  widgetDisplayOverlay(
+                    context: context,
+                    buttonKey: _harandoKey,
+                    displayDuration: const Duration(seconds: 5),
+                    child: Container(
+                      width: 300,
+                      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.black87.withValues(alpha: 0.7),
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(color: Colors.white30),
                       ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          const DefaultTextStyle(
+                            style: TextStyle(color: Colors.white, fontSize: 11),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: <Widget>[
+                                Text('過去の似たレースと比べて、今のオッズが「お得かどうか」を数値化しています。高いほど割安感あり。'),
+                                Text(''),
+                                Text('出走頭数に応じて上位をピックアップ。'),
+                                Text('8頭以下：4頭 ／ 9〜13頭：5頭 ／ 14頭以上：6頭'),
+                              ],
+                            ),
+                          ),
 
-                      if (raceModel != null) ...<Widget>[
-                        const SizedBox(height: 10),
+                          if (raceModel != null) ...<Widget>[
+                            const SizedBox(height: 10),
 
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: <Widget>[
-                            const SizedBox.shrink(),
-                            Padding(
-                              padding: const EdgeInsets.only(right: 20),
-                              child: Material(
-                                color: Colors.transparent,
-                                borderRadius: BorderRadius.circular(10),
-                                child: InkWell(
-                                  onTap: () => OddsFinderDialog(
-                                    context: context,
-                                    widget: SimilarRacesDisplayAlert(raceModel: raceModel),
-                                  ),
-                                  borderRadius: BorderRadius.circular(10),
-                                  splashColor: const Color(0xFFFBB6CE).withValues(alpha: 0.35),
-                                  highlightColor: const Color(0xFFFBB6CE).withValues(alpha: 0.1),
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 10),
-                                    decoration: BoxDecoration(
-                                      border: Border.all(color: const Color(0xFFFBB6CE)),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: <Widget>[
+                                const SizedBox.shrink(),
+                                Padding(
+                                  padding: const EdgeInsets.only(right: 20),
+                                  child: Material(
+                                    color: Colors.transparent,
+                                    borderRadius: BorderRadius.circular(10),
+                                    child: InkWell(
+                                      onTap: () => OddsFinderDialog(
+                                        context: context,
+                                        widget: SimilarRacesDisplayAlert(raceModel: raceModel),
+                                      ),
                                       borderRadius: BorderRadius.circular(10),
-                                    ),
-                                    child: const Text(
-                                      '過去の類似レース',
-                                      style: TextStyle(
-                                        fontSize: 10,
-                                        color: Color(0xFFFBB6CE),
-                                        fontWeight: FontWeight.bold,
+                                      splashColor: const Color(0xFFFBB6CE).withValues(alpha: 0.35),
+                                      highlightColor: const Color(0xFFFBB6CE).withValues(alpha: 0.1),
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 10),
+                                        decoration: BoxDecoration(
+                                          border: Border.all(color: const Color(0xFFFBB6CE)),
+                                          borderRadius: BorderRadius.circular(10),
+                                        ),
+                                        child: const Text(
+                                          '過去の類似レース',
+                                          style: TextStyle(
+                                            fontSize: 10,
+                                            color: Color(0xFFFBB6CE),
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
                                       ),
                                     ),
                                   ),
                                 ),
-                              ),
+                              ],
                             ),
                           ],
-                        ),
-                      ],
 
-                      const SizedBox(height: 20),
-                    ],
-                  ),
-                ),
-              );
-            },
-            child: const Text('期待数値とは？', style: TextStyle(fontSize: 10, color: Colors.white)),
+                          const SizedBox(height: 20),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+                child: const Text('期待数値とは？', style: TextStyle(fontSize: 10, color: Colors.white)),
+              ),
+            ],
           ),
         ),
+
         const SizedBox(height: 3),
       ],
     );
@@ -1594,18 +1593,9 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
 
     final List<int>? pickupNums = median != null ? _calcPickupNums(displayList, median) : null;
 
-    final Map<int, HorseModel> horseModelMap = <int, HorseModel>{
-      for (final HorseModel e in (widget.horseMap[widget.mapKey] ?? <HorseModel>[]).where(
-        (HorseModel e) => e.race == widget.raceNumber,
-      ))
-        e.num: e,
-    };
-
+    final Map<int, HorseModel> horseModelMap = _horseModelMap;
     final Map<int, int> numToRankMap = _numToRankMap;
-
-    final List<OddsModel> allOddsForRace = (widget.oddsMap[widget.mapKey] ?? <OddsModel>[])
-        .where((OddsModel e) => e.race == widget.raceNumber)
-        .toList();
+    final List<OddsModel> allOddsForRace = _oddsForRace;
 
     // 馬番 → 6分前オッズ のマップ。TotalForecastDisplayAlert にも渡す。
     final Map<int, String> sixMinOddsMap = <int, String>{
@@ -1629,6 +1619,12 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
         _buildRaceInfoBar(startTime: startTime, raceName: raceName, course: course, dist: dist),
 
         _buildControlButtons(raceIdx: raceIdx),
+
+        Divider(color: Colors.white.withValues(alpha: 0.5)),
+
+        SizedBox(height: 40, child: _displayRaceMinutesRow()),
+
+        const SizedBox(height: 10),
 
         if (displayList.isNotEmpty && (median != null || raceResultByRank.isNotEmpty)) ...<Widget>[
           Stack(
@@ -1698,6 +1694,8 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
         const SizedBox(height: 5),
 
         if (hasBothTimings) ...<Widget>[
+          const SizedBox(height: 5),
+
           Row(
             children: <Widget>[
               Material(
@@ -1805,11 +1803,9 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
               ),
             ],
           ),
+
+          const SizedBox(height: 5),
         ],
-
-        Divider(color: Colors.white.withValues(alpha: 0.5)),
-
-        SizedBox(height: 40, child: _displayRaceMinutesRow()),
 
         const SizedBox(height: 5),
         Expanded(
