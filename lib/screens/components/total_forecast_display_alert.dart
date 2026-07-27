@@ -223,8 +223,21 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
         ? 5
         : 6;
 
+    // ダイアログは常に6分前基準で表示するため、6分前オッズ順に並び替えたリストを使う。
+    // 6分前データがない馬は displayList の順序で末尾に並ぶ。
+    final List<OddsModel> sixMinSortedList = () {
+      if (widget.sixMinOddsMap == null || widget.sixMinOddsMap!.isEmpty) {
+        return widget.displayList;
+      }
+      return (List<OddsModel>.from(widget.displayList)..sort((OddsModel a, OddsModel b) {
+        final double aOdds = double.tryParse(widget.sixMinOddsMap![a.num] ?? '') ?? double.infinity;
+        final double bOdds = double.tryParse(widget.sixMinOddsMap![b.num] ?? '') ?? double.infinity;
+        return aOdds.compareTo(bOdds);
+      }));
+    }();
+
     final Set<int> pickupPopularitySet = medianModel != null
-        ? calcPickupPopularitySet(widget.displayList, medianModel, pickupCount, sixMinOddsMap: widget.sixMinOddsMap)
+        ? calcPickupPopularitySet(sixMinSortedList, medianModel, pickupCount, sixMinOddsMap: widget.sixMinOddsMap)
         : <int>{};
 
     // 期待数値スコアのランク参照を6分前基準に統一するためのマップ。
@@ -240,7 +253,7 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
             Padding(
               padding: const EdgeInsets.only(top: 20, right: 15, left: 15),
               child: DefaultTextStyle(
-                style: const TextStyle(fontSize: 12),
+                style: const TextStyle(fontSize: 12, color: Colors.white),
                 child: Column(
                   children: <Widget>[
                     Row(
@@ -280,33 +293,50 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
                       Container(
                         padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 12),
 
-                        child: const Row(
+                        child: Column(
                           children: <Widget>[
-                            Expanded(
-                              child: Text(
-                                'オッズ',
-                                style: TextStyle(fontSize: 11, color: Colors.white54, fontWeight: FontWeight.bold),
-                              ),
+                            const Row(
+                              children: <Widget>[
+                                Expanded(
+                                  child: Text(
+                                    'オッズ',
+                                    style: TextStyle(fontSize: 11, color: Colors.white54, fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                                Expanded(
+                                  child: Text(
+                                    '期待数値',
+                                    style: TextStyle(fontSize: 11, color: Colors.white54, fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                                Expanded(
+                                  child: Text(
+                                    'AI判定',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(fontSize: 11, color: Colors.white54, fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                                Expanded(
+                                  child: Text(
+                                    '過去合致',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(fontSize: 11, color: Colors.white54, fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                              ],
                             ),
-                            Expanded(
-                              child: Text(
-                                '期待数値',
-                                style: TextStyle(fontSize: 11, color: Colors.white54, fontWeight: FontWeight.bold),
-                              ),
-                            ),
-                            Expanded(
-                              child: Text(
-                                'AI判定',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(fontSize: 11, color: Colors.white54, fontWeight: FontWeight.bold),
-                              ),
-                            ),
-                            Expanded(
-                              child: Text(
-                                '過去合致',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(fontSize: 11, color: Colors.white54, fontWeight: FontWeight.bold),
-                              ),
+
+                            Row(
+                              children: <Widget>[
+                                SizedBox(width: context.screenSize.width * 0.2),
+
+                                const Expanded(
+                                  child: Text(
+                                    '期待数値は6分前のオッズを使用しています。',
+                                    style: TextStyle(color: Colors.greenAccent, fontSize: 10),
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),
@@ -318,9 +348,9 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
                       Expanded(
                         child: ListView.builder(
                           padding: const EdgeInsets.symmetric(horizontal: 12),
-                          itemCount: widget.displayList.length,
+                          itemCount: sixMinSortedList.length,
                           itemBuilder: (BuildContext context, int index) {
-                            final OddsModel item = widget.displayList[index];
+                            final OddsModel item = sixMinSortedList[index];
                             final int popularity = index + 1;
                             final String horseName = widget.horseModelMap[item.num]?.name ?? '';
                             final int? rank = widget.numToRankMap[item.num];
@@ -426,7 +456,7 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
                                         children: <Widget>[
                                           Expanded(
                                             child: Text(
-                                              item.odds,
+                                              widget.sixMinOddsMap?[item.num] ?? item.odds,
                                               style: const TextStyle(fontSize: 12, color: Colors.white),
                                             ),
                                           ),

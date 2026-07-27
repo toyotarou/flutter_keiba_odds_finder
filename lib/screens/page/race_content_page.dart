@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:fl_chart/fl_chart.dart';
+import 'package:flutter/gestures.dart' show PointerDeviceKind;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -1240,84 +1241,89 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
             const SizedBox(width: 5),
 
             Expanded(
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Padding(
-                  padding: const EdgeInsets.all(8),
-                  child: Row(
-                    children: displayList.asMap().entries.map((MapEntry<int, OddsModel> entry) {
-                      final int index = entry.key + 1;
-                      final OddsModel o = entry.value;
+              child: ScrollConfiguration(
+                behavior: ScrollConfiguration.of(
+                  context,
+                ).copyWith(dragDevices: {PointerDeviceKind.touch, PointerDeviceKind.mouse}),
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Padding(
+                    padding: const EdgeInsets.all(8),
+                    child: Row(
+                      children: displayList.asMap().entries.map((MapEntry<int, OddsModel> entry) {
+                        final int index = entry.key + 1;
+                        final OddsModel o = entry.value;
 
-                      // 期待数値スコアを計算する（選択タイミングのオッズに従う）。
-                      String upsetScore = '';
-                      final double medianDouble = double.tryParse(medianByRank(median, index)) ?? 0;
-                      if (medianDouble > 0) {
-                        final double oddsVal = o.odds.toDouble();
-                        if (oddsVal > 0) {
-                          upsetScore = (medianDouble / oddsVal).toStringAsFixed(2);
+                        // 期待数値スコアを計算する（選択タイミングのオッズに従う）。
+                        String upsetScore = '';
+                        final double medianDouble = double.tryParse(medianByRank(median, index)) ?? 0;
+                        if (medianDouble > 0) {
+                          final double oddsVal = o.odds.toDouble();
+                          if (oddsVal > 0) {
+                            upsetScore = (medianDouble / oddsVal).toStringAsFixed(2);
+                          }
                         }
-                      }
 
-                      return Stack(
-                        clipBehavior: Clip.none,
-                        children: <Widget>[
-                          Container(
-                            width: 70,
-                            margin: const EdgeInsets.symmetric(horizontal: 2),
-                            decoration: BoxDecoration(
-                              color: pickupIndexSet.contains(index)
-                                  ? Colors.yellowAccent.withValues(alpha: 0.2)
-                                  : Colors.white.withValues(alpha: 0.05),
+                        return Stack(
+                          clipBehavior: Clip.none,
+                          children: <Widget>[
+                            Container(
+                              width: 70,
+                              margin: const EdgeInsets.symmetric(horizontal: 2),
+                              decoration: BoxDecoration(
+                                color: pickupIndexSet.contains(index)
+                                    ? Colors.yellowAccent.withValues(alpha: 0.2)
+                                    : Colors.white.withValues(alpha: 0.05),
 
-                              border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+                                border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
 
-                              borderRadius: BorderRadius.circular(3),
-                            ),
-                            child: DefaultTextStyle(
-                              style: const TextStyle(fontSize: 12, color: Colors.white),
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: <Widget>[
-                                  Container(
-                                    decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.3)),
-                                    width: double.infinity,
-                                    alignment: Alignment.center,
-                                    child: Text('$index番人気'),
-                                  ),
-                                  Text('馬番: ${o.num}'),
-                                  const SizedBox(height: 3),
-                                  Text(
-                                    upsetScore,
-                                    style: TextStyle(
-                                      color: Colors.yellowAccent.withValues(alpha: 0.6),
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.bold,
+                                borderRadius: BorderRadius.circular(3),
+                              ),
+                              child: DefaultTextStyle(
+                                style: const TextStyle(fontSize: 12, color: Colors.white),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: <Widget>[
+                                    Container(
+                                      decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.3)),
+                                      width: double.infinity,
+                                      alignment: Alignment.center,
+                                      child: Text('$index番人気'),
                                     ),
-                                  ),
-                                  const SizedBox(height: 3),
-                                ],
-                              ),
-                            ),
-                          ),
-
-                          if (numToRankMap.containsKey(o.num))
-                            Positioned(
-                              right: -3,
-                              bottom: -3,
-                              child: Container(
-                                width: 22,
-                                height: 22,
-                                decoration: BoxDecoration(
-                                  color: raceRankColor(numToRankMap[o.num]),
-                                  shape: BoxShape.circle,
+                                    Text('馬番: ${o.num}'),
+                                    const SizedBox(height: 3),
+                                    Text(
+                                      upsetScore,
+                                      style: TextStyle(
+                                        color: Colors.yellowAccent.withValues(alpha: 0.6),
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 3),
+                                  ],
                                 ),
-                                child: const Icon(Icons.flag, size: 14, color: Colors.white),
                               ),
                             ),
-                        ],
-                      );
-                    }).toList(),
+
+                            if (numToRankMap.containsKey(o.num))
+                              Positioned(
+                                right: -3,
+                                bottom: -3,
+                                child: Container(
+                                  width: 22,
+                                  height: 22,
+                                  decoration: BoxDecoration(
+                                    color: raceRankColor(numToRankMap[o.num]),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(Icons.flag, size: 14, color: Colors.white),
+                                ),
+                              ),
+                          ],
+                        );
+                      }).toList(),
+                    ),
                   ),
                 ),
               ),
@@ -1329,95 +1335,107 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
 
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          child: Stack(
             children: <Widget>[
-              ///////////
-              Text(minTiming, style: const TextStyle(fontSize: 10, color: Colors.white)),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: <Widget>[
+                  if (appParamState.selectedTiming.isNotEmpty ? appParamState.selectedTiming : minTiming
+                      case final String t when t.isNotEmpty) ...<Widget>[
+                    Text('$t分前のデータを表示中', style: const TextStyle(fontSize: 10, color: Colors.white)),
+                  ],
 
-              Text(appParamState.selectedTiming),
+                  const SizedBox.shrink(),
+                ],
+              ),
 
-              /////////////
-              GestureDetector(
-                key: _harandoKey,
-                onTap: () {
-                  widgetDisplayOverlay(
-                    context: context,
-                    buttonKey: _harandoKey,
-                    displayDuration: const Duration(seconds: 5),
-                    child: Container(
-                      width: 300,
-                      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-                      decoration: BoxDecoration(
-                        color: Colors.black87.withValues(alpha: 0.7),
-                        borderRadius: BorderRadius.circular(6),
-                        border: Border.all(color: Colors.white30),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: <Widget>[
-                          const DefaultTextStyle(
-                            style: TextStyle(color: Colors.white, fontSize: 11),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: <Widget>[
-                                Text('過去の似たレースと比べて、今のオッズが「お得かどうか」を数値化しています。高いほど割安感あり。'),
-                                Text(''),
-                                Text('出走頭数に応じて上位をピックアップ。'),
-                                Text('8頭以下：4頭 ／ 9〜13頭：5頭 ／ 14頭以上：6頭'),
-                              ],
-                            ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: <Widget>[
+                  const SizedBox.shrink(),
+
+                  GestureDetector(
+                    key: _harandoKey,
+                    onTap: () {
+                      widgetDisplayOverlay(
+                        context: context,
+                        buttonKey: _harandoKey,
+                        displayDuration: const Duration(seconds: 5),
+                        child: Container(
+                          width: 300,
+                          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                          decoration: BoxDecoration(
+                            color: Colors.black87.withValues(alpha: 0.7),
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(color: Colors.white30),
                           ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: <Widget>[
+                              const DefaultTextStyle(
+                                style: TextStyle(color: Colors.white, fontSize: 11),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: <Widget>[
+                                    Text('過去の似たレースと比べて、今のオッズが「お得かどうか」を数値化しています。高いほど割安感あり。'),
+                                    Text(''),
+                                    Text('出走頭数に応じて上位をピックアップ。'),
+                                    Text('8頭以下：4頭 ／ 9〜13頭：5頭 ／ 14頭以上：6頭'),
+                                  ],
+                                ),
+                              ),
 
-                          if (raceModel != null) ...<Widget>[
-                            const SizedBox(height: 10),
+                              if (raceModel != null) ...<Widget>[
+                                const SizedBox(height: 10),
 
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: <Widget>[
-                                const SizedBox.shrink(),
-                                Padding(
-                                  padding: const EdgeInsets.only(right: 20),
-                                  child: Material(
-                                    color: Colors.transparent,
-                                    borderRadius: BorderRadius.circular(10),
-                                    child: InkWell(
-                                      onTap: () => OddsFinderDialog(
-                                        context: context,
-                                        widget: SimilarRacesDisplayAlert(raceModel: raceModel),
-                                      ),
-                                      borderRadius: BorderRadius.circular(10),
-                                      splashColor: const Color(0xFFFBB6CE).withValues(alpha: 0.35),
-                                      highlightColor: const Color(0xFFFBB6CE).withValues(alpha: 0.1),
-                                      child: Container(
-                                        padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 10),
-                                        decoration: BoxDecoration(
-                                          border: Border.all(color: const Color(0xFFFBB6CE)),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: <Widget>[
+                                    const SizedBox.shrink(),
+                                    Padding(
+                                      padding: const EdgeInsets.only(right: 20),
+                                      child: Material(
+                                        color: Colors.transparent,
+                                        borderRadius: BorderRadius.circular(10),
+                                        child: InkWell(
+                                          onTap: () => OddsFinderDialog(
+                                            context: context,
+                                            widget: SimilarRacesDisplayAlert(raceModel: raceModel),
+                                          ),
                                           borderRadius: BorderRadius.circular(10),
-                                        ),
-                                        child: const Text(
-                                          '過去の類似レース',
-                                          style: TextStyle(
-                                            fontSize: 10,
-                                            color: Color(0xFFFBB6CE),
-                                            fontWeight: FontWeight.bold,
+                                          splashColor: const Color(0xFFFBB6CE).withValues(alpha: 0.35),
+                                          highlightColor: const Color(0xFFFBB6CE).withValues(alpha: 0.1),
+                                          child: Container(
+                                            padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 10),
+                                            decoration: BoxDecoration(
+                                              border: Border.all(color: const Color(0xFFFBB6CE)),
+                                              borderRadius: BorderRadius.circular(10),
+                                            ),
+                                            child: const Text(
+                                              '過去の類似レース',
+                                              style: TextStyle(
+                                                fontSize: 10,
+                                                color: Color(0xFFFBB6CE),
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
                                           ),
                                         ),
                                       ),
                                     ),
-                                  ),
+                                  ],
                                 ),
                               ],
-                            ),
-                          ],
 
-                          const SizedBox(height: 20),
-                        ],
-                      ),
-                    ),
-                  );
-                },
-                child: const Text('期待数値とは？', style: TextStyle(fontSize: 10, color: Colors.white)),
+                              const SizedBox(height: 20),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                    child: const Text('期待数値とは？', style: TextStyle(fontSize: 10, color: Colors.white)),
+                  ),
+                ],
               ),
             ],
           ),
