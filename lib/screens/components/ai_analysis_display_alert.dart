@@ -46,8 +46,6 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
     final String day = kbdParts.length > 2 ? kbdParts[2] : '';
 
     try {
-      /////////////////////////////////////////
-
       final dynamic response = await ref
           .read(httpClientProvider)
           .get(
@@ -58,10 +56,9 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
               'basho': basho,
               'day': day,
               'race': widget.raceNumber.toString(),
+              'gapHorseNums': widget.gapHorseNums.join(','),
             },
           );
-
-      //////////
 
       final Map<String, dynamic> data =
           (response as Map<String, dynamic>)['data'] as Map<String, dynamic>? ?? <String, dynamic>{};

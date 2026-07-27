@@ -168,11 +168,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     final String basho = kbdParts.length > 1 ? kbdParts[1] : '';
     final String day = kbdParts.length > 2 ? kbdParts[2] : '';
     try {
-      //////////
-
-      ////DDD
       final List<int> gapHorseNums = _calcOddsGapHorseNums();
-      print('DDD: $gapHorseNums');
 
       final dynamic response = await ref
           .read(httpClientProvider)
@@ -184,10 +180,9 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
               'basho': basho,
               'day': day,
               'race': race.toString(),
+              'gapHorseNums': gapHorseNums.join(','),
             },
           );
-
-      //////////
 
       final Map<String, dynamic> data =
           (response as Map<String, dynamic>)['data'] as Map<String, dynamic>? ?? <String, dynamic>{};

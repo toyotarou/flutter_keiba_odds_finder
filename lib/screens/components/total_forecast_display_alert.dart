@@ -118,8 +118,6 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
     final String basho = kbdParts.length > 1 ? kbdParts[1] : '';
     final String day = kbdParts.length > 2 ? kbdParts[2] : '';
     try {
-      ////////
-
       final dynamic response = await ref
           .read(httpClientProvider)
           .get(
@@ -130,6 +128,7 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
               'basho': basho,
               'day': day,
               'race': race.toString(),
+              'gapHorseNums': widget.gapHorseNums.join(','),
             },
           );
 
