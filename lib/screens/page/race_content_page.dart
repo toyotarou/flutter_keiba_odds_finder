@@ -168,6 +168,12 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     final String basho = kbdParts.length > 1 ? kbdParts[1] : '';
     final String day = kbdParts.length > 2 ? kbdParts[2] : '';
     try {
+      //////////
+
+      ////DDD
+      final List<int> gapHorseNums = _calcOddsGapHorseNums();
+      print('DDD: $gapHorseNums');
+
       final dynamic response = await ref
           .read(httpClientProvider)
           .get(
@@ -1244,7 +1250,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
               child: ScrollConfiguration(
                 behavior: ScrollConfiguration.of(
                   context,
-                ).copyWith(dragDevices: {PointerDeviceKind.touch, PointerDeviceKind.mouse}),
+                ).copyWith(dragDevices: <PointerDeviceKind>{PointerDeviceKind.touch, PointerDeviceKind.mouse}),
                 child: SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: Padding(
@@ -1447,6 +1453,28 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
   }
 
   ///
+  List<int> _calcOddsGapHorseNums() {
+    final List<OddsModel> sixMinList =
+        _oddsForRace
+            .where((OddsModel e) => e.minutesBeforeStart == kOddsJudgeTiming && (double.tryParse(e.odds) ?? 0) > 0)
+            .toList()
+          ..sort((OddsModel a, OddsModel b) => (double.tryParse(a.odds) ?? 0).compareTo(double.tryParse(b.odds) ?? 0));
+
+    final List<int> gapHorseNums = <int>[];
+    for (int i = 0; i < sixMinList.length - 1; i++) {
+      final double oddsA = double.tryParse(sixMinList[i].odds) ?? 0;
+      final double oddsB = double.tryParse(sixMinList[i + 1].odds) ?? 0;
+      if (oddsA <= 0) {
+        continue;
+      }
+      if (oddsB / oddsA > 2.0) {
+        gapHorseNums.add(sixMinList[i].num);
+      }
+    }
+    return gapHorseNums;
+  }
+
+  ///
   double? _calcOddsDropRatio(List<String>? timeline) {
     if (timeline == null || timeline.isEmpty) {
       return null;
@@ -1609,8 +1637,6 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
 
     final List<OddsModel> displayList = _buildDisplayList();
 
-    final List<int>? pickupNums = median != null ? _calcPickupNums(displayList, median) : null;
-
     final Map<int, HorseModel> horseModelMap = _horseModelMap;
     final Map<int, int> numToRankMap = _numToRankMap;
     final List<OddsModel> allOddsForRace = _oddsForRace;
@@ -1760,10 +1786,14 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                 color: Colors.transparent,
                 borderRadius: BorderRadius.circular(10),
                 child: InkWell(
-                  onTap: () => OddsFinderDialog(
-                    context: context,
-                    widget: AiAnalysisDisplayAlert(raceNumber: widget.raceNumber, pickupNums: pickupNums),
-                  ),
+                  onTap: () {
+                    final List<int> gapHorseNums = _calcOddsGapHorseNums();
+
+                    OddsFinderDialog(
+                      context: context,
+                      widget: AiAnalysisDisplayAlert(raceNumber: widget.raceNumber, gapHorseNums: gapHorseNums),
+                    );
+                  },
 
                   borderRadius: BorderRadius.circular(10),
                   splashColor: const Color(0xFFFFD700).withValues(alpha: 0.35),
@@ -1789,6 +1819,8 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                 borderRadius: BorderRadius.circular(10),
                 child: InkWell(
                   onTap: () {
+                    final List<int> gapHorseNums = _calcOddsGapHorseNums();
+
                     OddsFinderDialog(
                       context: context,
                       widget: TotalForecastDisplayAlert(
@@ -1798,8 +1830,8 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                         raceNumber: widget.raceNumber,
                         raceName: raceName,
                         pickupHorse: _aiPickupHorse,
-                        pickupNums: pickupNums,
                         sixMinOddsMap: sixMinOddsMap,
+                        gapHorseNums: gapHorseNums,
                       ),
                     );
                   },
@@ -1843,28 +1875,6 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
         .toList();
 
     return filtered.isNotEmpty ? filtered.first : null;
-  }
-
-  ///
-  List<int> _calcPickupNums(List<OddsModel> displayList, PopularityRankOddsMedianModel median) {
-    final int pickupCount = displayList.length <= 8
-        ? 4
-        : displayList.length <= 13
-        ? 5
-        : 6;
-    final List<MapEntry<int, double>> scoredEntries = displayList.asMap().entries.map((MapEntry<int, OddsModel> e) {
-      final int idx = e.key + 1;
-      final double oddsVal = e.value.odds.toDouble();
-      double score = 0;
-      if (oddsVal != 0) {
-        final double medianDouble = double.tryParse(medianByRank(median, idx)) ?? 0;
-        if (medianDouble > 0) {
-          score = medianDouble / oddsVal;
-        }
-      }
-      return MapEntry<int, double>(idx, score);
-    }).toList()..sort((MapEntry<int, double> a, MapEntry<int, double> b) => b.value.compareTo(a.value));
-    return scoredEntries.take(pickupCount).map((MapEntry<int, double> e) => displayList[e.key - 1].num).toList();
   }
 }
 
@@ -2274,6 +2284,7 @@ class _OddsTimelineRow extends StatelessWidget {
                         width: double.infinity,
                         height: 50,
                         decoration: BoxDecoration(
+                          /////////
                           border: Border.all(
                             color: hasRatio && ratio >= 2.0
                                 ? const Color(0xFFFBB6CE).withValues(alpha: 0.4)

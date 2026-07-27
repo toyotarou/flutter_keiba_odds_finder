@@ -7,10 +7,10 @@ import '../../data/http/client.dart';
 import '../../data/http/path.dart';
 
 class AiAnalysisDisplayAlert extends ConsumerStatefulWidget {
-  const AiAnalysisDisplayAlert({super.key, required this.raceNumber, this.pickupNums});
+  const AiAnalysisDisplayAlert({super.key, required this.raceNumber, required this.gapHorseNums});
 
   final int raceNumber;
-  final List<int>? pickupNums;
+  final List<int> gapHorseNums;
 
   @override
   ConsumerState<AiAnalysisDisplayAlert> createState() => _AiAnalysisDisplayAlertState();
@@ -46,7 +46,7 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
     final String day = kbdParts.length > 2 ? kbdParts[2] : '';
 
     try {
-      ////////////////
+      /////////////////////////////////////////
 
       final dynamic response = await ref
           .read(httpClientProvider)

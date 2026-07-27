@@ -20,8 +20,8 @@ class TotalForecastDisplayAlert extends ConsumerStatefulWidget {
     required this.raceNumber,
     required this.raceName,
     this.pickupHorse = '',
-    this.pickupNums,
     this.sixMinOddsMap,
+    required this.gapHorseNums,
   });
 
   final List<OddsModel> displayList;
@@ -30,9 +30,9 @@ class TotalForecastDisplayAlert extends ConsumerStatefulWidget {
   final int raceNumber;
   final String raceName;
   final String pickupHorse;
-  final List<int>? pickupNums;
-
   final Map<int, String>? sixMinOddsMap;
+
+  final List<int> gapHorseNums;
 
   @override
   ConsumerState<TotalForecastDisplayAlert> createState() => _TotalForecastDisplayAlertState();
@@ -118,6 +118,8 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
     final String basho = kbdParts.length > 1 ? kbdParts[1] : '';
     final String day = kbdParts.length > 2 ? kbdParts[2] : '';
     try {
+      ////////
+
       final dynamic response = await ref
           .read(httpClientProvider)
           .get(
