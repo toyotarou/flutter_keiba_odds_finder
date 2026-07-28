@@ -1698,11 +1698,19 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     final Map<int, int> numToRankMap = _numToRankMap;
     final List<OddsModel> allOddsForRace = _oddsForRace;
 
-    // 馬番 → 6分前オッズ のマップ。TotalForecastDisplayAlert にも渡す。
-    final Map<int, String> sixMinOddsMap = <int, String>{
-      for (final OddsModel o in allOddsForRace.where((OddsModel e) => e.minutesBeforeStart == kOddsJudgeTiming))
-        o.num: o.odds,
-    };
+    // 6分前オッズのリスト（オッズ昇順）。TotalForecastDisplayAlert に渡す。
+    // 6分前データがない場合は現在オッズのリストで代替する。
+    final List<OddsModel> sixMinDisplayList = () {
+      final List<OddsModel> list = allOddsForRace
+          .where((OddsModel e) => e.minutesBeforeStart == kOddsJudgeTiming)
+          .toList()
+        ..sort((OddsModel a, OddsModel b) {
+          final double aOdds = double.tryParse(a.odds) ?? double.infinity;
+          final double bOdds = double.tryParse(b.odds) ?? double.infinity;
+          return aOdds.compareTo(bOdds);
+        });
+      return list.isNotEmpty ? list : displayList;
+    }();
 
     final bool hasBothTimings =
         allOddsForRace.any((OddsModel e) => e.minutesBeforeStart == kOddsTimingFirst) &&
@@ -1889,13 +1897,12 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                     OddsFinderDialog(
                       context: context,
                       widget: TotalForecastDisplayAlert(
-                        displayList: displayList,
+                        displayList: sixMinDisplayList,
                         horseModelMap: horseModelMap,
                         numToRankMap: numToRankMap,
                         raceNumber: widget.raceNumber,
                         raceName: raceName,
                         pickupHorse: _aiPickupHorse,
-                        sixMinOddsMap: sixMinOddsMap,
                         gapHorseNums: gapHorseNums,
                         upsetPickupHorseNums: upsetPickupHorseNums,
                       ),
