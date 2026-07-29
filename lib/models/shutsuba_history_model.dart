@@ -73,7 +73,7 @@ class ShutsubaHistoryModel {
       case '障':
         return '障害';
       default:
-        return abbr; // "芝" はそのまま
+        return abbr.replaceAll('ダ', 'ダート');
     }
   }
 

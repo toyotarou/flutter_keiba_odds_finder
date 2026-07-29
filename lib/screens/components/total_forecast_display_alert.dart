@@ -4,10 +4,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../controllers/controllers_mixin.dart';
 import '../../data/http/client.dart';
 import '../../data/http/path.dart';
+import '../../extensions/extensions.dart';
 import '../../models/horse_model.dart';
 import '../../models/odds_model.dart';
 import '../../models/popularity_rank_odds_median_model.dart';
 import '../../models/race_analysis_model.dart';
+import '../../models/race_model.dart';
+import '../../models/shutsuba_history_model.dart';
 import '../../utility/functions.dart';
 import '../parts/dashed_line_painter.dart';
 
@@ -17,8 +20,7 @@ class TotalForecastDisplayAlert extends ConsumerStatefulWidget {
     required this.displayList,
     required this.horseModelMap,
     required this.numToRankMap,
-    required this.raceNumber,
-    required this.raceName,
+    required this.currentRaceModel,
     this.pickupHorse = '',
     required this.gapHorseNums,
     required this.upsetPickupHorseNums,
@@ -28,8 +30,7 @@ class TotalForecastDisplayAlert extends ConsumerStatefulWidget {
   final List<OddsModel> displayList;
   final Map<int, HorseModel> horseModelMap;
   final Map<int, int> numToRankMap;
-  final int raceNumber;
-  final String raceName;
+  final RaceModel currentRaceModel;
   final String pickupHorse;
   final List<int> gapHorseNums;
   final List<int> upsetPickupHorseNums;
@@ -44,9 +45,23 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
   Set<int> _highProbabilityPopularities = <int>{};
   Set<int> _aiPickupNums = <int>{};
   Map<int, String> _aiPickupScores = <int, String>{};
+  Map<int, List<ShutsubaHistoryModel>> _shutsubaHistoryMap = <int, List<ShutsubaHistoryModel>>{};
 
   static const double _w0 = 60;
   static const double _w1 = 40;
+
+  static Widget get _dashedDivider => SizedBox(
+    width: double.infinity,
+    height: 5,
+    child: CustomPaint(
+      painter: DashedLinePainter(
+        color: Colors.white.withValues(alpha: 0.8),
+        strokeWidth: 1,
+        dashWidth: 1,
+        dashSpace: 10,
+      ),
+    ),
+  );
 
   ///
   ({String kaisuu, String basho, String day}) get _kbdParts {
@@ -67,16 +82,51 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
 
   ///
   Future<void> _fetchAll() async {
-    await Future.wait(<Future<void>>[_fetchHighProbabilityHorses(), _fetchAiPickup()]);
+    await Future.wait(<Future<void>>[_fetchHighProbabilityHorses(), _fetchAiPickup(), _fetchShutsubaHistory()]);
     if (mounted) {
       setState(() => _isLoading = false);
     }
   }
 
   ///
+  Future<void> _fetchShutsubaHistory() async {
+    final List<String> names = widget.horseModelMap.values
+        .map((HorseModel h) => h.name)
+        .where((String n) => n.isNotEmpty)
+        .toList();
+    if (names.isEmpty) {
+      return;
+    }
+    try {
+      final dynamic response = await ref
+          .read(httpClientProvider)
+          .get(
+            path: APIPath.getHorseOddsFinderShutsubaHistory,
+            queryParameters: <String, dynamic>{'names': names.join('/')},
+          );
+      final List<dynamic> dataList = (response as Map<String, dynamic>)['data'] as List<dynamic>? ?? <dynamic>[];
+      final Map<String, List<ShutsubaHistoryModel>> byName = <String, List<ShutsubaHistoryModel>>{};
+      for (final dynamic item in dataList) {
+        final ShutsubaHistoryModel m = ShutsubaHistoryModel.fromJson(item as Map<String, dynamic>);
+        byName.putIfAbsent(m.name, () => <ShutsubaHistoryModel>[]).add(m);
+      }
+      final Map<int, List<ShutsubaHistoryModel>> result = <int, List<ShutsubaHistoryModel>>{};
+      for (final MapEntry<int, HorseModel> entry in widget.horseModelMap.entries) {
+        final List<ShutsubaHistoryModel>? list = byName[entry.value.name];
+        if (list != null) {
+          result[entry.key] = list;
+        }
+      }
+      _shutsubaHistoryMap = result;
+    } catch (e) {
+      debugPrint('[TotalForecast] _fetchShutsubaHistory error: $e');
+    }
+  }
+
+  ///
   Future<void> _fetchHighProbabilityHorses() async {
     final String date = appParamState.selectedScheduleDate;
-    final int race = widget.raceNumber;
+    final int race = widget.currentRaceModel.race;
     final (:String kaisuu, :String basho, :String day) = _kbdParts;
     try {
       final dynamic response = await ref
@@ -118,7 +168,7 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
     }
 
     final String date = appParamState.selectedScheduleDate;
-    final int race = widget.raceNumber;
+    final int race = widget.currentRaceModel.race;
     final (:String kaisuu, :String basho, :String day) = _kbdParts;
     try {
       final dynamic response = await ref
@@ -213,7 +263,7 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
       final List<PopularityRankOddsMedianModel> list =
           appParamState.keepPopularityRankOddsMedianMap[mapKey] ?? <PopularityRankOddsMedianModel>[];
       final List<PopularityRankOddsMedianModel> filtered = list
-          .where((PopularityRankOddsMedianModel e) => e.race == widget.raceNumber)
+          .where((PopularityRankOddsMedianModel e) => e.race == widget.currentRaceModel.race)
           .toList();
       return filtered.isNotEmpty ? filtered.first : null;
     }();
@@ -246,7 +296,7 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
                       style: const TextStyle(fontSize: 12, color: Colors.white),
                       child: Column(
                         children: <Widget>[
-                          _buildColumnHeader(context),
+                          _buildColumnHeader(),
                           Divider(color: Colors.white.withValues(alpha: 0.5), thickness: 2),
                           Expanded(
                             child: ListView.builder(
@@ -292,6 +342,7 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
       child: DefaultTextStyle(
         style: const TextStyle(fontSize: 12, color: Colors.white),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -302,11 +353,13 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
             ),
             Row(
               children: <Widget>[
-                Text('R${widget.raceNumber}'),
+                Text('R${widget.currentRaceModel.race}'),
                 const SizedBox(width: 10),
-                Expanded(child: Text(widget.raceName, overflow: TextOverflow.ellipsis, maxLines: 1)),
+                Expanded(child: Text(widget.currentRaceModel.raceName, overflow: TextOverflow.ellipsis, maxLines: 1)),
               ],
             ),
+
+            Text('${widget.currentRaceModel.course} ${widget.currentRaceModel.dist}m'),
           ],
         ),
       ),
@@ -314,7 +367,7 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
   }
 
   ///
-  Widget _buildColumnHeader(BuildContext context) {
+  Widget _buildColumnHeader() {
     return const Padding(
       padding: EdgeInsets.symmetric(vertical: 5, horizontal: 12),
       child: Column(
@@ -394,18 +447,7 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
     final Widget column = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        SizedBox(
-          width: double.infinity,
-          height: 5,
-          child: CustomPaint(
-            painter: DashedLinePainter(
-              color: Colors.white.withValues(alpha: 0.8),
-              strokeWidth: 1,
-              dashWidth: 1,
-              dashSpace: 10,
-            ),
-          ),
-        ),
+        _dashedDivider,
 
         Padding(
           padding: const EdgeInsets.only(top: 6),
@@ -447,7 +489,7 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
                           Row(
                             children: <Widget>[
                               Expanded(
-                                child: Container(
+                                child: Align(
                                   alignment: Alignment.centerRight,
                                   child: Text(
                                     'ポイント評価(100点中):',
@@ -519,29 +561,27 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
           ),
         ],
 
-        SizedBox(
-          width: double.infinity,
-          height: 5,
-          child: CustomPaint(
-            painter: DashedLinePainter(
-              color: Colors.white.withValues(alpha: 0.8),
-              strokeWidth: 1,
-              dashWidth: 1,
-              dashSpace: 10,
-            ),
-          ),
-        ),
+        const SizedBox(height: 5),
+
+        _buildCourseExperience(item.num),
+
+        _dashedDivider,
 
         if (faultRatio.isNotEmpty) ...<Widget>[
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 10),
-            child: Text(
-              '$faultRatio（オッズ断層）',
-              style: TextStyle(
-                fontSize: 11,
-                color: (double.tryParse(faultRatio) ?? 0) > 2.0 ? const Color(0xFFFBB6CE) : Colors.grey,
-                fontWeight: (double.tryParse(faultRatio) ?? 0) > 2.0 ? FontWeight.bold : FontWeight.normal,
-              ),
+            child: Builder(
+              builder: (BuildContext context) {
+                final bool isLarge = (double.tryParse(faultRatio) ?? 0) > 2.0;
+                return Text(
+                  '$faultRatio（オッズ断層）',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: isLarge ? const Color(0xFFFBB6CE) : Colors.grey,
+                    fontWeight: isLarge ? FontWeight.bold : FontWeight.normal,
+                  ),
+                );
+              },
             ),
           ),
         ],
@@ -618,6 +658,64 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
           style: TextStyle(fontSize: 9, color: Colors.yellowAccent, fontWeight: FontWeight.bold),
         ),
       ),
+    );
+  }
+
+  ///
+  Widget _buildCourseExperience(int horseNum) {
+    final List<ShutsubaHistoryModel> history = _shutsubaHistoryMap[horseNum] ?? <ShutsubaHistoryModel>[];
+    Color bashoColor = Colors.transparent;
+    Color courseColor = Colors.transparent;
+    Color distColor = Colors.transparent;
+
+    for (final ShutsubaHistoryModel e in history) {
+      if (e.basho == widget.currentRaceModel.bashoName) {
+        bashoColor = Colors.yellowAccent;
+      }
+      if (e.course == widget.currentRaceModel.course) {
+        courseColor = Colors.yellowAccent;
+      }
+      if (e.dist == widget.currentRaceModel.dist) {
+        distColor = Colors.yellowAccent;
+      }
+    }
+
+    return Row(
+      children: <Widget>[
+        const Expanded(
+          child: Align(
+            alignment: Alignment.topRight,
+            child: Text('コース経験', style: TextStyle(fontSize: 10)),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Row(
+          children: <Widget>[
+            _courseChip(widget.currentRaceModel.bashoName, bashoColor),
+            const SizedBox(width: 4),
+            _courseChip(widget.currentRaceModel.course, courseColor),
+            const SizedBox(width: 4),
+            _courseChip('${widget.currentRaceModel.dist} m', distColor),
+          ],
+        ),
+      ],
+    );
+  }
+
+  ///
+  Widget _courseChip(String label, Color highlightColor) {
+    return Container(
+      decoration: BoxDecoration(
+        color: highlightColor.withValues(alpha: 0.2),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
+        borderRadius: BorderRadius.circular(3),
+      ),
+      margin: const EdgeInsets.all(3),
+      padding: const EdgeInsets.symmetric(vertical: 3, horizontal: 5),
+      alignment: Alignment.center,
+      width: context.screenSize.width * 0.15,
+      height: 20,
+      child: Text(label, style: const TextStyle(fontSize: 10)),
     );
   }
 }

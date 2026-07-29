@@ -1701,14 +1701,13 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     // 6分前オッズのリスト（オッズ昇順）。TotalForecastDisplayAlert に渡す。
     // 6分前データがない場合は現在オッズのリストで代替する。
     final List<OddsModel> sixMinDisplayList = () {
-      final List<OddsModel> list = allOddsForRace
-          .where((OddsModel e) => e.minutesBeforeStart == kOddsJudgeTiming)
-          .toList()
-        ..sort((OddsModel a, OddsModel b) {
-          final double aOdds = double.tryParse(a.odds) ?? double.infinity;
-          final double bOdds = double.tryParse(b.odds) ?? double.infinity;
-          return aOdds.compareTo(bOdds);
-        });
+      final List<OddsModel> list =
+          allOddsForRace.where((OddsModel e) => e.minutesBeforeStart == kOddsJudgeTiming).toList()
+            ..sort((OddsModel a, OddsModel b) {
+              final double aOdds = double.tryParse(a.odds) ?? double.infinity;
+              final double bOdds = double.tryParse(b.odds) ?? double.infinity;
+              return aOdds.compareTo(bOdds);
+            });
       return list.isNotEmpty ? list : displayList;
     }();
 
@@ -1900,8 +1899,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                         displayList: sixMinDisplayList,
                         horseModelMap: horseModelMap,
                         numToRankMap: numToRankMap,
-                        raceNumber: widget.raceNumber,
-                        raceName: raceName,
+                        currentRaceModel: currentRaceModel!,
                         pickupHorse: _aiPickupHorse,
                         gapHorseNums: gapHorseNums,
                         upsetPickupHorseNums: upsetPickupHorseNums,
