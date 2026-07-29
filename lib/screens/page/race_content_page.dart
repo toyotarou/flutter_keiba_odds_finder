@@ -1054,7 +1054,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
           if (popularity == 6) ...<Widget>[
             const SizedBox(height: 10),
 
-            SizedBox(
+            const SizedBox(
               width: double.infinity,
               height: 5,
               child: CustomPaint(painter: DashedLinePainter()),

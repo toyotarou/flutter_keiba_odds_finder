@@ -18,6 +18,7 @@ import '../models/push_notifier_user_model.dart';
 import '../models/race_model.dart';
 import '../models/race_result_model.dart';
 import '../models/schedule_model.dart';
+import '../models/score_model.dart';
 import '../models/summary_model.dart';
 import 'components/admin_menu_alert.dart';
 import 'components/history_race_record_display_alert.dart';
@@ -64,6 +65,8 @@ class HomeScreen extends ConsumerStatefulWidget {
     required this.onLogout,
     required this.pushNotifierUserList,
     required this.popularityRankOddsMedianMap,
+    required this.horseScoreMap,
+    required this.jockeyScoreMap,
   });
 
   final Map<String, List<ScheduleModel>> scheduleDateBashoMap;
@@ -89,6 +92,9 @@ class HomeScreen extends ConsumerStatefulWidget {
   final Map<String, LoginUserModel> loginUserMap;
   final List<PushNotifierUserModel> pushNotifierUserList;
   final Map<String, List<PopularityRankOddsMedianModel>> popularityRankOddsMedianMap;
+
+  final Map<String, ScoreModel> horseScoreMap;
+  final Map<String, ScoreModel> jockeyScoreMap;
 
   final String loggedInUserId;
   final VoidCallback onLogout;
@@ -130,6 +136,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
     pushNotifierUserNotifier.getAllPushNotifierUserData();
     popularityRankOddsMedianNotifier.getAllPopularityRankOddsMedianData();
     horseBestWeightNotifier.getAllHorseBestWeightData();
+
+    horseScoreNotifier.getAllHorseScoreData();
+    jockeyScoreNotifier.getAllJockeyScoreData();
 
     WidgetsBinding.instance.addPostFrameCallback((_) => _syncAppParam());
     if (widget.isRankingDialogOpen) {
@@ -231,6 +240,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
     appParamNotifier.setKeepLoginUserMap(map: widget.loginUserMap);
     appParamNotifier.setKeepPushNotifierUserList(list: widget.pushNotifierUserList);
     appParamNotifier.setKeepPopularityRankOddsMedianMap(map: widget.popularityRankOddsMedianMap);
+
+    appParamNotifier.setKeepHorseScoreMap(map: widget.horseScoreMap);
+    appParamNotifier.setKeepJockeyScoreMap(map: widget.jockeyScoreMap);
   }
 
   ///

@@ -9,6 +9,7 @@ import '../../models/odds_model.dart';
 import '../../models/popularity_rank_odds_median_model.dart';
 import '../../models/race_analysis_model.dart';
 import '../../utility/functions.dart';
+import '../parts/dashed_line_painter.dart';
 
 class TotalForecastDisplayAlert extends ConsumerStatefulWidget {
   const TotalForecastDisplayAlert({
@@ -388,9 +389,24 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
       }
     }
 
+    final String jockeyName = widget.horseModelMap[item.num]?.jockey ?? '';
+
     final Widget column = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
+        SizedBox(
+          width: double.infinity,
+          height: 5,
+          child: CustomPaint(
+            painter: DashedLinePainter(
+              color: Colors.white.withValues(alpha: 0.8),
+              strokeWidth: 1,
+              dashWidth: 1,
+              dashSpace: 10,
+            ),
+          ),
+        ),
+
         Padding(
           padding: const EdgeInsets.only(top: 6),
           child: Row(
@@ -414,6 +430,7 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
             ],
           ),
         ),
+
         Padding(
           padding: const EdgeInsets.only(top: 2, bottom: 6),
           child: Row(
@@ -436,7 +453,23 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
             ],
           ),
         ),
-        if (faultRatio.isNotEmpty)
+
+        Text(jockeyName),
+
+        SizedBox(
+          width: double.infinity,
+          height: 5,
+          child: CustomPaint(
+            painter: DashedLinePainter(
+              color: Colors.white.withValues(alpha: 0.8),
+              strokeWidth: 1,
+              dashWidth: 1,
+              dashSpace: 10,
+            ),
+          ),
+        ),
+
+        if (faultRatio.isNotEmpty) ...<Widget>[
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 10),
             child: Text(
@@ -448,6 +481,7 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
               ),
             ),
           ),
+        ],
       ],
     );
 

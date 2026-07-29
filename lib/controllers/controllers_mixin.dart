@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'app_param/app_param.dart';
 import 'horse/horse.dart';
 import 'horse_best_weight/horse_best_weight.dart';
+import 'horse_score/horse_score.dart';
+import 'jockey_score/jockey_score.dart';
 import 'laravel_config/laravel_config.dart';
 import 'login_user/login_user.dart';
 
@@ -127,6 +129,21 @@ mixin ControllersMixin<T extends ConsumerStatefulWidget> on ConsumerState<T> {
   HorseBestWeightState get horseBestWeightState => ref.watch(horseBestWeightProvider);
 
   HorseBestWeight get horseBestWeightNotifier => ref.read(horseBestWeightProvider.notifier);
+
+  //==========================================//
+
+  //==========================================//
+  HorseScoreState get horseScoreState => ref.watch(horseScoreProvider);
+
+  HorseScore get horseScoreNotifier => ref.read(horseScoreProvider.notifier);
+
+  //==========================================//
+
+  //==========================================//
+
+  JockeyScoreState get jockeyScoreState => ref.watch(jockeyScoreProvider);
+
+  JockeyScore get jockeyScoreNotifier => ref.read(jockeyScoreProvider.notifier);
 
   //==========================================//
 }

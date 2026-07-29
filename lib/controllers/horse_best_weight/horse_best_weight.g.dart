@@ -6,7 +6,7 @@ part of 'horse_best_weight.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$horseBestWeightHash() => r'3645925fca1163e95405fb6dc3f91c527fd51272';
+String _$horseBestWeightHash() => r'1774fc1bbe52118c53c622099765489305be2d99';
 
 /// See also [HorseBestWeight].
 @ProviderFor(HorseBestWeight)
