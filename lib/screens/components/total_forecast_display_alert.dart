@@ -409,23 +409,60 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
 
         Padding(
           padding: const EdgeInsets.only(top: 6),
-          child: Row(
+          child: Stack(
             children: <Widget>[
-              SizedBox(
-                width: _w0,
-                child: Text('$popularity番人気', style: const TextStyle(fontSize: 11, color: Colors.white)),
-              ),
-              SizedBox(
-                width: _w1,
-                child: Text('${item.num}番', style: const TextStyle(fontSize: 11, color: Colors.white)),
-              ),
-              Expanded(
-                child: Text(
-                  horseName,
-                  style: const TextStyle(fontSize: 12, color: Colors.white),
-                  overflow: TextOverflow.ellipsis,
-                  maxLines: 1,
+              if (appParamState.keepHorseScoreMap[horseName] != null) ...<Widget>[
+                Positioned(
+                  right: 30,
+                  child: Text(
+                    appParamState.keepHorseScoreMap[horseName]!.score.toString(),
+                    style: TextStyle(fontSize: 24, color: Colors.orangeAccent.withValues(alpha: 0.6)),
+                  ),
                 ),
+              ],
+
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  SizedBox(
+                    width: _w0,
+                    child: Text('$popularity番人気', style: const TextStyle(fontSize: 11, color: Colors.white)),
+                  ),
+                  SizedBox(
+                    width: _w1,
+                    child: Text('${item.num}番', style: const TextStyle(fontSize: 11, color: Colors.white)),
+                  ),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        Text(
+                          horseName,
+                          style: const TextStyle(fontSize: 12, color: Colors.white),
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                        ),
+
+                        if (appParamState.keepHorseScoreMap[horseName] != null) ...<Widget>[
+                          Row(
+                            children: <Widget>[
+                              Expanded(
+                                child: Container(
+                                  alignment: Alignment.centerRight,
+                                  child: Text(
+                                    'ポイント評価(100点中):',
+                                    style: TextStyle(fontSize: 10, color: Colors.orangeAccent.withValues(alpha: 0.8)),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 60),
+                            ],
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -454,7 +491,33 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
           ),
         ),
 
-        Text(jockeyName),
+        if (appParamState.keepJockeyScoreMap[jockeyName] != null) ...<Widget>[
+          Row(
+            children: <Widget>[
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: <Widget>[
+                    Text('ジョッキー名: $jockeyName', style: const TextStyle(fontSize: 10, color: Colors.white)),
+
+                    Text(
+                      'ポイント評価(100点中):',
+                      style: TextStyle(fontSize: 10, color: Colors.orangeAccent.withValues(alpha: 0.8)),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(width: 10),
+
+              Text(
+                appParamState.keepJockeyScoreMap[jockeyName]!.score.toString(),
+
+                style: TextStyle(fontSize: 24, color: Colors.orangeAccent.withValues(alpha: 0.6)),
+              ),
+            ],
+          ),
+        ],
 
         SizedBox(
           width: double.infinity,
