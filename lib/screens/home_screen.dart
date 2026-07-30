@@ -541,7 +541,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
 
                                   _scaffoldKey.currentState!.openDrawer();
                                 },
-                                child: const Icon(Icons.list, color: Colors.white),
+                                child: const Icon(Icons.list, color: Colors.greenAccent),
                               ),
 
                               const SizedBox(width: 10),

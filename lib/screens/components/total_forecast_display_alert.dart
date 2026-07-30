@@ -710,15 +710,22 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
     Color courseColor = Colors.transparent;
     Color distColor = Colors.transparent;
 
-    for (final RaceResultHistoryModel e in history) {
-      if (e.basho == widget.currentRaceModel.bashoName) {
-        bashoColor = Colors.yellowAccent;
-      }
-      if (e.course == widget.currentRaceModel.course) {
+    // 第一関門：場所
+    final List<RaceResultHistoryModel> bashoMatched = history
+        .where((RaceResultHistoryModel e) => e.basho == widget.currentRaceModel.bashoName)
+        .toList();
+    if (bashoMatched.isNotEmpty) {
+      bashoColor = Colors.yellowAccent;
+      // 第二関門：コース（場所を通過したものの中から）
+      final List<RaceResultHistoryModel> courseMatched = bashoMatched
+          .where((RaceResultHistoryModel e) => e.course == widget.currentRaceModel.course)
+          .toList();
+      if (courseMatched.isNotEmpty) {
         courseColor = Colors.yellowAccent;
-      }
-      if (e.dist == widget.currentRaceModel.dist) {
-        distColor = Colors.yellowAccent;
+        // 第三関門：距離（コースを通過したものの中から）
+        if (courseMatched.any((RaceResultHistoryModel e) => e.dist == widget.currentRaceModel.dist)) {
+          distColor = Colors.yellowAccent;
+        }
       }
     }
 
@@ -826,9 +833,9 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
         borderRadius: BorderRadius.circular(3),
       ),
       margin: const EdgeInsets.symmetric(vertical: 3, horizontal: 1),
-      padding: const EdgeInsets.symmetric(vertical: 3, horizontal: 5),
+      padding: const EdgeInsets.symmetric(vertical: 3),
       alignment: Alignment.center,
-      width: context.screenSize.width / 6,
+      width: context.screenSize.width / 7,
       height: 20,
       child: Text(label, style: const TextStyle(fontSize: 10)),
     );
