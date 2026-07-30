@@ -469,30 +469,38 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
                       ),
                     ],
 
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    Column(
                       children: <Widget>[
-                        SizedBox(
-                          width: _w0,
-                          child: Text('$popularity番人気', style: const TextStyle(fontSize: 11, color: Colors.white)),
-                        ),
-                        SizedBox(
-                          width: _w1,
-                          child: Text('${item.num}番', style: const TextStyle(fontSize: 11, color: Colors.white)),
-                        ),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: <Widget>[
-                              Text(
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: <Widget>[
+                            SizedBox(
+                              width: _w0,
+                              child: Text('$popularity番人気', style: const TextStyle(fontSize: 11, color: Colors.white)),
+                            ),
+                            SizedBox(
+                              width: _w1,
+                              child: Text('${item.num}番', style: const TextStyle(fontSize: 11, color: Colors.white)),
+                            ),
+                            Expanded(
+                              child: Text(
                                 horseName,
                                 style: const TextStyle(fontSize: 12, color: Colors.white),
                                 overflow: TextOverflow.ellipsis,
                                 maxLines: 1,
                               ),
+                            ),
+                          ],
+                        ),
 
-                              if (appParamState.keepHorseScoreMap[horseName] != null) ...<Widget>[
-                                Row(
+                        if (appParamState.keepHorseScoreMap[horseName] != null) ...<Widget>[
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: <Widget>[
+                              const SizedBox.shrink(),
+
+                              Expanded(
+                                child: Row(
                                   children: <Widget>[
                                     Expanded(
                                       child: Align(
@@ -509,10 +517,10 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
                                     const SizedBox(width: 60),
                                   ],
                                 ),
-                              ],
+                              ),
                             ],
                           ),
-                        ),
+                        ],
                       ],
                     ),
                   ],

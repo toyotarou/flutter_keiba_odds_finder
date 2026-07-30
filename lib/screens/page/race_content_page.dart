@@ -19,8 +19,8 @@ import '../../models/odds_model.dart';
 import '../../models/popularity_rank_odds_median_model.dart';
 import '../../models/race_analysis_model.dart';
 import '../../models/race_model.dart';
+import '../../models/race_result_history_model.dart';
 import '../../models/race_result_model.dart';
-import '../../models/shutsuba_history_model.dart';
 import '../../utility/functions.dart';
 import '../../utility/utility.dart';
 import '../components/ai_analysis_display_alert.dart';
@@ -100,7 +100,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
   Set<int> _aiPickupNums = <int>{};
   Map<int, String> _aiPickupScores = <int, String>{};
   String _aiPickupHorse = '';
-  Map<String, List<ShutsubaHistoryModel>> _shutsubaHistoryMap = <String, List<ShutsubaHistoryModel>>{};
+  Map<String, List<RaceResultHistoryModel>> _battleRecordMap = <String, List<RaceResultHistoryModel>>{};
 
   // 初回訪問時にmedianなし&期待数値タブ選択状態でパネルを自動クローズしたかどうか
   bool _autoClosedPanel = false;
@@ -145,7 +145,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         _fetchAiPickup();
-        _fetchShutsubaHistory();
+        _fetchHorseBattleRecords();
       }
     });
   }
@@ -208,7 +208,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
   }
 
   ///
-  Future<void> _fetchShutsubaHistory() async {
+  Future<void> _fetchHorseBattleRecords() async {
     final List<HorseModel> horses = (widget.horseMap[widget.mapKey] ?? <HorseModel>[])
         .where((HorseModel h) => h.race == widget.raceNumber)
         .toList();
@@ -219,15 +219,15 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     try {
       final dynamic response = await ref
           .read(httpClientProvider)
-          .get(path: APIPath.getHorseOddsFinderShutsubaHistory, queryParameters: <String, dynamic>{'names': names});
+          .get(path: APIPath.getHorseOddsFinderHorseBattleRecord, queryParameters: <String, dynamic>{'name': names});
       final List<dynamic> dataList = (response as Map<String, dynamic>)['data'] as List<dynamic>? ?? <dynamic>[];
-      final Map<String, List<ShutsubaHistoryModel>> map = <String, List<ShutsubaHistoryModel>>{};
+      final Map<String, List<RaceResultHistoryModel>> map = <String, List<RaceResultHistoryModel>>{};
       for (final dynamic item in dataList) {
-        final ShutsubaHistoryModel model = ShutsubaHistoryModel.fromJson(item as Map<String, dynamic>);
-        map.putIfAbsent(model.name, () => <ShutsubaHistoryModel>[]).add(model);
+        final RaceResultHistoryModel model = RaceResultHistoryModel.fromJson(item as Map<String, dynamic>);
+        map.putIfAbsent(model.name, () => <RaceResultHistoryModel>[]).add(model);
       }
       if (mounted) {
-        setState(() => _shutsubaHistoryMap = map);
+        setState(() => _battleRecordMap = map);
       }
     } catch (_) {}
   }
@@ -989,8 +989,8 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
 
                           children: <Widget>[
                             //////////////////////
-                            _ShutsubaHistorySection(
-                              historyList: horse != null ? _shutsubaHistoryMap[horse.name] : null,
+                            _BattleRecordSection(
+                              historyList: horse != null ? _battleRecordMap[horse.name] : null,
                               course: course,
                               dist: dist,
                             ),
@@ -1953,10 +1953,10 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
 // Page-private widgets
 // ---------------------------------------------------------------------------
 
-class _ShutsubaHistorySection extends StatelessWidget {
-  const _ShutsubaHistorySection({required this.historyList, required this.course, required this.dist});
+class _BattleRecordSection extends StatelessWidget {
+  const _BattleRecordSection({required this.historyList, required this.course, required this.dist});
 
-  final List<ShutsubaHistoryModel>? historyList;
+  final List<RaceResultHistoryModel>? historyList;
   final String course;
   final int dist;
 
@@ -1966,11 +1966,11 @@ class _ShutsubaHistorySection extends StatelessWidget {
       return const Text('過去の出走はありません。', style: TextStyle(fontSize: 9, color: Colors.yellowAccent));
     }
 
-    final List<ShutsubaHistoryModel> sorted = historyList!.toList()
-      ..sort((ShutsubaHistoryModel a, ShutsubaHistoryModel b) => b.date.compareTo(a.date));
-    final List<ShutsubaHistoryModel> recent = sorted.take(4).toList();
+    final List<RaceResultHistoryModel> sorted = historyList!.toList()
+      ..sort((RaceResultHistoryModel a, RaceResultHistoryModel b) => b.date.compareTo(a.date));
+    final List<RaceResultHistoryModel> recent = sorted.take(4).toList();
 
-    final int plottable = recent.where((ShutsubaHistoryModel h) => h.finishingPosition > 0).length;
+    final int plottable = recent.where((RaceResultHistoryModel h) => h.finishingPosition > 0).length;
 
     return DefaultTextStyle(
       style: const TextStyle(fontSize: 10, color: Colors.white),
@@ -1986,7 +1986,7 @@ class _ShutsubaHistorySection extends StatelessWidget {
               children: <Widget>[
                 Expanded(
                   child: Column(
-                    children: recent.map((ShutsubaHistoryModel e) {
+                    children: recent.map((RaceResultHistoryModel e) {
                       return Container(
                         decoration: BoxDecoration(
                           border: Border(bottom: BorderSide(color: Colors.white.withValues(alpha: 0.3))),
@@ -2063,13 +2063,13 @@ class _ShutsubaHistorySection extends StatelessWidget {
 class _FinishingPositionChart extends StatelessWidget {
   const _FinishingPositionChart({required this.historyList});
 
-  final List<ShutsubaHistoryModel> historyList;
+  final List<RaceResultHistoryModel> historyList;
 
   @override
   Widget build(BuildContext context) {
-    final List<ShutsubaHistoryModel> sorted = historyList.toList()
-      ..sort((ShutsubaHistoryModel a, ShutsubaHistoryModel b) => b.date.compareTo(a.date));
-    final List<ShutsubaHistoryModel> recent = sorted.take(4).toList().reversed.toList();
+    final List<RaceResultHistoryModel> sorted = historyList.toList()
+      ..sort((RaceResultHistoryModel a, RaceResultHistoryModel b) => b.date.compareTo(a.date));
+    final List<RaceResultHistoryModel> recent = sorted.take(4).toList().reversed.toList();
 
     final List<FlSpot> spots = <FlSpot>[];
     for (int i = 0; i < recent.length; i++) {
