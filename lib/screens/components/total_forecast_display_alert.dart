@@ -10,7 +10,7 @@ import '../../models/odds_model.dart';
 import '../../models/popularity_rank_odds_median_model.dart';
 import '../../models/race_analysis_model.dart';
 import '../../models/race_model.dart';
-import '../../models/shutsuba_history_model.dart';
+import '../../models/race_result_history_model.dart';
 import '../../utility/functions.dart';
 import '../parts/dashed_line_painter.dart';
 
@@ -45,7 +45,7 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
   Set<int> _highProbabilityPopularities = <int>{};
   Set<int> _aiPickupNums = <int>{};
   Map<int, String> _aiPickupScores = <int, String>{};
-  Map<int, List<ShutsubaHistoryModel>> _shutsubaHistoryMap = <int, List<ShutsubaHistoryModel>>{};
+  Map<int, List<RaceResultHistoryModel>> _battleRecordMap = <int, List<RaceResultHistoryModel>>{};
 
   static const double _w0 = 60;
   static const double _w1 = 40;
@@ -82,44 +82,44 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
 
   ///
   Future<void> _fetchAll() async {
-    await Future.wait(<Future<void>>[_fetchHighProbabilityHorses(), _fetchAiPickup(), _fetchShutsubaHistory()]);
+    await Future.wait(<Future<void>>[_fetchHighProbabilityHorses(), _fetchAiPickup(), _fetchHorseBattleRecords()]);
     if (mounted) {
       setState(() => _isLoading = false);
     }
   }
 
   ///
-  Future<void> _fetchShutsubaHistory() async {
-    final List<String> names = widget.horseModelMap.values
+  Future<void> _fetchHorseBattleRecords() async {
+    final List<String> horseNames = widget.horseModelMap.values
         .map((HorseModel h) => h.name)
         .where((String n) => n.isNotEmpty)
         .toList();
-    if (names.isEmpty) {
+    if (horseNames.isEmpty) {
       return;
     }
     try {
       final dynamic response = await ref
           .read(httpClientProvider)
           .get(
-            path: APIPath.getHorseOddsFinderShutsubaHistory,
-            queryParameters: <String, dynamic>{'names': names.join('/')},
+            path: APIPath.getHorseOddsFinderHorseBattleRecord,
+            queryParameters: <String, dynamic>{'name': horseNames.join('/')},
           );
       final List<dynamic> dataList = (response as Map<String, dynamic>)['data'] as List<dynamic>? ?? <dynamic>[];
-      final Map<String, List<ShutsubaHistoryModel>> byName = <String, List<ShutsubaHistoryModel>>{};
+      final Map<String, List<RaceResultHistoryModel>> byName = <String, List<RaceResultHistoryModel>>{};
       for (final dynamic item in dataList) {
-        final ShutsubaHistoryModel m = ShutsubaHistoryModel.fromJson(item as Map<String, dynamic>);
-        byName.putIfAbsent(m.name, () => <ShutsubaHistoryModel>[]).add(m);
+        final RaceResultHistoryModel m = RaceResultHistoryModel.fromJson(item as Map<String, dynamic>);
+        byName.putIfAbsent(m.name, () => <RaceResultHistoryModel>[]).add(m);
       }
-      final Map<int, List<ShutsubaHistoryModel>> result = <int, List<ShutsubaHistoryModel>>{};
+      final Map<int, List<RaceResultHistoryModel>> result = <int, List<RaceResultHistoryModel>>{};
       for (final MapEntry<int, HorseModel> entry in widget.horseModelMap.entries) {
-        final List<ShutsubaHistoryModel>? list = byName[entry.value.name];
+        final List<RaceResultHistoryModel>? list = byName[entry.value.name];
         if (list != null) {
           result[entry.key] = list;
         }
       }
-      _shutsubaHistoryMap = result;
+      _battleRecordMap = result;
     } catch (e) {
-      debugPrint('[TotalForecast] _fetchShutsubaHistory error: $e');
+      debugPrint('[TotalForecast] _fetchHorseBattleRecords error: $e');
     }
   }
 
@@ -449,121 +449,161 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
       children: <Widget>[
         _dashedDivider,
 
-        Padding(
-          padding: const EdgeInsets.only(top: 6),
-          child: Stack(
-            children: <Widget>[
-              if (appParamState.keepHorseScoreMap[horseName] != null) ...<Widget>[
-                Positioned(
-                  right: 30,
-                  child: Text(
-                    appParamState.keepHorseScoreMap[horseName]!.score.toString(),
-                    style: TextStyle(fontSize: 24, color: Colors.orangeAccent.withValues(alpha: 0.6)),
-                  ),
-                ),
-              ],
+        Container(
+          decoration: BoxDecoration(color: Colors.grey.withValues(alpha: 0.2)),
+          padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 2),
 
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  SizedBox(
-                    width: _w0,
-                    child: Text('$popularity番人気', style: const TextStyle(fontSize: 11, color: Colors.white)),
-                  ),
-                  SizedBox(
-                    width: _w1,
-                    child: Text('${item.num}番', style: const TextStyle(fontSize: 11, color: Colors.white)),
-                  ),
-                  Expanded(
-                    child: Column(
+          child: Column(
+            children: <Widget>[
+              Padding(
+                padding: const EdgeInsets.only(top: 6),
+                child: Stack(
+                  children: <Widget>[
+                    if (appParamState.keepHorseScoreMap[horseName] != null) ...<Widget>[
+                      Positioned(
+                        right: 30,
+                        child: Text(
+                          appParamState.keepHorseScoreMap[horseName]!.score.toString(),
+                          style: TextStyle(fontSize: 24, color: Colors.orangeAccent.withValues(alpha: 0.6)),
+                        ),
+                      ),
+                    ],
+
+                    Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
-                        Text(
-                          horseName,
-                          style: const TextStyle(fontSize: 12, color: Colors.white),
-                          overflow: TextOverflow.ellipsis,
-                          maxLines: 1,
+                        SizedBox(
+                          width: _w0,
+                          child: Text('$popularity番人気', style: const TextStyle(fontSize: 11, color: Colors.white)),
                         ),
-
-                        if (appParamState.keepHorseScoreMap[horseName] != null) ...<Widget>[
-                          Row(
+                        SizedBox(
+                          width: _w1,
+                          child: Text('${item.num}番', style: const TextStyle(fontSize: 11, color: Colors.white)),
+                        ),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: <Widget>[
-                              Expanded(
-                                child: Align(
-                                  alignment: Alignment.centerRight,
-                                  child: Text(
-                                    'ポイント評価(100点中):',
-                                    style: TextStyle(fontSize: 10, color: Colors.orangeAccent.withValues(alpha: 0.8)),
-                                  ),
-                                ),
+                              Text(
+                                horseName,
+                                style: const TextStyle(fontSize: 12, color: Colors.white),
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 1,
                               ),
-                              const SizedBox(width: 60),
+
+                              if (appParamState.keepHorseScoreMap[horseName] != null) ...<Widget>[
+                                Row(
+                                  children: <Widget>[
+                                    Expanded(
+                                      child: Align(
+                                        alignment: Alignment.centerRight,
+                                        child: Text(
+                                          'ポイント評価(100点中):',
+                                          style: TextStyle(
+                                            fontSize: 10,
+                                            color: Colors.orangeAccent.withValues(alpha: 0.8),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 60),
+                                  ],
+                                ),
+                              ],
                             ],
                           ),
-                        ],
+                        ),
                       ],
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-
-        Padding(
-          padding: const EdgeInsets.only(top: 2, bottom: 6),
-          child: Row(
-            children: <Widget>[
-              Expanded(
-                child: Text(item.odds, style: const TextStyle(fontSize: 12, color: Colors.white)),
-              ),
-              Expanded(
-                child: Text(
-                  upsetScore.isEmpty ? '-' : upsetScore,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: isInHighlight ? Colors.yellowAccent : Colors.white,
-                    fontWeight: isInHighlight ? FontWeight.bold : FontWeight.normal,
-                  ),
-                ),
-              ),
-              Expanded(child: isAiPickup ? _buildAiBadge(item.num) : const SizedBox.shrink()),
-              Expanded(child: hasAnalysis ? _buildPastBadge() : const SizedBox.shrink()),
-            ],
-          ),
-        ),
-
-        if (appParamState.keepJockeyScoreMap[jockeyName] != null) ...<Widget>[
-          Row(
-            children: <Widget>[
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: <Widget>[
-                    Text('ジョッキー名: $jockeyName', style: const TextStyle(fontSize: 10, color: Colors.white)),
-
-                    Text(
-                      'ポイント評価(100点中):',
-                      style: TextStyle(fontSize: 10, color: Colors.orangeAccent.withValues(alpha: 0.8)),
                     ),
                   ],
                 ),
               ),
 
-              const SizedBox(width: 10),
-
-              Text(
-                appParamState.keepJockeyScoreMap[jockeyName]!.score.toString(),
-
-                style: TextStyle(fontSize: 24, color: Colors.orangeAccent.withValues(alpha: 0.6)),
+              Padding(
+                padding: const EdgeInsets.only(top: 2, bottom: 6),
+                child: Row(
+                  children: <Widget>[
+                    Expanded(
+                      child: Text(item.odds, style: const TextStyle(fontSize: 12, color: Colors.white)),
+                    ),
+                    Expanded(
+                      child: Text(
+                        upsetScore.isEmpty ? '-' : upsetScore,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: isInHighlight ? Colors.yellowAccent : Colors.white,
+                          fontWeight: isInHighlight ? FontWeight.bold : FontWeight.normal,
+                        ),
+                      ),
+                    ),
+                    Expanded(child: isAiPickup ? _buildAiBadge(item.num) : const SizedBox.shrink()),
+                    Expanded(child: hasAnalysis ? _buildPastBadge() : const SizedBox.shrink()),
+                  ],
+                ),
               ),
+
+              if (appParamState.keepJockeyScoreMap[jockeyName] != null) ...<Widget>[
+                Row(
+                  children: <Widget>[
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: <Widget>[
+                          Text('ジョッキー名: $jockeyName', style: const TextStyle(fontSize: 10, color: Colors.white)),
+
+                          Text(
+                            'ポイント評価(100点中):',
+                            style: TextStyle(fontSize: 10, color: Colors.orangeAccent.withValues(alpha: 0.8)),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(width: 10),
+
+                    Text(
+                      appParamState.keepJockeyScoreMap[jockeyName]!.score.toString(),
+
+                      style: TextStyle(fontSize: 24, color: Colors.orangeAccent.withValues(alpha: 0.6)),
+                    ),
+                  ],
+                ),
+              ],
+
+              const SizedBox(height: 5),
+
+              _buildCourseExperience(item.num),
+
+              if (_battleRecordMap[item.num] != null) ...<Widget>[
+                const Stack(
+                  children: <Widget>[
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: <Widget>[
+                        SizedBox.shrink(),
+
+                        Text('下の数字は着順です', style: TextStyle(fontSize: 10, color: Colors.grey)),
+                      ],
+                    ),
+
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: <Widget>[
+                        Text('月ごとの出走経験', style: TextStyle(fontSize: 10)),
+                        SizedBox.shrink(),
+                      ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 3),
+
+                _buildMonthExperience(item.num),
+              ],
+
+              const SizedBox(height: 5),
             ],
           ),
-        ],
-
-        const SizedBox(height: 5),
-
-        _buildCourseExperience(item.num),
+        ),
 
         _dashedDivider,
 
@@ -663,12 +703,14 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
 
   ///
   Widget _buildCourseExperience(int horseNum) {
-    final List<ShutsubaHistoryModel> history = _shutsubaHistoryMap[horseNum] ?? <ShutsubaHistoryModel>[];
+    final List<RaceResultHistoryModel> history = (_battleRecordMap[horseNum] ?? <RaceResultHistoryModel>[])
+        .where((RaceResultHistoryModel e) => e.date != widget.currentRaceModel.date)
+        .toList();
     Color bashoColor = Colors.transparent;
     Color courseColor = Colors.transparent;
     Color distColor = Colors.transparent;
 
-    for (final ShutsubaHistoryModel e in history) {
+    for (final RaceResultHistoryModel e in history) {
       if (e.basho == widget.currentRaceModel.bashoName) {
         bashoColor = Colors.yellowAccent;
       }
@@ -681,6 +723,7 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
     }
 
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         const Expanded(
           child: Align(
@@ -689,16 +732,88 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
           ),
         ),
         const SizedBox(width: 10),
-        Row(
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            _courseChip(widget.currentRaceModel.bashoName, bashoColor),
-            const SizedBox(width: 4),
-            _courseChip(widget.currentRaceModel.course, courseColor),
-            const SizedBox(width: 4),
-            _courseChip('${widget.currentRaceModel.dist} m', distColor),
+            Row(
+              children: <Widget>[
+                _courseChip(widget.currentRaceModel.bashoName, bashoColor),
+                const SizedBox(width: 4),
+                _courseChip(widget.currentRaceModel.course, courseColor),
+                const SizedBox(width: 4),
+                _courseChip('${widget.currentRaceModel.dist} m', distColor),
+              ],
+            ),
+
+            Text('同条件のコースを経験しているか', style: TextStyle(fontSize: 10, color: Colors.white.withValues(alpha: 0.6))),
           ],
         ),
       ],
+    );
+  }
+
+  ///
+  Widget _buildMonthExperience(int horseNum) {
+    final List<RaceResultHistoryModel> history = (_battleRecordMap[horseNum] ?? <RaceResultHistoryModel>[])
+        .where((RaceResultHistoryModel e) => e.date != widget.currentRaceModel.date)
+        .toList();
+
+    final Set<int> racedMonths = <int>{};
+    for (final RaceResultHistoryModel e in history) {
+      final List<String> parts = e.date.split('-');
+      if (parts.length >= 2) {
+        final int? month = int.tryParse(parts[1]);
+        if (month != null) {
+          racedMonths.add(month);
+        }
+      }
+    }
+
+    final Map<int, List<int>> positionsByMonth = <int, List<int>>{};
+    for (final RaceResultHistoryModel e in history) {
+      final List<String> parts = e.date.split('-');
+      if (parts.length >= 2) {
+        final int? month = int.tryParse(parts[1]);
+        if (month != null) {
+          positionsByMonth.putIfAbsent(month, () => <int>[]).add(e.finishingPosition);
+        }
+      }
+    }
+
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: List<Widget>.generate(12, (int index) {
+          final int month = index + 1;
+          final bool hasRecord = racedMonths.contains(month);
+          final List<int> positions = positionsByMonth[month] ?? <int>[];
+          return Container(
+            margin: const EdgeInsets.symmetric(horizontal: 1),
+            width: context.screenSize.width / 20,
+            padding: const EdgeInsets.symmetric(vertical: 2),
+            decoration: BoxDecoration(
+              color: hasRecord ? Colors.yellowAccent.withValues(alpha: 0.2) : Colors.transparent,
+              border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
+              borderRadius: BorderRadius.circular(3),
+            ),
+            child: Column(
+              children: <Widget>[
+                Text(month.toString().padLeft(2, '0'), style: const TextStyle(fontSize: 9, color: Colors.white)),
+
+                const SizedBox(height: 10),
+
+                ...positions.map(
+                  (int pos) => Text(
+                    '$pos',
+                    style: const TextStyle(fontSize: 9, color: Colors.white),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ],
+            ),
+          );
+        }),
+      ),
     );
   }
 
@@ -710,10 +825,10 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
         border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
         borderRadius: BorderRadius.circular(3),
       ),
-      margin: const EdgeInsets.all(3),
+      margin: const EdgeInsets.symmetric(vertical: 3, horizontal: 1),
       padding: const EdgeInsets.symmetric(vertical: 3, horizontal: 5),
       alignment: Alignment.center,
-      width: context.screenSize.width * 0.15,
+      width: context.screenSize.width / 6,
       height: 20,
       child: Text(label, style: const TextStyle(fontSize: 10)),
     );
