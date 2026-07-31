@@ -6,6 +6,7 @@ import '../../data/http/client.dart';
 import '../../data/http/path.dart';
 import '../../extensions/extensions.dart';
 import '../../models/horse_model.dart';
+import '../../models/horse_odds_kitaichi_model.dart';
 import '../../models/odds_model.dart';
 import '../../models/popularity_rank_odds_median_model.dart';
 import '../../models/race_analysis_model.dart';
@@ -46,6 +47,7 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
   Set<int> _aiPickupNums = <int>{};
   Map<int, String> _aiPickupScores = <int, String>{};
   Map<int, List<RaceResultHistoryModel>> _battleRecordMap = <int, List<RaceResultHistoryModel>>{};
+  Map<int, HorseOddsKitaichiModel> _kitaichiMap = <int, HorseOddsKitaichiModel>{};
 
   static const double _w0 = 60;
   static const double _w1 = 40;
@@ -82,9 +84,44 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
 
   ///
   Future<void> _fetchAll() async {
-    await Future.wait(<Future<void>>[_fetchHighProbabilityHorses(), _fetchAiPickup(), _fetchHorseBattleRecords()]);
+    await Future.wait(<Future<void>>[
+      _fetchHighProbabilityHorses(),
+      _fetchAiPickup(),
+      _fetchHorseBattleRecords(),
+      _fetchKitaichi(),
+    ]);
     if (mounted) {
       setState(() => _isLoading = false);
+    }
+  }
+
+  ///
+  Future<void> _fetchKitaichi() async {
+    final String date = appParamState.selectedScheduleDate;
+    final int race = widget.currentRaceModel.race;
+    final (:String kaisuu, :String basho, :String day) = _kbdParts;
+    try {
+      final dynamic response = await ref
+          .read(httpClientProvider)
+          .get(
+            path: APIPath.getHorseOddsFinderKitaichi,
+            queryParameters: <String, dynamic>{
+              'date': date,
+              'kaisuu': kaisuu,
+              'basho': basho,
+              'day': day,
+              'race': race.toString(),
+            },
+          );
+      final List<dynamic> dataList = (response as Map<String, dynamic>)['data'] as List<dynamic>? ?? <dynamic>[];
+      final Map<int, HorseOddsKitaichiModel> result = <int, HorseOddsKitaichiModel>{};
+      for (final dynamic item in dataList) {
+        final HorseOddsKitaichiModel m = HorseOddsKitaichiModel.fromJson(item as Map<String, dynamic>);
+        result[m.popularityRank] = m;
+      }
+      _kitaichiMap = result;
+    } catch (e) {
+      debugPrint('[TotalForecast] _fetchKitaichi error: $e');
     }
   }
 
@@ -576,6 +613,138 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
                     ),
                   ],
                 ),
+              ],
+
+              if (_kitaichiMap[popularity] != null) ...<Widget>[
+                const SizedBox(height: 4),
+
+                Column(
+                  children: <Widget>[
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: <Widget>[
+                        const SizedBox.shrink(),
+                        Text(
+                          'オッズ × 過去同オッズ帯の勝率',
+                          style: TextStyle(fontSize: 8, color: Colors.white.withValues(alpha: 0.6)),
+                        ),
+                      ],
+                    ),
+
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: Text(
+                          _kitaichiMap[popularity]!.tanEvScore,
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: (double.tryParse(_kitaichiMap[popularity]!.tanEvScore) ?? 0) >= 1.0
+                                ? Colors.greenAccent
+                                : Colors.white54,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: <Widget>[
+                        const SizedBox.shrink(),
+                        Text(
+                          '複勝オッズ中間値 × 過去同オッズ帯の3着内率',
+                          style: TextStyle(fontSize: 8, color: Colors.white.withValues(alpha: 0.6)),
+                        ),
+                      ],
+                    ),
+
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: Text(
+                          _kitaichiMap[popularity]!.fukuEvScore,
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: (double.tryParse(_kitaichiMap[popularity]!.fukuEvScore) ?? 0) >= 1.0
+                                ? Colors.greenAccent
+                                : Colors.white54,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+
+                /*
+
+
+
+
+
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: <Widget>[
+                    Expanded(
+                      child:
+                          ((double.tryParse(_kitaichiMap[popularity]!.tanEvScore) ?? 0) > 1.0 ||
+                              (double.tryParse(_kitaichiMap[popularity]!.fukuEvScore) ?? 0) > 1.0)
+                          ? Container(alignment: Alignment.topRight, child: _buildAnaumaBadge())
+                          : const SizedBox.shrink(),
+                    ),
+
+                    Column(
+                      children: <Widget>[
+                        Row(
+                          children: <Widget>[
+                            const Text('単勝妙味:', style: TextStyle(fontSize: 10, color: Colors.white54)),
+                            const SizedBox(width: 8),
+                            Text(
+                              _kitaichiMap[popularity]!.tanEvScore,
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: (double.tryParse(_kitaichiMap[popularity]!.tanEvScore) ?? 0) >= 1.0
+                                    ? Colors.greenAccent
+                                    : Colors.white54,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                          ],
+                        ),
+
+                        const SizedBox(height: 4),
+                        Row(
+                          children: <Widget>[
+                            const Text('複勝妙味:', style: TextStyle(fontSize: 10, color: Colors.white54)),
+                            const SizedBox(width: 8),
+                            Text(
+                              _kitaichiMap[popularity]!.fukuEvScore,
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: (double.tryParse(_kitaichiMap[popularity]!.fukuEvScore) ?? 0) >= 1.0
+                                    ? Colors.greenAccent
+                                    : Colors.white54,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+
+
+
+
+
+
+
+                */
               ],
 
               const SizedBox(height: 5),
