@@ -120,6 +120,9 @@ class _HorseDetailDisplayAlertState extends ConsumerState<HorseDetailDisplayAler
             ),
           ),
           Text(detail.horseName, style: const TextStyle(color: Colors.white, fontSize: 26)),
+
+          Text(detail.profile.nameMeaning, style: const TextStyle(fontSize: 10)),
+
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -347,14 +350,7 @@ class _HorseDetailDisplayAlertState extends ConsumerState<HorseDetailDisplayAler
                       Expanded(
                         child: Column(
                           children: <Widget>[
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: <Widget>[
-                                Text('${e.course} ${e.dist}'),
-                                Text('${e.horseWeight} / ${e.condition}'),
-                              ],
-                            ),
-
+                            const SizedBox(height: 10),
                             Row(
                               children: <Widget>[
                                 Expanded(
@@ -407,9 +403,20 @@ class _HorseDetailDisplayAlertState extends ConsumerState<HorseDetailDisplayAler
                               ],
                             ),
 
+                            SizedBox(
+                              width: double.infinity,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: <Widget>[
+                                  Text('${e.course} ${e.dist}'),
+                                  Text('${e.horseWeight} / ${e.condition}'),
+                                ],
+                              ),
+                            ),
+
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: <Widget>[Text(e.time), Text(e.last3f)],
+                              children: <Widget>[Text('time: ${e.time}'), Text(e.last3f)],
                             ),
                           ],
                         ),
