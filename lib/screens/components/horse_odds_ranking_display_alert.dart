@@ -15,6 +15,7 @@ import '../../models/summary_model.dart';
 import '../parts/odds_finder_dialog.dart';
 import '../parts/widget_display_overlay.dart';
 import 'horse_race_result_display_alert.dart';
+import 'race_introspection_display_alert.dart';
 
 enum RankingMode { live, summary }
 
@@ -223,7 +224,14 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
   ///
   Widget _buildHeaderActions() {
     if (widget.mode == RankingMode.summary) {
-      return Icon(Icons.circle);
+      return GestureDetector(
+        onTap: () {
+          OddsFinderDialog(context: context, widget: const RaceIntrospectionDisplayAlert());
+        },
+        child: const Icon(Icons.circle),
+      );
+
+      //////////
 
       // return GestureDetector(
       //   onTap: () {
@@ -310,17 +318,21 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
     );
   }
 
-  ///
-  static Map<int, int> _computeLatestPopularityRank(List<SummaryModel> horses, List<int> timingMinutes) {
-    for (final int minutes in timingMinutes.reversed) {
-      final List<SummaryModel> sorted = _sortSummaryByOdds(horses, minutes);
-      if (sorted.isNotEmpty) {
-        return <int, int>{for (int i = 0; i < sorted.length; i++) sorted[i].num: i + 1};
-      }
-    }
-
-    return <int, int>{};
-  }
+  // ///
+  // static Map<int, int> _computeLatestPopularityRank(List<SummaryModel> horses, List<int> timingMinutes) {
+  //   for (final int minutes in timingMinutes.reversed) {
+  //     final List<SummaryModel> sorted = _sortSummaryByOdds(horses, minutes);
+  //     if (sorted.isNotEmpty) {
+  //       return <int, int>{for (int i = 0; i < sorted.length; i++) sorted[i].num: i + 1};
+  //     }
+  //   }
+  //
+  //   return <int, int>{};
+  // }
+  //
+  //
+  //
+  //
 
   ///
   static List<int> _computeTimingOrder(List<String> timingParts) {
@@ -364,17 +376,11 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
     final int selectedRace = appParamState.selectedRaceNumber;
 
     final int horseNum = selectedRace > 0
-        ? (raceState.raceMap[mapKey]
-                  ?.where((RaceModel e) => e.race == selectedRace)
-                  .firstOrNull
-                  ?.numHorses ??
-              0)
+        ? (raceState.raceMap[mapKey]?.where((RaceModel e) => e.race == selectedRace).firstOrNull?.numHorses ?? 0)
         : 0;
 
     final List<OddsModel> oddsModelList = selectedRace > 0
-        ? (oddsState.oddsMap[mapKey] ?? <OddsModel>[])
-              .where((OddsModel e) => e.race == selectedRace)
-              .toList()
+        ? (oddsState.oddsMap[mapKey] ?? <OddsModel>[]).where((OddsModel e) => e.race == selectedRace).toList()
         : <OddsModel>[];
 
     final String oddsGetTiming = laravelConfigState.oddsGetTiming.isNotEmpty
