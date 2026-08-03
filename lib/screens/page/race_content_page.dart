@@ -716,6 +716,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
 
             GestureDetector(
               onTap: () {
+                appParamNotifier.setSelectedRaceNumber(num: widget.raceNumber);
                 appParamNotifier.setIsShowUpperBox2(flag: true);
                 OddsFinderDialog(context: context, widget: const HorseOddsRankingDisplayAlert());
               },

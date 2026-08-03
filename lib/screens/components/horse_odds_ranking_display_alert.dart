@@ -28,7 +28,6 @@ const Color _changedBgColor3 = Color(0xFF5A1A1A);
 const Color _droppedBgColor = Color(0xFF4A1A6A);
 const Color _defaultBgColor = Colors.transparent;
 
-/////(3)
 final Map<int, String Function(SummaryModel)> _kOddsGetters = <int, String Function(SummaryModel)>{
   30: (SummaryModel m) => m.oddsTanBefore30,
   21: (SummaryModel m) => m.oddsTanBefore21,
@@ -40,7 +39,6 @@ final Map<int, String Function(SummaryModel)> _kOddsGetters = <int, String Funct
   3: (SummaryModel m) => m.oddsTanBefore3,
   0: (SummaryModel m) => m.oddsTanBefore0,
 };
-/////
 
 class HorseOddsRankingDisplayAlert extends ConsumerStatefulWidget {
   const HorseOddsRankingDisplayAlert({super.key, this.mode = RankingMode.live});
@@ -225,26 +223,28 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
   ///
   Widget _buildHeaderActions() {
     if (widget.mode == RankingMode.summary) {
-      return GestureDetector(
-        onTap: () {
-          final List<int> timingMinutes = appParamState.configOddsGetTiming.isEmpty
-              ? <int>[]
-              : appParamState.configOddsGetTiming.split('|').map(int.parse).toList();
-          final Map<int, int> popularityRank = _computeLatestPopularityRank(
-            summaryState.oneRaceSummaryList,
-            timingMinutes,
-          );
-          OddsFinderDialog(
-            context: context,
-            widget: HorseRaceResultDisplayAlert(from: ResultDisplayFrom.summary, numToPopularityRank: popularityRank),
+      return Icon(Icons.circle);
 
-            paddingTop: context.screenSize.height * 0.45,
-            paddingBottom: context.screenSize.height * 0.1,
-            clearBarrierColor: true,
-          );
-        },
-        child: Icon(Icons.flag, color: Colors.green[500]),
-      );
+      // return GestureDetector(
+      //   onTap: () {
+      //     final List<int> timingMinutes = appParamState.configOddsGetTiming.isEmpty
+      //         ? <int>[]
+      //         : appParamState.configOddsGetTiming.split('|').map(int.parse).toList();
+      //     final Map<int, int> popularityRank = _computeLatestPopularityRank(
+      //       summaryState.oneRaceSummaryList,
+      //       timingMinutes,
+      //     );
+      //     OddsFinderDialog(
+      //       context: context,
+      //       widget: HorseRaceResultDisplayAlert(from: ResultDisplayFrom.summary, numToPopularityRank: popularityRank),
+      //
+      //       paddingTop: context.screenSize.height * 0.45,
+      //       paddingBottom: context.screenSize.height * 0.1,
+      //       clearBarrierColor: true,
+      //     );
+      //   },
+      //   child: Icon(Icons.flag, color: Colors.green[500]),
+      // );
     }
 
     return Row(
@@ -361,21 +361,27 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
   _GridData _buildFromOddsModel() {
     final String mapKey = '${appParamState.selectedScheduleDate}_${appParamState.selectedScheduleKaisuuBashoDay}';
 
-    final bool hasData = appParamState.keepRaceMap[mapKey] != null && appParamState.selectedRaceNumber > 0;
+    final int selectedRace = appParamState.selectedRaceNumber;
 
-    final int horseNum = hasData
-        ? appParamState.keepRaceMap[mapKey]!
-              .firstWhere((RaceModel e) => e.race == appParamState.selectedRaceNumber)
-              .numHorses
+    final int horseNum = selectedRace > 0
+        ? (raceState.raceMap[mapKey]
+                  ?.where((RaceModel e) => e.race == selectedRace)
+                  .firstOrNull
+                  ?.numHorses ??
+              0)
         : 0;
 
-    final List<OddsModel> oddsModelList = hasData
-        ? (appParamState.keepOddsMap[mapKey] ?? <OddsModel>[])
-              .where((OddsModel e) => e.race == appParamState.selectedRaceNumber)
+    final List<OddsModel> oddsModelList = selectedRace > 0
+        ? (oddsState.oddsMap[mapKey] ?? <OddsModel>[])
+              .where((OddsModel e) => e.race == selectedRace)
               .toList()
         : <OddsModel>[];
 
-    final List<String> timingParts = appParamState.configOddsGetTiming.split('|');
+    final String oddsGetTiming = laravelConfigState.oddsGetTiming.isNotEmpty
+        ? laravelConfigState.oddsGetTiming
+        : appParamState.configOddsGetTiming;
+
+    final List<String> timingParts = oddsGetTiming.split('|');
     final List<int> timingOrder = _computeTimingOrder(timingParts);
     final Map<int, List<OddsModel>> oddsTimingMap = _computeOddsTimingMap(oddsModelList, timingOrder);
 
@@ -564,9 +570,7 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
     };
 
     if (data.horseNum == 0) {
-      return widget.mode == RankingMode.summary
-          ? const Center(child: CircularProgressIndicator(color: Colors.greenAccent))
-          : const SizedBox.shrink();
+      return const Center(child: CircularProgressIndicator(color: Colors.greenAccent));
     }
 
     const String cornerLabel = '分前';
