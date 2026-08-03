@@ -8,6 +8,7 @@ import '../extensions/extensions.dart';
 import '../models/horse_model.dart';
 import '../models/login_user_model.dart';
 import '../models/odds_model.dart';
+
 // import '../models/odds_wide_model.dart';
 //
 //
@@ -52,6 +53,8 @@ class HomeScreen extends ConsumerStatefulWidget {
     required this.oddsDropRateChuana,
     required this.oddsDropRateDaiana,
 
+    required this.baganrikiBrain,
+
     // required this.oddsWideMap,
     //
     //
@@ -80,6 +83,8 @@ class HomeScreen extends ConsumerStatefulWidget {
   final String oddsDropRateHonmei;
   final String oddsDropRateChuana;
   final String oddsDropRateDaiana;
+
+  final String baganrikiBrain;
 
   // final Map<String, List<OddsWideModel>> oddsWideMap;
   //
@@ -234,6 +239,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
       oddsDropRateChuana: widget.oddsDropRateChuana,
       oddsDropRateDaiana: widget.oddsDropRateDaiana,
     );
+
+    appParamNotifier.setConfigBaganrikiBrain(str: widget.baganrikiBrain);
 
     // appParamNotifier.setKeepOddsWideMap(map: widget.oddsWideMap);
     //

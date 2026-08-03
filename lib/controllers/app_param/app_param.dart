@@ -5,6 +5,7 @@ import '../../../utility/utility.dart';
 import '../../models/horse_model.dart';
 import '../../models/login_user_model.dart';
 import '../../models/odds_model.dart';
+
 // import '../../models/odds_wide_model.dart';
 //
 //
@@ -18,6 +19,7 @@ import '../../models/score_model.dart';
 import '../../models/summary_model.dart';
 
 part 'app_param.freezed.dart';
+
 part 'app_param.g.dart';
 
 @freezed
@@ -58,6 +60,8 @@ class AppParamState with _$AppParamState {
     @Default('') String configOddsDropRateHonmei,
     @Default('') String configOddsDropRateChuana,
     @Default('') String configOddsDropRateDaiana,
+
+    @Default('') String configBaganrikiBrain,
 
     ///
     @Default('') String selectedScheduleDate,
@@ -173,6 +177,9 @@ class AppParam extends _$AppParam {
       configOddsDropRateDaiana: oddsDropRateDaiana,
     );
   }
+
+  ///
+  void setConfigBaganrikiBrain({required String str}) => state = state.copyWith(configBaganrikiBrain: str);
 
   //////////////
 

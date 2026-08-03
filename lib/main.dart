@@ -272,6 +272,8 @@ class _MyAppState extends ConsumerState<MyApp> with ControllersMixin<MyApp> {
                 oddsDropRateChuana: laravelConfigState.oddsDropRateChuana,
                 oddsDropRateDaiana: laravelConfigState.oddsDropRateDaiana,
 
+                baganrikiBrain: laravelConfigState.baganrikiBrain,
+
                 //                netkeibaOddsMap: netkeibaOddsState.netkeibaOddsMap,
                 // oddsWideMap: oddsWideState.oddsWideMap,
                 //

@@ -228,31 +228,8 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
         onTap: () {
           OddsFinderDialog(context: context, widget: const RaceIntrospectionDisplayAlert());
         },
-        child: const Icon(Icons.circle),
+        child: const Icon(Icons.flag, color: Colors.greenAccent),
       );
-
-      //////////
-
-      // return GestureDetector(
-      //   onTap: () {
-      //     final List<int> timingMinutes = appParamState.configOddsGetTiming.isEmpty
-      //         ? <int>[]
-      //         : appParamState.configOddsGetTiming.split('|').map(int.parse).toList();
-      //     final Map<int, int> popularityRank = _computeLatestPopularityRank(
-      //       summaryState.oneRaceSummaryList,
-      //       timingMinutes,
-      //     );
-      //     OddsFinderDialog(
-      //       context: context,
-      //       widget: HorseRaceResultDisplayAlert(from: ResultDisplayFrom.summary, numToPopularityRank: popularityRank),
-      //
-      //       paddingTop: context.screenSize.height * 0.45,
-      //       paddingBottom: context.screenSize.height * 0.1,
-      //       clearBarrierColor: true,
-      //     );
-      //   },
-      //   child: Icon(Icons.flag, color: Colors.green[500]),
-      // );
     }
 
     return Row(

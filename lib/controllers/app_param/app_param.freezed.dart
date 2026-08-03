@@ -50,6 +50,7 @@ mixin _$AppParamState {
   String get configOddsDropRateHonmei => throw _privateConstructorUsedError;
   String get configOddsDropRateChuana => throw _privateConstructorUsedError;
   String get configOddsDropRateDaiana => throw _privateConstructorUsedError;
+  String get configBaganrikiBrain => throw _privateConstructorUsedError;
 
   ///
   String get selectedScheduleDate => throw _privateConstructorUsedError;
@@ -103,6 +104,7 @@ abstract class $AppParamStateCopyWith<$Res> {
       String configOddsDropRateHonmei,
       String configOddsDropRateChuana,
       String configOddsDropRateDaiana,
+      String configBaganrikiBrain,
       String selectedScheduleDate,
       String selectedScheduleKaisuuBashoDay,
       String selectedScheduleKaisuuBashoDayName,
@@ -153,6 +155,7 @@ class _$AppParamStateCopyWithImpl<$Res, $Val extends AppParamState>
     Object? configOddsDropRateHonmei = null,
     Object? configOddsDropRateChuana = null,
     Object? configOddsDropRateDaiana = null,
+    Object? configBaganrikiBrain = null,
     Object? selectedScheduleDate = null,
     Object? selectedScheduleKaisuuBashoDay = null,
     Object? selectedScheduleKaisuuBashoDayName = null,
@@ -237,6 +240,10 @@ class _$AppParamStateCopyWithImpl<$Res, $Val extends AppParamState>
       configOddsDropRateDaiana: null == configOddsDropRateDaiana
           ? _value.configOddsDropRateDaiana
           : configOddsDropRateDaiana // ignore: cast_nullable_to_non_nullable
+              as String,
+      configBaganrikiBrain: null == configBaganrikiBrain
+          ? _value.configBaganrikiBrain
+          : configBaganrikiBrain // ignore: cast_nullable_to_non_nullable
               as String,
       selectedScheduleDate: null == selectedScheduleDate
           ? _value.selectedScheduleDate
@@ -345,6 +352,7 @@ abstract class _$$AppParamStateImplCopyWith<$Res>
       String configOddsDropRateHonmei,
       String configOddsDropRateChuana,
       String configOddsDropRateDaiana,
+      String configBaganrikiBrain,
       String selectedScheduleDate,
       String selectedScheduleKaisuuBashoDay,
       String selectedScheduleKaisuuBashoDayName,
@@ -393,6 +401,7 @@ class __$$AppParamStateImplCopyWithImpl<$Res>
     Object? configOddsDropRateHonmei = null,
     Object? configOddsDropRateChuana = null,
     Object? configOddsDropRateDaiana = null,
+    Object? configBaganrikiBrain = null,
     Object? selectedScheduleDate = null,
     Object? selectedScheduleKaisuuBashoDay = null,
     Object? selectedScheduleKaisuuBashoDayName = null,
@@ -477,6 +486,10 @@ class __$$AppParamStateImplCopyWithImpl<$Res>
       configOddsDropRateDaiana: null == configOddsDropRateDaiana
           ? _value.configOddsDropRateDaiana
           : configOddsDropRateDaiana // ignore: cast_nullable_to_non_nullable
+              as String,
+      configBaganrikiBrain: null == configBaganrikiBrain
+          ? _value.configBaganrikiBrain
+          : configBaganrikiBrain // ignore: cast_nullable_to_non_nullable
               as String,
       selectedScheduleDate: null == selectedScheduleDate
           ? _value.selectedScheduleDate
@@ -591,6 +604,7 @@ class _$AppParamStateImpl implements _AppParamState {
       this.configOddsDropRateHonmei = '',
       this.configOddsDropRateChuana = '',
       this.configOddsDropRateDaiana = '',
+      this.configBaganrikiBrain = '',
       this.selectedScheduleDate = '',
       this.selectedScheduleKaisuuBashoDay = '',
       this.selectedScheduleKaisuuBashoDayName = '',
@@ -763,6 +777,9 @@ class _$AppParamStateImpl implements _AppParamState {
   @override
   @JsonKey()
   final String configOddsDropRateDaiana;
+  @override
+  @JsonKey()
+  final String configBaganrikiBrain;
 
   ///
   @override
@@ -825,7 +842,7 @@ class _$AppParamStateImpl implements _AppParamState {
 
   @override
   String toString() {
-    return 'AppParamState(keepScheduleDateBashoMap: $keepScheduleDateBashoMap, keepRaceMap: $keepRaceMap, keepHorseMap: $keepHorseMap, keepOddsMap: $keepOddsMap, keepSummaryMap: $keepSummaryMap, keepSummaryDateBashoMap: $keepSummaryDateBashoMap, keepLoginUserMap: $keepLoginUserMap, keepPushNotifierUserList: $keepPushNotifierUserList, keepPopularityRankOddsMedianMap: $keepPopularityRankOddsMedianMap, keepHorseScoreMap: $keepHorseScoreMap, keepJockeyScoreMap: $keepJockeyScoreMap, keepRaceIntrospectionMap: $keepRaceIntrospectionMap, configOddsGetTiming: $configOddsGetTiming, configOddsDropRateHonmei: $configOddsDropRateHonmei, configOddsDropRateChuana: $configOddsDropRateChuana, configOddsDropRateDaiana: $configOddsDropRateDaiana, selectedScheduleDate: $selectedScheduleDate, selectedScheduleKaisuuBashoDay: $selectedScheduleKaisuuBashoDay, selectedScheduleKaisuuBashoDayName: $selectedScheduleKaisuuBashoDayName, selectedRaceNumber: $selectedRaceNumber, selectedTiming: $selectedTiming, selectedTiming2: $selectedTiming2, queryUser: $queryUser, isShowUpperBox: $isShowUpperBox, isShowUpperBox2: $isShowUpperBox2, selectedDrawerRace: $selectedDrawerRace, isZoomed: $isZoomed, selectedUpsetBoxNum: $selectedUpsetBoxNum, selectedPopularityRank: $selectedPopularityRank, selectedPopularityRankYear: $selectedPopularityRankYear, selectedHistoryYear: $selectedHistoryYear, selectedHorseNameChar1: $selectedHorseNameChar1, selectedHorseNameChar2: $selectedHorseNameChar2, allExpanded: $allExpanded, isShowSideTabPanel: $isShowSideTabPanel)';
+    return 'AppParamState(keepScheduleDateBashoMap: $keepScheduleDateBashoMap, keepRaceMap: $keepRaceMap, keepHorseMap: $keepHorseMap, keepOddsMap: $keepOddsMap, keepSummaryMap: $keepSummaryMap, keepSummaryDateBashoMap: $keepSummaryDateBashoMap, keepLoginUserMap: $keepLoginUserMap, keepPushNotifierUserList: $keepPushNotifierUserList, keepPopularityRankOddsMedianMap: $keepPopularityRankOddsMedianMap, keepHorseScoreMap: $keepHorseScoreMap, keepJockeyScoreMap: $keepJockeyScoreMap, keepRaceIntrospectionMap: $keepRaceIntrospectionMap, configOddsGetTiming: $configOddsGetTiming, configOddsDropRateHonmei: $configOddsDropRateHonmei, configOddsDropRateChuana: $configOddsDropRateChuana, configOddsDropRateDaiana: $configOddsDropRateDaiana, configBaganrikiBrain: $configBaganrikiBrain, selectedScheduleDate: $selectedScheduleDate, selectedScheduleKaisuuBashoDay: $selectedScheduleKaisuuBashoDay, selectedScheduleKaisuuBashoDayName: $selectedScheduleKaisuuBashoDayName, selectedRaceNumber: $selectedRaceNumber, selectedTiming: $selectedTiming, selectedTiming2: $selectedTiming2, queryUser: $queryUser, isShowUpperBox: $isShowUpperBox, isShowUpperBox2: $isShowUpperBox2, selectedDrawerRace: $selectedDrawerRace, isZoomed: $isZoomed, selectedUpsetBoxNum: $selectedUpsetBoxNum, selectedPopularityRank: $selectedPopularityRank, selectedPopularityRankYear: $selectedPopularityRankYear, selectedHistoryYear: $selectedHistoryYear, selectedHorseNameChar1: $selectedHorseNameChar1, selectedHorseNameChar2: $selectedHorseNameChar2, allExpanded: $allExpanded, isShowSideTabPanel: $isShowSideTabPanel)';
   }
 
   @override
@@ -866,6 +883,8 @@ class _$AppParamStateImpl implements _AppParamState {
                 other.configOddsDropRateChuana == configOddsDropRateChuana) &&
             (identical(other.configOddsDropRateDaiana, configOddsDropRateDaiana) ||
                 other.configOddsDropRateDaiana == configOddsDropRateDaiana) &&
+            (identical(other.configBaganrikiBrain, configBaganrikiBrain) ||
+                other.configBaganrikiBrain == configBaganrikiBrain) &&
             (identical(other.selectedScheduleDate, selectedScheduleDate) ||
                 other.selectedScheduleDate == selectedScheduleDate) &&
             (identical(other.selectedScheduleKaisuuBashoDay, selectedScheduleKaisuuBashoDay) ||
@@ -892,8 +911,7 @@ class _$AppParamStateImpl implements _AppParamState {
                 other.isZoomed == isZoomed) &&
             (identical(other.selectedUpsetBoxNum, selectedUpsetBoxNum) ||
                 other.selectedUpsetBoxNum == selectedUpsetBoxNum) &&
-            (identical(other.selectedPopularityRank, selectedPopularityRank) ||
-                other.selectedPopularityRank == selectedPopularityRank) &&
+            (identical(other.selectedPopularityRank, selectedPopularityRank) || other.selectedPopularityRank == selectedPopularityRank) &&
             (identical(other.selectedPopularityRankYear, selectedPopularityRankYear) || other.selectedPopularityRankYear == selectedPopularityRankYear) &&
             (identical(other.selectedHistoryYear, selectedHistoryYear) || other.selectedHistoryYear == selectedHistoryYear) &&
             (identical(other.selectedHorseNameChar1, selectedHorseNameChar1) || other.selectedHorseNameChar1 == selectedHorseNameChar1) &&
@@ -921,6 +939,7 @@ class _$AppParamStateImpl implements _AppParamState {
         configOddsDropRateHonmei,
         configOddsDropRateChuana,
         configOddsDropRateDaiana,
+        configBaganrikiBrain,
         selectedScheduleDate,
         selectedScheduleKaisuuBashoDay,
         selectedScheduleKaisuuBashoDayName,
@@ -968,6 +987,7 @@ abstract class _AppParamState implements AppParamState {
       final String configOddsDropRateHonmei,
       final String configOddsDropRateChuana,
       final String configOddsDropRateDaiana,
+      final String configBaganrikiBrain,
       final String selectedScheduleDate,
       final String selectedScheduleKaisuuBashoDay,
       final String selectedScheduleKaisuuBashoDayName,
@@ -1027,6 +1047,8 @@ abstract class _AppParamState implements AppParamState {
   String get configOddsDropRateChuana;
   @override
   String get configOddsDropRateDaiana;
+  @override
+  String get configBaganrikiBrain;
   @override
 
   ///

@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../parts/odds_finder_dialog.dart';
+import 'baganriki_brain_display_alert.dart';
+
 class AiAnalysisExplainAlert extends ConsumerStatefulWidget {
   const AiAnalysisExplainAlert({super.key});
 
@@ -134,7 +137,21 @@ class _AiAnalysisExplainAlertState extends ConsumerState<AiAnalysisExplainAlert>
             _buildHeader(context),
 
             Divider(color: Colors.white.withValues(alpha: 0.5), thickness: 5),
-            const SizedBox(height: 16),
+
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: <Widget>[
+                const SizedBox.shrink(),
+                GestureDetector(
+                  onTap: () => OddsFinderDialog(context: context, widget: const BaganrikiBrainDisplayAlert()),
+
+                  child: const Padding(
+                    padding: EdgeInsets.all(8.0),
+                    child: Text('AI予想の判断基準について', style: TextStyle(fontSize: 10)),
+                  ),
+                ),
+              ],
+            ),
 
             Expanded(child: _buildBody()),
           ],
