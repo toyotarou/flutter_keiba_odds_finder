@@ -5,20 +5,19 @@ import '../../../utility/utility.dart';
 import '../../models/horse_model.dart';
 import '../../models/login_user_model.dart';
 import '../../models/odds_model.dart';
-
 // import '../../models/odds_wide_model.dart';
 //
 //
 
 import '../../models/popularity_rank_odds_median_model.dart';
 import '../../models/push_notifier_user_model.dart';
+import '../../models/race_introspection_model.dart';
 import '../../models/race_model.dart';
 import '../../models/schedule_model.dart';
 import '../../models/score_model.dart';
 import '../../models/summary_model.dart';
 
 part 'app_param.freezed.dart';
-
 part 'app_param.g.dart';
 
 @freezed
@@ -51,6 +50,8 @@ class AppParamState with _$AppParamState {
     @Default(<String, ScoreModel>{}) Map<String, ScoreModel> keepHorseScoreMap,
 
     @Default(<String, ScoreModel>{}) Map<String, ScoreModel> keepJockeyScoreMap,
+
+    @Default(<String, RaceIntrospectionModel>{}) Map<String, RaceIntrospectionModel> keepRaceIntrospectionMap,
 
     ///
     @Default('') String configOddsGetTiming,
@@ -150,6 +151,10 @@ class AppParam extends _$AppParam {
 
   ///
   void setKeepJockeyScoreMap({required Map<String, ScoreModel> map}) => state = state.copyWith(keepJockeyScoreMap: map);
+
+  ///
+  void setKeepRaceIntrospectionMap({required Map<String, RaceIntrospectionModel> map}) =>
+      state = state.copyWith(keepRaceIntrospectionMap: map);
 
   //////////////
 

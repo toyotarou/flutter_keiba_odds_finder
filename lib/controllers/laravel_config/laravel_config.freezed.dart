@@ -20,6 +20,7 @@ mixin _$LaravelConfigState {
   String get oddsDropRateHonmei => throw _privateConstructorUsedError;
   String get oddsDropRateChuana => throw _privateConstructorUsedError;
   String get oddsDropRateDaiana => throw _privateConstructorUsedError;
+  String get baganrikiBrain => throw _privateConstructorUsedError;
 
   @JsonKey(ignore: true)
   $LaravelConfigStateCopyWith<LaravelConfigState> get copyWith =>
@@ -36,7 +37,8 @@ abstract class $LaravelConfigStateCopyWith<$Res> {
       {String oddsGetTiming,
       String oddsDropRateHonmei,
       String oddsDropRateChuana,
-      String oddsDropRateDaiana});
+      String oddsDropRateDaiana,
+      String baganrikiBrain});
 }
 
 /// @nodoc
@@ -56,6 +58,7 @@ class _$LaravelConfigStateCopyWithImpl<$Res, $Val extends LaravelConfigState>
     Object? oddsDropRateHonmei = null,
     Object? oddsDropRateChuana = null,
     Object? oddsDropRateDaiana = null,
+    Object? baganrikiBrain = null,
   }) {
     return _then(_value.copyWith(
       oddsGetTiming: null == oddsGetTiming
@@ -74,6 +77,10 @@ class _$LaravelConfigStateCopyWithImpl<$Res, $Val extends LaravelConfigState>
           ? _value.oddsDropRateDaiana
           : oddsDropRateDaiana // ignore: cast_nullable_to_non_nullable
               as String,
+      baganrikiBrain: null == baganrikiBrain
+          ? _value.baganrikiBrain
+          : baganrikiBrain // ignore: cast_nullable_to_non_nullable
+              as String,
     ) as $Val);
   }
 }
@@ -90,7 +97,8 @@ abstract class _$$LaravelConfigStateImplCopyWith<$Res>
       {String oddsGetTiming,
       String oddsDropRateHonmei,
       String oddsDropRateChuana,
-      String oddsDropRateDaiana});
+      String oddsDropRateDaiana,
+      String baganrikiBrain});
 }
 
 /// @nodoc
@@ -108,6 +116,7 @@ class __$$LaravelConfigStateImplCopyWithImpl<$Res>
     Object? oddsDropRateHonmei = null,
     Object? oddsDropRateChuana = null,
     Object? oddsDropRateDaiana = null,
+    Object? baganrikiBrain = null,
   }) {
     return _then(_$LaravelConfigStateImpl(
       oddsGetTiming: null == oddsGetTiming
@@ -126,6 +135,10 @@ class __$$LaravelConfigStateImplCopyWithImpl<$Res>
           ? _value.oddsDropRateDaiana
           : oddsDropRateDaiana // ignore: cast_nullable_to_non_nullable
               as String,
+      baganrikiBrain: null == baganrikiBrain
+          ? _value.baganrikiBrain
+          : baganrikiBrain // ignore: cast_nullable_to_non_nullable
+              as String,
     ));
   }
 }
@@ -137,7 +150,8 @@ class _$LaravelConfigStateImpl implements _LaravelConfigState {
       {this.oddsGetTiming = '',
       this.oddsDropRateHonmei = '',
       this.oddsDropRateChuana = '',
-      this.oddsDropRateDaiana = ''});
+      this.oddsDropRateDaiana = '',
+      this.baganrikiBrain = ''});
 
   @override
   @JsonKey()
@@ -151,10 +165,13 @@ class _$LaravelConfigStateImpl implements _LaravelConfigState {
   @override
   @JsonKey()
   final String oddsDropRateDaiana;
+  @override
+  @JsonKey()
+  final String baganrikiBrain;
 
   @override
   String toString() {
-    return 'LaravelConfigState(oddsGetTiming: $oddsGetTiming, oddsDropRateHonmei: $oddsDropRateHonmei, oddsDropRateChuana: $oddsDropRateChuana, oddsDropRateDaiana: $oddsDropRateDaiana)';
+    return 'LaravelConfigState(oddsGetTiming: $oddsGetTiming, oddsDropRateHonmei: $oddsDropRateHonmei, oddsDropRateChuana: $oddsDropRateChuana, oddsDropRateDaiana: $oddsDropRateDaiana, baganrikiBrain: $baganrikiBrain)';
   }
 
   @override
@@ -169,12 +186,19 @@ class _$LaravelConfigStateImpl implements _LaravelConfigState {
             (identical(other.oddsDropRateChuana, oddsDropRateChuana) ||
                 other.oddsDropRateChuana == oddsDropRateChuana) &&
             (identical(other.oddsDropRateDaiana, oddsDropRateDaiana) ||
-                other.oddsDropRateDaiana == oddsDropRateDaiana));
+                other.oddsDropRateDaiana == oddsDropRateDaiana) &&
+            (identical(other.baganrikiBrain, baganrikiBrain) ||
+                other.baganrikiBrain == baganrikiBrain));
   }
 
   @override
-  int get hashCode => Object.hash(runtimeType, oddsGetTiming,
-      oddsDropRateHonmei, oddsDropRateChuana, oddsDropRateDaiana);
+  int get hashCode => Object.hash(
+      runtimeType,
+      oddsGetTiming,
+      oddsDropRateHonmei,
+      oddsDropRateChuana,
+      oddsDropRateDaiana,
+      baganrikiBrain);
 
   @JsonKey(ignore: true)
   @override
@@ -189,7 +213,8 @@ abstract class _LaravelConfigState implements LaravelConfigState {
       {final String oddsGetTiming,
       final String oddsDropRateHonmei,
       final String oddsDropRateChuana,
-      final String oddsDropRateDaiana}) = _$LaravelConfigStateImpl;
+      final String oddsDropRateDaiana,
+      final String baganrikiBrain}) = _$LaravelConfigStateImpl;
 
   @override
   String get oddsGetTiming;
@@ -199,6 +224,8 @@ abstract class _LaravelConfigState implements LaravelConfigState {
   String get oddsDropRateChuana;
   @override
   String get oddsDropRateDaiana;
+  @override
+  String get baganrikiBrain;
   @override
   @JsonKey(ignore: true)
   _$$LaravelConfigStateImplCopyWith<_$LaravelConfigStateImpl> get copyWith =>

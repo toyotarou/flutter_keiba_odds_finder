@@ -8,13 +8,13 @@ import '../extensions/extensions.dart';
 import '../models/horse_model.dart';
 import '../models/login_user_model.dart';
 import '../models/odds_model.dart';
-
 // import '../models/odds_wide_model.dart';
 //
 //
 
 import '../models/popularity_rank_odds_median_model.dart';
 import '../models/push_notifier_user_model.dart';
+import '../models/race_introspection_model.dart';
 import '../models/race_model.dart';
 import '../models/race_result_model.dart';
 import '../models/schedule_model.dart';
@@ -67,6 +67,7 @@ class HomeScreen extends ConsumerStatefulWidget {
     required this.popularityRankOddsMedianMap,
     required this.horseScoreMap,
     required this.jockeyScoreMap,
+    required this.raceIntrospectionMap,
   });
 
   final Map<String, List<ScheduleModel>> scheduleDateBashoMap;
@@ -95,6 +96,8 @@ class HomeScreen extends ConsumerStatefulWidget {
 
   final Map<String, ScoreModel> horseScoreMap;
   final Map<String, ScoreModel> jockeyScoreMap;
+
+  final Map<String, RaceIntrospectionModel> raceIntrospectionMap;
 
   final String loggedInUserId;
   final VoidCallback onLogout;
@@ -139,6 +142,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
 
     horseScoreNotifier.getAllHorseScoreData();
     jockeyScoreNotifier.getAllJockeyScoreData();
+
+    raceIntrospectionNotifier.getAllRaceIntrospectionData();
 
     WidgetsBinding.instance.addPostFrameCallback((_) => _syncAppParam());
     if (widget.isRankingDialogOpen) {
@@ -243,6 +248,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
 
     appParamNotifier.setKeepHorseScoreMap(map: widget.horseScoreMap);
     appParamNotifier.setKeepJockeyScoreMap(map: widget.jockeyScoreMap);
+
+    appParamNotifier.setKeepRaceIntrospectionMap(map: widget.raceIntrospectionMap);
   }
 
   ///

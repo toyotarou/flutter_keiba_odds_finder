@@ -288,6 +288,8 @@ class _MyAppState extends ConsumerState<MyApp> with ControllersMixin<MyApp> {
                 horseScoreMap: horseScoreState.horseScoreMap,
                 jockeyScoreMap: jockeyScoreState.jockeyScoreMap,
 
+                raceIntrospectionMap: raceIntrospectionState.raceIntrospectionMap,
+
                 loggedInUserId: _loggedInUserId,
                 onLogout: () => setState(() => _loggedInUserId = ''),
               )

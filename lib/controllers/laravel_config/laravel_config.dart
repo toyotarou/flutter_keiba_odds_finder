@@ -18,6 +18,8 @@ class LaravelConfigState with _$LaravelConfigState {
     @Default('') String oddsDropRateHonmei,
     @Default('') String oddsDropRateChuana,
     @Default('') String oddsDropRateDaiana,
+
+    @Default('') String baganrikiBrain,
   }) = _LaravelConfigState;
 }
 
@@ -42,6 +44,8 @@ class LaravelConfig extends _$LaravelConfig {
       String strOddsDropRateChuana = '';
       String strOddsDropRateDaiana = '';
 
+      String strBaganrikiBrain = '';
+
       // ignore: always_specify_types
       await client.get(path: APIPath.getHorseOddsFinderConfigs).then((value) {
         // ignore: avoid_dynamic_calls
@@ -55,6 +59,9 @@ class LaravelConfig extends _$LaravelConfig {
         strOddsDropRateChuana = (oddsDropRate['chu_ana'] as num).toString();
         // ignore: avoid_dynamic_calls
         strOddsDropRateDaiana = (oddsDropRate['daiana'] as num).toString();
+
+        // ignore: avoid_dynamic_calls
+        strBaganrikiBrain = value['data']['baganriki_brain'] as String;
       });
 
       return state.copyWith(
@@ -62,6 +69,7 @@ class LaravelConfig extends _$LaravelConfig {
         oddsDropRateHonmei: strOddsDropRateHonmei,
         oddsDropRateChuana: strOddsDropRateChuana,
         oddsDropRateDaiana: strOddsDropRateDaiana,
+        baganrikiBrain: strBaganrikiBrain,
       );
     } catch (e) {
       utility.showError('予期せぬエラーが発生しました');

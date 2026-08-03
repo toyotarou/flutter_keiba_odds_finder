@@ -1,26 +1,26 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'laravel_config.dart';
+part of 'race_introspection.dart';
 
 // **************************************************************************
 // RiverpodGenerator
 // **************************************************************************
 
-String _$laravelConfigHash() => r'a8650ec5f31bd373c3bef3264bd23581261720ab';
+String _$raceIntrospectionHash() => r'002227ab208fbe49e72125fa0934f1fc959b7163';
 
-/// See also [LaravelConfig].
-@ProviderFor(LaravelConfig)
-final laravelConfigProvider =
-    AutoDisposeNotifierProvider<LaravelConfig, LaravelConfigState>.internal(
-  LaravelConfig.new,
-  name: r'laravelConfigProvider',
+/// See also [RaceIntrospection].
+@ProviderFor(RaceIntrospection)
+final raceIntrospectionProvider = AutoDisposeNotifierProvider<RaceIntrospection,
+    RaceIntrospectionState>.internal(
+  RaceIntrospection.new,
+  name: r'raceIntrospectionProvider',
   debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
       ? null
-      : _$laravelConfigHash,
+      : _$raceIntrospectionHash,
   dependencies: null,
   allTransitiveDependencies: null,
 );
 
-typedef _$LaravelConfig = AutoDisposeNotifier<LaravelConfigState>;
+typedef _$RaceIntrospection = AutoDisposeNotifier<RaceIntrospectionState>;
 // ignore_for_file: type=lint
 // ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member

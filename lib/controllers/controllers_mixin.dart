@@ -21,6 +21,7 @@ import 'odds_get_timing/odds_get_timing.dart';
 import 'popularity_rank_odds_median/popularity_rank_odds_median.dart';
 import 'push_notifier_user/push_notifier_user.dart';
 import 'race/race.dart';
+import 'race_introspection/race_introspection.dart';
 import 'race_result/race_result.dart';
 import 'schedule/schedule.dart';
 import 'summary/summary.dart';
@@ -144,6 +145,14 @@ mixin ControllersMixin<T extends ConsumerStatefulWidget> on ConsumerState<T> {
   JockeyScoreState get jockeyScoreState => ref.watch(jockeyScoreProvider);
 
   JockeyScore get jockeyScoreNotifier => ref.read(jockeyScoreProvider.notifier);
+
+  //==========================================//
+
+  //==========================================//
+
+  RaceIntrospectionState get raceIntrospectionState => ref.watch(raceIntrospectionProvider);
+
+  RaceIntrospection get raceIntrospectionNotifier => ref.read(raceIntrospectionProvider.notifier);
 
   //==========================================//
 }
