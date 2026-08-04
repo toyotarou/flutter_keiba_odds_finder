@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/gestures.dart' show PointerDeviceKind;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -19,7 +18,6 @@ import '../../models/odds_model.dart';
 import '../../models/popularity_rank_odds_median_model.dart';
 import '../../models/race_analysis_model.dart';
 import '../../models/race_model.dart';
-import '../../models/race_result_history_model.dart';
 import '../../models/race_result_model.dart';
 import '../../utility/functions.dart';
 import '../../utility/utility.dart';
@@ -27,11 +25,6 @@ import '../components/ai_analysis_display_alert.dart';
 import '../components/horse_detail_display_alert.dart';
 import '../components/horse_odds_ranking_display_alert.dart';
 import '../components/similar_races_display_alert.dart';
-
-// import '../components/popularity_record_display_alert.dart';
-//
-//
-//
 
 import '../components/total_forecast_display_alert.dart';
 import '../parts/dashed_line_painter.dart';
@@ -100,7 +93,6 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
   Set<int> _aiPickupNums = <int>{};
   Map<int, String> _aiPickupScores = <int, String>{};
   String _aiPickupHorse = '';
-  Map<String, List<RaceResultHistoryModel>> _battleRecordMap = <String, List<RaceResultHistoryModel>>{};
 
   // 初回訪問時にmedianなし&期待数値タブ選択状態でパネルを自動クローズしたかどうか
   bool _autoClosedPanel = false;
@@ -145,7 +137,6 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         _fetchAiPickup();
-        _fetchHorseBattleRecords();
       }
     });
   }
@@ -203,31 +194,6 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
           _aiPickupNums = _parsePickupHorse(pickupRaw);
           _aiPickupScores = _parsePickupScores(pickupRaw);
         });
-      }
-    } catch (_) {}
-  }
-
-  ///
-  Future<void> _fetchHorseBattleRecords() async {
-    final List<HorseModel> horses = (widget.horseMap[widget.mapKey] ?? <HorseModel>[])
-        .where((HorseModel h) => h.race == widget.raceNumber)
-        .toList();
-    if (horses.isEmpty) {
-      return;
-    }
-    final String names = horses.map((HorseModel h) => h.name).join('/');
-    try {
-      final dynamic response = await ref
-          .read(httpClientProvider)
-          .get(path: APIPath.getHorseOddsFinderHorseBattleRecord, queryParameters: <String, dynamic>{'name': names});
-      final List<dynamic> dataList = (response as Map<String, dynamic>)['data'] as List<dynamic>? ?? <dynamic>[];
-      final Map<String, List<RaceResultHistoryModel>> map = <String, List<RaceResultHistoryModel>>{};
-      for (final dynamic item in dataList) {
-        final RaceResultHistoryModel model = RaceResultHistoryModel.fromJson(item as Map<String, dynamic>);
-        map.putIfAbsent(model.name, () => <RaceResultHistoryModel>[]).add(model);
-      }
-      if (mounted) {
-        setState(() => _battleRecordMap = map);
       }
     } catch (_) {}
   }
@@ -989,13 +955,6 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                           ),
 
                           children: <Widget>[
-                            //////////////////////
-                            _BattleRecordSection(
-                              historyList: horse != null ? _battleRecordMap[horse.name] : null,
-                              course: course,
-                              dist: dist,
-                            ),
-
                             //////////////////////
                             if (oddsTimeline != null) ...<Widget>[
                               const SizedBox(height: 5),
@@ -1950,209 +1909,6 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
   }
 }
 
-// ---------------------------------------------------------------------------
-// Page-private widgets
-// ---------------------------------------------------------------------------
-
-class _BattleRecordSection extends StatelessWidget {
-  const _BattleRecordSection({required this.historyList, required this.course, required this.dist});
-
-  final List<RaceResultHistoryModel>? historyList;
-  final String course;
-  final int dist;
-
-  @override
-  Widget build(BuildContext context) {
-    if (historyList == null) {
-      return const Text('過去の出走はありません。', style: TextStyle(fontSize: 9, color: Colors.yellowAccent));
-    }
-
-    final List<RaceResultHistoryModel> sorted = historyList!.toList()
-      ..sort((RaceResultHistoryModel a, RaceResultHistoryModel b) => b.date.compareTo(a.date));
-    final List<RaceResultHistoryModel> recent = sorted.take(4).toList();
-
-    final int plottable = recent.where((RaceResultHistoryModel h) => h.finishingPosition > 0).length;
-
-    return DefaultTextStyle(
-      style: const TextStyle(fontSize: 10, color: Colors.white),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          const Text('過去の出走（直近4R）'),
-          const SizedBox(height: 5),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 10),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Expanded(
-                  child: Column(
-                    children: recent.map((RaceResultHistoryModel e) {
-                      return Container(
-                        decoration: BoxDecoration(
-                          border: Border(bottom: BorderSide(color: Colors.white.withValues(alpha: 0.3))),
-                        ),
-                        child: Stack(
-                          children: <Widget>[
-                            Positioned(
-                              right: 30,
-                              child: Text(
-                                '${e.course} ${e.dist.toString().toCurrency()}m',
-                                style: TextStyle(
-                                  color: (e.course == course && e.dist == dist)
-                                      ? Colors.yellow.withValues(alpha: 0.8)
-                                      : Colors.white.withValues(alpha: 0.5),
-                                ),
-                              ),
-                            ),
-
-                            Row(
-                              children: <Widget>[
-                                Text(e.date),
-                                const SizedBox(width: 10),
-                                Expanded(child: Text(e.raceName, maxLines: 1, overflow: TextOverflow.ellipsis)),
-                                const SizedBox(width: 10),
-                                Stack(
-                                  alignment: Alignment.center,
-                                  children: <Widget>[
-                                    Container(
-                                      width: 24,
-                                      height: 24,
-                                      decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        border: Border.all(
-                                          color: raceRankColor(
-                                            e.finishingPosition > 0 ? e.finishingPosition : null,
-                                            alpha: 1.0,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-
-                                    Text(
-                                      e.finishingPosition > 0 ? e.finishingPosition.toString() : '着順なし',
-                                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                ),
-                if (plottable >= 2) ...<Widget>[
-                  const SizedBox(width: 10),
-                  Container(
-                    width: 120,
-                    height: 80,
-                    decoration: BoxDecoration(border: Border.all(color: Colors.white.withValues(alpha: 0.4))),
-                    child: _FinishingPositionChart(historyList: historyList!),
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _FinishingPositionChart extends StatelessWidget {
-  const _FinishingPositionChart({required this.historyList});
-
-  final List<RaceResultHistoryModel> historyList;
-
-  @override
-  Widget build(BuildContext context) {
-    final List<RaceResultHistoryModel> sorted = historyList.toList()
-      ..sort((RaceResultHistoryModel a, RaceResultHistoryModel b) => b.date.compareTo(a.date));
-    final List<RaceResultHistoryModel> recent = sorted.take(4).toList().reversed.toList();
-
-    final List<FlSpot> spots = <FlSpot>[];
-    for (int i = 0; i < recent.length; i++) {
-      final int pos = recent[i].finishingPosition;
-      if (pos > 0) {
-        spots.add(FlSpot(i.toDouble(), (19 - pos).toDouble()));
-      }
-    }
-
-    if (spots.isEmpty) {
-      return const SizedBox.shrink();
-    }
-
-    final LineChartBarData barData = LineChartBarData(
-      spots: spots,
-      color: Colors.white,
-      barWidth: 1.5,
-      dotData: FlDotData(
-        getDotPainter: (FlSpot spot, double xPercentage, LineChartBarData bar, int index) {
-          final int pos = (19 - spot.y).round();
-          return FlDotCirclePainter(
-            radius: 3,
-            color: raceRankColor(pos, alpha: 1.0, fallback: Colors.white),
-            strokeColor: Colors.transparent,
-          );
-        },
-      ),
-    );
-
-    return LineChart(
-      LineChartData(
-        lineTouchData: LineTouchData(
-          enabled: false,
-          touchTooltipData: LineTouchTooltipData(
-            fitInsideHorizontally: true,
-            fitInsideVertically: true,
-            tooltipPadding: EdgeInsets.zero,
-            tooltipMargin: -18,
-            getTooltipColor: (_) => Colors.transparent,
-            getTooltipItems: (List<LineBarSpot> touchedSpots) => touchedSpots.map((LineBarSpot s) {
-              final int pos = (19 - s.y).round();
-              return LineTooltipItem(
-                '$pos',
-                TextStyle(
-                  fontSize: 8,
-                  fontWeight: FontWeight.bold,
-                  color: raceRankColor(pos, alpha: 1.0, fallback: Colors.white),
-                ),
-              );
-            }).toList(),
-          ),
-        ),
-        showingTooltipIndicators: List<ShowingTooltipIndicators>.generate(
-          spots.length,
-          (int i) => ShowingTooltipIndicators(<LineBarSpot>[LineBarSpot(barData, 0, spots[i])]),
-        ),
-        minY: 1,
-        maxY: 18,
-        minX: 0,
-        maxX: (recent.length - 1).toDouble(),
-        clipData: const FlClipData.all(),
-        gridData: const FlGridData(show: false),
-        borderData: FlBorderData(show: false),
-        rangeAnnotations: RangeAnnotations(
-          horizontalRangeAnnotations: <HorizontalRangeAnnotation>[
-            HorizontalRangeAnnotation(y1: 17.5, y2: 18.5, color: const Color(0xFFFFD700).withValues(alpha: 0.6)),
-            HorizontalRangeAnnotation(y1: 16.5, y2: 17.5, color: const Color(0xFFC0C0C0).withValues(alpha: 0.6)),
-            HorizontalRangeAnnotation(y1: 15.5, y2: 16.5, color: const Color(0xFFCD7F32).withValues(alpha: 0.6)),
-          ],
-        ),
-        titlesData: const FlTitlesData(
-          leftTitles: AxisTitles(),
-          rightTitles: AxisTitles(),
-          topTitles: AxisTitles(),
-          bottomTitles: AxisTitles(),
-        ),
-        lineBarsData: <LineChartBarData>[barData],
-      ),
-    );
-  }
-}
-
 class _OddsTimelineRow extends StatelessWidget {
   const _OddsTimelineRow({
     required this.timeline,
@@ -2356,7 +2112,6 @@ class _OddsTimelineRow extends StatelessWidget {
                         width: double.infinity,
                         height: 50,
                         decoration: BoxDecoration(
-                          /////////
                           border: Border.all(
                             color: hasRatio && ratio >= 2.0
                                 ? const Color(0xFFFBB6CE).withValues(alpha: 0.4)

@@ -1,3 +1,4 @@
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -677,74 +678,6 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
                     ),
                   ],
                 ),
-
-                /*
-
-
-
-
-
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: <Widget>[
-                    Expanded(
-                      child:
-                          ((double.tryParse(_kitaichiMap[popularity]!.tanEvScore) ?? 0) > 1.0 ||
-                              (double.tryParse(_kitaichiMap[popularity]!.fukuEvScore) ?? 0) > 1.0)
-                          ? Container(alignment: Alignment.topRight, child: _buildAnaumaBadge())
-                          : const SizedBox.shrink(),
-                    ),
-
-                    Column(
-                      children: <Widget>[
-                        Row(
-                          children: <Widget>[
-                            const Text('単勝妙味:', style: TextStyle(fontSize: 10, color: Colors.white54)),
-                            const SizedBox(width: 8),
-                            Text(
-                              _kitaichiMap[popularity]!.tanEvScore,
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: (double.tryParse(_kitaichiMap[popularity]!.tanEvScore) ?? 0) >= 1.0
-                                    ? Colors.greenAccent
-                                    : Colors.white54,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                          ],
-                        ),
-
-                        const SizedBox(height: 4),
-                        Row(
-                          children: <Widget>[
-                            const Text('複勝妙味:', style: TextStyle(fontSize: 10, color: Colors.white54)),
-                            const SizedBox(width: 8),
-                            Text(
-                              _kitaichiMap[popularity]!.fukuEvScore,
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: (double.tryParse(_kitaichiMap[popularity]!.fukuEvScore) ?? 0) >= 1.0
-                                    ? Colors.greenAccent
-                                    : Colors.white54,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-
-
-
-
-
-
-
-                */
               ],
 
               const SizedBox(height: 5),
@@ -778,6 +711,12 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
               ],
 
               const SizedBox(height: 5),
+
+              _BattleRecordSection(
+                historyList: _battleRecordMap[item.num],
+                course: widget.currentRaceModel.course,
+                dist: widget.currentRaceModel.dist,
+              ),
             ],
           ),
         ),
@@ -1015,6 +954,205 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
       width: context.screenSize.width / 7,
       height: 20,
       child: Text(label, style: const TextStyle(fontSize: 10)),
+    );
+  }
+}
+
+class _BattleRecordSection extends StatelessWidget {
+  const _BattleRecordSection({required this.historyList, required this.course, required this.dist});
+
+  final List<RaceResultHistoryModel>? historyList;
+  final String course;
+  final int dist;
+
+  @override
+  Widget build(BuildContext context) {
+    if (historyList == null) {
+      return const Text('過去の出走はありません。', style: TextStyle(fontSize: 9, color: Colors.yellowAccent));
+    }
+
+    final List<RaceResultHistoryModel> sorted = historyList!.toList()
+      ..sort((RaceResultHistoryModel a, RaceResultHistoryModel b) => b.date.compareTo(a.date));
+    final List<RaceResultHistoryModel> recent = sorted.take(4).toList();
+
+    final int plottable = recent.where((RaceResultHistoryModel h) => h.finishingPosition > 0).length;
+
+    return DefaultTextStyle(
+      style: const TextStyle(fontSize: 10, color: Colors.white),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          const Text('過去の出走（直近4R）'),
+          const SizedBox(height: 5),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Expanded(
+                  child: Column(
+                    children: recent.map((RaceResultHistoryModel e) {
+                      return Container(
+                        decoration: BoxDecoration(
+                          border: Border(bottom: BorderSide(color: Colors.white.withValues(alpha: 0.3))),
+                        ),
+                        child: Stack(
+                          children: <Widget>[
+                            Positioned(
+                              right: 30,
+                              child: Text(
+                                '${e.course} ${e.dist.toString().toCurrency()}m',
+                                style: TextStyle(
+                                  color: (e.course == course && e.dist == dist)
+                                      ? Colors.yellow.withValues(alpha: 0.8)
+                                      : Colors.white.withValues(alpha: 0.5),
+                                ),
+                              ),
+                            ),
+
+                            Row(
+                              children: <Widget>[
+                                Text(e.date),
+                                const SizedBox(width: 10),
+                                Expanded(child: Text(e.raceName, maxLines: 1, overflow: TextOverflow.ellipsis)),
+                                const SizedBox(width: 10),
+                                Stack(
+                                  alignment: Alignment.center,
+                                  children: <Widget>[
+                                    Container(
+                                      width: 24,
+                                      height: 24,
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        border: Border.all(
+                                          color: raceRankColor(
+                                            e.finishingPosition > 0 ? e.finishingPosition : null,
+                                            alpha: 1.0,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+
+                                    Text(
+                                      e.finishingPosition > 0 ? e.finishingPosition.toString() : '着順なし',
+                                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ),
+                if (plottable >= 2) ...<Widget>[
+                  const SizedBox(width: 10),
+                  Container(
+                    width: 120,
+                    height: 80,
+                    decoration: BoxDecoration(border: Border.all(color: Colors.white.withValues(alpha: 0.4))),
+                    child: _FinishingPositionChart(historyList: historyList!),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FinishingPositionChart extends StatelessWidget {
+  const _FinishingPositionChart({required this.historyList});
+
+  final List<RaceResultHistoryModel> historyList;
+
+  @override
+  Widget build(BuildContext context) {
+    final List<RaceResultHistoryModel> sorted = historyList.toList()
+      ..sort((RaceResultHistoryModel a, RaceResultHistoryModel b) => b.date.compareTo(a.date));
+    final List<RaceResultHistoryModel> recent = sorted.take(4).toList().reversed.toList();
+
+    final List<FlSpot> spots = <FlSpot>[];
+    for (int i = 0; i < recent.length; i++) {
+      final int pos = recent[i].finishingPosition;
+      if (pos > 0) {
+        spots.add(FlSpot(i.toDouble(), (19 - pos).toDouble()));
+      }
+    }
+
+    if (spots.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    final LineChartBarData barData = LineChartBarData(
+      spots: spots,
+      color: Colors.white,
+      barWidth: 1.5,
+      dotData: FlDotData(
+        getDotPainter: (FlSpot spot, double xPercentage, LineChartBarData bar, int index) {
+          final int pos = (19 - spot.y).round();
+          return FlDotCirclePainter(
+            radius: 3,
+            color: raceRankColor(pos, alpha: 1.0, fallback: Colors.white),
+            strokeColor: Colors.transparent,
+          );
+        },
+      ),
+    );
+
+    return LineChart(
+      LineChartData(
+        lineTouchData: LineTouchData(
+          enabled: false,
+          touchTooltipData: LineTouchTooltipData(
+            fitInsideHorizontally: true,
+            fitInsideVertically: true,
+            tooltipPadding: EdgeInsets.zero,
+            tooltipMargin: -18,
+            getTooltipColor: (_) => Colors.transparent,
+            getTooltipItems: (List<LineBarSpot> touchedSpots) => touchedSpots.map((LineBarSpot s) {
+              final int pos = (19 - s.y).round();
+              return LineTooltipItem(
+                '$pos',
+                TextStyle(
+                  fontSize: 8,
+                  fontWeight: FontWeight.bold,
+                  color: raceRankColor(pos, alpha: 1.0, fallback: Colors.white),
+                ),
+              );
+            }).toList(),
+          ),
+        ),
+        showingTooltipIndicators: List<ShowingTooltipIndicators>.generate(
+          spots.length,
+          (int i) => ShowingTooltipIndicators(<LineBarSpot>[LineBarSpot(barData, 0, spots[i])]),
+        ),
+        minY: 1,
+        maxY: 18,
+        minX: 0,
+        maxX: (recent.length - 1).toDouble(),
+        clipData: const FlClipData.all(),
+        gridData: const FlGridData(show: false),
+        borderData: FlBorderData(show: false),
+        rangeAnnotations: RangeAnnotations(
+          horizontalRangeAnnotations: <HorizontalRangeAnnotation>[
+            HorizontalRangeAnnotation(y1: 17.5, y2: 18.5, color: const Color(0xFFFFD700).withValues(alpha: 0.6)),
+            HorizontalRangeAnnotation(y1: 16.5, y2: 17.5, color: const Color(0xFFC0C0C0).withValues(alpha: 0.6)),
+            HorizontalRangeAnnotation(y1: 15.5, y2: 16.5, color: const Color(0xFFCD7F32).withValues(alpha: 0.6)),
+          ],
+        ),
+        titlesData: const FlTitlesData(
+          leftTitles: AxisTitles(),
+          rightTitles: AxisTitles(),
+          topTitles: AxisTitles(),
+          bottomTitles: AxisTitles(),
+        ),
+        lineBarsData: <LineChartBarData>[barData],
+      ),
     );
   }
 }
