@@ -62,13 +62,7 @@ class _BaganrikiBrainDisplayAlertState extends ConsumerState<BaganrikiBrainDispl
             h2: const TextStyle(fontSize: 13, color: Colors.greenAccent, fontWeight: FontWeight.bold),
             h3: const TextStyle(fontSize: 12, color: Colors.yellowAccent, fontWeight: FontWeight.bold),
             p: const TextStyle(fontSize: 11, color: Colors.white, letterSpacing: 0.8, height: 1.8),
-            strong: const TextStyle(
-              fontSize: 11,
-              color: Colors.yellowAccent,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 0.8,
-              height: 1.8,
-            ),
+            strong: const TextStyle(fontSize: 11, color: Colors.white, letterSpacing: 0.8, height: 1.8),
             listBullet: const TextStyle(fontSize: 11, color: Colors.white70, height: 1.8),
             horizontalRuleDecoration: const BoxDecoration(
               border: Border(bottom: BorderSide(color: Colors.white24)),
