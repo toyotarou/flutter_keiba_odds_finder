@@ -570,18 +570,43 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
                 child: Row(
                   children: <Widget>[
                     Expanded(
-                      child: Text(item.odds, style: const TextStyle(fontSize: 12, color: Colors.white)),
+                      child: Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 10),
+                        padding: const EdgeInsets.all(3),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.1),
+
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        alignment: Alignment.center,
+
+                        child: Text(item.odds, style: const TextStyle(fontSize: 12, color: Colors.white)),
+                      ),
                     ),
+
                     Expanded(
-                      child: Text(
-                        upsetScore.isEmpty ? '-' : upsetScore,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: isInHighlight ? Colors.yellowAccent : Colors.white,
-                          fontWeight: isInHighlight ? FontWeight.bold : FontWeight.normal,
+                      child: Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 10),
+                        padding: const EdgeInsets.all(3),
+                        decoration: BoxDecoration(
+                          color: isInHighlight
+                              ? Colors.yellowAccent.withValues(alpha: 0.1)
+                              : Colors.white.withValues(alpha: 0.1),
+
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          upsetScore.isEmpty ? '-' : upsetScore,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: isInHighlight ? Colors.yellowAccent : Colors.white,
+                            fontWeight: isInHighlight ? FontWeight.bold : FontWeight.normal,
+                          ),
                         ),
                       ),
                     ),
+
                     Expanded(child: isAiPickup ? _buildAiBadge(item.num) : const SizedBox.shrink()),
                     Expanded(child: hasAnalysis ? _buildPastBadge() : const SizedBox.shrink()),
                   ],
@@ -958,7 +983,7 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
   }
 }
 
-class _BattleRecordSection extends StatelessWidget {
+class _BattleRecordSection extends ConsumerStatefulWidget {
   const _BattleRecordSection({required this.historyList, required this.course, required this.dist});
 
   final List<RaceResultHistoryModel>? historyList;
@@ -966,14 +991,22 @@ class _BattleRecordSection extends StatelessWidget {
   final int dist;
 
   @override
+  ConsumerState<_BattleRecordSection> createState() => _BattleRecordSectionState();
+}
+
+class _BattleRecordSectionState extends ConsumerState<_BattleRecordSection>
+    with ControllersMixin<_BattleRecordSection> {
+  ///
+  @override
   Widget build(BuildContext context) {
-    if (historyList == null) {
+    if (widget.historyList == null) {
       return const Text('過去の出走はありません。', style: TextStyle(fontSize: 9, color: Colors.yellowAccent));
     }
 
-    final List<RaceResultHistoryModel> sorted = historyList!.toList()
-      ..sort((RaceResultHistoryModel a, RaceResultHistoryModel b) => b.date.compareTo(a.date));
-    final List<RaceResultHistoryModel> recent = sorted.take(4).toList();
+    final List<RaceResultHistoryModel> filtered =
+        widget.historyList!.where((RaceResultHistoryModel h) => h.date != appParamState.selectedScheduleDate).toList()
+          ..sort((RaceResultHistoryModel a, RaceResultHistoryModel b) => b.date.compareTo(a.date));
+    final List<RaceResultHistoryModel> recent = filtered.take(4).toList();
 
     final int plottable = recent.where((RaceResultHistoryModel h) => h.finishingPosition > 0).length;
 
@@ -982,7 +1015,7 @@ class _BattleRecordSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          const Text('過去の出走（直近4R）'),
+          const Text('過去の出走'),
           const SizedBox(height: 5),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 10),
@@ -1003,7 +1036,7 @@ class _BattleRecordSection extends StatelessWidget {
                               child: Text(
                                 '${e.course} ${e.dist.toString().toCurrency()}m',
                                 style: TextStyle(
-                                  color: (e.course == course && e.dist == dist)
+                                  color: (e.course == widget.course && e.dist == widget.dist)
                                       ? Colors.yellow.withValues(alpha: 0.8)
                                       : Colors.white.withValues(alpha: 0.5),
                                 ),
@@ -1033,10 +1066,13 @@ class _BattleRecordSection extends StatelessWidget {
                                       ),
                                     ),
 
-                                    Text(
-                                      e.finishingPosition > 0 ? e.finishingPosition.toString() : '着順なし',
-                                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                                    ),
+                                    if (e.finishingPosition > 0)
+                                      Text(
+                                        e.finishingPosition.toString(),
+                                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                                      )
+                                    else
+                                      const Icon(Icons.close, size: 14, color: Colors.white54),
                                   ],
                                 ),
                               ],
@@ -1053,7 +1089,7 @@ class _BattleRecordSection extends StatelessWidget {
                     width: 120,
                     height: 80,
                     decoration: BoxDecoration(border: Border.all(color: Colors.white.withValues(alpha: 0.4))),
-                    child: _FinishingPositionChart(historyList: historyList!),
+                    child: _FinishingPositionChart(historyList: filtered),
                   ),
                 ],
               ],
@@ -1070,6 +1106,7 @@ class _FinishingPositionChart extends StatelessWidget {
 
   final List<RaceResultHistoryModel> historyList;
 
+  ///
   @override
   Widget build(BuildContext context) {
     final List<RaceResultHistoryModel> sorted = historyList.toList()
