@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -44,6 +46,11 @@ class TotalForecastDisplayAlert extends ConsumerStatefulWidget {
 class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplayAlert>
     with ControllersMixin<TotalForecastDisplayAlert> {
   bool _isLoading = true;
+
+  final ScrollController _scrollController = ScrollController();
+  Timer? _repeatTimer;
+  static const double _moveAmount = 18;
+  static const int _tickMs = 16;
   Set<int> _highProbabilityPopularities = <int>{};
   Set<int> _aiPickupNums = <int>{};
   Map<int, String> _aiPickupScores = <int, String>{};
@@ -81,6 +88,37 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) => _fetchAll());
+  }
+
+  ///
+  @override
+  void dispose() {
+    _repeatTimer?.cancel();
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  ///
+  void _startRepeating(VoidCallback action) {
+    _repeatTimer?.cancel();
+    action();
+    _repeatTimer = Timer.periodic(const Duration(milliseconds: _tickMs), (_) => action());
+  }
+
+  ///
+  void _stopRepeating() {
+    _repeatTimer?.cancel();
+    _repeatTimer = null;
+  }
+
+  ///
+  void _scrollBy(double delta) {
+    if (!_scrollController.hasClients) {
+      return;
+    }
+    final ScrollPosition pos = _scrollController.position;
+    final double newOffset = (_scrollController.offset + delta).clamp(0.0, pos.maxScrollExtent);
+    _scrollController.jumpTo(newOffset);
   }
 
   ///
@@ -322,6 +360,69 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
         child: Column(
           children: <Widget>[
             _buildHeader(),
+
+            const SizedBox(height: 5),
+
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: <Widget>[
+                Expanded(
+                  child: DefaultTextStyle(
+                    style: const TextStyle(fontSize: 12, color: Colors.white),
+                    child: Padding(
+                      padding: const EdgeInsets.only(left: 15),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          Row(
+                            children: <Widget>[
+                              Text('R${widget.currentRaceModel.race}'),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  widget.currentRaceModel.raceName,
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 1,
+                                ),
+                              ),
+                            ],
+                          ),
+                          Text('${widget.currentRaceModel.course} ${widget.currentRaceModel.dist}m'),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+
+                Row(
+                  children: <Widget>[
+                    GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTapDown: (_) => _startRepeating(() => _scrollBy(_moveAmount)),
+                      onTapUp: (_) => _stopRepeating(),
+                      onTapCancel: _stopRepeating,
+                      child: const SizedBox(
+                        width: 44,
+                        height: 44,
+                        child: Center(child: Icon(Icons.arrow_downward, color: Colors.white)),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTapDown: (_) => _startRepeating(() => _scrollBy(-_moveAmount)),
+                      onTapUp: (_) => _stopRepeating(),
+                      onTapCancel: _stopRepeating,
+                      child: const SizedBox(
+                        width: 44,
+                        height: 44,
+                        child: Center(child: Icon(Icons.arrow_upward, color: Colors.white)),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
             Divider(color: Colors.white.withValues(alpha: 0.5), thickness: 5),
             Expanded(
               child: Stack(
@@ -338,6 +439,7 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
                           Divider(color: Colors.white.withValues(alpha: 0.5), thickness: 2),
                           Expanded(
                             child: ListView.builder(
+                              controller: _scrollController,
                               padding: const EdgeInsets.symmetric(horizontal: 12),
                               itemCount: widget.displayList.length,
                               itemBuilder: (BuildContext context, int index) => _buildHorseItem(
@@ -379,25 +481,11 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
       padding: const EdgeInsets.only(top: 20, right: 15, left: 15),
       child: DefaultTextStyle(
         style: const TextStyle(fontSize: 12, color: Colors.white),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: <Widget>[
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: <Widget>[
-                Text(appParamState.selectedScheduleDate),
-                Text(appParamState.selectedScheduleKaisuuBashoDayName),
-              ],
-            ),
-            Row(
-              children: <Widget>[
-                Text('R${widget.currentRaceModel.race}'),
-                const SizedBox(width: 10),
-                Expanded(child: Text(widget.currentRaceModel.raceName, overflow: TextOverflow.ellipsis, maxLines: 1)),
-              ],
-            ),
-
-            Text('${widget.currentRaceModel.course} ${widget.currentRaceModel.dist}m'),
+            Text(appParamState.selectedScheduleDate),
+            Text(appParamState.selectedScheduleKaisuuBashoDayName),
           ],
         ),
       ),
@@ -1000,12 +1088,17 @@ class _BattleRecordSectionState extends ConsumerState<_BattleRecordSection>
   @override
   Widget build(BuildContext context) {
     if (widget.historyList == null) {
-      return const Text('過去の出走はありません。', style: TextStyle(fontSize: 9, color: Colors.yellowAccent));
+      return const SizedBox.shrink();
     }
 
     final List<RaceResultHistoryModel> filtered =
         widget.historyList!.where((RaceResultHistoryModel h) => h.date != appParamState.selectedScheduleDate).toList()
           ..sort((RaceResultHistoryModel a, RaceResultHistoryModel b) => b.date.compareTo(a.date));
+
+    if (filtered.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
     final List<RaceResultHistoryModel> recent = filtered.take(4).toList();
 
     final int plottable = recent.where((RaceResultHistoryModel h) => h.finishingPosition > 0).length;
