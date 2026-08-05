@@ -19,6 +19,7 @@ class PastRaceOddsTransitionAlert extends ConsumerStatefulWidget {
 class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransitionAlert>
     with ControllersMixin<PastRaceOddsTransitionAlert> {
   final ScrollController _scrollController = ScrollController();
+  final Map<String, bool> _expandedByDate = <String, bool>{};
 
   static const double _moveAmount = 18;
   static const int _tickMs = 16;
@@ -76,7 +77,50 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: <Widget>[
-                    const Text('過去レースのオッズ遷移表', style: TextStyle(fontSize: 12)),
+                    Row(
+                      children: <Widget>[
+                        const Text('過去レースのオッズ遷移表', style: TextStyle(fontSize: 12)),
+
+                        const SizedBox(width: 5),
+
+                        GestureDetector(
+                          onTap: () {
+                            final bool allOpen = summaryDateBashoMap.keys.every(
+                              (String k) => _expandedByDate[k] ?? false,
+                            );
+
+                            setState(() {
+                              for (final String k in summaryDateBashoMap.keys) {
+                                _expandedByDate[k] = !allOpen;
+                              }
+                            });
+                          },
+                          child: Builder(
+                            builder: (BuildContext context) {
+                              final bool allOpen = summaryDateBashoMap.keys.every(
+                                (String k) => _expandedByDate[k] ?? false,
+                              );
+
+                              return Container(
+                                padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 10),
+                                decoration: BoxDecoration(
+                                  color: allOpen
+                                      ? const Color(0xFF2196F3).withValues(alpha: 0.4)
+                                      : const Color(0xFF4CAF50).withValues(alpha: 0.4),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    allOpen ? 'CLOSE' : 'OPEN',
+                                    style: const TextStyle(color: Colors.white, fontSize: 12),
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
 
                     Row(
                       children: <Widget>[
@@ -129,7 +173,32 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
                                   stops: const <double>[0.7, 1],
                                 ),
                               ),
-                              child: Text(e.key, style: const TextStyle(color: Colors.white)),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: <Widget>[
+                                  Text(e.key, style: const TextStyle(color: Colors.white)),
+
+                                  GestureDetector(
+                                    onTap: () =>
+                                        setState(() => _expandedByDate[e.key] = !(_expandedByDate[e.key] ?? false)),
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 10),
+                                      decoration: BoxDecoration(
+                                        color: (_expandedByDate[e.key] ?? false)
+                                            ? const Color(0xFF2196F3).withValues(alpha: 0.4)
+                                            : const Color(0xFF4CAF50).withValues(alpha: 0.4),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Center(
+                                        child: Text(
+                                          (_expandedByDate[e.key] ?? false) ? 'CLOSE' : 'OPEN',
+                                          style: const TextStyle(color: Colors.white, fontSize: 12),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -147,6 +216,8 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
                                 }
 
                                 return ExpansionTile(
+                                  key: ValueKey<String>('${e.key}_${e2}_${_expandedByDate[e.key] ?? false}'),
+                                  initiallyExpanded: _expandedByDate[e.key] ?? false,
                                   iconColor: Colors.greenAccent,
                                   collapsedIconColor: Colors.white70,
                                   title: Text(
@@ -186,7 +257,11 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
   }
 
   ///
-  ({int hits, int total}) _calcHits({required String date, required List<SummaryModel> models, required int race}) {
+  ({int hits, int total, int comboHits, int comboTotal}) _calcHits({
+    required String date,
+    required List<SummaryModel> models,
+    required int race,
+  }) {
     final int kaisuu = int.tryParse(models.first.kaisuu) ?? 0;
     final RaceIntrospectionModel? introspectionModel = raceIntrospectionState.raceIntrospectionMap.values
         .where(
@@ -196,21 +271,54 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
         .firstOrNull;
 
     if (introspectionModel == null) {
-      return (hits: 0, total: 0);
+      return (hits: 0, total: 0, comboHits: 0, comboTotal: 0);
     }
 
-    final int hits = introspectionModel.introspection.split('\n').where((String l) => l.contains('（的中）')).length;
-    final int total = introspectionModel.introspection
-        .split('\n')
-        .where((String l) => l.contains('（的中）') || l.contains('（不的中）'))
-        .length;
+    final List<String> lines = introspectionModel.introspection.split('\n');
 
-    return (hits: hits, total: total);
+    final int hits = lines.where((String l) => l.contains('（的中）')).length;
+    final int total = lines.where((String l) => l.contains('（的中）') || l.contains('（不的中）')).length;
+
+    // 三連複: 予想・結果それぞれの馬番号セットを抽出して順不同で一致数を計算
+    final Set<int> predictedNumbers = <int>{};
+    final Set<int> resultNumbers = <int>{};
+    bool inPrediction = false;
+    bool inResult = false;
+    for (final String line in lines) {
+      final String trimmed = line.trim();
+      if (trimmed == '## 予想') {
+        inPrediction = true;
+        inResult = false;
+        continue;
+      } else if (trimmed == '## 結果') {
+        inPrediction = false;
+        inResult = true;
+        continue;
+      } else if (trimmed.startsWith('## ')) {
+        inPrediction = false;
+        inResult = false;
+        continue;
+      }
+      final RegExpMatch? match = RegExp(r'(\d+)番').firstMatch(line);
+      if (match != null) {
+        final int number = int.parse(match.group(1)!);
+        if (inPrediction) {
+          predictedNumbers.add(number);
+        } else if (inResult) {
+          resultNumbers.add(number);
+        }
+      }
+    }
+
+    final int comboHits = predictedNumbers.intersection(resultNumbers).length;
+    final int comboTotal = predictedNumbers.length;
+
+    return (hits: hits, total: total, comboHits: comboHits, comboTotal: comboTotal);
   }
 
   ///
   Widget _buildRaceRow({required String date, required List<SummaryModel> models, required MapEntry<int, String> r}) {
-    final (:int hits, :int total) = _calcHits(date: date, models: models, race: r.key);
+    final (:int hits, :int total, :int comboHits, :int comboTotal) = _calcHits(date: date, models: models, race: r.key);
 
     final Color scoreColor = total == 0
         ? Colors.transparent
@@ -220,16 +328,44 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
         ? Colors.redAccent
         : Colors.yellowAccent;
 
+    final Color comboColor = comboTotal == 0
+        ? Colors.transparent
+        : comboHits == comboTotal
+        ? Colors.greenAccent
+        : comboHits == 0
+        ? Colors.redAccent
+        : Colors.yellowAccent;
+
     return DefaultTextStyle(
       style: const TextStyle(color: Colors.white70, fontSize: 11),
       child: Stack(
         children: <Widget>[
-          if (total > 0)
+          if (total > 0) ...<Widget>[
             Positioned(
               top: 10,
               right: 30,
-              child: Text('$hits/$total', style: TextStyle(color: scoreColor, fontSize: 10)),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Row(
+                    children: <Widget>[
+                      const Text('三連単:', style: TextStyle(fontSize: 8, color: Colors.white)),
+                      const SizedBox(width: 5),
+                      Text('$hits/$total', style: TextStyle(color: scoreColor, fontSize: 10)),
+                    ],
+                  ),
+
+                  Row(
+                    children: <Widget>[
+                      const Text('三連複:', style: TextStyle(fontSize: 8, color: Colors.white)),
+                      const SizedBox(width: 5),
+                      Text('$comboHits/$comboTotal', style: TextStyle(color: comboColor, fontSize: 10)),
+                    ],
+                  ),
+                ],
+              ),
             ),
+          ],
 
           Container(
             decoration: BoxDecoration(
