@@ -189,7 +189,7 @@ class _HorseNameInitialPanelAlertState extends ConsumerState<HorseNameInitialPan
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                const Text('馬名検索', style: TextStyle(fontSize: 12)),
+                const Text('競走馬検索', style: TextStyle(fontSize: 12)),
                 Divider(color: Colors.white.withValues(alpha: 0.4), thickness: 5),
 
                 Row(

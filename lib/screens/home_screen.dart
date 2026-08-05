@@ -660,7 +660,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                     children: <Widget>[
                       Image.asset('assets/images/jockey.png', width: 35),
                       const SizedBox(width: 20),
-                      const Text('過去レースの勝者リスト', style: TextStyle(fontSize: 12)),
+                      const Text('過去レースの勝馬リスト', style: TextStyle(fontSize: 12)),
                     ],
                   ),
                 ),
@@ -704,7 +704,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                     children: <Widget>[
                       Image.asset('assets/images/jockey.png', width: 35),
                       const SizedBox(width: 20),
-                      const Text('馬名リスト', style: TextStyle(fontSize: 12)),
+                      const Text('競走馬検索', style: TextStyle(fontSize: 12)),
                     ],
                   ),
                 ),
