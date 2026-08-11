@@ -1177,7 +1177,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                   OddsFinderDialog(context: context, widget: const HorseDetailDisplayAlert());
                 }
               },
-              child: Icon(FontAwesomeIcons.horse, size: 20, color: Colors.green[500]!.withValues(alpha: 0.6)),
+              child: FaIcon(FontAwesomeIcons.horse, size: 20, color: Colors.green[500]!.withValues(alpha: 0.6)),
             ),
 
             const SizedBox(width: 10),
