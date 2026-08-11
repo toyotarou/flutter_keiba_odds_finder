@@ -8,6 +8,7 @@ import '../../controllers/controllers_mixin.dart';
 import '../../data/http/client.dart';
 import '../../data/http/path.dart';
 import '../../extensions/extensions.dart';
+import '../../models/common/ai_response_recommend_horse_model.dart';
 import '../../models/horse_model.dart';
 import '../../models/horse_odds_kitaichi_model.dart';
 import '../../models/odds_model.dart';
@@ -237,12 +238,6 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
 
   ///
   Future<void> _fetchAiPickup() async {
-    if (widget.pickupHorse.isNotEmpty) {
-      _aiPickupNums = _parsePickupRaw(widget.pickupHorse);
-      _aiPickupScores = _parsePickupScores(widget.pickupHorse);
-      return;
-    }
-
     final String date = appParamState.selectedScheduleDate;
     final int race = widget.currentRaceModel.race;
     final (:String kaisuu, :String basho, :String day) = _kbdParts;
@@ -263,68 +258,42 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
           );
       final Map<String, dynamic> data =
           (response as Map<String, dynamic>)['data'] as Map<String, dynamic>? ?? <String, dynamic>{};
-      final String pickupRaw = (data['pickup_horse'] as String?) ?? '';
-      if (pickupRaw.isNotEmpty) {
-        _aiPickupNums = _parsePickupRaw(pickupRaw);
-        _aiPickupScores = _parsePickupScores(pickupRaw);
-      } else {
-        _aiPickupNums = _parsePickupFromAnalysis((data['analysis_text'] as String?) ?? '');
-      }
+      final String analysisText = (data['analysis_text'] as String?) ?? '';
+      final List<AiResponseRecommendHorseModel> horses = _parseAnalysisText(analysisText);
+      _aiPickupNums = horses.map((AiResponseRecommendHorseModel h) => h.num).toSet();
+      _aiPickupScores = <int, String>{for (final AiResponseRecommendHorseModel h in horses) h.num: h.score.toString()};
     } catch (e) {
       debugPrint('[TotalForecast] _fetchAiPickup error: $e');
     }
   }
 
   ///
-  static Set<int> _parsePickupRaw(String pickupRaw) {
-    final Set<int> nums = <int>{};
-    for (final String part in pickupRaw.split('/')) {
-      final String trimmed = part.trim();
-      if (trimmed.isEmpty) {
-        continue;
-      }
-      final int? num = int.tryParse(trimmed.split('|').first.trim());
-      if (num != null) {
-        nums.add(num);
-      }
-    }
-    return nums;
-  }
+  static List<AiResponseRecommendHorseModel> _parseAnalysisText(String text) {
+    return text.split('\n\n').where((String block) => block.trim().isNotEmpty).map((String block) {
+      final String trimmed = block.trim();
+      final int reasonIdx = trimmed.indexOf('選出理由：');
+      final String reason = reasonIdx != -1 ? trimmed.substring(reasonIdx + '選出理由：'.length).trim() : '';
+      final String meta = reasonIdx != -1 ? trimmed.substring(0, reasonIdx) : trimmed;
 
-  ///
-  static Map<int, String> _parsePickupScores(String pickupRaw) {
-    final Map<int, String> scores = <int, String>{};
-    for (final String part in pickupRaw.split('/')) {
-      final List<String> fields = part.trim().split('|');
-      if (fields.length < 3) {
-        continue;
+      String extract(String key) {
+        final int idx = meta.indexOf(key);
+        if (idx == -1) {
+          return '';
+        }
+        final int start = idx + key.length;
+        final int end = meta.indexOf('、', start);
+        return (end == -1 ? meta.substring(start) : meta.substring(start, end)).trim();
       }
-      final int? num = int.tryParse(fields[0].trim());
-      if (num != null) {
-        scores[num] = fields[2].trim();
-      }
-    }
-    return scores;
-  }
 
-  ///
-  static Set<int> _parsePickupFromAnalysis(String analysisText) {
-    final int sec1Start = analysisText.indexOf('## 1.');
-    if (sec1Start == -1) {
-      return <int>{};
-    }
-    final int sec2Start = analysisText.indexOf('## 2.');
-    final String section1 = sec2Start != -1
-        ? analysisText.substring(sec1Start, sec2Start)
-        : analysisText.substring(sec1Start);
-    final Set<int> nums = <int>{};
-    for (final RegExpMatch m in RegExp(r'（(\d+)番）').allMatches(section1)) {
-      final int? num = int.tryParse(m.group(1) ?? '');
-      if (num != null) {
-        nums.add(num);
-      }
-    }
-    return nums;
+      return AiResponseRecommendHorseModel(
+        num: int.tryParse(extract('馬番：')) ?? 0,
+        name: extract('馬名：'),
+        popularity: extract('人気順: '),
+        odds: extract('6分前オッズ: '),
+        score: int.tryParse(extract('おすすめ度: ')) ?? 0,
+        reason: reason,
+      );
+    }).toList();
   }
 
   ///
