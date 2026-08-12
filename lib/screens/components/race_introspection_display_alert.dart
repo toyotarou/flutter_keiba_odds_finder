@@ -3,8 +3,6 @@ import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../controllers/controllers_mixin.dart';
-import '../../data/http/client.dart';
-import '../../data/http/path.dart';
 import '../../models/race_introspection_model.dart';
 import '../../models/race_result_history_model.dart';
 import '../../models/summary_model.dart';
@@ -36,11 +34,14 @@ class _RaceIntrospectionDisplayAlertState extends ConsumerState<RaceIntrospectio
     }
     final SummaryModel s = list.first;
     final int kaisuu = int.tryParse(s.kaisuu) ?? 0;
-    return raceIntrospectionState.raceIntrospectionMap.values
-        .where(
-          (RaceIntrospectionModel e) => e.date == s.date && e.race == s.race && e.kaisuu == kaisuu && e.day == s.day,
-        )
-        .firstOrNull;
+    return findRaceIntrospection(
+      raceIntrospectionState.raceIntrospectionMap,
+      date: s.date,
+      kaisuu: kaisuu,
+      basho: s.basho,
+      day: s.day,
+      race: s.race,
+    );
   }
 
   ///
@@ -108,18 +109,10 @@ class _RaceIntrospectionDisplayAlertState extends ConsumerState<RaceIntrospectio
     }
 
     try {
-      final dynamic response = await ref
-          .read(httpClientProvider)
-          .get(
-            path: APIPath.getHorseOddsFinderHorseBattleRecord,
-            queryParameters: <String, dynamic>{'name': horseNames.join('/')},
-          );
-      final List<dynamic> dataList = (response as Map<String, dynamic>)['data'] as List<dynamic>? ?? <dynamic>[];
-      final Map<String, List<RaceResultHistoryModel>> byName = <String, List<RaceResultHistoryModel>>{};
-      for (final dynamic item in dataList) {
-        final RaceResultHistoryModel m = RaceResultHistoryModel.fromJson(item as Map<String, dynamic>);
-        byName.putIfAbsent(m.name, () => <RaceResultHistoryModel>[]).add(m);
-      }
+      final Map<String, List<RaceResultHistoryModel>> byName = await fetchBattleRecordsByName(
+        ref,
+        horseNames: horseNames,
+      );
       final Map<int, List<RaceResultHistoryModel>> result = <int, List<RaceResultHistoryModel>>{};
       for (final MapEntry<int, String> entry in pickupHorses.entries) {
         final List<RaceResultHistoryModel>? list = byName[entry.value];

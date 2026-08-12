@@ -2,15 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../controllers/controllers_mixin.dart';
-import '../../data/http/client.dart';
-import '../../data/http/path.dart';
 import '../../extensions/extensions.dart';
 import '../../models/common/ai_response_recommend_horse_model.dart';
 import '../../models/horse_model.dart';
 import '../../models/race_introspection_model.dart';
-import '../../models/race_result_history_model.dart';
 import '../../models/race_result_payout_model.dart';
 import '../../utility/functions.dart';
+import '../parts/error_confirm_dialog.dart';
 import '../parts/odds_finder_dialog.dart';
 import 'ai_analysis_payout_result_alert.dart';
 
@@ -52,28 +50,18 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
   ///
   Future<void> _fetchPayout() async {
     final String date = appParamState.selectedScheduleDate;
-    final List<String> kbdParts = appParamState.selectedScheduleKaisuuBashoDay.split('_');
-    if (kbdParts.length < 3) {
+    final (:String kaisuu, :String basho, day: _) = parseKbdParts(appParamState.selectedScheduleKaisuuBashoDay);
+    if (kaisuu.isEmpty || basho.isEmpty) {
       return;
     }
-    final String kaisuu = kbdParts[0];
-    final String basho = kbdParts[1];
 
     try {
-      final dynamic response = await ref
-          .read(httpClientProvider)
-          .get(
-            path: APIPath.getHorseOddsFinderRaceResultPayout,
-            queryParameters: <String, dynamic>{'races': '$date|$kaisuu|$basho|${widget.raceNumber}'},
-          );
-      final List<dynamic> dataList = (response as Map<String, dynamic>)['data'] as List<dynamic>? ?? <dynamic>[];
+      final Map<String, RaceResultPayoutModel> result = await fetchPayoutMap(
+        ref,
+        racesParam: '$date|$kaisuu|$basho|${widget.raceNumber}',
+      );
       if (mounted) {
-        setState(() {
-          for (final dynamic item in dataList) {
-            final RaceResultPayoutModel m = RaceResultPayoutModel.fromJson(item as Map<String, dynamic>);
-            _payoutMap['${m.date}_${m.kaisuu}_${m.bashoCode}_${m.day}_${m.race}'] = m;
-          }
-        });
+        setState(() => _payoutMap.addAll(result));
       }
     } catch (_) {}
   }
@@ -90,39 +78,10 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
       return;
     }
 
-    final List<String> horseNames = horses.map((HorseModel e) => e.name).where((String n) => n.isNotEmpty).toList();
-    if (horseNames.isEmpty) {
-      return;
-    }
-
     try {
-      final dynamic response = await ref
-          .read(httpClientProvider)
-          .get(
-            path: APIPath.getHorseOddsFinderHorseBattleRecord,
-            queryParameters: <String, dynamic>{'name': horseNames.join('/')},
-          );
-      final List<dynamic> dataList = (response as Map<String, dynamic>)['data'] as List<dynamic>? ?? <dynamic>[];
-
-      final Map<String, List<RaceResultHistoryModel>> byName = <String, List<RaceResultHistoryModel>>{};
-      for (final dynamic item in dataList) {
-        final RaceResultHistoryModel m = RaceResultHistoryModel.fromJson(item as Map<String, dynamic>);
-        byName.putIfAbsent(m.name, () => <RaceResultHistoryModel>[]).add(m);
-      }
-
+      final Map<int, int?> result = await fetchFinishingPositionMap(ref, horses: horses, date: date);
       if (mounted) {
-        setState(() {
-          for (final HorseModel horse in horses) {
-            final List<RaceResultHistoryModel> records = byName[horse.name] ?? <RaceResultHistoryModel>[];
-            final RaceResultHistoryModel? record = records
-                .where((RaceResultHistoryModel r) => r.date == date)
-                .firstOrNull;
-            if (record != null) {
-              final int pos = record.finishingPosition;
-              _finishingPositionMap[horse.num] = pos >= 1 ? pos : null;
-            }
-          }
-        });
+        setState(() => _finishingPositionMap.addAll(result));
       }
     } catch (_) {}
   }
@@ -130,36 +89,23 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
   ///
   Future<void> _fetchAiAnalysis() async {
     final String date = appParamState.selectedScheduleDate;
-
-    final List<String> kbdParts = appParamState.selectedScheduleKaisuuBashoDay.split('_');
-    final String kaisuu = kbdParts.isNotEmpty ? kbdParts[0] : '';
-    final String basho = kbdParts.length > 1 ? kbdParts[1] : '';
-    final String day = kbdParts.length > 2 ? kbdParts[2] : '';
+    final (:String kaisuu, :String basho, :String day) = parseKbdParts(appParamState.selectedScheduleKaisuuBashoDay);
 
     try {
-      final dynamic response = await ref
-          .read(httpClientProvider)
-          .get(
-            path: APIPath.getHorseOddsFinderAiAnalysis,
-            queryParameters: <String, dynamic>{
-              'date': date,
-              'kaisuu': kaisuu,
-              'basho': basho,
-              'day': day,
-              'race': widget.raceNumber.toString(),
-              'gapHorseNums': widget.gapHorseNums.join('|'),
-              'upsetPickupHorseNums': widget.upsetPickupHorseNums.join('|'),
-            },
-          );
-
-      final Map<String, dynamic> data =
-          (response as Map<String, dynamic>)['data'] as Map<String, dynamic>? ?? <String, dynamic>{};
-
+      final Map<String, dynamic> data = await fetchAiAnalysisData(
+        ref,
+        date: date,
+        kaisuu: kaisuu,
+        basho: basho,
+        day: day,
+        race: widget.raceNumber,
+        gapHorseNums: widget.gapHorseNums,
+        upsetPickupHorseNums: widget.upsetPickupHorseNums,
+      );
       final String analysisText = (data['analysis_text'] as String?) ?? '';
-
       if (mounted) {
         setState(() {
-          aiRecommendHorses = _parseAnalysisText(analysisText);
+          aiRecommendHorses = parseAnalysisText(analysisText);
           _isLoading = false;
         });
       }
@@ -171,57 +117,6 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
         });
       }
     }
-  }
-
-  ///
-  static String? _extractResultLine(String introspection) {
-    final List<String> lines = introspection.split('\n');
-    bool inResult = false;
-    for (final String line in lines) {
-      final String trimmed = line.trim();
-      if (trimmed == '## 結果') {
-        inResult = true;
-        continue;
-      }
-      if (inResult) {
-        if (trimmed.startsWith('## ')) {
-          break;
-        }
-        if (trimmed.isNotEmpty) {
-          return trimmed;
-        }
-      }
-    }
-    return null;
-  }
-
-  ///
-  static List<AiResponseRecommendHorseModel> _parseAnalysisText(String text) {
-    return text.split('\n\n').where((String block) => block.contains('馬番：')).map((String block) {
-      final String trimmed = block.trim();
-      final int reasonIdx = trimmed.indexOf('選出理由：');
-      final String reason = reasonIdx != -1 ? trimmed.substring(reasonIdx + '選出理由：'.length).trim() : '';
-      final String meta = reasonIdx != -1 ? trimmed.substring(0, reasonIdx) : trimmed;
-
-      String extract(String key) {
-        final int idx = meta.indexOf(key);
-        if (idx == -1) {
-          return '';
-        }
-        final int start = idx + key.length;
-        final int end = meta.indexOf('、', start);
-        return (end == -1 ? meta.substring(start) : meta.substring(start, end)).trim();
-      }
-
-      return AiResponseRecommendHorseModel(
-        num: int.tryParse(extract('馬番：')) ?? 0,
-        name: extract('馬名：'),
-        popularity: extract('人気順: '),
-        odds: extract('6分前オッズ: '),
-        score: int.tryParse(extract('おすすめ度: ')) ?? 0,
-        reason: reason,
-      );
-    }).toList();
   }
 
   ///
@@ -243,22 +138,22 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
       );
     }
 
-    final List<String> kbdParts = appParamState.selectedScheduleKaisuuBashoDay.split('_');
-    final int kaisuu = int.tryParse(kbdParts.isNotEmpty ? kbdParts[0] : '') ?? 0;
-    final String basho = kbdParts.length > 1 ? kbdParts[1] : '';
-    final int day = int.tryParse(kbdParts.length > 2 ? kbdParts[2] : '') ?? 0;
-    final String lookupKey = '${appParamState.selectedScheduleDate}_${kaisuu}_${basho}_${day}_${widget.raceNumber}';
+    final (:String kaisuu, :String basho, day: String dayStr) = parseKbdParts(
+      appParamState.selectedScheduleKaisuuBashoDay,
+    );
+    final int kaisuuInt = int.tryParse(kaisuu) ?? 0;
+    final int day = int.tryParse(dayStr) ?? 0;
+    final String lookupKey = '${appParamState.selectedScheduleDate}_${kaisuuInt}_${basho}_${day}_${widget.raceNumber}';
     final RaceResultPayoutModel? payout = _payoutMap[lookupKey];
-    final RaceIntrospectionModel? introspectionModel = raceIntrospectionState.raceIntrospectionMap.values
-        .where(
-          (RaceIntrospectionModel e) =>
-              e.date == appParamState.selectedScheduleDate &&
-              e.kaisuu == kaisuu &&
-              e.day == day &&
-              e.race == widget.raceNumber,
-        )
-        .firstOrNull;
-    final String? resultText = introspectionModel != null ? _extractResultLine(introspectionModel.introspection) : null;
+    final RaceIntrospectionModel? introspectionModel = findRaceIntrospection(
+      raceIntrospectionState.raceIntrospectionMap,
+      date: appParamState.selectedScheduleDate,
+      kaisuu: kaisuuInt,
+      basho: basho,
+      day: day,
+      race: widget.raceNumber,
+    );
+    final String? resultText = introspectionModel != null ? extractResultLine(introspectionModel.introspection) : null;
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -290,14 +185,18 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
                         borderRadius: BorderRadius.circular(10),
                         child: InkWell(
                           onTap: () {
-                            OddsFinderDialog(
-                              context: context,
-                              widget: AiAnalysisPayoutResultAlert(
-                                aiRecommendHorses: aiRecommendHorses,
-                                raceNumber: widget.raceNumber,
-                              ),
-                              paddingLeft: context.screenSize.width * 0.25,
-                            );
+                            if (resultText != null && !resultText.contains('0頭が合致')) {
+                              OddsFinderDialog(
+                                context: context,
+                                widget: AiAnalysisPayoutResultAlert(
+                                  aiRecommendHorses: aiRecommendHorses,
+                                  raceNumber: widget.raceNumber,
+                                ),
+                                paddingLeft: context.screenSize.width * 0.25,
+                              );
+                            } else {
+                              errorConfirmDialog(context: context, title: '合致なし', content: '1頭も合致しませんでした。');
+                            }
                           },
 
                           borderRadius: BorderRadius.circular(10),

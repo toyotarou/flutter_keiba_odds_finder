@@ -4,12 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../controllers/controllers_mixin.dart';
-import '../../data/http/client.dart';
-import '../../data/http/path.dart';
 import '../../extensions/extensions.dart';
 import '../../models/race_introspection_model.dart';
 import '../../models/race_result_payout_model.dart';
 import '../../models/summary_model.dart';
+import '../../utility/functions.dart';
 import '../parts/odds_finder_dialog.dart';
 import 'horse_odds_ranking_display_alert.dart';
 
@@ -62,22 +61,11 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
     }
 
     try {
-      final dynamic response = await ref
-          .read(httpClientProvider)
-          .get(
-            path: APIPath.getHorseOddsFinderRaceResultPayout,
-            queryParameters: <String, dynamic>{'races': raceParamSet.join('/')},
-          );
-      final List<dynamic> dataList = (response as Map<String, dynamic>)['data'] as List<dynamic>? ?? <dynamic>[];
+      final Map<String, RaceResultPayoutModel> result = await fetchPayoutMap(ref, racesParam: raceParamSet.join('/'));
       if (mounted) {
-        setState(() {
-          for (final dynamic item in dataList) {
-            final RaceResultPayoutModel m = RaceResultPayoutModel.fromJson(item as Map<String, dynamic>);
-            _payoutMap['${m.date}_${m.kaisuu}_${m.bashoCode}_${m.day}_${m.race}'] = m;
-          }
-        });
+        setState(() => _payoutMap.addAll(result));
       }
-    } catch (e) {
+    } catch (_) {
       _fetchedDates.remove(date);
     }
   }
@@ -326,13 +314,6 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
     );
   }
 
-  //
-  //
-  //
-  //
-  //
-  //
-  //
   // ///
   // ({int hits, int total, int comboHits, int comboTotal}) _calcHits({
   //   required String date,
@@ -340,12 +321,14 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
   //   required int race,
   // }) {
   //   final int kaisuu = int.tryParse(models.first.kaisuu) ?? 0;
-  //   final RaceIntrospectionModel? introspectionModel = raceIntrospectionState.raceIntrospectionMap.values
-  //       .where(
-  //         (RaceIntrospectionModel e) =>
-  //             e.date == date && e.kaisuu == kaisuu && e.day == models.first.day && e.race == race,
-  //       )
-  //       .firstOrNull;
+  //   final RaceIntrospectionModel? introspectionModel = findRaceIntrospection(
+  //     raceIntrospectionState.raceIntrospectionMap,
+  //     date: date,
+  //     kaisuu: kaisuu,
+  //     basho: models.first.basho,
+  //     day: models.first.day,
+  //     race: race,
+  //   );
   //
   //   if (introspectionModel == null) {
   //     return (hits: 0, total: 0, comboHits: 0, comboTotal: 0);
@@ -392,40 +375,11 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
   //
   //   return (hits: hits, total: total, comboHits: comboHits, comboTotal: comboTotal);
   // }
-  //
-  //
-  //
-  //
-  //
-  //
-  //
-  //
-
-  String? _extractResultLine(String introspection) {
-    final List<String> lines = introspection.split('\n');
-    bool inResult = false;
-    for (final String line in lines) {
-      final String trimmed = line.trim();
-      if (trimmed == '## 結果') {
-        inResult = true;
-        continue;
-      }
-      if (inResult) {
-        if (trimmed.startsWith('## ')) {
-          break;
-        }
-        if (trimmed.isNotEmpty) {
-          return trimmed;
-        }
-      }
-    }
-    return null;
-  }
 
   ///
   Widget _buildRaceRow({required String date, required List<SummaryModel> models, required MapEntry<int, String> r}) {
     // final (:int hits, :int total, :int comboHits, :int comboTotal) = _calcHits(date: date, models: models, race: r.key);
-    //
+
     // final Color scoreColor = total == 0
     //     ? Colors.transparent
     //     : hits == total
@@ -433,7 +387,7 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
     //     : hits == 0
     //     ? Colors.redAccent
     //     : Colors.yellowAccent;
-    //
+
     // final Color comboColor = comboTotal == 0
     //     ? Colors.transparent
     //     : comboHits == comboTotal
@@ -441,19 +395,17 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
     //     : comboHits == 0
     //     ? Colors.redAccent
     //     : Colors.yellowAccent;
-    //
-    //
-    //
-    //
 
     final int kaisuu = int.tryParse(models.first.kaisuu) ?? 0;
-    final RaceIntrospectionModel? introspectionModel = raceIntrospectionState.raceIntrospectionMap.values
-        .where(
-          (RaceIntrospectionModel e) =>
-              e.date == date && e.kaisuu == kaisuu && e.day == models.first.day && e.race == r.key,
-        )
-        .firstOrNull;
-    final String? resultText = introspectionModel != null ? _extractResultLine(introspectionModel.introspection) : null;
+    final RaceIntrospectionModel? introspectionModel = findRaceIntrospection(
+      raceIntrospectionState.raceIntrospectionMap,
+      date: date,
+      kaisuu: kaisuu,
+      basho: models.first.basho,
+      day: models.first.day,
+      race: r.key,
+    );
+    final String? resultText = introspectionModel != null ? extractResultLine(introspectionModel.introspection) : null;
     final String lookupKey = '${date}_${kaisuu}_${models.first.basho}_${models.first.day}_${r.key}';
     final RaceResultPayoutModel? payout = _payoutMap[lookupKey];
 

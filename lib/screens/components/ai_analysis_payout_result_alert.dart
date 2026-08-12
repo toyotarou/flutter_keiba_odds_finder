@@ -2,13 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../controllers/controllers_mixin.dart';
-import '../../data/http/client.dart';
-import '../../data/http/path.dart';
 import '../../extensions/extensions.dart';
 import '../../models/common/ai_response_recommend_horse_model.dart';
 import '../../models/horse_model.dart';
 import '../../models/race_introspection_model.dart';
-import '../../models/race_result_history_model.dart';
 import '../../models/race_result_payout_model.dart';
 import '../../utility/functions.dart';
 
@@ -40,28 +37,18 @@ class _AiAnalysisPayoutResultAlertState extends ConsumerState<AiAnalysisPayoutRe
   ///
   Future<void> _fetchPayout() async {
     final String date = appParamState.selectedScheduleDate;
-    final List<String> kbdParts = appParamState.selectedScheduleKaisuuBashoDay.split('_');
-    if (kbdParts.length < 3) {
+    final (:String kaisuu, :String basho, day: _) = parseKbdParts(appParamState.selectedScheduleKaisuuBashoDay);
+    if (kaisuu.isEmpty || basho.isEmpty) {
       return;
     }
-    final String kaisuu = kbdParts[0];
-    final String basho = kbdParts[1];
 
     try {
-      final dynamic response = await ref
-          .read(httpClientProvider)
-          .get(
-            path: APIPath.getHorseOddsFinderRaceResultPayout,
-            queryParameters: <String, dynamic>{'races': '$date|$kaisuu|$basho|${widget.raceNumber}'},
-          );
-      final List<dynamic> dataList = (response as Map<String, dynamic>)['data'] as List<dynamic>? ?? <dynamic>[];
+      final Map<String, RaceResultPayoutModel> result = await fetchPayoutMap(
+        ref,
+        racesParam: '$date|$kaisuu|$basho|${widget.raceNumber}',
+      );
       if (mounted) {
-        setState(() {
-          for (final dynamic item in dataList) {
-            final RaceResultPayoutModel m = RaceResultPayoutModel.fromJson(item as Map<String, dynamic>);
-            _payoutMap['${m.date}_${m.kaisuu}_${m.bashoCode}_${m.day}_${m.race}'] = m;
-          }
-        });
+        setState(() => _payoutMap.addAll(result));
       }
     } catch (_) {}
   }
@@ -78,39 +65,10 @@ class _AiAnalysisPayoutResultAlertState extends ConsumerState<AiAnalysisPayoutRe
       return;
     }
 
-    final List<String> horseNames = horses.map((HorseModel e) => e.name).where((String n) => n.isNotEmpty).toList();
-    if (horseNames.isEmpty) {
-      return;
-    }
-
     try {
-      final dynamic response = await ref
-          .read(httpClientProvider)
-          .get(
-            path: APIPath.getHorseOddsFinderHorseBattleRecord,
-            queryParameters: <String, dynamic>{'name': horseNames.join('/')},
-          );
-      final List<dynamic> dataList = (response as Map<String, dynamic>)['data'] as List<dynamic>? ?? <dynamic>[];
-
-      final Map<String, List<RaceResultHistoryModel>> byName = <String, List<RaceResultHistoryModel>>{};
-      for (final dynamic item in dataList) {
-        final RaceResultHistoryModel m = RaceResultHistoryModel.fromJson(item as Map<String, dynamic>);
-        byName.putIfAbsent(m.name, () => <RaceResultHistoryModel>[]).add(m);
-      }
-
+      final Map<int, int?> result = await fetchFinishingPositionMap(ref, horses: horses, date: date);
       if (mounted) {
-        setState(() {
-          for (final HorseModel horse in horses) {
-            final List<RaceResultHistoryModel> records = byName[horse.name] ?? <RaceResultHistoryModel>[];
-            final RaceResultHistoryModel? record = records
-                .where((RaceResultHistoryModel r) => r.date == date)
-                .firstOrNull;
-            if (record != null) {
-              final int pos = record.finishingPosition;
-              _finishingPositionMap[horse.num] = pos >= 1 ? pos : null;
-            }
-          }
-        });
+        setState(() => _finishingPositionMap.addAll(result));
       }
     } catch (_) {}
   }
@@ -118,22 +76,23 @@ class _AiAnalysisPayoutResultAlertState extends ConsumerState<AiAnalysisPayoutRe
   ///
   @override
   Widget build(BuildContext context) {
-    final List<String> kbdParts = appParamState.selectedScheduleKaisuuBashoDay.split('_');
-    final int kaisuu = int.tryParse(kbdParts.isNotEmpty ? kbdParts[0] : '') ?? 0;
-    final String basho = kbdParts.length > 1 ? kbdParts[1] : '';
-    final int day = int.tryParse(kbdParts.length > 2 ? kbdParts[2] : '') ?? 0;
-    final String lookupKey = '${appParamState.selectedScheduleDate}_${kaisuu}_${basho}_${day}_${widget.raceNumber}';
+    final (:String kaisuu, :String basho, day: String dayStr) = parseKbdParts(
+      appParamState.selectedScheduleKaisuuBashoDay,
+    );
+    final int kaisuuInt = int.tryParse(kaisuu) ?? 0;
+    final int day = int.tryParse(dayStr) ?? 0;
+    final String lookupKey = '${appParamState.selectedScheduleDate}_${kaisuuInt}_${basho}_${day}_${widget.raceNumber}';
     final RaceResultPayoutModel? payout = _payoutMap[lookupKey];
-    final RaceIntrospectionModel? introspectionModel = raceIntrospectionState.raceIntrospectionMap.values
-        .where(
-          (RaceIntrospectionModel e) =>
-              e.date == appParamState.selectedScheduleDate &&
-              e.kaisuu == kaisuu &&
-              e.day == day &&
-              e.race == widget.raceNumber,
-        )
-        .firstOrNull;
-    final String? resultText = introspectionModel != null ? _extractResultLine(introspectionModel.introspection) : null;
+    final RaceIntrospectionModel? introspectionModel = findRaceIntrospection(
+      raceIntrospectionState.raceIntrospectionMap,
+      date: appParamState.selectedScheduleDate,
+      kaisuu: kaisuuInt,
+      basho: basho,
+      day: day,
+      race: widget.raceNumber,
+    );
+
+    final String? resultText = introspectionModel != null ? extractResultLine(introspectionModel.introspection) : null;
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -173,32 +132,36 @@ class _AiAnalysisPayoutResultAlertState extends ConsumerState<AiAnalysisPayoutRe
                   child: _buildHorseList(payout),
                 ),
 
-                if (widget.aiRecommendHorses.length >= 2) ...<Widget>[
-                  const SizedBox(height: 10),
+                if (resultText != null && resultText.contains('2頭が合致')) ...<Widget>[
+                  if (widget.aiRecommendHorses.length >= 2) ...<Widget>[
+                    const SizedBox(height: 10),
 
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.5),
-                      borderRadius: BorderRadius.circular(10),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.5),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: _buildTwoCombinations(payout),
                     ),
-                    child: _buildTwoCombinations(payout),
-                  ),
+                  ],
                 ],
 
-                if (widget.aiRecommendHorses.length >= 3) ...<Widget>[
-                  const SizedBox(height: 10),
+                if (resultText != null && resultText.contains('3頭が合致')) ...<Widget>[
+                  if (widget.aiRecommendHorses.length >= 3) ...<Widget>[
+                    const SizedBox(height: 10),
 
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.5),
-                      borderRadius: BorderRadius.circular(10),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.5),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: _buildThreeCombinations(payout),
                     ),
-                    child: _buildThreeCombinations(payout),
-                  ),
+                  ],
                 ],
 
                 const SizedBox(height: 20),
@@ -211,28 +174,6 @@ class _AiAnalysisPayoutResultAlertState extends ConsumerState<AiAnalysisPayoutRe
   }
 
   ///
-  static String? _extractResultLine(String introspection) {
-    final List<String> lines = introspection.split('\n');
-    bool inResult = false;
-    for (final String line in lines) {
-      final String trimmed = line.trim();
-      if (trimmed == '## 結果') {
-        inResult = true;
-        continue;
-      }
-      if (inResult) {
-        if (trimmed.startsWith('## ')) {
-          break;
-        }
-        if (trimmed.isNotEmpty) {
-          return trimmed;
-        }
-      }
-    }
-    return null;
-  }
-
-  ///
   Set<String> _parseCombos(String raw) {
     if (raw.isEmpty) {
       return <String>{};
@@ -240,11 +181,17 @@ class _AiAnalysisPayoutResultAlertState extends ConsumerState<AiAnalysisPayoutRe
     return raw.split('/').map((String e) => e.split('|').first.trim()).toSet();
   }
 
-  bool _matchesUnordered(Set<String> combos, String a, String b) =>
-      combos.contains('$a-$b') || combos.contains('$b-$a');
+  ///
+  bool _matchesUnordered(Set<String> combos, String a, String b) {
+    return combos.contains('$a-$b') || combos.contains('$b-$a');
+  }
 
-  bool _matchesOrdered(Set<String> combos, String a, String b) => combos.contains('$a-$b');
+  ///
+  bool _matchesOrdered(Set<String> combos, String a, String b) {
+    return combos.contains('$a-$b');
+  }
 
+  ///
   bool _matchesUnordered3(Set<String> combos, String a, String b, String c) {
     final List<String> sorted = <String>[a, b, c]..sort();
     return combos.any((String combo) {
@@ -256,8 +203,12 @@ class _AiAnalysisPayoutResultAlertState extends ConsumerState<AiAnalysisPayoutRe
     });
   }
 
-  bool _matchesOrdered3(Set<String> combos, String a, String b, String c) => combos.contains('$a-$b-$c');
+  ///
+  bool _matchesOrdered3(Set<String> combos, String a, String b, String c) {
+    return combos.contains('$a-$b-$c');
+  }
 
+  ///
   Set<int> _parseSingleHorseNums(String raw) {
     if (raw.isEmpty) {
       return <int>{};
@@ -265,6 +216,7 @@ class _AiAnalysisPayoutResultAlertState extends ConsumerState<AiAnalysisPayoutRe
     return raw.split('/').map((String e) => int.tryParse(e.split('|').first.trim())).whereType<int>().toSet();
   }
 
+  ///
   String _payoutText(String raw) {
     if (raw.isEmpty) {
       return '-';
@@ -312,7 +264,7 @@ class _AiAnalysisPayoutResultAlertState extends ConsumerState<AiAnalysisPayoutRe
             padding: const EdgeInsets.symmetric(vertical: 2),
             child: Container(
               decoration: BoxDecoration(
-                border: Border(bottom: BorderSide(color: Colors.white.withValues(alpha: 0.5))),
+                border: Border(bottom: BorderSide(color: Colors.white.withValues(alpha: 0.3))),
               ),
 
               child: Stack(

@@ -1,36 +1,29 @@
 import 'dart:async';
 
 // import 'package:fl_chart/fl_chart.dart';
-//
-//
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../controllers/controllers_mixin.dart';
-import '../../data/http/client.dart';
-import '../../data/http/path.dart';
+
+// import '../../data/http/client.dart';  // _fetchKitaichi を有効化する際に再追加
+// import '../../data/http/path.dart';    // _fetchKitaichi を有効化する際に再追加
 
 // import '../../extensions/extensions.dart';
-//
-//
 
 import '../../models/common/ai_response_recommend_horse_model.dart';
 import '../../models/horse_model.dart';
 
 // import '../../models/horse_odds_kitaichi_model.dart';
-//
-//
 
 import '../../models/odds_model.dart';
 import '../../models/popularity_rank_odds_median_model.dart';
-import '../../models/race_analysis_model.dart';
+
+// import '../../models/race_analysis_model.dart';  // _fetchKitaichi / fetchHighProbabilityAnalysis は functions.dart で処理
 import '../../models/race_model.dart';
 
 // import '../../models/race_result_history_model.dart';
-//
-//
-//
 
 import '../../utility/functions.dart';
 import '../parts/dashed_line_painter.dart';
@@ -73,14 +66,8 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
   Map<int, String> _aiPickupScores = <int, String>{};
 
   // Map<int, List<RaceResultHistoryModel>> _battleRecordMap = <int, List<RaceResultHistoryModel>>{};
-  //
-  //
-  //
 
   // Map<int, HorseOddsKitaichiModel> _kitaichiMap = <int, HorseOddsKitaichiModel>{};
-  //
-  //
-  //
 
   static const double _w0 = 60;
   static const double _w1 = 40;
@@ -98,14 +85,10 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
     ),
   );
 
-  ///
+  /// selectedScheduleKaisuuBashoDay を分解する省略記法。
+  /// 内部実装は functions.dart の parseKbdParts に委譲する。
   ({String kaisuu, String basho, String day}) get _kbdParts {
-    final List<String> parts = appParamState.selectedScheduleKaisuuBashoDay.split('_');
-    return (
-      kaisuu: parts.isNotEmpty ? parts[0] : '',
-      basho: parts.length > 1 ? parts[1] : '',
-      day: parts.length > 2 ? parts[2] : '',
-    );
+    return parseKbdParts(appParamState.selectedScheduleKaisuuBashoDay);
   }
 
   ///
@@ -151,17 +134,10 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
     await Future.wait(<Future<void>>[
       _fetchHighProbabilityHorses(),
       _fetchAiPickup(),
+
       // _fetchHorseBattleRecords(),
-      //
-      //
-      //
-      //
 
       // _fetchKitaichi(),
-      //
-      //
-      //
-      //
     ]);
     if (mounted) {
       setState(() => _isLoading = false);
@@ -208,18 +184,8 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
   //     return;
   //   }
   //   try {
-  //     final dynamic response = await ref
-  //         .read(httpClientProvider)
-  //         .get(
-  //           path: APIPath.getHorseOddsFinderHorseBattleRecord,
-  //           queryParameters: <String, dynamic>{'name': horseNames.join('/')},
-  //         );
-  //     final List<dynamic> dataList = (response as Map<String, dynamic>)['data'] as List<dynamic>? ?? <dynamic>[];
-  //     final Map<String, List<RaceResultHistoryModel>> byName = <String, List<RaceResultHistoryModel>>{};
-  //     for (final dynamic item in dataList) {
-  //       final RaceResultHistoryModel m = RaceResultHistoryModel.fromJson(item as Map<String, dynamic>);
-  //       byName.putIfAbsent(m.name, () => <RaceResultHistoryModel>[]).add(m);
-  //     }
+  //     final Map<String, List<RaceResultHistoryModel>> byName =
+  //         await fetchBattleRecordsByName(ref, horseNames: horseNames);
   //     final Map<int, List<RaceResultHistoryModel>> result = <int, List<RaceResultHistoryModel>>{};
   //     for (final MapEntry<int, HorseModel> entry in widget.horseModelMap.entries) {
   //       final List<RaceResultHistoryModel>? list = byName[entry.value.name];
@@ -239,31 +205,16 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
     final int race = widget.currentRaceModel.race;
     final (:String kaisuu, :String basho, :String day) = _kbdParts;
     try {
-      final dynamic response = await ref
-          .read(httpClientProvider)
-          .get(
-            path: APIPath.getHorseOddsFinderHighProbabilityHorses,
-            queryParameters: <String, dynamic>{
-              'date': date,
-              'kaisuu': kaisuu,
-              'basho': basho,
-              'day': day,
-              'race': race.toString(),
-            },
-          );
-      final List<dynamic> dataList = (response as Map<String, dynamic>)['data'] as List<dynamic>? ?? <dynamic>[];
-      final Set<int> popularities = <int>{};
-      for (final dynamic item in dataList) {
-        final RaceAnalysisModel model = RaceAnalysisModel.fromJson(item as Map<String, dynamic>);
-        if (model.race == race && model.kaisuu == kaisuu && model.basho == basho && model.day == day) {
-          for (final HorseOddsFinderSimilarRaceHorseModel horse in model.horses) {
-            if (horse.analysis.isNotEmpty) {
-              popularities.add(horse.popularityRank);
-            }
-          }
-        }
-      }
-      _highProbabilityPopularities = popularities;
+      final Map<int, String> result = await fetchHighProbabilityAnalysis(
+        ref,
+        date: date,
+        kaisuu: kaisuu,
+        basho: basho,
+        day: day,
+        race: race,
+      );
+      // analysis がある人気順位のみ Set に変換して保持する
+      _highProbabilityPopularities = result.keys.toSet();
     } catch (e) {
       debugPrint('[TotalForecast] _fetchHighProbabilityHorses error: $e');
     }
@@ -275,58 +226,23 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
     final int race = widget.currentRaceModel.race;
     final (:String kaisuu, :String basho, :String day) = _kbdParts;
     try {
-      final dynamic response = await ref
-          .read(httpClientProvider)
-          .get(
-            path: APIPath.getHorseOddsFinderAiAnalysis,
-            queryParameters: <String, dynamic>{
-              'date': date,
-              'kaisuu': kaisuu,
-              'basho': basho,
-              'day': day,
-              'race': race.toString(),
-              'gapHorseNums': widget.gapHorseNums.join('|'),
-              'upsetPickupHorseNums': widget.upsetPickupHorseNums.join('|'),
-            },
-          );
-      final Map<String, dynamic> data =
-          (response as Map<String, dynamic>)['data'] as Map<String, dynamic>? ?? <String, dynamic>{};
+      final Map<String, dynamic> data = await fetchAiAnalysisData(
+        ref,
+        date: date,
+        kaisuu: kaisuu,
+        basho: basho,
+        day: day,
+        race: race,
+        gapHorseNums: widget.gapHorseNums,
+        upsetPickupHorseNums: widget.upsetPickupHorseNums,
+      );
       final String analysisText = (data['analysis_text'] as String?) ?? '';
-      final List<AiResponseRecommendHorseModel> horses = _parseAnalysisText(analysisText);
+      final List<AiResponseRecommendHorseModel> horses = parseAnalysisText(analysisText);
       _aiPickupNums = horses.map((AiResponseRecommendHorseModel h) => h.num).toSet();
       _aiPickupScores = <int, String>{for (final AiResponseRecommendHorseModel h in horses) h.num: h.score.toString()};
     } catch (e) {
       debugPrint('[TotalForecast] _fetchAiPickup error: $e');
     }
-  }
-
-  ///
-  static List<AiResponseRecommendHorseModel> _parseAnalysisText(String text) {
-    return text.split('\n\n').where((String block) => block.contains('馬番：')).map((String block) {
-      final String trimmed = block.trim();
-      final int reasonIdx = trimmed.indexOf('選出理由：');
-      final String reason = reasonIdx != -1 ? trimmed.substring(reasonIdx + '選出理由：'.length).trim() : '';
-      final String meta = reasonIdx != -1 ? trimmed.substring(0, reasonIdx) : trimmed;
-
-      String extract(String key) {
-        final int idx = meta.indexOf(key);
-        if (idx == -1) {
-          return '';
-        }
-        final int start = idx + key.length;
-        final int end = meta.indexOf('、', start);
-        return (end == -1 ? meta.substring(start) : meta.substring(start, end)).trim();
-      }
-
-      return AiResponseRecommendHorseModel(
-        num: int.tryParse(extract('馬番：')) ?? 0,
-        name: extract('馬名：'),
-        popularity: extract('人気順: '),
-        odds: extract('6分前オッズ: '),
-        score: int.tryParse(extract('おすすめ度: ')) ?? 0,
-        reason: reason,
-      );
-    }).toList();
   }
 
   ///
@@ -532,7 +448,7 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
             ],
           ),
 
-          Text('オッズ表示、期待数値の計算には発送6分前のオッズを使用しています。', style: TextStyle(color: Colors.greenAccent, fontSize: 10)),
+          Text('オッズ表示、期待数値の計算には発走6分前のオッズを使用しています。', style: TextStyle(color: Colors.greenAccent, fontSize: 10)),
         ],
       ),
     );
@@ -648,10 +564,6 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
                         //     ],
                         //   ),
                         // ],
-                        //
-                        //
-                        //
-                        //
                       ],
                     ),
                   ],

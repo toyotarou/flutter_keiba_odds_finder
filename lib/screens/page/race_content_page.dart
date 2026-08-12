@@ -9,14 +9,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../const/const.dart';
 import '../../controllers/controllers_mixin.dart';
-import '../../data/http/client.dart';
-import '../../data/http/path.dart';
 import '../../extensions/extensions.dart';
 import '../../main.dart';
 import '../../models/horse_model.dart';
 import '../../models/odds_model.dart';
 import '../../models/popularity_rank_odds_median_model.dart';
-import '../../models/race_analysis_model.dart';
 import '../../models/race_model.dart';
 import '../../models/race_result_model.dart';
 import '../../utility/functions.dart';
@@ -128,7 +125,9 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
   }
 
   ///
-  String get _minTiming => _resolveMinTiming(_oddsForRace, _configFirstKey, _configLastKey);
+  String get _minTiming {
+    return _resolveMinTiming(_oddsForRace, _configFirstKey, _configLastKey);
+  }
 
   ///
   @override
@@ -161,32 +160,21 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
 
     final String date = appParamState.selectedScheduleDate;
     final int race = widget.raceNumber;
-    final List<String> kbdParts = appParamState.selectedScheduleKaisuuBashoDay.split('_');
-    final String kaisuu = kbdParts.isNotEmpty ? kbdParts[0] : '';
-    final String basho = kbdParts.length > 1 ? kbdParts[1] : '';
-    final String day = kbdParts.length > 2 ? kbdParts[2] : '';
+    final (:String kaisuu, :String basho, :String day) = parseKbdParts(appParamState.selectedScheduleKaisuuBashoDay);
     try {
       final List<int> gapHorseNums = _calcOddsGapHorseNums();
-
       final List<int> upsetPickupHorseNums = _calcUpsetPickupHorseNums();
 
-      final dynamic response = await ref
-          .read(httpClientProvider)
-          .get(
-            path: APIPath.getHorseOddsFinderAiAnalysis,
-            queryParameters: <String, dynamic>{
-              'date': date,
-              'kaisuu': kaisuu,
-              'basho': basho,
-              'day': day,
-              'race': race.toString(),
-              'gapHorseNums': gapHorseNums.join('|'),
-              'upsetPickupHorseNums': upsetPickupHorseNums.join('|'),
-            },
-          );
-
-      final Map<String, dynamic> data =
-          (response as Map<String, dynamic>)['data'] as Map<String, dynamic>? ?? <String, dynamic>{};
+      final Map<String, dynamic> data = await fetchAiAnalysisData(
+        ref,
+        date: date,
+        kaisuu: kaisuu,
+        basho: basho,
+        day: day,
+        race: race,
+        gapHorseNums: gapHorseNums,
+        upsetPickupHorseNums: upsetPickupHorseNums,
+      );
       final String pickupRaw = (data['pickup_horse'] as String?) ?? '';
       if (mounted) {
         setState(() {
@@ -234,35 +222,17 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
   Future<bool> _fetchAnalysis() async {
     final String date = appParamState.selectedScheduleDate;
     final int race = widget.raceNumber;
-    final List<String> kbdParts = appParamState.selectedScheduleKaisuuBashoDay.split('_');
-    final String kaisuu = kbdParts.isNotEmpty ? kbdParts[0] : '';
-    final String basho = kbdParts.length > 1 ? kbdParts[1] : '';
-    final String day = kbdParts.length > 2 ? kbdParts[2] : '';
+    final (:String kaisuu, :String basho, :String day) = parseKbdParts(appParamState.selectedScheduleKaisuuBashoDay);
     try {
-      final dynamic response = await ref
-          .read(httpClientProvider)
-          .get(
-            path: APIPath.getHorseOddsFinderHighProbabilityHorses,
-            queryParameters: <String, dynamic>{
-              'date': date,
-              'kaisuu': kaisuu,
-              'basho': basho,
-              'day': day,
-              'race': race.toString(),
-            },
-          );
-      final List<dynamic> dataList = (response as Map<String, dynamic>)['data'] as List<dynamic>? ?? <dynamic>[];
-      final Map<int, String> newMap = <int, String>{};
-      for (final dynamic item in dataList) {
-        final RaceAnalysisModel model = RaceAnalysisModel.fromJson(item as Map<String, dynamic>);
-        if (model.race == race && model.kaisuu == kaisuu && model.basho == basho && model.day == day) {
-          for (final HorseOddsFinderSimilarRaceHorseModel horse in model.horses) {
-            if (horse.analysis.isNotEmpty) {
-              newMap[horse.popularityRank] = horse.analysis;
-            }
-          }
-        }
-      }
+      // 人気順位 → analysis テキストの Map を取得（空の場合は過去合致なし）
+      final Map<int, String> newMap = await fetchHighProbabilityAnalysis(
+        ref,
+        date: date,
+        kaisuu: kaisuu,
+        basho: basho,
+        day: day,
+        race: race,
+      );
       if (mounted) {
         setState(() => _analysisMap = newMap);
       }
@@ -411,13 +381,14 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
   }
 
   ///
-  static String _filterMinutesToTimingKey(int? filterMinutes, String firstTimingKey, String lastTimingKey) =>
-      switch (filterMinutes) {
-        null => '',
-        kOddsTimingFirst => firstTimingKey,
-        kOddsTimingLast => lastTimingKey,
-        _ => filterMinutes.toString(),
-      };
+  static String _filterMinutesToTimingKey(int? filterMinutes, String firstTimingKey, String lastTimingKey) {
+    return switch (filterMinutes) {
+      null => '',
+      kOddsTimingFirst => firstTimingKey,
+      kOddsTimingLast => lastTimingKey,
+      _ => filterMinutes.toString(),
+    };
+  }
 
   ///
   static String _resolveMinTiming(List<OddsModel> oddsModelList, String firstTimingKey, String lastTimingKey) {
@@ -1067,6 +1038,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     );
   }
 
+  ///
   Widget _buildHorseItemHeader({required int popularity, int? fukuRank, HorseModel? horse}) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1928,6 +1900,7 @@ class _OddsTimelineRow extends StatelessWidget {
   final List<String>? fukuMaxList;
   final List<String>? nextTimeline;
 
+  ///
   @override
   Widget build(BuildContext context) {
     final List<String> timingKeys = oddsGetTiming.split('|');
