@@ -6,6 +6,13 @@ import '../../data/http/client.dart';
 import '../../data/http/path.dart';
 import '../../extensions/extensions.dart';
 import '../../models/common/ai_response_recommend_horse_model.dart';
+import '../../models/horse_model.dart';
+import '../../models/race_introspection_model.dart';
+import '../../models/race_result_history_model.dart';
+import '../../models/race_result_payout_model.dart';
+import '../../utility/functions.dart';
+import '../parts/odds_finder_dialog.dart';
+import 'ai_analysis_payout_result_alert.dart';
 
 class AiAnalysisDisplayAlert extends ConsumerStatefulWidget {
   const AiAnalysisDisplayAlert({
@@ -26,14 +33,98 @@ class AiAnalysisDisplayAlert extends ConsumerStatefulWidget {
 class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
     with ControllersMixin<AiAnalysisDisplayAlert> {
   bool _isLoading = true;
-  List<AiResponseRecommendHorseModel> _aiRecommendHorses = <AiResponseRecommendHorseModel>[];
+  List<AiResponseRecommendHorseModel> aiRecommendHorses = <AiResponseRecommendHorseModel>[];
   String? _errorMessage;
+  final Map<String, RaceResultPayoutModel> _payoutMap = <String, RaceResultPayoutModel>{};
+  final Map<int, int?> _finishingPositionMap = <int, int?>{};
 
   ///
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _fetchAiAnalysis());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _fetchAiAnalysis();
+      _fetchPayout();
+      _fetchBattleRecords();
+    });
+  }
+
+  ///
+  Future<void> _fetchPayout() async {
+    final String date = appParamState.selectedScheduleDate;
+    final List<String> kbdParts = appParamState.selectedScheduleKaisuuBashoDay.split('_');
+    if (kbdParts.length < 3) {
+      return;
+    }
+    final String kaisuu = kbdParts[0];
+    final String basho = kbdParts[1];
+
+    try {
+      final dynamic response = await ref
+          .read(httpClientProvider)
+          .get(
+            path: APIPath.getHorseOddsFinderRaceResultPayout,
+            queryParameters: <String, dynamic>{'races': '$date|$kaisuu|$basho|${widget.raceNumber}'},
+          );
+      final List<dynamic> dataList = (response as Map<String, dynamic>)['data'] as List<dynamic>? ?? <dynamic>[];
+      if (mounted) {
+        setState(() {
+          for (final dynamic item in dataList) {
+            final RaceResultPayoutModel m = RaceResultPayoutModel.fromJson(item as Map<String, dynamic>);
+            _payoutMap['${m.date}_${m.kaisuu}_${m.bashoCode}_${m.day}_${m.race}'] = m;
+          }
+        });
+      }
+    } catch (_) {}
+  }
+
+  ///
+  Future<void> _fetchBattleRecords() async {
+    final String date = appParamState.selectedScheduleDate;
+    final String mapKey = '${appParamState.selectedScheduleDate}_${appParamState.selectedScheduleKaisuuBashoDay}';
+    final List<HorseModel> horses = (appParamState.keepHorseMap[mapKey] ?? <HorseModel>[])
+        .where((HorseModel e) => e.race == widget.raceNumber)
+        .toList();
+
+    if (horses.isEmpty) {
+      return;
+    }
+
+    final List<String> horseNames = horses.map((HorseModel e) => e.name).where((String n) => n.isNotEmpty).toList();
+    if (horseNames.isEmpty) {
+      return;
+    }
+
+    try {
+      final dynamic response = await ref
+          .read(httpClientProvider)
+          .get(
+            path: APIPath.getHorseOddsFinderHorseBattleRecord,
+            queryParameters: <String, dynamic>{'name': horseNames.join('/')},
+          );
+      final List<dynamic> dataList = (response as Map<String, dynamic>)['data'] as List<dynamic>? ?? <dynamic>[];
+
+      final Map<String, List<RaceResultHistoryModel>> byName = <String, List<RaceResultHistoryModel>>{};
+      for (final dynamic item in dataList) {
+        final RaceResultHistoryModel m = RaceResultHistoryModel.fromJson(item as Map<String, dynamic>);
+        byName.putIfAbsent(m.name, () => <RaceResultHistoryModel>[]).add(m);
+      }
+
+      if (mounted) {
+        setState(() {
+          for (final HorseModel horse in horses) {
+            final List<RaceResultHistoryModel> records = byName[horse.name] ?? <RaceResultHistoryModel>[];
+            final RaceResultHistoryModel? record = records
+                .where((RaceResultHistoryModel r) => r.date == date)
+                .firstOrNull;
+            if (record != null) {
+              final int pos = record.finishingPosition;
+              _finishingPositionMap[horse.num] = pos >= 1 ? pos : null;
+            }
+          }
+        });
+      }
+    } catch (_) {}
   }
 
   ///
@@ -68,7 +159,7 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
 
       if (mounted) {
         setState(() {
-          _aiRecommendHorses = _parseAnalysisText(analysisText);
+          aiRecommendHorses = _parseAnalysisText(analysisText);
           _isLoading = false;
         });
       }
@@ -80,6 +171,28 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
         });
       }
     }
+  }
+
+  ///
+  static String? _extractResultLine(String introspection) {
+    final List<String> lines = introspection.split('\n');
+    bool inResult = false;
+    for (final String line in lines) {
+      final String trimmed = line.trim();
+      if (trimmed == '## 結果') {
+        inResult = true;
+        continue;
+      }
+      if (inResult) {
+        if (trimmed.startsWith('## ')) {
+          break;
+        }
+        if (trimmed.isNotEmpty) {
+          return trimmed;
+        }
+      }
+    }
+    return null;
   }
 
   ///
@@ -130,6 +243,23 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
       );
     }
 
+    final List<String> kbdParts = appParamState.selectedScheduleKaisuuBashoDay.split('_');
+    final int kaisuu = int.tryParse(kbdParts.isNotEmpty ? kbdParts[0] : '') ?? 0;
+    final String basho = kbdParts.length > 1 ? kbdParts[1] : '';
+    final int day = int.tryParse(kbdParts.length > 2 ? kbdParts[2] : '') ?? 0;
+    final String lookupKey = '${appParamState.selectedScheduleDate}_${kaisuu}_${basho}_${day}_${widget.raceNumber}';
+    final RaceResultPayoutModel? payout = _payoutMap[lookupKey];
+    final RaceIntrospectionModel? introspectionModel = raceIntrospectionState.raceIntrospectionMap.values
+        .where(
+          (RaceIntrospectionModel e) =>
+              e.date == appParamState.selectedScheduleDate &&
+              e.kaisuu == kaisuu &&
+              e.day == day &&
+              e.race == widget.raceNumber,
+        )
+        .firstOrNull;
+    final String? resultText = introspectionModel != null ? _extractResultLine(introspectionModel.introspection) : null;
+
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: SafeArea(
@@ -140,12 +270,58 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                const Text('馬眼力ピックアップ', style: TextStyle(fontSize: 12)),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: <Widget>[
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        const Text('馬眼力ピックアップ', style: TextStyle(fontSize: 12)),
+
+                        if (resultText != null) ...<Widget>[
+                          Text(resultText, style: const TextStyle(fontSize: 11, color: Colors.yellowAccent)),
+                        ],
+                      ],
+                    ),
+
+                    if (payout != null) ...<Widget>[
+                      Material(
+                        color: Colors.transparent,
+                        borderRadius: BorderRadius.circular(10),
+                        child: InkWell(
+                          onTap: () {
+                            OddsFinderDialog(
+                              context: context,
+                              widget: AiAnalysisPayoutResultAlert(
+                                aiRecommendHorses: aiRecommendHorses,
+                                raceNumber: widget.raceNumber,
+                              ),
+                              paddingLeft: context.screenSize.width * 0.25,
+                            );
+                          },
+
+                          borderRadius: BorderRadius.circular(10),
+                          splashColor: const Color(0xFFFFD700).withValues(alpha: 0.35),
+                          highlightColor: const Color(0xFFFFD700).withValues(alpha: 0.1),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 10),
+                            decoration: BoxDecoration(
+                              border: Border.all(color: const Color(0xFFFFD700)),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Text(
+                              '合致結果',
+                              style: TextStyle(fontSize: 10, color: Color(0xFFFFD700), fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ] else ...<Widget>[const SizedBox.shrink()],
+                  ],
+                ),
                 Divider(color: Colors.white.withValues(alpha: 0.4), thickness: 5),
 
                 Expanded(child: displayRecommendHorseData()),
-
-                if (_aiRecommendHorses.length >= 3) ...<Widget>[const SizedBox(height: 10), _buildCombinations()],
               ],
             ),
           ),
@@ -155,49 +331,9 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
   }
 
   ///
-  Widget _buildCombinations() {
-    final List<String> combos = <String>[];
-    for (int i = 0; i < _aiRecommendHorses.length; i++) {
-      for (int j = 0; j < _aiRecommendHorses.length; j++) {
-        if (j == i) {
-          continue;
-        }
-        for (int k = 0; k < _aiRecommendHorses.length; k++) {
-          if (k == i || k == j) {
-            continue;
-          }
-          combos.add('${_aiRecommendHorses[i].num}-${_aiRecommendHorses[j].num}-${_aiRecommendHorses[k].num}');
-        }
-      }
-    }
-
-    return SizedBox(
-      height: 200,
-      child: SingleChildScrollView(
-        child: Wrap(
-          spacing: 8,
-          runSpacing: 6,
-          children: combos.map((String combo) {
-            return Container(
-              width: context.screenSize.width / 6,
-              padding: const EdgeInsets.symmetric(vertical: 2),
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.white.withValues(alpha: 0.4)),
-                borderRadius: BorderRadius.circular(4),
-              ),
-              alignment: Alignment.center,
-              child: Text(combo, style: const TextStyle(fontSize: 12, color: Colors.white)),
-            );
-          }).toList(),
-        ),
-      ),
-    );
-  }
-
-  ///
   Widget displayRecommendHorseData() {
     return ListView(
-      children: _aiRecommendHorses.map((AiResponseRecommendHorseModel h) {
+      children: aiRecommendHorses.map((AiResponseRecommendHorseModel h) {
         return Stack(
           children: <Widget>[
             Positioned(right: 10, bottom: 10, child: Text(h.score.toString(), style: const TextStyle(fontSize: 40))),
@@ -287,6 +423,25 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
                 ),
               ),
             ),
+
+            if (_finishingPositionMap[h.num] != null && _finishingPositionMap[h.num]! <= 3)
+              Positioned(
+                bottom: 10,
+                left: 10,
+                child: Container(
+                  width: 32,
+
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: raceRankColor(_finishingPositionMap[h.num], fallback: Colors.grey.withValues(alpha: 0.6)),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    _finishingPositionMap[h.num].toString(),
+                    style: const TextStyle(fontSize: 12, color: Colors.white, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
           ],
         );
       }).toList(),
