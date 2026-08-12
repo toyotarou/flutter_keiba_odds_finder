@@ -22,11 +22,14 @@ import '../models/schedule_model.dart';
 import '../models/score_model.dart';
 import '../models/summary_model.dart';
 import 'components/admin_menu_alert.dart';
-import 'components/history_race_record_display_alert.dart';
-import 'components/horse_name_initial_panel_alert.dart';
+
+// import 'components/history_race_record_display_alert.dart';
+// import 'components/horse_name_initial_panel_alert.dart';
+
 import 'components/horse_odds_ranking_display_alert.dart';
 import 'components/past_race_odds_transition_alert.dart';
-import 'components/popularity_record_display_alert.dart';
+// import 'components/popularity_record_display_alert.dart';
+
 import 'components/terms_alert.dart';
 import 'components/weekend_race_calendar_alert.dart';
 import 'page/race_content_page.dart';
@@ -647,26 +650,25 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
               const SizedBox(height: 20),
             ],
 
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: GestureDetector(
-                onTap: () => OddsFinderDialog(context: context, widget: const HistoryRaceRecordDisplayAlert()),
-                child: Container(
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    border: Border(bottom: BorderSide(color: Colors.white.withValues(alpha: 0.5))),
-                  ),
-                  child: Row(
-                    children: <Widget>[
-                      Image.asset('assets/images/jockey.png', width: 35),
-                      const SizedBox(width: 20),
-                      const Text('過去レースの勝馬リスト', style: TextStyle(fontSize: 12)),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-
+            // Padding(
+            //   padding: const EdgeInsets.all(8.0),
+            //   child: GestureDetector(
+            //     onTap: () => OddsFinderDialog(context: context, widget: const HistoryRaceRecordDisplayAlert()),
+            //     child: Container(
+            //       width: double.infinity,
+            //       decoration: BoxDecoration(
+            //         border: Border(bottom: BorderSide(color: Colors.white.withValues(alpha: 0.5))),
+            //       ),
+            //       child: Row(
+            //         children: <Widget>[
+            //           Image.asset('assets/images/jockey.png', width: 35),
+            //           const SizedBox(width: 20),
+            //           const Text('過去レースの勝馬リスト', style: TextStyle(fontSize: 12)),
+            //         ],
+            //       ),
+            //     ),
+            //   ),
+            // ),
             Padding(
               padding: const EdgeInsets.all(8.0),
               child: GestureDetector(
@@ -687,54 +689,53 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
               ),
             ),
 
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: GestureDetector(
-                onTap: () {
-                  appParamNotifier.setSelectedHorseNameChar1(char: '');
-                  appParamNotifier.setSelectedHorseNameChar2(char: '');
-                  OddsFinderDialog(context: context, widget: const HorseNameInitialPanelAlert());
-                },
-                child: Container(
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    border: Border(bottom: BorderSide(color: Colors.white.withValues(alpha: 0.5))),
-                  ),
-                  child: Row(
-                    children: <Widget>[
-                      Image.asset('assets/images/jockey.png', width: 35),
-                      const SizedBox(width: 20),
-                      const Text('競走馬検索', style: TextStyle(fontSize: 12)),
-                    ],
-                  ),
-                ),
-              ),
-            ),
+            // Padding(
+            //   padding: const EdgeInsets.all(8.0),
+            //   child: GestureDetector(
+            //     onTap: () {
+            //       appParamNotifier.setSelectedHorseNameChar1(char: '');
+            //       appParamNotifier.setSelectedHorseNameChar2(char: '');
+            //       OddsFinderDialog(context: context, widget: const HorseNameInitialPanelAlert());
+            //     },
+            //     child: Container(
+            //       width: double.infinity,
+            //       decoration: BoxDecoration(
+            //         border: Border(bottom: BorderSide(color: Colors.white.withValues(alpha: 0.5))),
+            //       ),
+            //       child: Row(
+            //         children: <Widget>[
+            //           Image.asset('assets/images/jockey.png', width: 35),
+            //           const SizedBox(width: 20),
+            //           const Text('競走馬検索', style: TextStyle(fontSize: 12)),
+            //         ],
+            //       ),
+            //     ),
+            //   ),
+            // ),
 
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: GestureDetector(
-                onTap: () {
-                  appParamNotifier.setSelectedPopularityRank(rank: 0);
-                  appParamNotifier.setSelectedPopularityRankYear(year: '');
-                  OddsFinderDialog(context: context, widget: const PopularityRecordDisplayAlert());
-                },
-                child: Container(
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    border: Border(bottom: BorderSide(color: Colors.white.withValues(alpha: 0.5))),
-                  ),
-                  child: Row(
-                    children: <Widget>[
-                      Image.asset('assets/images/jockey.png', width: 35),
-                      const SizedBox(width: 20),
-                      const Text('過去の人気順オッズリスト', style: TextStyle(fontSize: 12)),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-
+            // Padding(
+            //   padding: const EdgeInsets.all(8.0),
+            //   child: GestureDetector(
+            //     onTap: () {
+            //       appParamNotifier.setSelectedPopularityRank(rank: 0);
+            //       appParamNotifier.setSelectedPopularityRankYear(year: '');
+            //       OddsFinderDialog(context: context, widget: const PopularityRecordDisplayAlert());
+            //     },
+            //     child: Container(
+            //       width: double.infinity,
+            //       decoration: BoxDecoration(
+            //         border: Border(bottom: BorderSide(color: Colors.white.withValues(alpha: 0.5))),
+            //       ),
+            //       child: Row(
+            //         children: <Widget>[
+            //           Image.asset('assets/images/jockey.png', width: 35),
+            //           const SizedBox(width: 20),
+            //           const Text('過去の人気順オッズリスト', style: TextStyle(fontSize: 12)),
+            //         ],
+            //       ),
+            //     ),
+            //   ),
+            // ),
             const Spacer(),
 
             Divider(color: Colors.white.withValues(alpha: 0.5), thickness: 5),

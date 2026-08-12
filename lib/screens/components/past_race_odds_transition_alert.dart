@@ -256,124 +256,147 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
     );
   }
 
-  ///
-  ({int hits, int total, int comboHits, int comboTotal}) _calcHits({
-    required String date,
-    required List<SummaryModel> models,
-    required int race,
-  }) {
-    final int kaisuu = int.tryParse(models.first.kaisuu) ?? 0;
-    final RaceIntrospectionModel? introspectionModel = raceIntrospectionState.raceIntrospectionMap.values
-        .where(
-          (RaceIntrospectionModel e) =>
-              e.date == date && e.kaisuu == kaisuu && e.day == models.first.day && e.race == race,
-        )
-        .firstOrNull;
+  //
+  //
+  //
+  //
+  //
+  //
+  //
+  // ///
+  // ({int hits, int total, int comboHits, int comboTotal}) _calcHits({
+  //   required String date,
+  //   required List<SummaryModel> models,
+  //   required int race,
+  // }) {
+  //   final int kaisuu = int.tryParse(models.first.kaisuu) ?? 0;
+  //   final RaceIntrospectionModel? introspectionModel = raceIntrospectionState.raceIntrospectionMap.values
+  //       .where(
+  //         (RaceIntrospectionModel e) =>
+  //             e.date == date && e.kaisuu == kaisuu && e.day == models.first.day && e.race == race,
+  //       )
+  //       .firstOrNull;
+  //
+  //   if (introspectionModel == null) {
+  //     return (hits: 0, total: 0, comboHits: 0, comboTotal: 0);
+  //   }
+  //
+  //   final List<String> lines = introspectionModel.introspection.split('\n');
+  //
+  //   final int hits = lines.where((String l) => l.contains('（的中）')).length;
+  //   final int total = lines.where((String l) => l.contains('（的中）') || l.contains('（不的中）')).length;
+  //
+  //   // 三連複: 予想・結果それぞれの馬番号セットを抽出して順不同で一致数を計算
+  //   final Set<int> predictedNumbers = <int>{};
+  //   final Set<int> resultNumbers = <int>{};
+  //   bool inPrediction = false;
+  //   bool inResult = false;
+  //   for (final String line in lines) {
+  //     final String trimmed = line.trim();
+  //     if (trimmed == '## 予想') {
+  //       inPrediction = true;
+  //       inResult = false;
+  //       continue;
+  //     } else if (trimmed == '## 結果') {
+  //       inPrediction = false;
+  //       inResult = true;
+  //       continue;
+  //     } else if (trimmed.startsWith('## ')) {
+  //       inPrediction = false;
+  //       inResult = false;
+  //       continue;
+  //     }
+  //     final RegExpMatch? match = RegExp(r'(\d+)番').firstMatch(line);
+  //     if (match != null) {
+  //       final int number = int.parse(match.group(1)!);
+  //       if (inPrediction) {
+  //         predictedNumbers.add(number);
+  //       } else if (inResult) {
+  //         resultNumbers.add(number);
+  //       }
+  //     }
+  //   }
+  //
+  //   final int comboHits = predictedNumbers.intersection(resultNumbers).length;
+  //   final int comboTotal = predictedNumbers.length;
+  //
+  //   return (hits: hits, total: total, comboHits: comboHits, comboTotal: comboTotal);
+  // }
+  //
+  //
+  //
+  //
+  //
+  //
+  //
+  //
 
-    if (introspectionModel == null) {
-      return (hits: 0, total: 0, comboHits: 0, comboTotal: 0);
-    }
-
-    final List<String> lines = introspectionModel.introspection.split('\n');
-
-    final int hits = lines.where((String l) => l.contains('（的中）')).length;
-    final int total = lines.where((String l) => l.contains('（的中）') || l.contains('（不的中）')).length;
-
-    // 三連複: 予想・結果それぞれの馬番号セットを抽出して順不同で一致数を計算
-    final Set<int> predictedNumbers = <int>{};
-    final Set<int> resultNumbers = <int>{};
-    bool inPrediction = false;
+  String? _extractResultLine(String introspection) {
+    final List<String> lines = introspection.split('\n');
     bool inResult = false;
     for (final String line in lines) {
       final String trimmed = line.trim();
-      if (trimmed == '## 予想') {
-        inPrediction = true;
-        inResult = false;
-        continue;
-      } else if (trimmed == '## 結果') {
-        inPrediction = false;
+      if (trimmed == '## 結果') {
         inResult = true;
         continue;
-      } else if (trimmed.startsWith('## ')) {
-        inPrediction = false;
-        inResult = false;
-        continue;
       }
-      final RegExpMatch? match = RegExp(r'(\d+)番').firstMatch(line);
-      if (match != null) {
-        final int number = int.parse(match.group(1)!);
-        if (inPrediction) {
-          predictedNumbers.add(number);
-        } else if (inResult) {
-          resultNumbers.add(number);
+      if (inResult) {
+        if (trimmed.startsWith('## ')) {
+          break;
+        }
+        if (trimmed.isNotEmpty) {
+          return trimmed;
         }
       }
     }
-
-    final int comboHits = predictedNumbers.intersection(resultNumbers).length;
-    final int comboTotal = predictedNumbers.length;
-
-    return (hits: hits, total: total, comboHits: comboHits, comboTotal: comboTotal);
+    return null;
   }
 
   ///
   Widget _buildRaceRow({required String date, required List<SummaryModel> models, required MapEntry<int, String> r}) {
-    final (:int hits, :int total, :int comboHits, :int comboTotal) = _calcHits(date: date, models: models, race: r.key);
+    // final (:int hits, :int total, :int comboHits, :int comboTotal) = _calcHits(date: date, models: models, race: r.key);
+    //
+    // final Color scoreColor = total == 0
+    //     ? Colors.transparent
+    //     : hits == total
+    //     ? Colors.greenAccent
+    //     : hits == 0
+    //     ? Colors.redAccent
+    //     : Colors.yellowAccent;
+    //
+    // final Color comboColor = comboTotal == 0
+    //     ? Colors.transparent
+    //     : comboHits == comboTotal
+    //     ? Colors.greenAccent
+    //     : comboHits == 0
+    //     ? Colors.redAccent
+    //     : Colors.yellowAccent;
+    //
+    //
+    //
+    //
 
-    final Color scoreColor = total == 0
-        ? Colors.transparent
-        : hits == total
-        ? Colors.greenAccent
-        : hits == 0
-        ? Colors.redAccent
-        : Colors.yellowAccent;
-
-    final Color comboColor = comboTotal == 0
-        ? Colors.transparent
-        : comboHits == comboTotal
-        ? Colors.greenAccent
-        : comboHits == 0
-        ? Colors.redAccent
-        : Colors.yellowAccent;
+    final int kaisuu = int.tryParse(models.first.kaisuu) ?? 0;
+    final RaceIntrospectionModel? introspectionModel = raceIntrospectionState.raceIntrospectionMap.values
+        .where(
+          (RaceIntrospectionModel e) =>
+              e.date == date && e.kaisuu == kaisuu && e.day == models.first.day && e.race == r.key,
+        )
+        .firstOrNull;
+    final String? resultText = introspectionModel != null ? _extractResultLine(introspectionModel.introspection) : null;
 
     return DefaultTextStyle(
       style: const TextStyle(color: Colors.white70, fontSize: 11),
-      child: Stack(
-        children: <Widget>[
-          if (total > 0) ...<Widget>[
-            Positioned(
-              top: 10,
-              right: 30,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Row(
-                    children: <Widget>[
-                      const Text('三連単:', style: TextStyle(fontSize: 8, color: Colors.white)),
-                      const SizedBox(width: 5),
-                      Text('$hits/$total', style: TextStyle(color: scoreColor, fontSize: 10)),
-                    ],
-                  ),
+      child: Container(
+        decoration: BoxDecoration(
+          border: Border(bottom: BorderSide(color: Colors.white.withOpacity(0.3))),
+        ),
+        padding: const EdgeInsets.symmetric(vertical: 5),
 
-                  Row(
-                    children: <Widget>[
-                      const Text('三連複:', style: TextStyle(fontSize: 8, color: Colors.white)),
-                      const SizedBox(width: 5),
-                      Text('$comboHits/$comboTotal', style: TextStyle(color: comboColor, fontSize: 10)),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
-
-          Container(
-            decoration: BoxDecoration(
-              border: Border(bottom: BorderSide(color: Colors.white.withOpacity(0.3))),
-            ),
-            padding: const EdgeInsets.symmetric(vertical: 5),
-
-            child: Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: <Widget>[
+            Row(
               children: <Widget>[
                 Container(width: 20, alignment: Alignment.topRight, child: Text('${r.key}R')),
                 const SizedBox(width: 20),
@@ -407,8 +430,14 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
                 ),
               ],
             ),
-          ),
-        ],
+
+            if (resultText != null) ...<Widget>[
+              if (resultText.contains('3頭が合致')) ...<Widget>[
+                Text(resultText, style: const TextStyle(fontSize: 10, color: Color(0xFFFBB6CE))),
+              ] else ...<Widget>[Text(resultText, style: const TextStyle(fontSize: 10))],
+            ],
+          ],
+        ),
       ),
     );
   }

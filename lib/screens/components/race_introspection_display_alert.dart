@@ -3,8 +3,12 @@ import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../controllers/controllers_mixin.dart';
+import '../../data/http/client.dart';
+import '../../data/http/path.dart';
 import '../../models/race_introspection_model.dart';
+import '../../models/race_result_history_model.dart';
 import '../../models/summary_model.dart';
+import '../../utility/functions.dart';
 
 class RaceIntrospectionDisplayAlert extends ConsumerStatefulWidget {
   const RaceIntrospectionDisplayAlert({super.key});
@@ -15,6 +19,15 @@ class RaceIntrospectionDisplayAlert extends ConsumerStatefulWidget {
 
 class _RaceIntrospectionDisplayAlertState extends ConsumerState<RaceIntrospectionDisplayAlert>
     with ControllersMixin<RaceIntrospectionDisplayAlert> {
+  Map<int, List<RaceResultHistoryModel>> _battleRecordMap = <int, List<RaceResultHistoryModel>>{};
+
+  ///
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _fetchHorseBattleRecords());
+  }
+
   ///
   RaceIntrospectionModel? get _model {
     final List<SummaryModel> list = summaryState.oneRaceSummaryList;
@@ -51,6 +64,98 @@ class _RaceIntrospectionDisplayAlertState extends ConsumerState<RaceIntrospectio
         ),
       ),
     );
+  }
+
+  ///
+  static Map<int, String> _parsePickupHorses(String introspection) {
+    final Map<int, String> result = <int, String>{};
+    final List<String> lines = introspection.split('\n');
+    bool inPickup = false;
+    for (final String line in lines) {
+      final String trimmed = line.trim();
+      if (trimmed == '## ピックアップ') {
+        inPickup = true;
+        continue;
+      }
+      if (inPickup) {
+        if (trimmed.startsWith('## ')) {
+          break;
+        }
+        final RegExpMatch? m = _pickupLineReg.firstMatch(trimmed);
+        if (m != null) {
+          final int? num = int.tryParse(m.group(1)!);
+          final String name = m.group(2)?.trim() ?? '';
+          if (num != null && name.isNotEmpty) {
+            result[num] = name;
+          }
+        }
+      }
+    }
+    return result;
+  }
+
+  ///
+  Future<void> _fetchHorseBattleRecords() async {
+    final RaceIntrospectionModel? model = _model;
+    if (model == null || model.introspection.isEmpty) {
+      return;
+    }
+
+    final Map<int, String> pickupHorses = _parsePickupHorses(model.introspection);
+    final List<String> horseNames = pickupHorses.values.where((String n) => n.isNotEmpty).toList();
+    if (horseNames.isEmpty) {
+      return;
+    }
+
+    try {
+      final dynamic response = await ref
+          .read(httpClientProvider)
+          .get(
+            path: APIPath.getHorseOddsFinderHorseBattleRecord,
+            queryParameters: <String, dynamic>{'name': horseNames.join('/')},
+          );
+      final List<dynamic> dataList = (response as Map<String, dynamic>)['data'] as List<dynamic>? ?? <dynamic>[];
+      final Map<String, List<RaceResultHistoryModel>> byName = <String, List<RaceResultHistoryModel>>{};
+      for (final dynamic item in dataList) {
+        final RaceResultHistoryModel m = RaceResultHistoryModel.fromJson(item as Map<String, dynamic>);
+        byName.putIfAbsent(m.name, () => <RaceResultHistoryModel>[]).add(m);
+      }
+      final Map<int, List<RaceResultHistoryModel>> result = <int, List<RaceResultHistoryModel>>{};
+      for (final MapEntry<int, String> entry in pickupHorses.entries) {
+        final List<RaceResultHistoryModel>? list = byName[entry.value];
+        if (list != null) {
+          result[entry.key] = list;
+        }
+      }
+      if (mounted) {
+        setState(() => _battleRecordMap = result);
+      }
+    } catch (e) {
+      debugPrint('[RaceIntrospection] _fetchHorseBattleRecords error: $e');
+    }
+  }
+
+  ///
+  int? _pickupFinishingPosition(int? horseNum) {
+    if (horseNum == null) {
+      return null;
+    }
+    final RaceIntrospectionModel? model = _model;
+    if (model == null) {
+      return null;
+    }
+    final List<RaceResultHistoryModel>? records = _battleRecordMap[horseNum];
+    if (records == null) {
+      return null;
+    }
+    final RaceResultHistoryModel? record = records
+        .where((RaceResultHistoryModel r) => r.date == model.date)
+        .firstOrNull;
+    if (record == null) {
+      return null;
+    }
+    final int pos = record.finishingPosition;
+    return (pos >= 1 && pos <= 3) ? pos : null;
   }
 
   ///
@@ -116,20 +221,15 @@ class _RaceIntrospectionDisplayAlertState extends ConsumerState<RaceIntrospectio
       }
 
       final List<String> contentLines = lines.skip(1).where((String l) => l.trim().isNotEmpty).toList();
-      final bool hasRankLines = contentLines.any((String l) => RegExp(r'^\d+着').hasMatch(l.trim()));
 
-      if (hasRankLines) {
+      if (heading == '## ピックアップ') {
         for (final String line in contentLines) {
-          final String trimmed = line.trim();
-          if (trimmed.isEmpty) {
-            continue;
-          }
-          widgets.add(_buildRankRow(trimmed));
+          widgets.add(_buildPickupRow(line.trim()));
         }
       } else if (contentLines.isNotEmpty) {
         widgets.add(
           MarkdownBody(
-            data: contentLines.join('\n'),
+            data: contentLines.join('\n\n'),
             styleSheet: MarkdownStyleSheet(
               h3: const TextStyle(fontSize: 12, color: Colors.yellowAccent, fontWeight: FontWeight.bold),
               p: const TextStyle(fontSize: 11, color: Colors.white, letterSpacing: 0.8, height: 1.8),
@@ -149,43 +249,35 @@ class _RaceIntrospectionDisplayAlertState extends ConsumerState<RaceIntrospectio
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: widgets);
   }
 
-  static final RegExp _rankLineReg = RegExp(r'^(\d+)着[:\s：]*(\d+)番\s*(.*)$');
+  static final RegExp _pickupLineReg = RegExp(r'^(\d+)番\s*(.*)$');
 
   ///
-  Widget _buildRankRow(String line) {
-    final RegExpMatch? m = _rankLineReg.firstMatch(line);
+  Widget _buildPickupRow(String line) {
+    final RegExpMatch? m = _pickupLineReg.firstMatch(line);
 
     if (m != null) {
-      final String rank = '${m.group(1)}着';
-      final String number = '${m.group(2)}番';
-      final String name = m.group(3)?.trim() ?? '';
+      final int? horseNum = int.tryParse(m.group(1)!);
+      final int? rank = _pickupFinishingPosition(horseNum);
+      final Color nameColor = rank != null ? const Color(0xFFFBB6CE) : Colors.white;
 
-      Widget? resultIcon;
-      if (line.contains('（的中）')) {
-        resultIcon = const Icon(Icons.radio_button_unchecked, color: Colors.greenAccent, size: 14);
-      } else if (line.contains('（不的中）')) {
-        resultIcon = const Icon(Icons.close, color: Colors.redAccent, size: 14);
-      }
-
-      return Container(
-        decoration: const BoxDecoration(
-          border: Border(bottom: BorderSide(color: Colors.white24)),
-        ),
-        padding: const EdgeInsets.symmetric(vertical: 4),
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 2),
         child: Row(
           children: <Widget>[
             SizedBox(
-              width: 32,
-              child: Text(rank, style: const TextStyle(fontSize: 11, color: Colors.white)),
-            ),
-            SizedBox(
-              width: 44,
-              child: Text(number, style: const TextStyle(fontSize: 11, color: Colors.white)),
+              width: 36,
+              child: Text('${m.group(1)}番', style: const TextStyle(fontSize: 11, color: Colors.white70)),
             ),
             Expanded(
-              child: Text(name, style: const TextStyle(fontSize: 11, color: Colors.white)),
+              child: Text(m.group(2)?.trim() ?? '', style: TextStyle(fontSize: 11, color: nameColor)),
             ),
-            if (resultIcon != null) resultIcon,
+            if (rank != null)
+              Container(
+                width: 40,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(color: raceRankColor(rank, fallback: Colors.grey.withValues(alpha: 0.3))),
+                child: Text(rank.toString(), style: const TextStyle(fontSize: 11, color: Colors.white)),
+              ),
           ],
         ),
       );
