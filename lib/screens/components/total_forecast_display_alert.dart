@@ -1,21 +1,37 @@
 import 'dart:async';
 
-import 'package:fl_chart/fl_chart.dart';
+// import 'package:fl_chart/fl_chart.dart';
+//
+//
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../controllers/controllers_mixin.dart';
 import '../../data/http/client.dart';
 import '../../data/http/path.dart';
-import '../../extensions/extensions.dart';
+
+// import '../../extensions/extensions.dart';
+//
+//
+
 import '../../models/common/ai_response_recommend_horse_model.dart';
 import '../../models/horse_model.dart';
-import '../../models/horse_odds_kitaichi_model.dart';
+
+// import '../../models/horse_odds_kitaichi_model.dart';
+//
+//
+
 import '../../models/odds_model.dart';
 import '../../models/popularity_rank_odds_median_model.dart';
 import '../../models/race_analysis_model.dart';
 import '../../models/race_model.dart';
-import '../../models/race_result_history_model.dart';
+
+// import '../../models/race_result_history_model.dart';
+//
+//
+//
+
 import '../../utility/functions.dart';
 import '../parts/dashed_line_painter.dart';
 
@@ -55,8 +71,16 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
   Set<int> _highProbabilityPopularities = <int>{};
   Set<int> _aiPickupNums = <int>{};
   Map<int, String> _aiPickupScores = <int, String>{};
-  Map<int, List<RaceResultHistoryModel>> _battleRecordMap = <int, List<RaceResultHistoryModel>>{};
-  Map<int, HorseOddsKitaichiModel> _kitaichiMap = <int, HorseOddsKitaichiModel>{};
+
+  // Map<int, List<RaceResultHistoryModel>> _battleRecordMap = <int, List<RaceResultHistoryModel>>{};
+  //
+  //
+  //
+
+  // Map<int, HorseOddsKitaichiModel> _kitaichiMap = <int, HorseOddsKitaichiModel>{};
+  //
+  //
+  //
 
   static const double _w0 = 60;
   static const double _w1 = 40;
@@ -127,78 +151,87 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
     await Future.wait(<Future<void>>[
       _fetchHighProbabilityHorses(),
       _fetchAiPickup(),
-      _fetchHorseBattleRecords(),
-      _fetchKitaichi(),
+      // _fetchHorseBattleRecords(),
+      //
+      //
+      //
+      //
+
+      // _fetchKitaichi(),
+      //
+      //
+      //
+      //
     ]);
     if (mounted) {
       setState(() => _isLoading = false);
     }
   }
 
-  ///
-  Future<void> _fetchKitaichi() async {
-    final String date = appParamState.selectedScheduleDate;
-    final int race = widget.currentRaceModel.race;
-    final (:String kaisuu, :String basho, :String day) = _kbdParts;
-    try {
-      final dynamic response = await ref
-          .read(httpClientProvider)
-          .get(
-            path: APIPath.getHorseOddsFinderKitaichi,
-            queryParameters: <String, dynamic>{
-              'date': date,
-              'kaisuu': kaisuu,
-              'basho': basho,
-              'day': day,
-              'race': race.toString(),
-            },
-          );
-      final List<dynamic> dataList = (response as Map<String, dynamic>)['data'] as List<dynamic>? ?? <dynamic>[];
-      final Map<int, HorseOddsKitaichiModel> result = <int, HorseOddsKitaichiModel>{};
-      for (final dynamic item in dataList) {
-        final HorseOddsKitaichiModel m = HorseOddsKitaichiModel.fromJson(item as Map<String, dynamic>);
-        result[m.popularityRank] = m;
-      }
-      _kitaichiMap = result;
-    } catch (e) {
-      debugPrint('[TotalForecast] _fetchKitaichi error: $e');
-    }
-  }
+  // ///
+  // Future<void> _fetchKitaichi() async {
+  //   final String date = appParamState.selectedScheduleDate;
+  //   final int race = widget.currentRaceModel.race;
+  //   final (:String kaisuu, :String basho, :String day) = _kbdParts;
+  //   try {
+  //     final dynamic response = await ref
+  //         .read(httpClientProvider)
+  //         .get(
+  //           path: APIPath.getHorseOddsFinderKitaichi,
+  //           queryParameters: <String, dynamic>{
+  //             'date': date,
+  //             'kaisuu': kaisuu,
+  //             'basho': basho,
+  //             'day': day,
+  //             'race': race.toString(),
+  //           },
+  //         );
+  //     final List<dynamic> dataList = (response as Map<String, dynamic>)['data'] as List<dynamic>? ?? <dynamic>[];
+  //     final Map<int, HorseOddsKitaichiModel> result = <int, HorseOddsKitaichiModel>{};
+  //     for (final dynamic item in dataList) {
+  //       final HorseOddsKitaichiModel m = HorseOddsKitaichiModel.fromJson(item as Map<String, dynamic>);
+  //       result[m.popularityRank] = m;
+  //     }
+  //     _kitaichiMap = result;
+  //   } catch (e) {
+  //     debugPrint('[TotalForecast] _fetchKitaichi error: $e');
+  //   }
+  // }
 
-  ///
-  Future<void> _fetchHorseBattleRecords() async {
-    final List<String> horseNames = widget.horseModelMap.values
-        .map((HorseModel h) => h.name)
-        .where((String n) => n.isNotEmpty)
-        .toList();
-    if (horseNames.isEmpty) {
-      return;
-    }
-    try {
-      final dynamic response = await ref
-          .read(httpClientProvider)
-          .get(
-            path: APIPath.getHorseOddsFinderHorseBattleRecord,
-            queryParameters: <String, dynamic>{'name': horseNames.join('/')},
-          );
-      final List<dynamic> dataList = (response as Map<String, dynamic>)['data'] as List<dynamic>? ?? <dynamic>[];
-      final Map<String, List<RaceResultHistoryModel>> byName = <String, List<RaceResultHistoryModel>>{};
-      for (final dynamic item in dataList) {
-        final RaceResultHistoryModel m = RaceResultHistoryModel.fromJson(item as Map<String, dynamic>);
-        byName.putIfAbsent(m.name, () => <RaceResultHistoryModel>[]).add(m);
-      }
-      final Map<int, List<RaceResultHistoryModel>> result = <int, List<RaceResultHistoryModel>>{};
-      for (final MapEntry<int, HorseModel> entry in widget.horseModelMap.entries) {
-        final List<RaceResultHistoryModel>? list = byName[entry.value.name];
-        if (list != null) {
-          result[entry.key] = list;
-        }
-      }
-      _battleRecordMap = result;
-    } catch (e) {
-      debugPrint('[TotalForecast] _fetchHorseBattleRecords error: $e');
-    }
-  }
+  // ///
+  // Future<void> _fetchHorseBattleRecords() async {
+  //   final List<String> horseNames = widget.horseModelMap.values
+  //       .map((HorseModel h) => h.name)
+  //       .where((String n) => n.isNotEmpty)
+  //       .toList();
+  //   if (horseNames.isEmpty) {
+  //     return;
+  //   }
+  //   try {
+  //     final dynamic response = await ref
+  //         .read(httpClientProvider)
+  //         .get(
+  //           path: APIPath.getHorseOddsFinderHorseBattleRecord,
+  //           queryParameters: <String, dynamic>{'name': horseNames.join('/')},
+  //         );
+  //     final List<dynamic> dataList = (response as Map<String, dynamic>)['data'] as List<dynamic>? ?? <dynamic>[];
+  //     final Map<String, List<RaceResultHistoryModel>> byName = <String, List<RaceResultHistoryModel>>{};
+  //     for (final dynamic item in dataList) {
+  //       final RaceResultHistoryModel m = RaceResultHistoryModel.fromJson(item as Map<String, dynamic>);
+  //       byName.putIfAbsent(m.name, () => <RaceResultHistoryModel>[]).add(m);
+  //     }
+  //     final Map<int, List<RaceResultHistoryModel>> result = <int, List<RaceResultHistoryModel>>{};
+  //     for (final MapEntry<int, HorseModel> entry in widget.horseModelMap.entries) {
+  //       final List<RaceResultHistoryModel>? list = byName[entry.value.name];
+  //       if (list != null) {
+  //         result[entry.key] = list;
+  //       }
+  //     }
+  //     _battleRecordMap = result;
+  //   } catch (e) {
+  //     debugPrint('[TotalForecast] _fetchHorseBattleRecords error: $e');
+  //   }
+  // }
 
   ///
   Future<void> _fetchHighProbabilityHorses() async {
@@ -554,16 +587,15 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
                 padding: const EdgeInsets.only(top: 6),
                 child: Stack(
                   children: <Widget>[
-                    if (appParamState.keepHorseScoreMap[horseName] != null) ...<Widget>[
-                      Positioned(
-                        right: 30,
-                        child: Text(
-                          appParamState.keepHorseScoreMap[horseName]!.score.toString(),
-                          style: TextStyle(fontSize: 24, color: Colors.orangeAccent.withValues(alpha: 0.6)),
-                        ),
-                      ),
-                    ],
-
+                    // if (appParamState.keepHorseScoreMap[horseName] != null) ...<Widget>[
+                    //   Positioned(
+                    //     right: 30,
+                    //     child: Text(
+                    //       appParamState.keepHorseScoreMap[horseName]!.score.toString(),
+                    //       style: TextStyle(fontSize: 24, color: Colors.orangeAccent.withValues(alpha: 0.6)),
+                    //     ),
+                    //   ),
+                    // ],
                     Column(
                       children: <Widget>[
                         Row(
@@ -588,34 +620,38 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
                           ],
                         ),
 
-                        if (appParamState.keepHorseScoreMap[horseName] != null) ...<Widget>[
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: <Widget>[
-                              const SizedBox.shrink(),
-
-                              Expanded(
-                                child: Row(
-                                  children: <Widget>[
-                                    Expanded(
-                                      child: Align(
-                                        alignment: Alignment.centerRight,
-                                        child: Text(
-                                          'ポイント評価(100点中):',
-                                          style: TextStyle(
-                                            fontSize: 10,
-                                            color: Colors.orangeAccent.withValues(alpha: 0.8),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 60),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
+                        // if (appParamState.keepHorseScoreMap[horseName] != null) ...<Widget>[
+                        //   Row(
+                        //     mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        //     children: <Widget>[
+                        //       const SizedBox.shrink(),
+                        //
+                        //       Expanded(
+                        //         child: Row(
+                        //           children: <Widget>[
+                        //             Expanded(
+                        //               child: Align(
+                        //                 alignment: Alignment.centerRight,
+                        //                 child: Text(
+                        //                   'ポイント評価(100点中):',
+                        //                   style: TextStyle(
+                        //                     fontSize: 10,
+                        //                     color: Colors.orangeAccent.withValues(alpha: 0.8),
+                        //                   ),
+                        //                 ),
+                        //               ),
+                        //             ),
+                        //             const SizedBox(width: 60),
+                        //           ],
+                        //         ),
+                        //       ),
+                        //     ],
+                        //   ),
+                        // ],
+                        //
+                        //
+                        //
+                        //
                       ],
                     ),
                   ],
@@ -679,126 +715,126 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
                         children: <Widget>[
                           Text('ジョッキー名: $jockeyName', style: const TextStyle(fontSize: 10, color: Colors.white)),
 
-                          Text(
-                            'ポイント評価(100点中):',
-                            style: TextStyle(fontSize: 10, color: Colors.orangeAccent.withValues(alpha: 0.8)),
-                          ),
+                          // Text(
+                          //   'ポイント評価(100点中):',
+                          //   style: TextStyle(fontSize: 10, color: Colors.orangeAccent.withValues(alpha: 0.8)),
+                          // ),
                         ],
                       ),
                     ),
 
-                    const SizedBox(width: 10),
-
-                    Text(
-                      appParamState.keepJockeyScoreMap[jockeyName]!.score.toString(),
-
-                      style: TextStyle(fontSize: 24, color: Colors.orangeAccent.withValues(alpha: 0.6)),
-                    ),
+                    // const SizedBox(width: 10),
+                    //
+                    // Text(
+                    //   appParamState.keepJockeyScoreMap[jockeyName]!.score.toString(),
+                    //
+                    //   style: TextStyle(fontSize: 24, color: Colors.orangeAccent.withValues(alpha: 0.6)),
+                    // ),
                   ],
                 ),
               ],
 
-              if (_kitaichiMap[popularity] != null) ...<Widget>[
-                const SizedBox(height: 4),
+              // if (_kitaichiMap[popularity] != null) ...<Widget>[
+              //   const SizedBox(height: 4),
+              //
+              //   Column(
+              //     children: <Widget>[
+              //       Row(
+              //         mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              //         children: <Widget>[
+              //           const SizedBox.shrink(),
+              //           Text(
+              //             'オッズ × 過去同オッズ帯の勝率',
+              //             style: TextStyle(fontSize: 8, color: Colors.white.withValues(alpha: 0.6)),
+              //           ),
+              //         ],
+              //       ),
+              //
+              //       Align(
+              //         alignment: Alignment.centerRight,
+              //         child: Padding(
+              //           padding: const EdgeInsets.only(right: 8),
+              //           child: Text(
+              //             _kitaichiMap[popularity]!.tanEvScore,
+              //             style: TextStyle(
+              //               fontSize: 13,
+              //               color: (double.tryParse(_kitaichiMap[popularity]!.tanEvScore) ?? 0) >= 1.0
+              //                   ? Colors.greenAccent
+              //                   : Colors.white54,
+              //               fontWeight: FontWeight.bold,
+              //             ),
+              //           ),
+              //         ),
+              //       ),
+              //
+              //       Row(
+              //         mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              //         children: <Widget>[
+              //           const SizedBox.shrink(),
+              //           Text(
+              //             '複勝オッズ中間値 × 過去同オッズ帯の3着内率',
+              //             style: TextStyle(fontSize: 8, color: Colors.white.withValues(alpha: 0.6)),
+              //           ),
+              //         ],
+              //       ),
+              //
+              //       Align(
+              //         alignment: Alignment.centerRight,
+              //         child: Padding(
+              //           padding: const EdgeInsets.only(right: 8),
+              //           child: Text(
+              //             _kitaichiMap[popularity]!.fukuEvScore,
+              //             style: TextStyle(
+              //               fontSize: 13,
+              //               color: (double.tryParse(_kitaichiMap[popularity]!.fukuEvScore) ?? 0) >= 1.0
+              //                   ? Colors.greenAccent
+              //                   : Colors.white54,
+              //               fontWeight: FontWeight.bold,
+              //             ),
+              //           ),
+              //         ),
+              //       ),
+              //     ],
+              //   ),
+              // ],
+              //
+              // const SizedBox(height: 5),
+              //
+              // _buildCourseExperience(item.num),
 
-                Column(
-                  children: <Widget>[
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: <Widget>[
-                        const SizedBox.shrink(),
-                        Text(
-                          'オッズ × 過去同オッズ帯の勝率',
-                          style: TextStyle(fontSize: 8, color: Colors.white.withValues(alpha: 0.6)),
-                        ),
-                      ],
-                    ),
-
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: Padding(
-                        padding: const EdgeInsets.only(right: 8),
-                        child: Text(
-                          _kitaichiMap[popularity]!.tanEvScore,
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: (double.tryParse(_kitaichiMap[popularity]!.tanEvScore) ?? 0) >= 1.0
-                                ? Colors.greenAccent
-                                : Colors.white54,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: <Widget>[
-                        const SizedBox.shrink(),
-                        Text(
-                          '複勝オッズ中間値 × 過去同オッズ帯の3着内率',
-                          style: TextStyle(fontSize: 8, color: Colors.white.withValues(alpha: 0.6)),
-                        ),
-                      ],
-                    ),
-
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: Padding(
-                        padding: const EdgeInsets.only(right: 8),
-                        child: Text(
-                          _kitaichiMap[popularity]!.fukuEvScore,
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: (double.tryParse(_kitaichiMap[popularity]!.fukuEvScore) ?? 0) >= 1.0
-                                ? Colors.greenAccent
-                                : Colors.white54,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-
-              const SizedBox(height: 5),
-
-              _buildCourseExperience(item.num),
-
-              if (_battleRecordMap[item.num] != null) ...<Widget>[
-                const Stack(
-                  children: <Widget>[
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: <Widget>[
-                        SizedBox.shrink(),
-
-                        Text('下の数字は着順です', style: TextStyle(fontSize: 10, color: Colors.grey)),
-                      ],
-                    ),
-
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: <Widget>[
-                        Text('月ごとの出走経験', style: TextStyle(fontSize: 10)),
-                        SizedBox.shrink(),
-                      ],
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 3),
-
-                _buildMonthExperience(item.num),
-              ],
-
-              const SizedBox(height: 5),
-
-              _BattleRecordSection(
-                historyList: _battleRecordMap[item.num],
-                course: widget.currentRaceModel.course,
-                dist: widget.currentRaceModel.dist,
-              ),
+              // if (_battleRecordMap[item.num] != null) ...<Widget>[
+              //   const Stack(
+              //     children: <Widget>[
+              //       Row(
+              //         mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              //         children: <Widget>[
+              //           SizedBox.shrink(),
+              //
+              //           Text('下の数字は着順です', style: TextStyle(fontSize: 10, color: Colors.grey)),
+              //         ],
+              //       ),
+              //
+              //       Row(
+              //         mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              //         children: <Widget>[
+              //           Text('月ごとの出走経験', style: TextStyle(fontSize: 10)),
+              //           SizedBox.shrink(),
+              //         ],
+              //       ),
+              //     ],
+              //   ),
+              //   const SizedBox(height: 3),
+              //
+              //   _buildMonthExperience(item.num),
+              // ],
+              //
+              // const SizedBox(height: 5),
+              //
+              // _BattleRecordSection(
+              //   historyList: _battleRecordMap[item.num],
+              //   course: widget.currentRaceModel.course,
+              //   dist: widget.currentRaceModel.dist,
+              // ),
             ],
           ),
         ),
@@ -899,359 +935,359 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
     );
   }
 
-  ///
-  Widget _buildCourseExperience(int horseNum) {
-    final List<RaceResultHistoryModel> history = (_battleRecordMap[horseNum] ?? <RaceResultHistoryModel>[])
-        .where((RaceResultHistoryModel e) => e.date != widget.currentRaceModel.date)
-        .toList();
-    Color bashoColor = Colors.transparent;
-    Color courseColor = Colors.transparent;
-    Color distColor = Colors.transparent;
+  // ///
+  // Widget _buildCourseExperience(int horseNum) {
+  //   final List<RaceResultHistoryModel> history = (_battleRecordMap[horseNum] ?? <RaceResultHistoryModel>[])
+  //       .where((RaceResultHistoryModel e) => e.date != widget.currentRaceModel.date)
+  //       .toList();
+  //   Color bashoColor = Colors.transparent;
+  //   Color courseColor = Colors.transparent;
+  //   Color distColor = Colors.transparent;
+  //
+  //   // 第一関門：場所
+  //   final List<RaceResultHistoryModel> bashoMatched = history
+  //       .where((RaceResultHistoryModel e) => e.basho == widget.currentRaceModel.bashoName)
+  //       .toList();
+  //   if (bashoMatched.isNotEmpty) {
+  //     bashoColor = Colors.yellowAccent;
+  //     // 第二関門：コース（場所を通過したものの中から）
+  //     final List<RaceResultHistoryModel> courseMatched = bashoMatched
+  //         .where((RaceResultHistoryModel e) => e.course == widget.currentRaceModel.course)
+  //         .toList();
+  //     if (courseMatched.isNotEmpty) {
+  //       courseColor = Colors.yellowAccent;
+  //       // 第三関門：距離（コースを通過したものの中から）
+  //       if (courseMatched.any((RaceResultHistoryModel e) => e.dist == widget.currentRaceModel.dist)) {
+  //         distColor = Colors.yellowAccent;
+  //       }
+  //     }
+  //   }
+  //
+  //   return Row(
+  //     crossAxisAlignment: CrossAxisAlignment.start,
+  //     children: <Widget>[
+  //       const Expanded(
+  //         child: Align(
+  //           alignment: Alignment.topRight,
+  //           child: Text('コース経験', style: TextStyle(fontSize: 10)),
+  //         ),
+  //       ),
+  //       const SizedBox(width: 10),
+  //       Column(
+  //         crossAxisAlignment: CrossAxisAlignment.start,
+  //         children: <Widget>[
+  //           Row(
+  //             children: <Widget>[
+  //               _courseChip(widget.currentRaceModel.bashoName, bashoColor),
+  //               const SizedBox(width: 4),
+  //               _courseChip(widget.currentRaceModel.course, courseColor),
+  //               const SizedBox(width: 4),
+  //               _courseChip('${widget.currentRaceModel.dist} m', distColor),
+  //             ],
+  //           ),
+  //
+  //           Text('同条件のコースを経験しているか', style: TextStyle(fontSize: 10, color: Colors.white.withValues(alpha: 0.6))),
+  //         ],
+  //       ),
+  //     ],
+  //   );
+  // }
 
-    // 第一関門：場所
-    final List<RaceResultHistoryModel> bashoMatched = history
-        .where((RaceResultHistoryModel e) => e.basho == widget.currentRaceModel.bashoName)
-        .toList();
-    if (bashoMatched.isNotEmpty) {
-      bashoColor = Colors.yellowAccent;
-      // 第二関門：コース（場所を通過したものの中から）
-      final List<RaceResultHistoryModel> courseMatched = bashoMatched
-          .where((RaceResultHistoryModel e) => e.course == widget.currentRaceModel.course)
-          .toList();
-      if (courseMatched.isNotEmpty) {
-        courseColor = Colors.yellowAccent;
-        // 第三関門：距離（コースを通過したものの中から）
-        if (courseMatched.any((RaceResultHistoryModel e) => e.dist == widget.currentRaceModel.dist)) {
-          distColor = Colors.yellowAccent;
-        }
-      }
-    }
+  // ///
+  // Widget _buildMonthExperience(int horseNum) {
+  //   final List<RaceResultHistoryModel> history = (_battleRecordMap[horseNum] ?? <RaceResultHistoryModel>[])
+  //       .where((RaceResultHistoryModel e) => e.date != widget.currentRaceModel.date)
+  //       .toList();
+  //
+  //   final Set<int> racedMonths = <int>{};
+  //   for (final RaceResultHistoryModel e in history) {
+  //     final List<String> parts = e.date.split('-');
+  //     if (parts.length >= 2) {
+  //       final int? month = int.tryParse(parts[1]);
+  //       if (month != null) {
+  //         racedMonths.add(month);
+  //       }
+  //     }
+  //   }
+  //
+  //   final Map<int, List<int>> positionsByMonth = <int, List<int>>{};
+  //   for (final RaceResultHistoryModel e in history) {
+  //     final List<String> parts = e.date.split('-');
+  //     if (parts.length >= 2) {
+  //       final int? month = int.tryParse(parts[1]);
+  //       if (month != null) {
+  //         positionsByMonth.putIfAbsent(month, () => <int>[]).add(e.finishingPosition);
+  //       }
+  //     }
+  //   }
+  //
+  //   return IntrinsicHeight(
+  //     child: Row(
+  //       crossAxisAlignment: CrossAxisAlignment.stretch,
+  //       children: List<Widget>.generate(12, (int index) {
+  //         final int month = index + 1;
+  //         final bool hasRecord = racedMonths.contains(month);
+  //         final List<int> positions = positionsByMonth[month] ?? <int>[];
+  //         return Container(
+  //           margin: const EdgeInsets.symmetric(horizontal: 1),
+  //           width: context.screenSize.width / 20,
+  //           padding: const EdgeInsets.symmetric(vertical: 2),
+  //           decoration: BoxDecoration(
+  //             color: hasRecord ? Colors.yellowAccent.withValues(alpha: 0.2) : Colors.transparent,
+  //             border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
+  //             borderRadius: BorderRadius.circular(3),
+  //           ),
+  //           child: Column(
+  //             children: <Widget>[
+  //               Text(month.toString().padLeft(2, '0'), style: const TextStyle(fontSize: 9, color: Colors.white)),
+  //
+  //               const SizedBox(height: 10),
+  //
+  //               ...positions.map(
+  //                 (int pos) => Text(
+  //                   '$pos',
+  //                   style: const TextStyle(fontSize: 9, color: Colors.white),
+  //                   textAlign: TextAlign.center,
+  //                 ),
+  //               ),
+  //             ],
+  //           ),
+  //         );
+  //       }),
+  //     ),
+  //   );
+  // }
 
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        const Expanded(
-          child: Align(
-            alignment: Alignment.topRight,
-            child: Text('コース経験', style: TextStyle(fontSize: 10)),
-          ),
-        ),
-        const SizedBox(width: 10),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Row(
-              children: <Widget>[
-                _courseChip(widget.currentRaceModel.bashoName, bashoColor),
-                const SizedBox(width: 4),
-                _courseChip(widget.currentRaceModel.course, courseColor),
-                const SizedBox(width: 4),
-                _courseChip('${widget.currentRaceModel.dist} m', distColor),
-              ],
-            ),
+  //   ///
+  //   Widget _courseChip(String label, Color highlightColor) {
+  //     return Container(
+  //       decoration: BoxDecoration(
+  //         color: highlightColor.withValues(alpha: 0.2),
+  //         border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
+  //         borderRadius: BorderRadius.circular(3),
+  //       ),
+  //       margin: const EdgeInsets.symmetric(vertical: 3, horizontal: 1),
+  //       padding: const EdgeInsets.symmetric(vertical: 3),
+  //       alignment: Alignment.center,
+  //       width: context.screenSize.width / 7,
+  //       height: 20,
+  //       child: Text(label, style: const TextStyle(fontSize: 10)),
+  //     );
+  //   }
+  // }
 
-            Text('同条件のコースを経験しているか', style: TextStyle(fontSize: 10, color: Colors.white.withValues(alpha: 0.6))),
-          ],
-        ),
-      ],
-    );
-  }
+  // class _BattleRecordSection extends ConsumerStatefulWidget {
+  //   const _BattleRecordSection({required this.historyList, required this.course, required this.dist});
+  //
+  //   final List<RaceResultHistoryModel>? historyList;
+  //   final String course;
+  //   final int dist;
+  //
+  //   @override
+  //   ConsumerState<_BattleRecordSection> createState() => _BattleRecordSectionState();
+  // }
 
-  ///
-  Widget _buildMonthExperience(int horseNum) {
-    final List<RaceResultHistoryModel> history = (_battleRecordMap[horseNum] ?? <RaceResultHistoryModel>[])
-        .where((RaceResultHistoryModel e) => e.date != widget.currentRaceModel.date)
-        .toList();
+  // class _BattleRecordSectionState extends ConsumerState<_BattleRecordSection>
+  //     with ControllersMixin<_BattleRecordSection> {
+  //   ///
+  //   @override
+  //   Widget build(BuildContext context) {
+  //     if (widget.historyList == null) {
+  //       return const SizedBox.shrink();
+  //     }
+  //
+  //     final List<RaceResultHistoryModel> filtered =
+  //         widget.historyList!.where((RaceResultHistoryModel h) => h.date != appParamState.selectedScheduleDate).toList()
+  //           ..sort((RaceResultHistoryModel a, RaceResultHistoryModel b) => b.date.compareTo(a.date));
+  //
+  //     if (filtered.isEmpty) {
+  //       return const SizedBox.shrink();
+  //     }
+  //
+  //     final List<RaceResultHistoryModel> recent = filtered.take(4).toList();
+  //
+  //     final int plottable = recent.where((RaceResultHistoryModel h) => h.finishingPosition > 0).length;
+  //
+  //     return DefaultTextStyle(
+  //       style: const TextStyle(fontSize: 10, color: Colors.white),
+  //       child: Column(
+  //         crossAxisAlignment: CrossAxisAlignment.start,
+  //         children: <Widget>[
+  //           const Text('過去の出走'),
+  //           const SizedBox(height: 5),
+  //           Padding(
+  //             padding: const EdgeInsets.symmetric(horizontal: 10),
+  //             child: Row(
+  //               crossAxisAlignment: CrossAxisAlignment.start,
+  //               children: <Widget>[
+  //                 Expanded(
+  //                   child: Column(
+  //                     children: recent.map((RaceResultHistoryModel e) {
+  //                       return Container(
+  //                         decoration: BoxDecoration(
+  //                           border: Border(bottom: BorderSide(color: Colors.white.withValues(alpha: 0.3))),
+  //                         ),
+  //                         child: Stack(
+  //                           children: <Widget>[
+  //                             Positioned(
+  //                               right: 30,
+  //                               child: Text(
+  //                                 '${e.course} ${e.dist.toString().toCurrency()}m',
+  //                                 style: TextStyle(
+  //                                   color: (e.course == widget.course && e.dist == widget.dist)
+  //                                       ? Colors.yellow.withValues(alpha: 0.8)
+  //                                       : Colors.white.withValues(alpha: 0.5),
+  //                                 ),
+  //                               ),
+  //                             ),
+  //
+  //                             Row(
+  //                               children: <Widget>[
+  //                                 Text(e.date),
+  //                                 const SizedBox(width: 10),
+  //                                 Expanded(child: Text(e.raceName, maxLines: 1, overflow: TextOverflow.ellipsis)),
+  //                                 const SizedBox(width: 10),
+  //                                 Stack(
+  //                                   alignment: Alignment.center,
+  //                                   children: <Widget>[
+  //                                     Container(
+  //                                       width: 24,
+  //                                       height: 24,
+  //                                       decoration: BoxDecoration(
+  //                                         shape: BoxShape.circle,
+  //                                         border: Border.all(
+  //                                           color: raceRankColor(
+  //                                             e.finishingPosition > 0 ? e.finishingPosition : null,
+  //                                             alpha: 1.0,
+  //                                           ),
+  //                                         ),
+  //                                       ),
+  //                                     ),
+  //
+  //                                     if (e.finishingPosition > 0)
+  //                                       Text(
+  //                                         e.finishingPosition.toString(),
+  //                                         style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+  //                                       )
+  //                                     else
+  //                                       const Icon(Icons.close, size: 14, color: Colors.white54),
+  //                                   ],
+  //                                 ),
+  //                               ],
+  //                             ),
+  //                           ],
+  //                         ),
+  //                       );
+  //                     }).toList(),
+  //                   ),
+  //                 ),
+  //                 if (plottable >= 2) ...<Widget>[
+  //                   const SizedBox(width: 10),
+  //                   Container(
+  //                     width: 120,
+  //                     height: 80,
+  //                     decoration: BoxDecoration(border: Border.all(color: Colors.white.withValues(alpha: 0.4))),
+  //                     child: _FinishingPositionChart(historyList: filtered),
+  //                   ),
+  //                 ],
+  //               ],
+  //             ),
+  //           ),
+  //         ],
+  //       ),
+  //     );
+  //   }
+  // }
 
-    final Set<int> racedMonths = <int>{};
-    for (final RaceResultHistoryModel e in history) {
-      final List<String> parts = e.date.split('-');
-      if (parts.length >= 2) {
-        final int? month = int.tryParse(parts[1]);
-        if (month != null) {
-          racedMonths.add(month);
-        }
-      }
-    }
-
-    final Map<int, List<int>> positionsByMonth = <int, List<int>>{};
-    for (final RaceResultHistoryModel e in history) {
-      final List<String> parts = e.date.split('-');
-      if (parts.length >= 2) {
-        final int? month = int.tryParse(parts[1]);
-        if (month != null) {
-          positionsByMonth.putIfAbsent(month, () => <int>[]).add(e.finishingPosition);
-        }
-      }
-    }
-
-    return IntrinsicHeight(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: List<Widget>.generate(12, (int index) {
-          final int month = index + 1;
-          final bool hasRecord = racedMonths.contains(month);
-          final List<int> positions = positionsByMonth[month] ?? <int>[];
-          return Container(
-            margin: const EdgeInsets.symmetric(horizontal: 1),
-            width: context.screenSize.width / 20,
-            padding: const EdgeInsets.symmetric(vertical: 2),
-            decoration: BoxDecoration(
-              color: hasRecord ? Colors.yellowAccent.withValues(alpha: 0.2) : Colors.transparent,
-              border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
-              borderRadius: BorderRadius.circular(3),
-            ),
-            child: Column(
-              children: <Widget>[
-                Text(month.toString().padLeft(2, '0'), style: const TextStyle(fontSize: 9, color: Colors.white)),
-
-                const SizedBox(height: 10),
-
-                ...positions.map(
-                  (int pos) => Text(
-                    '$pos',
-                    style: const TextStyle(fontSize: 9, color: Colors.white),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-              ],
-            ),
-          );
-        }),
-      ),
-    );
-  }
-
-  ///
-  Widget _courseChip(String label, Color highlightColor) {
-    return Container(
-      decoration: BoxDecoration(
-        color: highlightColor.withValues(alpha: 0.2),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
-        borderRadius: BorderRadius.circular(3),
-      ),
-      margin: const EdgeInsets.symmetric(vertical: 3, horizontal: 1),
-      padding: const EdgeInsets.symmetric(vertical: 3),
-      alignment: Alignment.center,
-      width: context.screenSize.width / 7,
-      height: 20,
-      child: Text(label, style: const TextStyle(fontSize: 10)),
-    );
-  }
-}
-
-class _BattleRecordSection extends ConsumerStatefulWidget {
-  const _BattleRecordSection({required this.historyList, required this.course, required this.dist});
-
-  final List<RaceResultHistoryModel>? historyList;
-  final String course;
-  final int dist;
-
-  @override
-  ConsumerState<_BattleRecordSection> createState() => _BattleRecordSectionState();
-}
-
-class _BattleRecordSectionState extends ConsumerState<_BattleRecordSection>
-    with ControllersMixin<_BattleRecordSection> {
-  ///
-  @override
-  Widget build(BuildContext context) {
-    if (widget.historyList == null) {
-      return const SizedBox.shrink();
-    }
-
-    final List<RaceResultHistoryModel> filtered =
-        widget.historyList!.where((RaceResultHistoryModel h) => h.date != appParamState.selectedScheduleDate).toList()
-          ..sort((RaceResultHistoryModel a, RaceResultHistoryModel b) => b.date.compareTo(a.date));
-
-    if (filtered.isEmpty) {
-      return const SizedBox.shrink();
-    }
-
-    final List<RaceResultHistoryModel> recent = filtered.take(4).toList();
-
-    final int plottable = recent.where((RaceResultHistoryModel h) => h.finishingPosition > 0).length;
-
-    return DefaultTextStyle(
-      style: const TextStyle(fontSize: 10, color: Colors.white),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          const Text('過去の出走'),
-          const SizedBox(height: 5),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 10),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Expanded(
-                  child: Column(
-                    children: recent.map((RaceResultHistoryModel e) {
-                      return Container(
-                        decoration: BoxDecoration(
-                          border: Border(bottom: BorderSide(color: Colors.white.withValues(alpha: 0.3))),
-                        ),
-                        child: Stack(
-                          children: <Widget>[
-                            Positioned(
-                              right: 30,
-                              child: Text(
-                                '${e.course} ${e.dist.toString().toCurrency()}m',
-                                style: TextStyle(
-                                  color: (e.course == widget.course && e.dist == widget.dist)
-                                      ? Colors.yellow.withValues(alpha: 0.8)
-                                      : Colors.white.withValues(alpha: 0.5),
-                                ),
-                              ),
-                            ),
-
-                            Row(
-                              children: <Widget>[
-                                Text(e.date),
-                                const SizedBox(width: 10),
-                                Expanded(child: Text(e.raceName, maxLines: 1, overflow: TextOverflow.ellipsis)),
-                                const SizedBox(width: 10),
-                                Stack(
-                                  alignment: Alignment.center,
-                                  children: <Widget>[
-                                    Container(
-                                      width: 24,
-                                      height: 24,
-                                      decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        border: Border.all(
-                                          color: raceRankColor(
-                                            e.finishingPosition > 0 ? e.finishingPosition : null,
-                                            alpha: 1.0,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-
-                                    if (e.finishingPosition > 0)
-                                      Text(
-                                        e.finishingPosition.toString(),
-                                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                                      )
-                                    else
-                                      const Icon(Icons.close, size: 14, color: Colors.white54),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                ),
-                if (plottable >= 2) ...<Widget>[
-                  const SizedBox(width: 10),
-                  Container(
-                    width: 120,
-                    height: 80,
-                    decoration: BoxDecoration(border: Border.all(color: Colors.white.withValues(alpha: 0.4))),
-                    child: _FinishingPositionChart(historyList: filtered),
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _FinishingPositionChart extends StatelessWidget {
-  const _FinishingPositionChart({required this.historyList});
-
-  final List<RaceResultHistoryModel> historyList;
-
-  ///
-  @override
-  Widget build(BuildContext context) {
-    final List<RaceResultHistoryModel> sorted = historyList.toList()
-      ..sort((RaceResultHistoryModel a, RaceResultHistoryModel b) => b.date.compareTo(a.date));
-    final List<RaceResultHistoryModel> recent = sorted.take(4).toList().reversed.toList();
-
-    final List<FlSpot> spots = <FlSpot>[];
-    for (int i = 0; i < recent.length; i++) {
-      final int pos = recent[i].finishingPosition;
-      if (pos > 0) {
-        spots.add(FlSpot(i.toDouble(), (19 - pos).toDouble()));
-      }
-    }
-
-    if (spots.isEmpty) {
-      return const SizedBox.shrink();
-    }
-
-    final LineChartBarData barData = LineChartBarData(
-      spots: spots,
-      color: Colors.white,
-      barWidth: 1.5,
-      dotData: FlDotData(
-        getDotPainter: (FlSpot spot, double xPercentage, LineChartBarData bar, int index) {
-          final int pos = (19 - spot.y).round();
-          return FlDotCirclePainter(
-            radius: 3,
-            color: raceRankColor(pos, alpha: 1.0, fallback: Colors.white),
-            strokeColor: Colors.transparent,
-          );
-        },
-      ),
-    );
-
-    return LineChart(
-      LineChartData(
-        lineTouchData: LineTouchData(
-          enabled: false,
-          touchTooltipData: LineTouchTooltipData(
-            fitInsideHorizontally: true,
-            fitInsideVertically: true,
-            tooltipPadding: EdgeInsets.zero,
-            tooltipMargin: -18,
-            getTooltipColor: (_) => Colors.transparent,
-            getTooltipItems: (List<LineBarSpot> touchedSpots) => touchedSpots.map((LineBarSpot s) {
-              final int pos = (19 - s.y).round();
-              return LineTooltipItem(
-                '$pos',
-                TextStyle(
-                  fontSize: 8,
-                  fontWeight: FontWeight.bold,
-                  color: raceRankColor(pos, alpha: 1.0, fallback: Colors.white),
-                ),
-              );
-            }).toList(),
-          ),
-        ),
-        showingTooltipIndicators: List<ShowingTooltipIndicators>.generate(
-          spots.length,
-          (int i) => ShowingTooltipIndicators(<LineBarSpot>[LineBarSpot(barData, 0, spots[i])]),
-        ),
-        minY: 1,
-        maxY: 18,
-        minX: 0,
-        maxX: (recent.length - 1).toDouble(),
-        clipData: const FlClipData.all(),
-        gridData: const FlGridData(show: false),
-        borderData: FlBorderData(show: false),
-        rangeAnnotations: RangeAnnotations(
-          horizontalRangeAnnotations: <HorizontalRangeAnnotation>[
-            HorizontalRangeAnnotation(y1: 17.5, y2: 18.5, color: const Color(0xFFFFD700).withValues(alpha: 0.6)),
-            HorizontalRangeAnnotation(y1: 16.5, y2: 17.5, color: const Color(0xFFC0C0C0).withValues(alpha: 0.6)),
-            HorizontalRangeAnnotation(y1: 15.5, y2: 16.5, color: const Color(0xFFCD7F32).withValues(alpha: 0.6)),
-          ],
-        ),
-        titlesData: const FlTitlesData(
-          leftTitles: AxisTitles(),
-          rightTitles: AxisTitles(),
-          topTitles: AxisTitles(),
-          bottomTitles: AxisTitles(),
-        ),
-        lineBarsData: <LineChartBarData>[barData],
-      ),
-    );
-  }
+  // class _FinishingPositionChart extends StatelessWidget {
+  //   const _FinishingPositionChart({required this.historyList});
+  //
+  //   final List<RaceResultHistoryModel> historyList;
+  //
+  //   ///
+  //   @override
+  //   Widget build(BuildContext context) {
+  //     final List<RaceResultHistoryModel> sorted = historyList.toList()
+  //       ..sort((RaceResultHistoryModel a, RaceResultHistoryModel b) => b.date.compareTo(a.date));
+  //     final List<RaceResultHistoryModel> recent = sorted.take(4).toList().reversed.toList();
+  //
+  //     final List<FlSpot> spots = <FlSpot>[];
+  //     for (int i = 0; i < recent.length; i++) {
+  //       final int pos = recent[i].finishingPosition;
+  //       if (pos > 0) {
+  //         spots.add(FlSpot(i.toDouble(), (19 - pos).toDouble()));
+  //       }
+  //     }
+  //
+  //     if (spots.isEmpty) {
+  //       return const SizedBox.shrink();
+  //     }
+  //
+  //     final LineChartBarData barData = LineChartBarData(
+  //       spots: spots,
+  //       color: Colors.white,
+  //       barWidth: 1.5,
+  //       dotData: FlDotData(
+  //         getDotPainter: (FlSpot spot, double xPercentage, LineChartBarData bar, int index) {
+  //           final int pos = (19 - spot.y).round();
+  //           return FlDotCirclePainter(
+  //             radius: 3,
+  //             color: raceRankColor(pos, alpha: 1.0, fallback: Colors.white),
+  //             strokeColor: Colors.transparent,
+  //           );
+  //         },
+  //       ),
+  //     );
+  //
+  //     return LineChart(
+  //       LineChartData(
+  //         lineTouchData: LineTouchData(
+  //           enabled: false,
+  //           touchTooltipData: LineTouchTooltipData(
+  //             fitInsideHorizontally: true,
+  //             fitInsideVertically: true,
+  //             tooltipPadding: EdgeInsets.zero,
+  //             tooltipMargin: -18,
+  //             getTooltipColor: (_) => Colors.transparent,
+  //             getTooltipItems: (List<LineBarSpot> touchedSpots) => touchedSpots.map((LineBarSpot s) {
+  //               final int pos = (19 - s.y).round();
+  //               return LineTooltipItem(
+  //                 '$pos',
+  //                 TextStyle(
+  //                   fontSize: 8,
+  //                   fontWeight: FontWeight.bold,
+  //                   color: raceRankColor(pos, alpha: 1.0, fallback: Colors.white),
+  //                 ),
+  //               );
+  //             }).toList(),
+  //           ),
+  //         ),
+  //         showingTooltipIndicators: List<ShowingTooltipIndicators>.generate(
+  //           spots.length,
+  //           (int i) => ShowingTooltipIndicators(<LineBarSpot>[LineBarSpot(barData, 0, spots[i])]),
+  //         ),
+  //         minY: 1,
+  //         maxY: 18,
+  //         minX: 0,
+  //         maxX: (recent.length - 1).toDouble(),
+  //         clipData: const FlClipData.all(),
+  //         gridData: const FlGridData(show: false),
+  //         borderData: FlBorderData(show: false),
+  //         rangeAnnotations: RangeAnnotations(
+  //           horizontalRangeAnnotations: <HorizontalRangeAnnotation>[
+  //             HorizontalRangeAnnotation(y1: 17.5, y2: 18.5, color: const Color(0xFFFFD700).withValues(alpha: 0.6)),
+  //             HorizontalRangeAnnotation(y1: 16.5, y2: 17.5, color: const Color(0xFFC0C0C0).withValues(alpha: 0.6)),
+  //             HorizontalRangeAnnotation(y1: 15.5, y2: 16.5, color: const Color(0xFFCD7F32).withValues(alpha: 0.6)),
+  //           ],
+  //         ),
+  //         titlesData: const FlTitlesData(
+  //           leftTitles: AxisTitles(),
+  //           rightTitles: AxisTitles(),
+  //           topTitles: AxisTitles(),
+  //           bottomTitles: AxisTitles(),
+  //         ),
+  //         lineBarsData: <LineChartBarData>[barData],
+  //       ),
+  //     );
+  //   }
 }
