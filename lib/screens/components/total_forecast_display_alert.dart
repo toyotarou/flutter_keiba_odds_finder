@@ -269,7 +269,7 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
 
   ///
   static List<AiResponseRecommendHorseModel> _parseAnalysisText(String text) {
-    return text.split('\n\n').where((String block) => block.trim().isNotEmpty).map((String block) {
+    return text.split('\n\n').where((String block) => block.contains('馬番：')).map((String block) {
       final String trimmed = block.trim();
       final int reasonIdx = trimmed.indexOf('選出理由：');
       final String reason = reasonIdx != -1 ? trimmed.substring(reasonIdx + '選出理由：'.length).trim() : '';
