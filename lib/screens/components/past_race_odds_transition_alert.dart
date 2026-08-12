@@ -4,7 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../controllers/controllers_mixin.dart';
+import '../../data/http/client.dart';
+import '../../data/http/path.dart';
+import '../../extensions/extensions.dart';
 import '../../models/race_introspection_model.dart';
+import '../../models/race_result_payout_model.dart';
 import '../../models/summary_model.dart';
 import '../parts/odds_finder_dialog.dart';
 import 'horse_odds_ranking_display_alert.dart';
@@ -20,11 +24,63 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
     with ControllersMixin<PastRaceOddsTransitionAlert> {
   final ScrollController _scrollController = ScrollController();
   final Map<String, bool> _expandedByDate = <String, bool>{};
+  final Set<String> _fetchedDates = <String>{};
+  final Map<String, RaceResultPayoutModel> _payoutMap = <String, RaceResultPayoutModel>{};
 
   static const double _moveAmount = 18;
   static const int _tickMs = 16;
 
   Timer? _repeatTimer;
+
+  ///
+  Future<void> _fetchPayoutsForDate(String date) async {
+    if (_fetchedDates.contains(date)) {
+      return;
+    }
+    _fetchedDates.add(date);
+
+    final Map<String, List<SummaryModel>> summaryMap = summaryState.summaryMap;
+    final Set<String> raceParamSet = <String>{};
+    for (final MapEntry<String, List<SummaryModel>> entry in summaryMap.entries) {
+      if (!entry.key.startsWith(date)) {
+        continue;
+      }
+      final List<SummaryModel> models = entry.value;
+      if (models.isEmpty) {
+        continue;
+      }
+      final int kaisuu = int.tryParse(models.first.kaisuu) ?? 0;
+      final Set<int> seenRaces = <int>{};
+      for (final SummaryModel m in models) {
+        if (seenRaces.add(m.race)) {
+          raceParamSet.add('${m.date}|$kaisuu|${m.basho}|${m.race}');
+        }
+      }
+    }
+    if (raceParamSet.isEmpty) {
+      return;
+    }
+
+    try {
+      final dynamic response = await ref
+          .read(httpClientProvider)
+          .get(
+            path: APIPath.getHorseOddsFinderRaceResultPayout,
+            queryParameters: <String, dynamic>{'races': raceParamSet.join('/')},
+          );
+      final List<dynamic> dataList = (response as Map<String, dynamic>)['data'] as List<dynamic>? ?? <dynamic>[];
+      if (mounted) {
+        setState(() {
+          for (final dynamic item in dataList) {
+            final RaceResultPayoutModel m = RaceResultPayoutModel.fromJson(item as Map<String, dynamic>);
+            _payoutMap['${m.date}_${m.kaisuu}_${m.bashoCode}_${m.day}_${m.race}'] = m;
+          }
+        });
+      }
+    } catch (e) {
+      _fetchedDates.remove(date);
+    }
+  }
 
   ///
   @override
@@ -94,6 +150,10 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
                                 _expandedByDate[k] = !allOpen;
                               }
                             });
+
+                            if (!allOpen) {
+                              summaryDateBashoMap.keys.forEach(_fetchPayoutsForDate);
+                            }
                           },
                           child: Builder(
                             builder: (BuildContext context) {
@@ -179,8 +239,13 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
                                   Text(e.key, style: const TextStyle(color: Colors.white)),
 
                                   GestureDetector(
-                                    onTap: () =>
-                                        setState(() => _expandedByDate[e.key] = !(_expandedByDate[e.key] ?? false)),
+                                    onTap: () {
+                                      final bool nowOpen = !(_expandedByDate[e.key] ?? false);
+                                      setState(() => _expandedByDate[e.key] = nowOpen);
+                                      if (nowOpen) {
+                                        _fetchPayoutsForDate(e.key);
+                                      }
+                                    },
                                     child: Container(
                                       padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 10),
                                       decoration: BoxDecoration(
@@ -218,6 +283,11 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
                                 return ExpansionTile(
                                   key: ValueKey<String>('${e.key}_${e2}_${_expandedByDate[e.key] ?? false}'),
                                   initiallyExpanded: _expandedByDate[e.key] ?? false,
+                                  onExpansionChanged: (bool expanded) {
+                                    if (expanded) {
+                                      _fetchPayoutsForDate(e.key);
+                                    }
+                                  },
                                   iconColor: Colors.greenAccent,
                                   collapsedIconColor: Colors.white70,
                                   title: Text(
@@ -384,6 +454,8 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
         )
         .firstOrNull;
     final String? resultText = introspectionModel != null ? _extractResultLine(introspectionModel.introspection) : null;
+    final String lookupKey = '${date}_${kaisuu}_${models.first.basho}_${models.first.day}_${r.key}';
+    final RaceResultPayoutModel? payout = _payoutMap[lookupKey];
 
     return DefaultTextStyle(
       style: const TextStyle(color: Colors.white70, fontSize: 11),
@@ -431,11 +503,69 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
               ],
             ),
 
-            if (resultText != null) ...<Widget>[
+            if (resultText != null)
               if (resultText.contains('3頭が合致')) ...<Widget>[
-                Text(resultText, style: const TextStyle(fontSize: 10, color: Color(0xFFFBB6CE))),
+                DefaultTextStyle(
+                  style: const TextStyle(fontSize: 10, color: Color(0xFFFBB6CE)),
+
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: <Widget>[
+                      Text(resultText),
+                      if (payout != null) ...<Widget>[
+                        if (payout.trifecta.isNotEmpty) ...<Widget>[
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: <Widget>[
+                              const SizedBox.shrink(),
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.baseline,
+                                textBaseline: TextBaseline.alphabetic,
+                                children: <Widget>[
+                                  const Text('三連単'),
+
+                                  Container(
+                                    width: 40,
+                                    alignment: Alignment.bottomRight,
+                                    child: Text(
+                                      payout.trifecta.split('/').first.split('|').elementAtOrNull(1)?.toCurrency() ??
+                                          '',
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ],
+
+                        if (payout.trio.isNotEmpty) ...<Widget>[
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: <Widget>[
+                              const SizedBox.shrink(),
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.baseline,
+                                textBaseline: TextBaseline.alphabetic,
+                                children: <Widget>[
+                                  const Text('三連複'),
+
+                                  Container(
+                                    width: 40,
+                                    alignment: Alignment.bottomRight,
+                                    child: Text(
+                                      payout.trio.split('/').first.split('|').elementAtOrNull(1)?.toCurrency() ?? '',
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ],
+                      ],
+                    ],
+                  ),
+                ),
               ] else ...<Widget>[Text(resultText, style: const TextStyle(fontSize: 10))],
-            ],
           ],
         ),
       ),
