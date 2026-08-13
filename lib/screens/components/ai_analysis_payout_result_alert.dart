@@ -113,7 +113,14 @@ class _AiAnalysisPayoutResultAlertState extends ConsumerState<AiAnalysisPayoutRe
                         const Text('合致結果', style: TextStyle(fontSize: 12)),
 
                         if (resultText != null) ...<Widget>[
-                          Text(resultText, style: const TextStyle(fontSize: 11, color: Colors.yellowAccent)),
+                          Text(
+                            resultText,
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: Colors.yellowAccent,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ],
                       ],
                     ),
@@ -132,7 +139,7 @@ class _AiAnalysisPayoutResultAlertState extends ConsumerState<AiAnalysisPayoutRe
                   child: _buildHorseList(payout),
                 ),
 
-                if (resultText != null && resultText.contains('2頭が合致')) ...<Widget>[
+                if (resultText != null && (resultText.contains('2頭が合致') || resultText.contains('3頭が合致'))) ...<Widget>[
                   if (widget.aiRecommendHorses.length >= 2) ...<Widget>[
                     const SizedBox(height: 10),
 
@@ -252,7 +259,8 @@ class _AiAnalysisPayoutResultAlertState extends ConsumerState<AiAnalysisPayoutRe
           const SizedBox(height: 4),
 
           Text('単勝  ${_payoutText(payout.tan)}', style: const TextStyle(fontSize: 11, color: Colors.amber)),
-          Text('複勝  ${_payoutText(payout.fuku)}', style: const TextStyle(fontSize: 11, color: Colors.lightBlue)),
+          Text('複勝  ${_payoutText(payout.fuku)}', style: const TextStyle(fontSize: 11, color: Colors.lightBlueAccent)),
+
           const SizedBox(height: 6),
         ],
         ...widget.aiRecommendHorses.map((AiResponseRecommendHorseModel h) {
@@ -274,7 +282,7 @@ class _AiAnalysisPayoutResultAlertState extends ConsumerState<AiAnalysisPayoutRe
                     right: 5,
                     child: Row(
                       children: <Widget>[
-                        if (hasTan)
+                        if (hasTan) ...<Widget>[
                           Container(
                             margin: const EdgeInsets.only(left: 4),
                             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
@@ -282,9 +290,11 @@ class _AiAnalysisPayoutResultAlertState extends ConsumerState<AiAnalysisPayoutRe
                               color: Colors.orangeAccent.withValues(alpha: 0.8),
                               borderRadius: BorderRadius.circular(4),
                             ),
-                            child: const Text('単勝', style: TextStyle(fontSize: 10, color: Colors.black)),
+                            child: const Text('単勝', style: TextStyle(fontSize: 10, color: Colors.white)),
                           ),
-                        if (hasFuku)
+                        ],
+
+                        if (hasFuku) ...<Widget>[
                           Container(
                             margin: const EdgeInsets.only(left: 4),
                             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
@@ -292,8 +302,9 @@ class _AiAnalysisPayoutResultAlertState extends ConsumerState<AiAnalysisPayoutRe
                               color: Colors.lightBlueAccent.withValues(alpha: 0.8),
                               borderRadius: BorderRadius.circular(4),
                             ),
-                            child: const Text('複勝', style: TextStyle(fontSize: 10, color: Colors.black)),
+                            child: const Text('複勝', style: TextStyle(fontSize: 10, color: Colors.white)),
                           ),
+                        ],
                       ],
                     ),
                   ),
@@ -327,7 +338,14 @@ class _AiAnalysisPayoutResultAlertState extends ConsumerState<AiAnalysisPayoutRe
                           ],
                         ),
                       ),
-                      Expanded(child: Text(name, style: const TextStyle(fontSize: 11))),
+                      Expanded(
+                        child: Text(
+                          name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontSize: 11),
+                        ),
+                      ),
                     ],
                   ),
                 ],
@@ -432,7 +450,7 @@ class _AiAnalysisPayoutResultAlertState extends ConsumerState<AiAnalysisPayoutRe
                       borderRadius: BorderRadius.circular(4),
                     ),
                     alignment: Alignment.center,
-                    child: Text(combo, style: const TextStyle(fontSize: 12, color: Colors.white)),
+                    child: Text(combo, style: const TextStyle(fontSize: 10, color: Colors.white)),
                   );
                 }).toList(),
               ),
@@ -513,14 +531,14 @@ class _AiAnalysisPayoutResultAlertState extends ConsumerState<AiAnalysisPayoutRe
                   }
 
                   return Container(
-                    width: context.screenSize.width / 8,
+                    width: context.screenSize.width / 7,
                     padding: const EdgeInsets.symmetric(vertical: 2),
                     decoration: BoxDecoration(
                       border: Border.all(color: borderColor),
                       borderRadius: BorderRadius.circular(4),
                     ),
                     alignment: Alignment.center,
-                    child: Text(combo, style: const TextStyle(fontSize: 12, color: Colors.white)),
+                    child: Text(combo, style: const TextStyle(fontSize: 10, color: Colors.white)),
                   );
                 }).toList(),
               ),

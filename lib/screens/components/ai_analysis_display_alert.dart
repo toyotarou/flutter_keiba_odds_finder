@@ -8,7 +8,6 @@ import '../../models/horse_model.dart';
 import '../../models/race_introspection_model.dart';
 import '../../models/race_result_payout_model.dart';
 import '../../utility/functions.dart';
-import '../parts/error_confirm_dialog.dart';
 import '../parts/odds_finder_dialog.dart';
 import 'ai_analysis_payout_result_alert.dart';
 
@@ -155,6 +154,8 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
     );
     final String? resultText = introspectionModel != null ? extractResultLine(introspectionModel.introspection) : null;
 
+    final String matchCount = resultText != null ? (RegExp(r'(\d+)頭が合致').firstMatch(resultText)?.group(1) ?? '') : '';
+
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: SafeArea(
@@ -174,46 +175,85 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
                         const Text('馬眼力ピックアップ', style: TextStyle(fontSize: 12)),
 
                         if (resultText != null) ...<Widget>[
-                          Text(resultText, style: const TextStyle(fontSize: 11, color: Colors.yellowAccent)),
+                          Text(
+                            resultText,
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: Colors.yellowAccent,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ],
                       ],
                     ),
 
-                    if (payout != null) ...<Widget>[
-                      Material(
-                        color: Colors.transparent,
-                        borderRadius: BorderRadius.circular(10),
-                        child: InkWell(
-                          onTap: () {
-                            if (resultText != null && !resultText.contains('0頭が合致')) {
-                              OddsFinderDialog(
-                                context: context,
-                                widget: AiAnalysisPayoutResultAlert(
-                                  aiRecommendHorses: aiRecommendHorses,
-                                  raceNumber: widget.raceNumber,
+                    if (payout != null && resultText != null && !resultText.contains('0頭が合致')) ...<Widget>[
+                      Stack(
+                        children: <Widget>[
+                          Positioned(
+                            right: 0,
+                            bottom: 0,
+                            child: Container(
+                              alignment: Alignment.center,
+                              child: Transform(
+                                alignment: Alignment.centerLeft,
+                                transform: Matrix4.identity()..setEntry(0, 1, -0.8),
+                                child: Text(
+                                  matchCount,
+                                  style: const TextStyle(
+                                    fontSize: 20,
+                                    color: Color(0xFFFBB6CE),
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
-                                paddingLeft: context.screenSize.width * 0.25,
-                              );
-                            } else {
-                              errorConfirmDialog(context: context, title: '合致なし', content: '1頭も合致しませんでした。');
-                            }
-                          },
-
-                          borderRadius: BorderRadius.circular(10),
-                          splashColor: const Color(0xFFFFD700).withValues(alpha: 0.35),
-                          highlightColor: const Color(0xFFFFD700).withValues(alpha: 0.1),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 10),
-                            decoration: BoxDecoration(
-                              border: Border.all(color: const Color(0xFFFFD700)),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: const Text(
-                              '合致結果',
-                              style: TextStyle(fontSize: 10, color: Color(0xFFFFD700), fontWeight: FontWeight.bold),
+                              ),
                             ),
                           ),
-                        ),
+
+                          Column(
+                            children: <Widget>[
+                              const SizedBox(height: 10),
+
+                              Material(
+                                color: Colors.transparent,
+                                borderRadius: BorderRadius.circular(10),
+                                child: InkWell(
+                                  onTap: () {
+                                    OddsFinderDialog(
+                                      context: context,
+                                      widget: AiAnalysisPayoutResultAlert(
+                                        aiRecommendHorses: aiRecommendHorses,
+                                        raceNumber: widget.raceNumber,
+                                      ),
+                                      paddingLeft: context.screenSize.width * 0.2,
+                                    );
+                                  },
+
+                                  borderRadius: BorderRadius.circular(10),
+                                  splashColor: const Color(0xFFFFD700).withValues(alpha: 0.35),
+                                  highlightColor: const Color(0xFFFFD700).withValues(alpha: 0.1),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 10),
+                                    decoration: BoxDecoration(
+                                      border: Border.all(color: const Color(0xFFFFD700)),
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: const Text(
+                                      '合致結果',
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        color: Color(0xFFFFD700),
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+
+                              const SizedBox(height: 10),
+                            ],
+                          ),
+                        ],
                       ),
                     ] else ...<Widget>[const SizedBox.shrink()],
                   ],
@@ -235,7 +275,15 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
       children: aiRecommendHorses.map((AiResponseRecommendHorseModel h) {
         return Stack(
           children: <Widget>[
-            Positioned(right: 10, bottom: 10, child: Text(h.score.toString(), style: const TextStyle(fontSize: 40))),
+            Positioned(
+              right: 15,
+              bottom: 10,
+              child: Transform(
+                alignment: Alignment.centerLeft,
+                transform: Matrix4.identity()..setEntry(0, 1, -0.8),
+                child: Text(h.score.toString(), style: const TextStyle(fontSize: 40)),
+              ),
+            ),
 
             Container(
               margin: const EdgeInsets.symmetric(vertical: 4),
