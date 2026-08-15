@@ -463,7 +463,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
 
                         Container(
                           decoration: BoxDecoration(
-                            border: Border(bottom: BorderSide(color: Colors.white.withValues(alpha: 0.5))),
+                            border: Border(bottom: BorderSide(color: Colors.orangeAccent.withValues(alpha: 0.5))),
                           ),
 
                           child: Row(
@@ -471,7 +471,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                               Expanded(
                                 child: Container(
                                   alignment: Alignment.topRight,
-                                  child: const Text('発走まで', style: TextStyle(fontSize: 8, color: Colors.white)),
+                                  child: const Text('発走まで', style: TextStyle(fontSize: 8, color: Colors.orangeAccent)),
                                 ),
                               ),
 
@@ -483,7 +483,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                                     valueListenable: _remainingSecondsNotifier,
                                     builder: (BuildContext context, int seconds, Widget? _) => Text(
                                       _formatCountdown(seconds),
-                                      style: const TextStyle(fontSize: 13, color: Colors.white),
+                                      style: const TextStyle(fontSize: 13, color: Colors.orangeAccent),
                                     ),
                                   ),
                                 ),
@@ -494,7 +494,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
 
                         Container(
                           decoration: BoxDecoration(
-                            border: Border(bottom: BorderSide(color: Colors.orangeAccent.withValues(alpha: 0.5))),
+                            border: Border(bottom: BorderSide(color: Colors.white60.withValues(alpha: 0.5))),
                           ),
 
                           child: Row(
@@ -502,10 +502,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                               Expanded(
                                 child: Container(
                                   alignment: Alignment.topRight,
-                                  child: const Text(
-                                    '馬券締切まで',
-                                    style: TextStyle(fontSize: 8, color: Colors.orangeAccent),
-                                  ),
+                                  child: const Text('馬券締切まで', style: TextStyle(fontSize: 8, color: Colors.white60)),
                                 ),
                               ),
                               SizedBox(
@@ -516,7 +513,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                                     valueListenable: _remainingSecondsNotifier,
                                     builder: (BuildContext context, int seconds, Widget? _) => Text(
                                       _formatCountdown(seconds > 180 ? seconds - 180 : 0),
-                                      style: const TextStyle(fontSize: 13, color: Colors.orangeAccent),
+                                      style: const TextStyle(fontSize: 13, color: Colors.white60),
                                     ),
                                   ),
                                 ),
