@@ -299,66 +299,91 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    Stack(
                       children: <Widget>[
-                        Container(
-                          decoration: BoxDecoration(
-                            border: Border(bottom: BorderSide(color: Colors.white.withValues(alpha: 0.5))),
-                          ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: <Widget>[
+                            const SizedBox.shrink(),
 
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.baseline,
-                            textBaseline: TextBaseline.alphabetic,
-                            children: <Widget>[
-                              const SizedBox(width: 10),
+                            Container(
+                              decoration: BoxDecoration(
+                                border: Border(bottom: BorderSide(color: Colors.orangeAccent.withValues(alpha: 0.5))),
+                              ),
 
-                              Container(width: 20, alignment: Alignment.topLeft, child: Text(h.popularity)),
-                              const Text('番人気'),
+                              child: DefaultTextStyle(
+                                style: const TextStyle(color: Colors.orangeAccent, fontSize: 10),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.baseline,
+                                  textBaseline: TextBaseline.alphabetic,
+                                  children: <Widget>[
+                                    const SizedBox(width: 10),
+                                    const Text('6分前オッズ'),
+                                    Container(width: 40, alignment: Alignment.topRight, child: Text(h.odds)),
 
-                              const SizedBox(width: 10),
-                            ],
-                          ),
+                                    const SizedBox(width: 10),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                        Container(
-                          decoration: BoxDecoration(
-                            border: Border(bottom: BorderSide(color: Colors.white.withValues(alpha: 0.5))),
-                          ),
 
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.baseline,
-                            textBaseline: TextBaseline.alphabetic,
-                            children: <Widget>[
-                              const SizedBox(width: 10),
-                              const Text('6分前オッズ'),
-                              Container(width: 40, alignment: Alignment.topRight, child: Text(h.odds)),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: <Widget>[
+                            Container(
+                              decoration: BoxDecoration(
+                                border: Border(bottom: BorderSide(color: Colors.greenAccent.withValues(alpha: 0.5))),
+                              ),
 
-                              const SizedBox(width: 10),
-                            ],
-                          ),
+                              child: DefaultTextStyle(
+                                style: const TextStyle(color: Colors.greenAccent, fontSize: 10),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.baseline,
+                                  textBaseline: TextBaseline.alphabetic,
+                                  children: <Widget>[
+                                    const SizedBox(width: 10),
+
+                                    Container(width: 20, alignment: Alignment.topLeft, child: Text(h.popularity)),
+                                    const Text('番人気'),
+
+                                    const SizedBox(width: 10),
+                                  ],
+                                ),
+                              ),
+                            ),
+
+                            const SizedBox.shrink(),
+                          ],
                         ),
                       ],
                     ),
 
                     const SizedBox(height: 10),
 
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.baseline,
-                      textBaseline: TextBaseline.alphabetic,
-                      children: <Widget>[
-                        Container(
-                          width: 40,
+                    DefaultTextStyle(
+                      style: const TextStyle(color: Color(0xFFFBB6CE), fontSize: 12),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.baseline,
+                        textBaseline: TextBaseline.alphabetic,
+                        children: <Widget>[
+                          Container(
+                            width: 40,
 
-                          padding: const EdgeInsets.all(2),
+                            padding: const EdgeInsets.all(2),
 
-                          decoration: BoxDecoration(border: Border.all(color: Colors.white.withValues(alpha: 0.5))),
+                            decoration: BoxDecoration(
+                              border: Border.all(color: const Color(0xFFFBB6CE).withValues(alpha: 0.5)),
+                            ),
 
-                          alignment: Alignment.center,
-                          child: Text(h.num.toString()),
-                        ),
-                        const SizedBox(width: 10),
-                        Text(h.name),
-                      ],
+                            alignment: Alignment.center,
+                            child: Text(h.num.toString()),
+                          ),
+                          const SizedBox(width: 10),
+                          Text(h.name),
+                        ],
+                      ),
                     ),
 
                     const SizedBox(height: 5),
