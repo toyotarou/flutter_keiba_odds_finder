@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../controllers/controllers_mixin.dart';
 import '../../extensions/extensions.dart';
 import '../../models/common/ai_response_recommend_horse_model.dart';
-import '../../models/horse_model.dart';
 import '../../models/race_introspection_model.dart';
 import '../../models/race_result_payout_model.dart';
 import '../../utility/functions.dart';
@@ -17,11 +16,13 @@ class AiAnalysisDisplayAlert extends ConsumerStatefulWidget {
     required this.raceNumber,
     required this.gapHorseNums,
     required this.upsetPickupHorseNums,
+    required this.numToRankMap,
   });
 
   final int raceNumber;
   final List<int> gapHorseNums;
   final List<int> upsetPickupHorseNums;
+  final Map<int, int> numToRankMap;
 
   @override
   ConsumerState<AiAnalysisDisplayAlert> createState() => _AiAnalysisDisplayAlertState();
@@ -33,7 +34,6 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
   List<AiResponseRecommendHorseModel> aiRecommendHorses = <AiResponseRecommendHorseModel>[];
   String? _errorMessage;
   final Map<String, RaceResultPayoutModel> _payoutMap = <String, RaceResultPayoutModel>{};
-  final Map<int, int?> _finishingPositionMap = <int, int?>{};
 
   ///
   @override
@@ -42,7 +42,6 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _fetchAiAnalysis();
       _fetchPayout();
-      _fetchBattleRecords();
     });
   }
 
@@ -61,26 +60,6 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
       );
       if (mounted) {
         setState(() => _payoutMap.addAll(result));
-      }
-    } catch (_) {}
-  }
-
-  ///
-  Future<void> _fetchBattleRecords() async {
-    final String date = appParamState.selectedScheduleDate;
-    final String mapKey = '${appParamState.selectedScheduleDate}_${appParamState.selectedScheduleKaisuuBashoDay}';
-    final List<HorseModel> horses = (appParamState.keepHorseMap[mapKey] ?? <HorseModel>[])
-        .where((HorseModel e) => e.race == widget.raceNumber)
-        .toList();
-
-    if (horses.isEmpty) {
-      return;
-    }
-
-    try {
-      final Map<int, int?> result = await fetchFinishingPositionMap(ref, horses: horses, date: date);
-      if (mounted) {
-        setState(() => _finishingPositionMap.addAll(result));
       }
     } catch (_) {}
   }
@@ -396,7 +375,7 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
               ),
             ),
 
-            if (_finishingPositionMap[h.num] != null && _finishingPositionMap[h.num]! <= 3)
+            if (widget.numToRankMap[h.num] != null && widget.numToRankMap[h.num]! <= 3)
               Positioned(
                 bottom: 10,
                 left: 10,
@@ -405,11 +384,11 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
 
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
-                    color: raceRankColor(_finishingPositionMap[h.num], fallback: Colors.grey.withValues(alpha: 0.6)),
+                    color: raceRankColor(widget.numToRankMap[h.num], fallback: Colors.grey.withValues(alpha: 0.6)),
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
-                    _finishingPositionMap[h.num].toString(),
+                    widget.numToRankMap[h.num].toString(),
                     style: const TextStyle(fontSize: 12, color: Colors.white, fontWeight: FontWeight.bold),
                   ),
                 ),

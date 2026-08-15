@@ -1790,6 +1790,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                         raceNumber: widget.raceNumber,
                         gapHorseNums: gapHorseNums,
                         upsetPickupHorseNums: upsetPickupHorseNums,
+                        numToRankMap: numToRankMap,
                       ),
                     );
                   },
