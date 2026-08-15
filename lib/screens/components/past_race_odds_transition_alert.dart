@@ -455,11 +455,22 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
               ],
             ),
 
-            if (resultText != null)
-              if (resultText.contains('3頭が合致')) ...<Widget>[
-                DefaultTextStyle(
-                  style: const TextStyle(fontSize: 10, color: Color(0xFFFBB6CE)),
+            if (resultText != null) ...<Widget>[
+              () {
+                final bool isMatch = resultText.contains('3頭が合致');
 
+                final int trioAmount = (payout != null && payout.trio.isNotEmpty)
+                    ? (int.tryParse(payout.trio.split('/').first.split('|').elementAtOrNull(1) ?? '') ?? 0)
+                    : 0;
+
+                final Color textColor = isMatch
+                    ? const Color(0xFFFBB6CE)
+                    : trioAmount >= 10000
+                    ? Colors.yellowAccent.withValues(alpha: 0.5)
+                    : Colors.white60;
+
+                return DefaultTextStyle(
+                  style: TextStyle(fontSize: 10, color: textColor),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: <Widget>[
@@ -475,9 +486,8 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
                                 textBaseline: TextBaseline.alphabetic,
                                 children: <Widget>[
                                   const Text('三連単'),
-
                                   Container(
-                                    width: 40,
+                                    width: 60,
                                     alignment: Alignment.bottomRight,
                                     child: Text(
                                       payout.trifecta.split('/').first.split('|').elementAtOrNull(1)?.toCurrency() ??
@@ -500,9 +510,8 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
                                 textBaseline: TextBaseline.alphabetic,
                                 children: <Widget>[
                                   const Text('三連複'),
-
                                   Container(
-                                    width: 40,
+                                    width: 60,
                                     alignment: Alignment.bottomRight,
                                     child: Text(
                                       payout.trio.split('/').first.split('|').elementAtOrNull(1)?.toCurrency() ?? '',
@@ -516,8 +525,9 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
                       ],
                     ],
                   ),
-                ),
-              ] else ...<Widget>[Text(resultText, style: const TextStyle(fontSize: 10))],
+                );
+              }(),
+            ],
           ],
         ),
       ),
