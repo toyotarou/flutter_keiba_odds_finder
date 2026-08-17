@@ -180,6 +180,9 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
 
     final String matchCount = resultText != null ? (RegExp(r'(\d+)頭が合致').firstMatch(resultText)?.group(1) ?? '') : '';
 
+    final int supplementCoveredCount =
+        calcSupplementCoveredCount(supplementHorses: _supplementHorses, payout: payout) ?? 0;
+
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: SafeArea(
@@ -256,17 +259,36 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
                                 bottom: 0,
                                 child: Container(
                                   alignment: Alignment.center,
-                                  child: Transform(
-                                    alignment: Alignment.centerLeft,
-                                    transform: Matrix4.identity()..setEntry(0, 1, -0.8),
-                                    child: Text(
-                                      matchCount,
-                                      style: const TextStyle(
-                                        fontSize: 20,
-                                        color: Color(0xFFFBB6CE),
-                                        fontWeight: FontWeight.bold,
+                                  child: Row(
+                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                    children: <Widget>[
+                                      Transform(
+                                        alignment: Alignment.centerLeft,
+                                        transform: Matrix4.identity()..setEntry(0, 1, -0.8),
+                                        child: Text(
+                                          matchCount,
+                                          style: const TextStyle(
+                                            fontSize: 20,
+                                            color: Color(0xFFFBB6CE),
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
                                       ),
-                                    ),
+                                      if (supplementCoveredCount > 0) ...<Widget>[
+                                        Transform(
+                                          alignment: Alignment.centerLeft,
+                                          transform: Matrix4.identity()..setEntry(0, 1, -0.8),
+                                          child: Text(
+                                            '+$supplementCoveredCount',
+                                            style: const TextStyle(
+                                              fontSize: 14,
+                                              color: Colors.greenAccent,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ],
                                   ),
                                 ),
                               ),

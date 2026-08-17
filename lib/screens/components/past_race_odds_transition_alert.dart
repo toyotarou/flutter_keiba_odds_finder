@@ -133,41 +133,15 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
     if (secondAiText == null || secondAiText.isEmpty) {
       return null;
     }
-    if (payout == null) {
-      return null;
-    }
     if (introspectionModel == null) {
       return null;
     }
-    final Set<int> deepSeekNums = parseAnalysisText(
-      secondAiText,
-    ).map((AiResponseRecommendHorseModel h) => h.num).toSet();
+    final List<AiResponseRecommendHorseModel> deepSeekHorses = parseAnalysisText(secondAiText);
     final Set<int> claudeNums = _extractPickupNums(introspectionModel.introspection);
-    final Set<int> supplementNums = deepSeekNums.difference(claudeNums);
-    if (supplementNums.isEmpty) {
-      return null;
-    }
-    final Set<int> resultNums = _extractResultNums(payout);
-    if (resultNums.isEmpty) {
-      return null;
-    }
-    final int covered = supplementNums.intersection(resultNums).length;
-    return covered > 0 ? covered : null;
-  }
-
-  ///
-  /// 三連単 → 三連複の順で払戻データから入賞3頭の馬番セットを返す。
-  Set<int> _extractResultNums(RaceResultPayoutModel payout) {
-    for (final String raw in <String>[payout.trifecta, payout.trio]) {
-      final String numsPart = raw.split('/').first.split('|').first;
-      if (numsPart.contains('-')) {
-        final Set<int> nums = numsPart.split('-').map((String s) => int.tryParse(s.trim())).whereType<int>().toSet();
-        if (nums.length == 3) {
-          return nums;
-        }
-      }
-    }
-    return <int>{};
+    final List<AiResponseRecommendHorseModel> supplementHorses = deepSeekHorses
+        .where((AiResponseRecommendHorseModel h) => !claudeNums.contains(h.num))
+        .toList();
+    return calcSupplementCoveredCount(supplementHorses: supplementHorses, payout: payout);
   }
 
   ///

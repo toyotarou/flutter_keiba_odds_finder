@@ -332,6 +332,38 @@ List<AiResponseRecommendHorseModel> parseAnalysisText(String text) {
   }).toList();
 }
 
+/// 払戻データから入賞3頭の馬番セットを返す（三連単 → 三連複の順で試みる）。
+Set<int> extractResultNumsFromPayout(RaceResultPayoutModel payout) {
+  for (final String raw in <String>[payout.trifecta, payout.trio]) {
+    final String numsPart = raw.split('/').first.split('|').first;
+    if (numsPart.contains('-')) {
+      final Set<int> nums = numsPart.split('-').map((String s) => int.tryParse(s.trim())).whereType<int>().toSet();
+      if (nums.length == 3) {
+        return nums;
+      }
+    }
+  }
+  return <int>{};
+}
+
+/// 補欠馬（DeepSeek選出でClaudeにない馬）が入賞馬と何頭一致したかを返す。
+/// 合致なし・データ不足の場合は null。
+int? calcSupplementCoveredCount({
+  required List<AiResponseRecommendHorseModel> supplementHorses,
+  required RaceResultPayoutModel? payout,
+}) {
+  if (supplementHorses.isEmpty || payout == null) {
+    return null;
+  }
+  final Set<int> resultNums = extractResultNumsFromPayout(payout);
+  if (resultNums.isEmpty) {
+    return null;
+  }
+  final Set<int> supplementNums = supplementHorses.map((AiResponseRecommendHorseModel h) => h.num).toSet();
+  final int covered = supplementNums.intersection(resultNums).length;
+  return covered > 0 ? covered : null;
+}
+
 /// 振り返りテキストから "## 結果" セクションの最初の非空行を返す。
 ///
 /// 振り返りテキストは "## セクション名\n内容" の形式で構成されている。
