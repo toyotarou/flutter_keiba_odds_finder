@@ -3,6 +3,7 @@ import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../parts/odds_finder_dialog.dart';
+import 'ai_second_explain_alert.dart';
 import 'baganriki_brain_display_alert.dart';
 
 class AiAnalysisExplainAlert extends ConsumerStatefulWidget {
@@ -221,15 +222,50 @@ class _AiAnalysisExplainAlertState extends ConsumerState<AiAnalysisExplainAlert>
             Divider(color: Colors.white.withValues(alpha: 0.5), thickness: 5),
 
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: <Widget>[
-                const SizedBox.shrink(),
-                GestureDetector(
-                  onTap: () => OddsFinderDialog(context: context, widget: const BaganrikiBrainDisplayAlert()),
+                Material(
+                  color: Colors.transparent,
+                  borderRadius: BorderRadius.circular(10),
+                  child: InkWell(
+                    onTap: () => OddsFinderDialog(context: context, widget: const BaganrikiBrainDisplayAlert()),
+                    borderRadius: BorderRadius.circular(10),
+                    splashColor: Colors.white.withValues(alpha: 0.35),
+                    highlightColor: Colors.white.withValues(alpha: 0.1),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 10),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.white),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Text(
+                        'AI予想の判断基準について',
+                        style: TextStyle(fontSize: 10, color: Colors.white, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ),
+                ),
 
-                  child: const Padding(
-                    padding: EdgeInsets.all(8.0),
-                    child: Text('AI予想の判断基準について', style: TextStyle(fontSize: 10)),
+                const SizedBox(width: 10),
+
+                Material(
+                  color: Colors.transparent,
+                  borderRadius: BorderRadius.circular(10),
+                  child: InkWell(
+                    onTap: () => OddsFinderDialog(context: context, widget: const AiSecondExplainAlert()),
+                    borderRadius: BorderRadius.circular(10),
+                    splashColor: Colors.white.withValues(alpha: 0.35),
+                    highlightColor: Colors.white.withValues(alpha: 0.1),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 10),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.white),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Text(
+                        '2nd AIの実行について',
+                        style: TextStyle(fontSize: 10, color: Colors.white, fontWeight: FontWeight.bold),
+                      ),
+                    ),
                   ),
                 ),
               ],
