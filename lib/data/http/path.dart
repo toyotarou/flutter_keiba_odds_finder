@@ -40,6 +40,7 @@ enum APIPath {
   getHorseOddsFinderJockeyScores,
   getHorseOddsFinderKitaichi,
   getHorseOddsFinderRaceIntrospection,
+  getHorseOddsFinderSecondAiOpinion,
 }
 
 extension APIPathExtension on APIPath {
@@ -148,6 +149,9 @@ extension APIPathExtension on APIPath {
         return 'getHorseOddsFinderKitaichi';
       case APIPath.getHorseOddsFinderRaceIntrospection:
         return 'getHorseOddsFinderRaceIntrospection';
+
+      case APIPath.getHorseOddsFinderSecondAiOpinion:
+        return 'getHorseOddsFinderSecondAiOpinion';
     }
   }
 }

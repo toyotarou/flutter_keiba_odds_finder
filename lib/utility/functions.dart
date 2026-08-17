@@ -266,13 +266,50 @@ Future<Map<String, dynamic>> fetchAiAnalysisData(
   return (response as Map<String, dynamic>)['data'] as Map<String, dynamic>? ?? <String, dynamic>{};
 }
 
+/// DeepSeek（第2AI）分析APIを呼び出し、レスポンスの data フィールドを返す。
+Future<Map<String, dynamic>> fetchSecondAiOpinionData(
+  WidgetRef ref, {
+  required String date,
+  required String kaisuu,
+  required String basho,
+  required String day,
+  required int race,
+}) async {
+  final dynamic response = await ref
+      .read(httpClientProvider)
+      .get(
+        path: APIPath.getHorseOddsFinderSecondAiOpinion,
+        queryParameters: <String, dynamic>{
+          'date': date,
+          'kaisuu': kaisuu,
+          'basho': basho,
+          'day': day,
+          'race': race.toString(),
+        },
+      );
+  return (response as Map<String, dynamic>)['data'] as Map<String, dynamic>? ?? <String, dynamic>{};
+}
+
 /// analysis_text を解析して推奨馬リストを返す。
+/// \n\n 区切りでも \n 区切りでも動作するよう、馬番：の出現位置でブロックを分割する。
 List<AiResponseRecommendHorseModel> parseAnalysisText(String text) {
-  return text.split('\n\n').where((String block) => block.contains('馬番：')).map((String block) {
-    final String trimmed = block.trim();
-    final int reasonIdx = trimmed.indexOf('選出理由：');
-    final String reason = reasonIdx != -1 ? trimmed.substring(reasonIdx + '選出理由：'.length).trim() : '';
-    final String meta = reasonIdx != -1 ? trimmed.substring(0, reasonIdx) : trimmed;
+  final RegExp horseStart = RegExp(r'馬番：\d+');
+  final List<RegExpMatch> matches = horseStart.allMatches(text).toList();
+  if (matches.isEmpty) {
+    return <AiResponseRecommendHorseModel>[];
+  }
+
+  final List<String> blocks = <String>[];
+  for (int i = 0; i < matches.length; i++) {
+    final int start = matches[i].start;
+    final int end = i + 1 < matches.length ? matches[i + 1].start : text.length;
+    blocks.add(text.substring(start, end).trim());
+  }
+
+  return blocks.map((String block) {
+    final int reasonIdx = block.indexOf('選出理由：');
+    final String reason = reasonIdx != -1 ? block.substring(reasonIdx + '選出理由：'.length).trim() : '';
+    final String meta = reasonIdx != -1 ? block.substring(0, reasonIdx) : block;
 
     String extract(String key) {
       final int idx = meta.indexOf(key);

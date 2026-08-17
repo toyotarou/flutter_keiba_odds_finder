@@ -35,6 +35,16 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
   String? _errorMessage;
   final Map<String, RaceResultPayoutModel> _payoutMap = <String, RaceResultPayoutModel>{};
 
+  // DeepSeek（第2AI）結果
+  bool _isLoadingSecondAi = false;
+  List<AiResponseRecommendHorseModel> _secondAiHorses = <AiResponseRecommendHorseModel>[];
+
+  // DeepSeekのみが選んだ馬（Claudeの選出にない馬＝補欠）
+  List<AiResponseRecommendHorseModel> get _supplementHorses {
+    final Set<int> claudeNums = aiRecommendHorses.map((AiResponseRecommendHorseModel h) => h.num).toSet();
+    return _secondAiHorses.where((AiResponseRecommendHorseModel h) => !claudeNums.contains(h.num)).toList();
+  }
+
   ///
   @override
   void initState() {
@@ -62,6 +72,41 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
         setState(() => _payoutMap.addAll(result));
       }
     } catch (_) {}
+  }
+
+  ///
+  Future<void> _fetchSecondAiOpinion() async {
+    if (_isLoadingSecondAi) {
+      return;
+    }
+    setState(() => _isLoadingSecondAi = true);
+
+    final String date = appParamState.selectedScheduleDate;
+    final (:String kaisuu, :String basho, :String day) = parseKbdParts(appParamState.selectedScheduleKaisuuBashoDay);
+
+    try {
+      final Map<String, dynamic> data = await fetchSecondAiOpinionData(
+        ref,
+        date: date,
+        kaisuu: kaisuu,
+        basho: basho,
+        day: day,
+        race: widget.raceNumber,
+      );
+      final String analysisText = (data['analysis_text'] as String?) ?? '';
+      final List<AiResponseRecommendHorseModel> secondHorses = parseAnalysisText(analysisText);
+
+      if (mounted) {
+        setState(() {
+          _secondAiHorses = secondHorses;
+          _isLoadingSecondAi = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => _isLoadingSecondAi = false);
+      }
+    }
   }
 
   ///
@@ -166,62 +211,59 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
                       ],
                     ),
 
-                    if (payout != null && resultText != null && !resultText.contains('0頭が合致')) ...<Widget>[
-                      Stack(
-                        children: <Widget>[
-                          Positioned(
-                            right: 0,
-                            bottom: 0,
+                    Row(
+                      children: <Widget>[
+                        Material(
+                          color: Colors.transparent,
+                          borderRadius: BorderRadius.circular(10),
+                          child: InkWell(
+                            onTap: _isLoadingSecondAi ? null : _fetchSecondAiOpinion,
+
+                            borderRadius: BorderRadius.circular(10),
+                            splashColor: Colors.greenAccent.withValues(alpha: 0.35),
+                            highlightColor: Colors.greenAccent.withValues(alpha: 0.1),
                             child: Container(
-                              alignment: Alignment.center,
-                              child: Transform(
-                                alignment: Alignment.centerLeft,
-                                transform: Matrix4.identity()..setEntry(0, 1, -0.8),
-                                child: Text(
-                                  matchCount,
-                                  style: const TextStyle(
-                                    fontSize: 20,
-                                    color: Color(0xFFFBB6CE),
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-
-                          Column(
-                            children: <Widget>[
-                              const SizedBox(height: 10),
-
-                              Material(
-                                color: Colors.transparent,
+                              padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 10),
+                              decoration: BoxDecoration(
+                                border: Border.all(color: Colors.greenAccent),
                                 borderRadius: BorderRadius.circular(10),
-                                child: InkWell(
-                                  onTap: () {
-                                    OddsFinderDialog(
-                                      context: context,
-                                      widget: AiAnalysisPayoutResultAlert(
-                                        aiRecommendHorses: aiRecommendHorses,
-                                        raceNumber: widget.raceNumber,
-                                      ),
-                                      paddingLeft: context.screenSize.width * 0.2,
-                                    );
-                                  },
-
-                                  borderRadius: BorderRadius.circular(10),
-                                  splashColor: const Color(0xFFFFD700).withValues(alpha: 0.35),
-                                  highlightColor: const Color(0xFFFFD700).withValues(alpha: 0.1),
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 10),
-                                    decoration: BoxDecoration(
-                                      border: Border.all(color: const Color(0xFFFFD700)),
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                    child: const Text(
-                                      '合致結果',
+                              ),
+                              child: _isLoadingSecondAi
+                                  ? const SizedBox(
+                                      width: 12,
+                                      height: 12,
+                                      child: CircularProgressIndicator(color: Colors.greenAccent, strokeWidth: 1.5),
+                                    )
+                                  : const Text(
+                                      '2nd AI',
                                       style: TextStyle(
                                         fontSize: 10,
-                                        color: Color(0xFFFFD700),
+                                        color: Colors.greenAccent,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                            ),
+                          ),
+                        ),
+
+                        if (payout != null && resultText != null && !resultText.contains('0頭が合致')) ...<Widget>[
+                          const SizedBox(width: 10),
+
+                          Stack(
+                            children: <Widget>[
+                              Positioned(
+                                right: 0,
+                                bottom: 0,
+                                child: Container(
+                                  alignment: Alignment.center,
+                                  child: Transform(
+                                    alignment: Alignment.centerLeft,
+                                    transform: Matrix4.identity()..setEntry(0, 1, -0.8),
+                                    child: Text(
+                                      matchCount,
+                                      style: const TextStyle(
+                                        fontSize: 20,
+                                        color: Color(0xFFFBB6CE),
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
@@ -229,12 +271,54 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
                                 ),
                               ),
 
-                              const SizedBox(height: 10),
+                              Column(
+                                children: <Widget>[
+                                  const SizedBox(height: 10),
+
+                                  Material(
+                                    color: Colors.transparent,
+                                    borderRadius: BorderRadius.circular(10),
+                                    child: InkWell(
+                                      onTap: () {
+                                        OddsFinderDialog(
+                                          context: context,
+                                          widget: AiAnalysisPayoutResultAlert(
+                                            aiRecommendHorses: aiRecommendHorses,
+                                            raceNumber: widget.raceNumber,
+                                          ),
+                                          paddingLeft: context.screenSize.width * 0.2,
+                                        );
+                                      },
+
+                                      borderRadius: BorderRadius.circular(10),
+                                      splashColor: const Color(0xFFFFD700).withValues(alpha: 0.35),
+                                      highlightColor: const Color(0xFFFFD700).withValues(alpha: 0.1),
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 10),
+                                        decoration: BoxDecoration(
+                                          border: Border.all(color: const Color(0xFFFFD700)),
+                                          borderRadius: BorderRadius.circular(10),
+                                        ),
+                                        child: const Text(
+                                          '合致結果',
+                                          style: TextStyle(
+                                            fontSize: 10,
+                                            color: Color(0xFFFFD700),
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+
+                                  const SizedBox(height: 10),
+                                ],
+                              ),
                             ],
                           ),
-                        ],
-                      ),
-                    ] else ...<Widget>[const SizedBox.shrink()],
+                        ] else ...<Widget>[const SizedBox.shrink()],
+                      ],
+                    ),
                   ],
                 ),
                 Divider(color: Colors.white.withValues(alpha: 0.4), thickness: 5),
@@ -249,153 +333,223 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
   }
 
   ///
-  Widget displayRecommendHorseData() {
-    return ListView(
-      children: aiRecommendHorses.map((AiResponseRecommendHorseModel h) {
-        return Stack(
-          children: <Widget>[
-            Positioned(
-              right: 15,
-              bottom: 10,
-              child: Transform(
-                alignment: Alignment.centerLeft,
-                transform: Matrix4.identity()..setEntry(0, 1, -0.8),
-                child: Text(h.score.toString(), style: const TextStyle(fontSize: 40)),
-              ),
+  Widget _buildHorseCard(AiResponseRecommendHorseModel h, {bool isSupplementary = false}) {
+    // consensus 時に表示する DeepSeek の理由文（補欠カードは不要）
+    final AiResponseRecommendHorseModel? secondAiHorse = !isSupplementary
+        ? _secondAiHorses.where((AiResponseRecommendHorseModel s) => s.num == h.num).firstOrNull
+        : null;
+
+    return Stack(
+      children: <Widget>[
+        Positioned(
+          right: 15,
+          bottom: 10,
+          child: Transform(
+            alignment: Alignment.centerLeft,
+            transform: Matrix4.identity()..setEntry(0, 1, -0.8),
+            child: Text(h.score.toString(), style: const TextStyle(fontSize: 40)),
+          ),
+        ),
+
+        Container(
+          margin: const EdgeInsets.symmetric(vertical: 4),
+          padding: const EdgeInsets.all(5),
+
+          decoration: BoxDecoration(
+            color: isSupplementary ? Colors.greenAccent.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.4),
+            border: Border.all(
+              color: isSupplementary ? Colors.greenAccent.withValues(alpha: 0.4) : Colors.white.withValues(alpha: 0.5),
             ),
-
-            Container(
-              margin: const EdgeInsets.symmetric(vertical: 4),
-              padding: const EdgeInsets.all(5),
-
-              decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.4),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.5)),
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: DefaultTextStyle(
-                style: const TextStyle(fontSize: 12, color: Colors.white),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: DefaultTextStyle(
+            style: const TextStyle(fontSize: 12, color: Colors.white),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Stack(
                   children: <Widget>[
-                    Stack(
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: <Widget>[
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: <Widget>[
-                            const SizedBox.shrink(),
+                        const SizedBox.shrink(),
 
-                            Container(
-                              decoration: BoxDecoration(
-                                border: Border(bottom: BorderSide(color: Colors.orangeAccent.withValues(alpha: 0.5))),
-                              ),
+                        Container(
+                          decoration: BoxDecoration(
+                            border: Border(bottom: BorderSide(color: Colors.orangeAccent.withValues(alpha: 0.5))),
+                          ),
 
-                              child: DefaultTextStyle(
-                                style: const TextStyle(color: Colors.orangeAccent, fontSize: 10),
-                                child: Row(
-                                  crossAxisAlignment: CrossAxisAlignment.baseline,
-                                  textBaseline: TextBaseline.alphabetic,
-                                  children: <Widget>[
-                                    const SizedBox(width: 10),
-                                    const Text('6分前オッズ'),
-                                    Container(width: 40, alignment: Alignment.topRight, child: Text(h.odds)),
+                          child: DefaultTextStyle(
+                            style: const TextStyle(color: Colors.orangeAccent, fontSize: 10),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.baseline,
+                              textBaseline: TextBaseline.alphabetic,
+                              children: <Widget>[
+                                const SizedBox(width: 10),
+                                const Text('6分前オッズ'),
+                                Container(width: 40, alignment: Alignment.topRight, child: Text(h.odds)),
 
-                                    const SizedBox(width: 10),
-                                  ],
-                                ),
-                              ),
+                                const SizedBox(width: 10),
+                              ],
                             ),
-                          ],
-                        ),
-
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: <Widget>[
-                            Container(
-                              decoration: BoxDecoration(
-                                border: Border(bottom: BorderSide(color: Colors.greenAccent.withValues(alpha: 0.5))),
-                              ),
-
-                              child: DefaultTextStyle(
-                                style: const TextStyle(color: Colors.greenAccent, fontSize: 10),
-                                child: Row(
-                                  crossAxisAlignment: CrossAxisAlignment.baseline,
-                                  textBaseline: TextBaseline.alphabetic,
-                                  children: <Widget>[
-                                    const SizedBox(width: 10),
-
-                                    Container(width: 20, alignment: Alignment.topLeft, child: Text(h.popularity)),
-                                    const Text('番人気'),
-
-                                    const SizedBox(width: 10),
-                                  ],
-                                ),
-                              ),
-                            ),
-
-                            const SizedBox.shrink(),
-                          ],
+                          ),
                         ),
                       ],
                     ),
 
-                    const SizedBox(height: 10),
-
-                    DefaultTextStyle(
-                      style: const TextStyle(color: Color(0xFFFBB6CE), fontSize: 12),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.baseline,
-                        textBaseline: TextBaseline.alphabetic,
-                        children: <Widget>[
-                          Container(
-                            width: 40,
-
-                            padding: const EdgeInsets.all(2),
-
-                            decoration: BoxDecoration(
-                              border: Border.all(color: const Color(0xFFFBB6CE).withValues(alpha: 0.5)),
-                            ),
-
-                            alignment: Alignment.center,
-                            child: Text(h.num.toString()),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: <Widget>[
+                        Container(
+                          decoration: BoxDecoration(
+                            border: Border(bottom: BorderSide(color: Colors.greenAccent.withValues(alpha: 0.5))),
                           ),
-                          const SizedBox(width: 10),
-                          Text(h.name),
-                        ],
-                      ),
+
+                          child: DefaultTextStyle(
+                            style: const TextStyle(color: Colors.greenAccent, fontSize: 10),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.baseline,
+                              textBaseline: TextBaseline.alphabetic,
+                              children: <Widget>[
+                                const SizedBox(width: 10),
+
+                                Container(width: 20, alignment: Alignment.topLeft, child: Text(h.popularity)),
+                                const Text('番人気'),
+
+                                const SizedBox(width: 10),
+                              ],
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox.shrink(),
+                      ],
                     ),
-
-                    const SizedBox(height: 5),
-
-                    Text(h.reason, style: const TextStyle(letterSpacing: 0.4, height: 1.7)),
-
-                    const SizedBox(height: 40),
                   ],
                 ),
-              ),
-            ),
 
-            if (widget.numToRankMap[h.num] != null && widget.numToRankMap[h.num]! <= 3)
-              Positioned(
-                bottom: 10,
-                left: 10,
-                child: Container(
-                  width: 32,
+                const SizedBox(height: 10),
 
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: raceRankColor(widget.numToRankMap[h.num], fallback: Colors.grey.withValues(alpha: 0.6)),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(
-                    widget.numToRankMap[h.num].toString(),
-                    style: const TextStyle(fontSize: 12, color: Colors.white, fontWeight: FontWeight.bold),
+                DefaultTextStyle(
+                  style: const TextStyle(color: Color(0xFFFBB6CE), fontSize: 12),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                    textBaseline: TextBaseline.alphabetic,
+                    children: <Widget>[
+                      Container(
+                        width: 40,
+
+                        padding: const EdgeInsets.all(2),
+
+                        decoration: BoxDecoration(
+                          border: Border.all(color: const Color(0xFFFBB6CE).withValues(alpha: 0.5)),
+                        ),
+
+                        alignment: Alignment.center,
+                        child: Text(h.num.toString()),
+                      ),
+                      const SizedBox(width: 10),
+                      Text(h.name),
+                    ],
                   ),
                 ),
+
+                const SizedBox(height: 5),
+
+                Text(h.reason, style: const TextStyle(letterSpacing: 0.4, height: 1.7)),
+
+                if (secondAiHorse != null) ...<Widget>[
+                  const SizedBox(height: 8),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.greenAccent.withValues(alpha: 0.5)),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        const Text('2nd AI', style: TextStyle(fontSize: 10, color: Colors.greenAccent)),
+                        const SizedBox(height: 4),
+                        Text(secondAiHorse.reason, style: const TextStyle(letterSpacing: 0.4, height: 1.7)),
+                      ],
+                    ),
+                  ),
+                ],
+
+                const SizedBox(height: 40),
+              ],
+            ),
+          ),
+        ),
+
+        if (widget.numToRankMap[h.num] != null && widget.numToRankMap[h.num]! <= 3) ...<Widget>[
+          Positioned(
+            bottom: 10,
+            left: 10,
+            child: Container(
+              width: 32,
+
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: raceRankColor(widget.numToRankMap[h.num], fallback: Colors.grey.withValues(alpha: 0.6)),
+                borderRadius: BorderRadius.circular(4),
               ),
-          ],
-        );
-      }).toList(),
+              child: Text('${widget.numToRankMap[h.num]}位', style: const TextStyle(fontSize: 12, color: Colors.white)),
+            ),
+          ),
+        ],
+
+        // 補欠カードには「補欠」ラベルを表示
+        if (isSupplementary) ...<Widget>[
+          Positioned(
+            top: 30,
+            right: 10,
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 8),
+              decoration: BoxDecoration(
+                color: Colors.greenAccent.withValues(alpha: 0.15),
+                border: Border.all(color: Colors.greenAccent),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: const Text(
+                '補欠',
+                style: TextStyle(fontSize: 10, color: Colors.greenAccent, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  ///
+  Widget displayRecommendHorseData() {
+    final List<AiResponseRecommendHorseModel> supplements = _supplementHorses;
+
+    return ListView(
+      children: <Widget>[
+        // Claude の選出馬
+        ...aiRecommendHorses.map((AiResponseRecommendHorseModel h) => _buildHorseCard(h)),
+
+        // DeepSeek のみが返した補欠馬
+        if (supplements.isNotEmpty) ...<Widget>[
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Row(
+              children: <Widget>[
+                Expanded(child: Divider(color: Colors.greenAccent.withValues(alpha: 0.4))),
+                const SizedBox(width: 8),
+                const Text('2nd AI 補欠', style: TextStyle(fontSize: 11, color: Colors.greenAccent)),
+                const SizedBox(width: 8),
+                Expanded(child: Divider(color: Colors.greenAccent.withValues(alpha: 0.4))),
+              ],
+            ),
+          ),
+          ...supplements.map((AiResponseRecommendHorseModel h) => _buildHorseCard(h, isSupplementary: true)),
+        ],
+      ],
     );
   }
 }
