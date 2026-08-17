@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../controllers/controllers_mixin.dart';
 import '../../extensions/extensions.dart';
+import '../../models/common/ai_response_recommend_horse_model.dart';
 import '../../models/race_introspection_model.dart';
 import '../../models/race_result_payout_model.dart';
 import '../../models/summary_model.dart';
@@ -25,11 +26,149 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
   final Map<String, bool> _expandedByDate = <String, bool>{};
   final Set<String> _fetchedDates = <String>{};
   final Map<String, RaceResultPayoutModel> _payoutMap = <String, RaceResultPayoutModel>{};
+  final Map<String, String?> _secondAiTextMap = <String, String?>{};
+  final Set<String> _fetchedSecondAiDates = <String>{};
 
   static const double _moveAmount = 18;
   static const int _tickMs = 16;
 
   Timer? _repeatTimer;
+
+  ///
+  Future<void> _fetchSecondAiForDate(String date) async {
+    if (_fetchedSecondAiDates.contains(date)) {
+      return;
+    }
+    _fetchedSecondAiDates.add(date);
+
+    final Map<String, List<SummaryModel>> summaryMap = summaryState.summaryMap;
+    final List<Future<MapEntry<String, String?>>> futures = <Future<MapEntry<String, String?>>>[];
+
+    for (final MapEntry<String, List<SummaryModel>> entry in summaryMap.entries) {
+      if (!entry.key.startsWith(date)) {
+        continue;
+      }
+      final List<SummaryModel> models = entry.value;
+      if (models.isEmpty) {
+        continue;
+      }
+
+      final int kaisuu = int.tryParse(models.first.kaisuu) ?? 0;
+      final Set<int> seenRaces = <int>{};
+      for (final SummaryModel m in models) {
+        if (!seenRaces.add(m.race)) {
+          continue;
+        }
+        final String key = '${m.date}_${kaisuu}_${m.basho}_${m.day}_${m.race}';
+        futures.add(
+          fetchSecondAiOpinionData(
+                ref,
+                date: m.date,
+                kaisuu: kaisuu.toString(),
+                basho: m.basho,
+                day: m.day.toString(),
+                race: m.race,
+              )
+              .then((Map<String, dynamic> data) => MapEntry<String, String?>(key, data['analysis_text'] as String?))
+              .catchError((_) => MapEntry<String, String?>(key, null)),
+        );
+      }
+    }
+
+    if (futures.isEmpty) {
+      return;
+    }
+
+    try {
+      final List<MapEntry<String, String?>> results = await Future.wait(futures);
+      if (mounted) {
+        setState(() {
+          for (final MapEntry<String, String?> e in results) {
+            _secondAiTextMap[e.key] = e.value;
+          }
+        });
+      }
+    } catch (_) {
+      _fetchedSecondAiDates.remove(date);
+    }
+  }
+
+  ///
+  /// ## ピックアップ セクションから馬番を抽出する。
+  /// 「X番」パターン（例: ○3番 ホゲホゲ）で取得する。
+  Set<int> _extractPickupNums(String introspection) {
+    final int start = introspection.indexOf('## ピックアップ');
+    if (start == -1) {
+      return <int>{};
+    }
+    final int sectionStart = start + '## ピックアップ'.length;
+    final int nextSection = introspection.indexOf('## ', sectionStart);
+    final String pickupPart = nextSection != -1
+        ? introspection.substring(sectionStart, nextSection)
+        : introspection.substring(sectionStart);
+
+    final Set<int> nums = <int>{};
+    for (final RegExpMatch m in RegExp(r'(\d+)番').allMatches(pickupPart)) {
+      final int? num = int.tryParse(m.group(1)!);
+      if (num != null) {
+        nums.add(num);
+      }
+    }
+    return nums;
+  }
+
+  ///
+  /// DeepSeek補欠馬が実際の入賞馬と何頭一致したかを返す。
+  /// 3頭が合致済み、データ不足、カバーなしの場合は null。
+  int? _calcSupplementCovered({
+    required String? resultText,
+    required String lookupKey,
+    required RaceIntrospectionModel? introspectionModel,
+    required RaceResultPayoutModel? payout,
+  }) {
+    if (resultText == null || resultText.contains('3頭が合致')) {
+      return null;
+    }
+    final String? secondAiText = _secondAiTextMap[lookupKey];
+    if (secondAiText == null || secondAiText.isEmpty) {
+      return null;
+    }
+    if (payout == null) {
+      return null;
+    }
+    if (introspectionModel == null) {
+      return null;
+    }
+    final Set<int> deepSeekNums = parseAnalysisText(
+      secondAiText,
+    ).map((AiResponseRecommendHorseModel h) => h.num).toSet();
+    final Set<int> claudeNums = _extractPickupNums(introspectionModel.introspection);
+    final Set<int> supplementNums = deepSeekNums.difference(claudeNums);
+    if (supplementNums.isEmpty) {
+      return null;
+    }
+    final Set<int> resultNums = _extractResultNums(payout);
+    if (resultNums.isEmpty) {
+      return null;
+    }
+    final int covered = supplementNums.intersection(resultNums).length;
+    return covered > 0 ? covered : null;
+  }
+
+  ///
+  /// 三連単 → 三連複の順で払戻データから入賞3頭の馬番セットを返す。
+  Set<int> _extractResultNums(RaceResultPayoutModel payout) {
+    for (final String raw in <String>[payout.trifecta, payout.trio]) {
+      final String numsPart = raw.split('/').first.split('|').first;
+      if (numsPart.contains('-')) {
+        final Set<int> nums = numsPart.split('-').map((String s) => int.tryParse(s.trim())).whereType<int>().toSet();
+        if (nums.length == 3) {
+          return nums;
+        }
+      }
+    }
+    return <int>{};
+  }
 
   ///
   Future<void> _fetchPayoutsForDate(String date) async {
@@ -141,6 +280,7 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
 
                             if (!allOpen) {
                               summaryDateBashoMap.keys.forEach(_fetchPayoutsForDate);
+                              summaryDateBashoMap.keys.forEach(_fetchSecondAiForDate);
                             }
                           },
                           child: Builder(
@@ -232,6 +372,7 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
                                       setState(() => _expandedByDate[e.key] = nowOpen);
                                       if (nowOpen) {
                                         _fetchPayoutsForDate(e.key);
+                                        _fetchSecondAiForDate(e.key);
                                       }
                                     },
                                     child: Container(
@@ -274,6 +415,7 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
                                   onExpansionChanged: (bool expanded) {
                                     if (expanded) {
                                       _fetchPayoutsForDate(e.key);
+                                      _fetchSecondAiForDate(e.key);
                                     }
                                   },
                                   iconColor: Colors.greenAccent,
@@ -409,6 +551,13 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
     final String lookupKey = '${date}_${kaisuu}_${models.first.basho}_${models.first.day}_${r.key}';
     final RaceResultPayoutModel? payout = _payoutMap[lookupKey];
 
+    final int? supplementCoveredCount = _calcSupplementCovered(
+      resultText: resultText,
+      lookupKey: lookupKey,
+      introspectionModel: introspectionModel,
+      payout: payout,
+    );
+
     return DefaultTextStyle(
       style: const TextStyle(color: Colors.white70, fontSize: 11),
       child: Container(
@@ -475,6 +624,9 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: <Widget>[
                       Text(resultText),
+
+                      if (supplementCoveredCount != null) ...<Widget>[Text('補欠で$supplementCoveredCount頭をカバー')],
+
                       if (payout != null) ...<Widget>[
                         if (payout.trifecta.isNotEmpty) ...<Widget>[
                           Row(
