@@ -582,11 +582,16 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
               () {
                 final bool isMatch = resultText.contains('3頭が合致');
 
+                // 補欠込みで合計3頭になった場合もピンクにする
+                final int claudeMatchCount =
+                    int.tryParse(RegExp(r'(\d+)頭が合致').firstMatch(resultText)?.group(1) ?? '') ?? 0;
+                final bool isMatchWithSupplement = isMatch || (claudeMatchCount + (supplementCoveredCount ?? 0) >= 3);
+
                 final int trioAmount = (payout != null && payout.trio.isNotEmpty)
                     ? (int.tryParse(payout.trio.split('/').first.split('|').elementAtOrNull(1) ?? '') ?? 0)
                     : 0;
 
-                final Color textColor = isMatch
+                final Color textColor = isMatchWithSupplement
                     ? const Color(0xFFFBB6CE)
                     : trioAmount >= 10000
                     ? Colors.yellowAccent.withValues(alpha: 0.5)

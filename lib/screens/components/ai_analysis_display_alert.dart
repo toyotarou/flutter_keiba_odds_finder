@@ -211,6 +211,17 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
                             ),
                           ),
                         ],
+
+                        if (supplementCoveredCount > 0) ...<Widget>[
+                          Text(
+                            '補欠で$supplementCoveredCount頭をカバー',
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: Colors.greenAccent,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
                       ],
                     ),
 
@@ -307,6 +318,8 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
                                           widget: AiAnalysisPayoutResultAlert(
                                             aiRecommendHorses: aiRecommendHorses,
                                             raceNumber: widget.raceNumber,
+                                            supplementHorses: _supplementHorses,
+                                            supplementCoveredCount: supplementCoveredCount,
                                           ),
                                           paddingLeft: context.screenSize.width * 0.2,
                                         );

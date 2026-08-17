@@ -10,10 +10,18 @@ import '../../models/race_result_payout_model.dart';
 import '../../utility/functions.dart';
 
 class AiAnalysisPayoutResultAlert extends ConsumerStatefulWidget {
-  const AiAnalysisPayoutResultAlert({super.key, required this.aiRecommendHorses, required this.raceNumber});
+  const AiAnalysisPayoutResultAlert({
+    super.key,
+    required this.aiRecommendHorses,
+    required this.raceNumber,
+    this.supplementHorses = const <AiResponseRecommendHorseModel>[],
+    this.supplementCoveredCount = 0,
+  });
 
   final List<AiResponseRecommendHorseModel> aiRecommendHorses;
   final int raceNumber;
+  final List<AiResponseRecommendHorseModel> supplementHorses;
+  final int supplementCoveredCount;
 
   @override
   ConsumerState<AiAnalysisPayoutResultAlert> createState() => _AiAnalysisPayoutResultAlertState();
@@ -94,6 +102,16 @@ class _AiAnalysisPayoutResultAlertState extends ConsumerState<AiAnalysisPayoutRe
 
     final String? resultText = introspectionModel != null ? extractResultLine(introspectionModel.introspection) : null;
 
+    // 補欠がカバーしている場合は全馬（Claude＋補欠）を母数にする
+    final bool useSupplementPool = widget.supplementCoveredCount > 0;
+    final List<AiResponseRecommendHorseModel> allHorses = useSupplementPool
+        ? <AiResponseRecommendHorseModel>[...widget.aiRecommendHorses, ...widget.supplementHorses]
+        : widget.aiRecommendHorses;
+
+    // Claude合致数 ＋ 補欠合致数 の合計で組み合わせセクションの表示を判定
+    final int claudeMatchCount = int.tryParse(RegExp(r'(\d+)頭が合致').firstMatch(resultText ?? '')?.group(1) ?? '') ?? 0;
+    final int totalMatchCount = claudeMatchCount + widget.supplementCoveredCount;
+
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: SafeArea(
@@ -122,6 +140,17 @@ class _AiAnalysisPayoutResultAlertState extends ConsumerState<AiAnalysisPayoutRe
                             ),
                           ),
                         ],
+
+                        if (widget.supplementCoveredCount > 0) ...<Widget>[
+                          Text(
+                            '補欠で${widget.supplementCoveredCount}頭をカバー',
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: Colors.greenAccent,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                     const SizedBox.shrink(),
@@ -139,36 +168,32 @@ class _AiAnalysisPayoutResultAlertState extends ConsumerState<AiAnalysisPayoutRe
                   child: _buildHorseList(payout),
                 ),
 
-                if (resultText != null && (resultText.contains('2頭が合致') || resultText.contains('3頭が合致'))) ...<Widget>[
-                  if (widget.aiRecommendHorses.length >= 2) ...<Widget>[
-                    const SizedBox(height: 10),
+                if (totalMatchCount >= 2 && allHorses.length >= 2) ...<Widget>[
+                  const SizedBox(height: 10),
 
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.5),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: _buildTwoCombinations(payout),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.5),
+                      borderRadius: BorderRadius.circular(10),
                     ),
-                  ],
+                    child: _buildTwoCombinations(payout, allHorses),
+                  ),
                 ],
 
-                if (resultText != null && resultText.contains('3頭が合致')) ...<Widget>[
-                  if (widget.aiRecommendHorses.length >= 3) ...<Widget>[
-                    const SizedBox(height: 10),
+                if (totalMatchCount >= 3 && allHorses.length >= 3) ...<Widget>[
+                  const SizedBox(height: 10),
 
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.5),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: _buildThreeCombinations(payout),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.5),
+                      borderRadius: BorderRadius.circular(10),
                     ),
-                  ],
+                    child: _buildThreeCombinations(payout, allHorses),
+                  ),
                 ],
 
                 const SizedBox(height: 20),
@@ -251,125 +276,159 @@ class _AiAnalysisPayoutResultAlertState extends ConsumerState<AiAnalysisPayoutRe
     final Set<int> tanNums = _parseSingleHorseNums(payout?.tan ?? '');
     final Set<int> fukuNums = _parseSingleHorseNums(payout?.fuku ?? '');
 
+    final bool hasSupplements = widget.supplementCoveredCount > 0 && widget.supplementHorses.isNotEmpty;
+    final int totalCount = widget.aiRecommendHorses.length + (hasSupplements ? widget.supplementHorses.length : 0);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         if (payout != null) ...<Widget>[
-          Text('1頭: ${widget.aiRecommendHorses.length}通り', style: const TextStyle(fontSize: 11, color: Colors.white)),
+          Text('1頭: $totalCount通り', style: const TextStyle(fontSize: 11, color: Colors.white)),
           const SizedBox(height: 4),
-
           Text('単勝  ${_payoutText(payout.tan)}', style: const TextStyle(fontSize: 11, color: Colors.amber)),
           Text('複勝  ${_payoutText(payout.fuku)}', style: const TextStyle(fontSize: 11, color: Colors.lightBlueAccent)),
-
           const SizedBox(height: 6),
         ],
-        ...widget.aiRecommendHorses.map((AiResponseRecommendHorseModel h) {
-          final String name = horseMap[h.num]?.name ?? '';
-          final bool hasTan = tanNums.contains(h.num);
-          final bool hasFuku = fukuNums.contains(h.num);
-          final int? rank = _finishingPositionMap[h.num];
-          return Padding(
-            padding: const EdgeInsets.symmetric(vertical: 2),
-            child: Container(
-              decoration: BoxDecoration(
-                border: Border(bottom: BorderSide(color: Colors.white.withValues(alpha: 0.3))),
-              ),
 
-              child: Stack(
-                children: <Widget>[
-                  Positioned(
-                    top: 5,
-                    right: 5,
-                    child: Row(
-                      children: <Widget>[
-                        if (hasTan) ...<Widget>[
-                          Container(
-                            margin: const EdgeInsets.only(left: 4),
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-                            decoration: BoxDecoration(
-                              color: Colors.orangeAccent.withValues(alpha: 0.8),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: const Text('単勝', style: TextStyle(fontSize: 10, color: Colors.white)),
-                          ),
-                        ],
+        ...widget.aiRecommendHorses.map(
+          (AiResponseRecommendHorseModel h) => _buildHorseRow(h, horseMap, tanNums, fukuNums),
+        ),
 
-                        if (hasFuku) ...<Widget>[
-                          Container(
-                            margin: const EdgeInsets.only(left: 4),
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-                            decoration: BoxDecoration(
-                              color: Colors.lightBlueAccent.withValues(alpha: 0.8),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: const Text('複勝', style: TextStyle(fontSize: 10, color: Colors.white)),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-
-                  Row(
-                    children: <Widget>[
-                      SizedBox(
-                        width: 36,
-                        child: Column(
-                          children: <Widget>[
-                            Text('${h.num}番', style: const TextStyle(fontSize: 11, color: Colors.white)),
-
-                            if (rank != null && rank <= 3) ...<Widget>[
-                              Container(
-                                width: 24,
-                                alignment: Alignment.center,
-                                decoration: BoxDecoration(
-                                  color: raceRankColor(rank, fallback: Colors.grey.withValues(alpha: 0.3)),
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                                child: Text(
-                                  rank.toString(),
-                                  style: const TextStyle(
-                                    fontSize: 10,
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ],
-                        ),
-                      ),
-                      Expanded(
-                        child: Text(
-                          name,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(fontSize: 11),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+        if (hasSupplements) ...<Widget>[
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 6),
+            child: Row(
+              children: <Widget>[
+                Expanded(child: Divider(color: Colors.greenAccent.withValues(alpha: 0.4))),
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 8),
+                  child: Text('補欠', style: TextStyle(fontSize: 10, color: Colors.greenAccent)),
+                ),
+                Expanded(child: Divider(color: Colors.greenAccent.withValues(alpha: 0.4))),
+              ],
             ),
-          );
-        }),
+          ),
+          ...widget.supplementHorses.map(
+            (AiResponseRecommendHorseModel h) => _buildHorseRow(h, horseMap, tanNums, fukuNums, isSupplementary: true),
+          ),
+        ],
       ],
     );
   }
 
   ///
-  Widget _buildTwoCombinations(RaceResultPayoutModel? payout) {
+  Widget _buildHorseRow(
+    AiResponseRecommendHorseModel h,
+    Map<int, HorseModel> horseMap,
+    Set<int> tanNums,
+    Set<int> fukuNums, {
+    bool isSupplementary = false,
+  }) {
+    final String name = horseMap[h.num]?.name ?? '';
+    final bool hasTan = tanNums.contains(h.num);
+    final bool hasFuku = fukuNums.contains(h.num);
+    final int? rank = _finishingPositionMap[h.num];
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Container(
+        decoration: BoxDecoration(
+          border: isSupplementary
+              ? Border.all(color: Colors.greenAccent.withValues(alpha: 0.5))
+              : Border(bottom: BorderSide(color: Colors.white.withValues(alpha: 0.3))),
+          borderRadius: isSupplementary ? BorderRadius.circular(4) : null,
+        ),
+        child: Stack(
+          children: <Widget>[
+            Positioned(
+              top: 5,
+              right: 5,
+              child: Row(
+                children: <Widget>[
+                  if (isSupplementary) ...<Widget>[
+                    Container(
+                      margin: const EdgeInsets.only(left: 4),
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                      decoration: BoxDecoration(
+                        color: Colors.greenAccent.withValues(alpha: 0.3),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: const Text('補欠', style: TextStyle(fontSize: 10, color: Colors.greenAccent)),
+                    ),
+                  ],
+                  if (hasTan) ...<Widget>[
+                    Container(
+                      margin: const EdgeInsets.only(left: 4),
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                      decoration: BoxDecoration(
+                        color: Colors.orangeAccent.withValues(alpha: 0.8),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: const Text('単勝', style: TextStyle(fontSize: 10, color: Colors.white)),
+                    ),
+                  ],
+                  if (hasFuku) ...<Widget>[
+                    Container(
+                      margin: const EdgeInsets.only(left: 4),
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                      decoration: BoxDecoration(
+                        color: Colors.lightBlueAccent.withValues(alpha: 0.8),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: const Text('複勝', style: TextStyle(fontSize: 10, color: Colors.white)),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            Row(
+              children: <Widget>[
+                SizedBox(
+                  width: 36,
+                  child: Column(
+                    children: <Widget>[
+                      Text('${h.num}番', style: const TextStyle(fontSize: 11, color: Colors.white)),
+                      if (rank != null && rank <= 3) ...<Widget>[
+                        Container(
+                          width: 24,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: raceRankColor(rank, fallback: Colors.grey.withValues(alpha: 0.3)),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            rank.toString(),
+                            style: const TextStyle(fontSize: 10, color: Colors.white, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: Text(name, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 11)),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  ///
+  Widget _buildTwoCombinations(RaceResultPayoutModel? payout, List<AiResponseRecommendHorseModel> horses) {
     final Set<String> wideCombos = _parseCombos(payout?.wide ?? '');
     final Set<String> umarenCombos = _parseCombos(payout?.umaren ?? '');
     final Set<String> umatanCombos = _parseCombos(payout?.umatan ?? '');
 
     final List<String> combos = <String>[];
-    for (int i = 0; i < widget.aiRecommendHorses.length; i++) {
-      for (int j = 0; j < widget.aiRecommendHorses.length; j++) {
+    for (int i = 0; i < horses.length; i++) {
+      for (int j = 0; j < horses.length; j++) {
         if (j == i) {
           continue;
         }
-        combos.add('${widget.aiRecommendHorses[i].num}-${widget.aiRecommendHorses[j].num}');
+        combos.add('${horses[i].num}-${horses[j].num}');
       }
     }
 
@@ -380,7 +439,7 @@ class _AiAnalysisPayoutResultAlertState extends ConsumerState<AiAnalysisPayoutRe
         children: <Widget>[
           Builder(
             builder: (BuildContext context) {
-              final int n = widget.aiRecommendHorses.length;
+              final int n = horses.length;
               final int two = n * (n - 1);
               return Text('2頭: $two通り', style: const TextStyle(fontSize: 11, color: Colors.white));
             },
@@ -462,23 +521,21 @@ class _AiAnalysisPayoutResultAlertState extends ConsumerState<AiAnalysisPayoutRe
   }
 
   ///
-  Widget _buildThreeCombinations(RaceResultPayoutModel? payout) {
+  Widget _buildThreeCombinations(RaceResultPayoutModel? payout, List<AiResponseRecommendHorseModel> horses) {
     final Set<String> trioCombos = _parseCombos(payout?.trio ?? '');
     final Set<String> trifectaCombos = _parseCombos(payout?.trifecta ?? '');
 
     final List<String> combos = <String>[];
-    for (int i = 0; i < widget.aiRecommendHorses.length; i++) {
-      for (int j = 0; j < widget.aiRecommendHorses.length; j++) {
+    for (int i = 0; i < horses.length; i++) {
+      for (int j = 0; j < horses.length; j++) {
         if (j == i) {
           continue;
         }
-        for (int k = 0; k < widget.aiRecommendHorses.length; k++) {
+        for (int k = 0; k < horses.length; k++) {
           if (k == i || k == j) {
             continue;
           }
-          combos.add(
-            '${widget.aiRecommendHorses[i].num}-${widget.aiRecommendHorses[j].num}-${widget.aiRecommendHorses[k].num}',
-          );
+          combos.add('${horses[i].num}-${horses[j].num}-${horses[k].num}');
         }
       }
     }
@@ -490,8 +547,7 @@ class _AiAnalysisPayoutResultAlertState extends ConsumerState<AiAnalysisPayoutRe
         children: <Widget>[
           Builder(
             builder: (BuildContext context) {
-              final int n = widget.aiRecommendHorses.length;
-
+              final int n = horses.length;
               final int three = n * (n - 1) * (n - 2);
               return Text('3頭: $three通り', style: const TextStyle(fontSize: 11, color: Colors.white));
             },
