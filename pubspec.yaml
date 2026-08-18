@@ -37,6 +37,8 @@ dependencies:
   flutter_markdown: ^0.7.0
   fl_chart: ^0.70.2
 
+  web_socket_channel: ^3.0.3
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

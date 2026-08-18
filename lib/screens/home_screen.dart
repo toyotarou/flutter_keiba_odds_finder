@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -8,11 +10,6 @@ import '../extensions/extensions.dart';
 import '../models/horse_model.dart';
 import '../models/login_user_model.dart';
 import '../models/odds_model.dart';
-
-// import '../models/odds_wide_model.dart';
-//
-//
-
 import '../models/popularity_rank_odds_median_model.dart';
 import '../models/push_notifier_user_model.dart';
 import '../models/race_introspection_model.dart';
@@ -21,15 +18,10 @@ import '../models/race_result_model.dart';
 import '../models/schedule_model.dart';
 import '../models/score_model.dart';
 import '../models/summary_model.dart';
+import '../services/odds_websocket_service.dart';
 import 'components/admin_menu_alert.dart';
-
-// import 'components/history_race_record_display_alert.dart';
-// import 'components/horse_name_initial_panel_alert.dart';
-
 import 'components/horse_odds_ranking_display_alert.dart';
 import 'components/past_race_odds_transition_alert.dart';
-// import 'components/popularity_record_display_alert.dart';
-
 import 'components/terms_alert.dart';
 import 'components/weekend_race_calendar_alert.dart';
 import 'page/race_content_page.dart';
@@ -58,10 +50,6 @@ class HomeScreen extends ConsumerStatefulWidget {
 
     required this.baganrikiBrain,
 
-    // required this.oddsWideMap,
-    //
-    //
-    //
     required this.isRankingDialogOpen,
     required this.summaryMap,
     required this.summaryDateBashoMap,
@@ -89,11 +77,6 @@ class HomeScreen extends ConsumerStatefulWidget {
 
   final String baganrikiBrain;
 
-  // final Map<String, List<OddsWideModel>> oddsWideMap;
-  //
-  //
-  //
-
   final bool isRankingDialogOpen;
   final Map<String, List<SummaryModel>> summaryMap;
   final Map<String, List<String>> summaryDateBashoMap;
@@ -120,6 +103,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
   TabController? _raceTabControllerPendingDispose;
   String _raceTabMapKey = '';
 
+  // WebSocket
+  final OddsWebSocketService _wsService = OddsWebSocketService();
+  Timer? _wsDebounceTimer;
+
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   String get _mapKey => '${appParamState.selectedScheduleDate}_${appParamState.selectedScheduleKaisuuBashoDay}';
@@ -135,11 +122,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
     oddsNotifier.getAllOddsData();
     laravelConfigNotifier.getAllLaravelConfigData();
     oddsGetTimingNotifier.getAllOddsGetTimingData();
-    // oddsWideNotifier.getAllOddsWideData();
-    //
-    //
-    //
-    //
 
     summaryNotifier.getAllSummaryData();
     raceResultNotifier.getAllRaceResultData();
@@ -152,6 +134,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
     jockeyScoreNotifier.getAllJockeyScoreData();
 
     raceIntrospectionNotifier.getAllRaceIntrospectionData();
+
+    // WebSocket接続を開始し、オッズ更新イベントを受信したら再フェッチする
+    _wsService.onOddsUpdated = () {
+      if (!mounted) {
+        return;
+      }
+      _wsDebounceTimer?.cancel();
+      // 500ms以内に複数イベントが届いた場合まとめて1回だけ再フェッチする
+      _wsDebounceTimer = Timer(const Duration(milliseconds: 500), () {
+        if (mounted) {
+          oddsNotifier.getAllOddsData();
+        }
+      });
+    };
+    _wsService.connect();
 
     WidgetsBinding.instance.addPostFrameCallback((_) => _syncAppParam());
     if (widget.isRankingDialogOpen) {
@@ -191,6 +188,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
   ///
   @override
   void dispose() {
+    _wsDebounceTimer?.cancel();
+    _wsService.dispose();
     try {
       _raceTabController?.removeListener(_onRaceTabChanged);
       _raceTabController?.dispose();
@@ -650,25 +649,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
               const SizedBox(height: 20),
             ],
 
-            // Padding(
-            //   padding: const EdgeInsets.all(8.0),
-            //   child: GestureDetector(
-            //     onTap: () => OddsFinderDialog(context: context, widget: const HistoryRaceRecordDisplayAlert()),
-            //     child: Container(
-            //       width: double.infinity,
-            //       decoration: BoxDecoration(
-            //         border: Border(bottom: BorderSide(color: Colors.white.withValues(alpha: 0.5))),
-            //       ),
-            //       child: Row(
-            //         children: <Widget>[
-            //           Image.asset('assets/images/jockey.png', width: 35),
-            //           const SizedBox(width: 20),
-            //           const Text('過去レースの勝馬リスト', style: TextStyle(fontSize: 12)),
-            //         ],
-            //       ),
-            //     ),
-            //   ),
-            // ),
             Padding(
               padding: const EdgeInsets.all(8.0),
               child: GestureDetector(
@@ -689,53 +669,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
               ),
             ),
 
-            // Padding(
-            //   padding: const EdgeInsets.all(8.0),
-            //   child: GestureDetector(
-            //     onTap: () {
-            //       appParamNotifier.setSelectedHorseNameChar1(char: '');
-            //       appParamNotifier.setSelectedHorseNameChar2(char: '');
-            //       OddsFinderDialog(context: context, widget: const HorseNameInitialPanelAlert());
-            //     },
-            //     child: Container(
-            //       width: double.infinity,
-            //       decoration: BoxDecoration(
-            //         border: Border(bottom: BorderSide(color: Colors.white.withValues(alpha: 0.5))),
-            //       ),
-            //       child: Row(
-            //         children: <Widget>[
-            //           Image.asset('assets/images/jockey.png', width: 35),
-            //           const SizedBox(width: 20),
-            //           const Text('競走馬検索', style: TextStyle(fontSize: 12)),
-            //         ],
-            //       ),
-            //     ),
-            //   ),
-            // ),
-
-            // Padding(
-            //   padding: const EdgeInsets.all(8.0),
-            //   child: GestureDetector(
-            //     onTap: () {
-            //       appParamNotifier.setSelectedPopularityRank(rank: 0);
-            //       appParamNotifier.setSelectedPopularityRankYear(year: '');
-            //       OddsFinderDialog(context: context, widget: const PopularityRecordDisplayAlert());
-            //     },
-            //     child: Container(
-            //       width: double.infinity,
-            //       decoration: BoxDecoration(
-            //         border: Border(bottom: BorderSide(color: Colors.white.withValues(alpha: 0.5))),
-            //       ),
-            //       child: Row(
-            //         children: <Widget>[
-            //           Image.asset('assets/images/jockey.png', width: 35),
-            //           const SizedBox(width: 20),
-            //           const Text('過去の人気順オッズリスト', style: TextStyle(fontSize: 12)),
-            //         ],
-            //       ),
-            //     ),
-            //   ),
-            // ),
             const Spacer(),
 
             Divider(color: Colors.white.withValues(alpha: 0.5), thickness: 5),
