@@ -36,8 +36,10 @@ class _AiAnalysisPayoutResultAlertState extends ConsumerState<AiAnalysisPayoutRe
   @override
   void initState() {
     super.initState();
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _fetchPayout();
+
       _fetchBattleRecords();
     });
   }
@@ -45,7 +47,9 @@ class _AiAnalysisPayoutResultAlertState extends ConsumerState<AiAnalysisPayoutRe
   ///
   Future<void> _fetchPayout() async {
     final String date = appParamState.selectedScheduleDate;
+
     final (:String kaisuu, :String basho, day: _) = parseKbdParts(appParamState.selectedScheduleKaisuuBashoDay);
+
     if (kaisuu.isEmpty || basho.isEmpty) {
       return;
     }
@@ -55,6 +59,7 @@ class _AiAnalysisPayoutResultAlertState extends ConsumerState<AiAnalysisPayoutRe
         ref,
         racesParam: '$date|$kaisuu|$basho|${widget.raceNumber}',
       );
+
       if (mounted) {
         setState(() => _payoutMap.addAll(result));
       }
@@ -64,7 +69,9 @@ class _AiAnalysisPayoutResultAlertState extends ConsumerState<AiAnalysisPayoutRe
   ///
   Future<void> _fetchBattleRecords() async {
     final String date = appParamState.selectedScheduleDate;
+
     final String mapKey = '${appParamState.selectedScheduleDate}_${appParamState.selectedScheduleKaisuuBashoDay}';
+
     final List<HorseModel> horses = (appParamState.keepHorseMap[mapKey] ?? <HorseModel>[])
         .where((HorseModel e) => e.race == widget.raceNumber)
         .toList();
@@ -75,6 +82,7 @@ class _AiAnalysisPayoutResultAlertState extends ConsumerState<AiAnalysisPayoutRe
 
     try {
       final Map<int, int?> result = await fetchFinishingPositionMap(ref, horses: horses, date: date);
+
       if (mounted) {
         setState(() => _finishingPositionMap.addAll(result));
       }
@@ -87,10 +95,15 @@ class _AiAnalysisPayoutResultAlertState extends ConsumerState<AiAnalysisPayoutRe
     final (:String kaisuu, :String basho, day: String dayStr) = parseKbdParts(
       appParamState.selectedScheduleKaisuuBashoDay,
     );
+
     final int kaisuuInt = int.tryParse(kaisuu) ?? 0;
+
     final int day = int.tryParse(dayStr) ?? 0;
+
     final String lookupKey = '${appParamState.selectedScheduleDate}_${kaisuuInt}_${basho}_${day}_${widget.raceNumber}';
+
     final RaceResultPayoutModel? payout = _payoutMap[lookupKey];
+
     final RaceIntrospectionModel? introspectionModel = findRaceIntrospection(
       raceIntrospectionState.raceIntrospectionMap,
       date: appParamState.selectedScheduleDate,
@@ -102,14 +115,14 @@ class _AiAnalysisPayoutResultAlertState extends ConsumerState<AiAnalysisPayoutRe
 
     final String? resultText = introspectionModel != null ? extractResultLine(introspectionModel.introspection) : null;
 
-    // 補欠がカバーしている場合は全馬（Claude＋補欠）を母数にする
     final bool useSupplementPool = widget.supplementCoveredCount > 0;
+
     final List<AiResponseRecommendHorseModel> allHorses = useSupplementPool
         ? <AiResponseRecommendHorseModel>[...widget.aiRecommendHorses, ...widget.supplementHorses]
         : widget.aiRecommendHorses;
 
-    // Claude合致数 ＋ 補欠合致数 の合計で組み合わせセクションの表示を判定
     final int claudeMatchCount = int.tryParse(RegExp(r'(\d+)頭が合致').firstMatch(resultText ?? '')?.group(1) ?? '') ?? 0;
+
     final int totalMatchCount = claudeMatchCount + widget.supplementCoveredCount;
 
     return Scaffold(
@@ -129,8 +142,7 @@ class _AiAnalysisPayoutResultAlertState extends ConsumerState<AiAnalysisPayoutRe
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
                         const Text('合致結果', style: TextStyle(fontSize: 12)),
-
-                        if (resultText != null) ...<Widget>[
+                        if (resultText != null)
                           Text(
                             resultText,
                             style: const TextStyle(
@@ -139,9 +151,7 @@ class _AiAnalysisPayoutResultAlertState extends ConsumerState<AiAnalysisPayoutRe
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                        ],
-
-                        if (widget.supplementCoveredCount > 0) ...<Widget>[
+                        if (widget.supplementCoveredCount > 0)
                           Text(
                             '補欠で${widget.supplementCoveredCount}頭をカバー',
                             style: const TextStyle(
@@ -150,14 +160,11 @@ class _AiAnalysisPayoutResultAlertState extends ConsumerState<AiAnalysisPayoutRe
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                        ],
                       ],
                     ),
-                    const SizedBox.shrink(),
                   ],
                 ),
                 Divider(color: Colors.white.withValues(alpha: 0.4), thickness: 5),
-
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(10),
@@ -167,10 +174,8 @@ class _AiAnalysisPayoutResultAlertState extends ConsumerState<AiAnalysisPayoutRe
                   ),
                   child: _buildHorseList(payout),
                 ),
-
                 if (totalMatchCount >= 2 && allHorses.length >= 2) ...<Widget>[
                   const SizedBox(height: 10),
-
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(10),
@@ -181,10 +186,8 @@ class _AiAnalysisPayoutResultAlertState extends ConsumerState<AiAnalysisPayoutRe
                     child: _buildTwoCombinations(payout, allHorses),
                   ),
                 ],
-
                 if (totalMatchCount >= 3 && allHorses.length >= 3) ...<Widget>[
                   const SizedBox(height: 10),
-
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(10),
@@ -195,7 +198,6 @@ class _AiAnalysisPayoutResultAlertState extends ConsumerState<AiAnalysisPayoutRe
                     child: _buildThreeCombinations(payout, allHorses),
                   ),
                 ],
-
                 const SizedBox(height: 20),
               ],
             ),
@@ -210,6 +212,7 @@ class _AiAnalysisPayoutResultAlertState extends ConsumerState<AiAnalysisPayoutRe
     if (raw.isEmpty) {
       return <String>{};
     }
+
     return raw.split('/').map((String e) => e.split('|').first.trim()).toSet();
   }
 
@@ -226,11 +229,14 @@ class _AiAnalysisPayoutResultAlertState extends ConsumerState<AiAnalysisPayoutRe
   ///
   bool _matchesUnordered3(Set<String> combos, String a, String b, String c) {
     final List<String> sorted = <String>[a, b, c]..sort();
+
     return combos.any((String combo) {
       final List<String> parts = combo.split('-');
+
       if (parts.length != 3) {
         return false;
       }
+
       return (parts..sort()).join('-') == sorted.join('-');
     });
   }
@@ -245,6 +251,7 @@ class _AiAnalysisPayoutResultAlertState extends ConsumerState<AiAnalysisPayoutRe
     if (raw.isEmpty) {
       return <int>{};
     }
+
     return raw.split('/').map((String e) => int.tryParse(e.split('|').first.trim())).whereType<int>().toSet();
   }
 
@@ -253,13 +260,16 @@ class _AiAnalysisPayoutResultAlertState extends ConsumerState<AiAnalysisPayoutRe
     if (raw.isEmpty) {
       return '-';
     }
+
     return raw
         .split('/')
         .map((String e) {
           final List<String> parts = e.split('|');
+
           if (parts.length < 2) {
             return parts[0];
           }
+
           return '${parts[0]}  ¥${parts[1].toCurrency()}';
         })
         .join('   ');
@@ -268,15 +278,19 @@ class _AiAnalysisPayoutResultAlertState extends ConsumerState<AiAnalysisPayoutRe
   ///
   Widget _buildHorseList(RaceResultPayoutModel? payout) {
     final String mapKey = '${appParamState.selectedScheduleDate}_${appParamState.selectedScheduleKaisuuBashoDay}';
+
     final Map<int, HorseModel> horseMap = Map<int, HorseModel>.fromEntries(
       (appParamState.keepHorseMap[mapKey] ?? <HorseModel>[])
           .where((HorseModel e) => e.race == widget.raceNumber)
           .map((HorseModel e) => MapEntry<int, HorseModel>(e.num, e)),
     );
+
     final Set<int> tanNums = _parseSingleHorseNums(payout?.tan ?? '');
+
     final Set<int> fukuNums = _parseSingleHorseNums(payout?.fuku ?? '');
 
     final bool hasSupplements = widget.supplementCoveredCount > 0 && widget.supplementHorses.isNotEmpty;
+
     final int totalCount = widget.aiRecommendHorses.length + (hasSupplements ? widget.supplementHorses.length : 0);
 
     return Column(
@@ -289,11 +303,9 @@ class _AiAnalysisPayoutResultAlertState extends ConsumerState<AiAnalysisPayoutRe
           Text('複勝  ${_payoutText(payout.fuku)}', style: const TextStyle(fontSize: 11, color: Colors.lightBlueAccent)),
           const SizedBox(height: 6),
         ],
-
         ...widget.aiRecommendHorses.map(
           (AiResponseRecommendHorseModel h) => _buildHorseRow(h, horseMap, tanNums, fukuNums),
         ),
-
         if (hasSupplements) ...<Widget>[
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 6),
@@ -325,8 +337,11 @@ class _AiAnalysisPayoutResultAlertState extends ConsumerState<AiAnalysisPayoutRe
     bool isSupplementary = false,
   }) {
     final String name = horseMap[h.num]?.name ?? '';
+
     final bool hasTan = tanNums.contains(h.num);
+
     final bool hasFuku = fukuNums.contains(h.num);
+
     final int? rank = _finishingPositionMap[h.num];
 
     return Padding(
@@ -345,7 +360,7 @@ class _AiAnalysisPayoutResultAlertState extends ConsumerState<AiAnalysisPayoutRe
               right: 5,
               child: Row(
                 children: <Widget>[
-                  if (isSupplementary) ...<Widget>[
+                  if (isSupplementary)
                     Container(
                       margin: const EdgeInsets.only(left: 4),
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
@@ -355,8 +370,7 @@ class _AiAnalysisPayoutResultAlertState extends ConsumerState<AiAnalysisPayoutRe
                       ),
                       child: const Text('補欠', style: TextStyle(fontSize: 10, color: Colors.greenAccent)),
                     ),
-                  ],
-                  if (hasTan) ...<Widget>[
+                  if (hasTan)
                     Container(
                       margin: const EdgeInsets.only(left: 4),
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
@@ -366,8 +380,7 @@ class _AiAnalysisPayoutResultAlertState extends ConsumerState<AiAnalysisPayoutRe
                       ),
                       child: const Text('単勝', style: TextStyle(fontSize: 10, color: Colors.white)),
                     ),
-                  ],
-                  if (hasFuku) ...<Widget>[
+                  if (hasFuku)
                     Container(
                       margin: const EdgeInsets.only(left: 4),
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
@@ -377,7 +390,6 @@ class _AiAnalysisPayoutResultAlertState extends ConsumerState<AiAnalysisPayoutRe
                       ),
                       child: const Text('複勝', style: TextStyle(fontSize: 10, color: Colors.white)),
                     ),
-                  ],
                 ],
               ),
             ),
@@ -388,7 +400,7 @@ class _AiAnalysisPayoutResultAlertState extends ConsumerState<AiAnalysisPayoutRe
                   child: Column(
                     children: <Widget>[
                       Text('${h.num}番', style: const TextStyle(fontSize: 11, color: Colors.white)),
-                      if (rank != null && rank <= 3) ...<Widget>[
+                      if (rank != null && rank <= 3)
                         Container(
                           width: 24,
                           alignment: Alignment.center,
@@ -401,7 +413,6 @@ class _AiAnalysisPayoutResultAlertState extends ConsumerState<AiAnalysisPayoutRe
                             style: const TextStyle(fontSize: 10, color: Colors.white, fontWeight: FontWeight.bold),
                           ),
                         ),
-                      ],
                     ],
                   ),
                 ),
@@ -419,15 +430,21 @@ class _AiAnalysisPayoutResultAlertState extends ConsumerState<AiAnalysisPayoutRe
   ///
   Widget _buildTwoCombinations(RaceResultPayoutModel? payout, List<AiResponseRecommendHorseModel> horses) {
     final Set<String> wideCombos = _parseCombos(payout?.wide ?? '');
+
     final Set<String> umarenCombos = _parseCombos(payout?.umaren ?? '');
+
     final Set<String> umatanCombos = _parseCombos(payout?.umatan ?? '');
 
+    final int n = horses.length;
+
     final List<String> combos = <String>[];
-    for (int i = 0; i < horses.length; i++) {
-      for (int j = 0; j < horses.length; j++) {
+
+    for (int i = 0; i < n; i++) {
+      for (int j = 0; j < n; j++) {
         if (j == i) {
           continue;
         }
+
         combos.add('${horses[i].num}-${horses[j].num}');
       }
     }
@@ -437,16 +454,8 @@ class _AiAnalysisPayoutResultAlertState extends ConsumerState<AiAnalysisPayoutRe
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          Builder(
-            builder: (BuildContext context) {
-              final int n = horses.length;
-              final int two = n * (n - 1);
-              return Text('2頭: $two通り', style: const TextStyle(fontSize: 11, color: Colors.white));
-            },
-          ),
-
+          Text('2頭: ${n * (n - 1)}通り', style: const TextStyle(fontSize: 11, color: Colors.white)),
           const SizedBox(height: 10),
-
           Text(
             '馬連  ${_payoutText(payout?.umaren ?? '')}',
             style: const TextStyle(fontSize: 11, color: Colors.greenAccent),
@@ -455,15 +464,7 @@ class _AiAnalysisPayoutResultAlertState extends ConsumerState<AiAnalysisPayoutRe
             '馬単  ${_payoutText(payout?.umatan ?? '')}',
             style: const TextStyle(fontSize: 11, color: Colors.orangeAccent),
           ),
-
-          const Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: <Widget>[
-              Text('ワイド', style: TextStyle(fontSize: 11, color: Colors.lightBlueAccent)),
-              SizedBox.shrink(),
-            ],
-          ),
-
+          const Text('ワイド', style: TextStyle(fontSize: 11, color: Colors.lightBlueAccent)),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: <Widget>[
@@ -476,9 +477,7 @@ class _AiAnalysisPayoutResultAlertState extends ConsumerState<AiAnalysisPayoutRe
               ),
             ],
           ),
-
           const SizedBox(height: 20),
-
           Expanded(
             child: SingleChildScrollView(
               child: Wrap(
@@ -523,18 +522,24 @@ class _AiAnalysisPayoutResultAlertState extends ConsumerState<AiAnalysisPayoutRe
   ///
   Widget _buildThreeCombinations(RaceResultPayoutModel? payout, List<AiResponseRecommendHorseModel> horses) {
     final Set<String> trioCombos = _parseCombos(payout?.trio ?? '');
+
     final Set<String> trifectaCombos = _parseCombos(payout?.trifecta ?? '');
 
+    final int n = horses.length;
+
     final List<String> combos = <String>[];
-    for (int i = 0; i < horses.length; i++) {
-      for (int j = 0; j < horses.length; j++) {
+
+    for (int i = 0; i < n; i++) {
+      for (int j = 0; j < n; j++) {
         if (j == i) {
           continue;
         }
-        for (int k = 0; k < horses.length; k++) {
+
+        for (int k = 0; k < n; k++) {
           if (k == i || k == j) {
             continue;
           }
+
           combos.add('${horses[i].num}-${horses[j].num}-${horses[k].num}');
         }
       }
@@ -545,16 +550,8 @@ class _AiAnalysisPayoutResultAlertState extends ConsumerState<AiAnalysisPayoutRe
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          Builder(
-            builder: (BuildContext context) {
-              final int n = horses.length;
-              final int three = n * (n - 1) * (n - 2);
-              return Text('3頭: $three通り', style: const TextStyle(fontSize: 11, color: Colors.white));
-            },
-          ),
-
+          Text('3頭: ${n * (n - 1) * (n - 2)}通り', style: const TextStyle(fontSize: 11, color: Colors.white)),
           const SizedBox(height: 10),
-
           Text(
             '三連複  ${_payoutText(payout?.trio ?? '')}',
             style: const TextStyle(fontSize: 11, color: Colors.greenAccent),
@@ -563,9 +560,7 @@ class _AiAnalysisPayoutResultAlertState extends ConsumerState<AiAnalysisPayoutRe
             '三連単  ${_payoutText(payout?.trifecta ?? '')}',
             style: const TextStyle(fontSize: 11, color: Colors.orangeAccent),
           ),
-
           const SizedBox(height: 20),
-
           Expanded(
             child: SingleChildScrollView(
               child: Wrap(

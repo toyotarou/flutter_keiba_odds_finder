@@ -23,13 +23,19 @@ class PastRaceOddsTransitionAlert extends ConsumerStatefulWidget {
 class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransitionAlert>
     with ControllersMixin<PastRaceOddsTransitionAlert> {
   final ScrollController _scrollController = ScrollController();
+
   final Map<String, bool> _expandedByDate = <String, bool>{};
+
   final Set<String> _fetchedDates = <String>{};
+
   final Map<String, RaceResultPayoutModel> _payoutMap = <String, RaceResultPayoutModel>{};
+
   final Map<String, String?> _secondAiTextMap = <String, String?>{};
+
   final Set<String> _fetchedSecondAiDates = <String>{};
 
   static const double _moveAmount = 18;
+
   static const int _tickMs = 16;
 
   Timer? _repeatTimer;
@@ -42,24 +48,31 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
     _fetchedSecondAiDates.add(date);
 
     final Map<String, List<SummaryModel>> summaryMap = summaryState.summaryMap;
+
     final List<Future<MapEntry<String, String?>>> futures = <Future<MapEntry<String, String?>>>[];
 
     for (final MapEntry<String, List<SummaryModel>> entry in summaryMap.entries) {
       if (!entry.key.startsWith(date)) {
         continue;
       }
+
       final List<SummaryModel> models = entry.value;
+
       if (models.isEmpty) {
         continue;
       }
 
       final int kaisuu = int.tryParse(models.first.kaisuu) ?? 0;
+
       final Set<int> seenRaces = <int>{};
+
       for (final SummaryModel m in models) {
         if (!seenRaces.add(m.race)) {
           continue;
         }
+
         final String key = '${m.date}_${kaisuu}_${m.basho}_${m.day}_${m.race}';
+
         futures.add(
           fetchSecondAiOpinionData(
                 ref,
@@ -81,6 +94,7 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
 
     try {
       final List<MapEntry<String, String?>> results = await Future.wait(futures);
+
       if (mounted) {
         setState(() {
           for (final MapEntry<String, String?> e in results) {
@@ -94,32 +108,35 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
   }
 
   ///
-  /// ## ピックアップ セクションから馬番を抽出する。
-  /// 「X番」パターン（例: ○3番 ホゲホゲ）で取得する。
   Set<int> _extractPickupNums(String introspection) {
     final int start = introspection.indexOf('## ピックアップ');
+
     if (start == -1) {
       return <int>{};
     }
+
     final int sectionStart = start + '## ピックアップ'.length;
+
     final int nextSection = introspection.indexOf('## ', sectionStart);
+
     final String pickupPart = nextSection != -1
         ? introspection.substring(sectionStart, nextSection)
         : introspection.substring(sectionStart);
 
     final Set<int> nums = <int>{};
+
     for (final RegExpMatch m in RegExp(r'(\d+)番').allMatches(pickupPart)) {
       final int? num = int.tryParse(m.group(1)!);
+
       if (num != null) {
         nums.add(num);
       }
     }
+
     return nums;
   }
 
   ///
-  /// DeepSeek補欠馬が実際の入賞馬と何頭一致したかを返す。
-  /// 3頭が合致済み、データ不足、カバーなしの場合は null。
   int? _calcSupplementCovered({
     required String? resultText,
     required String lookupKey,
@@ -129,18 +146,25 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
     if (resultText == null || resultText.contains('3頭が合致')) {
       return null;
     }
+
     final String? secondAiText = _secondAiTextMap[lookupKey];
+
     if (secondAiText == null || secondAiText.isEmpty) {
       return null;
     }
+
     if (introspectionModel == null) {
       return null;
     }
+
     final List<AiResponseRecommendHorseModel> deepSeekHorses = parseAnalysisText(secondAiText);
+
     final Set<int> claudeNums = _extractPickupNums(introspectionModel.introspection);
+
     final List<AiResponseRecommendHorseModel> supplementHorses = deepSeekHorses
         .where((AiResponseRecommendHorseModel h) => !claudeNums.contains(h.num))
         .toList();
+
     return calcSupplementCoveredCount(supplementHorses: supplementHorses, payout: payout);
   }
 
@@ -149,32 +173,42 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
     if (_fetchedDates.contains(date)) {
       return;
     }
+
     _fetchedDates.add(date);
 
     final Map<String, List<SummaryModel>> summaryMap = summaryState.summaryMap;
+
     final Set<String> raceParamSet = <String>{};
+
     for (final MapEntry<String, List<SummaryModel>> entry in summaryMap.entries) {
       if (!entry.key.startsWith(date)) {
         continue;
       }
+
       final List<SummaryModel> models = entry.value;
+
       if (models.isEmpty) {
         continue;
       }
+
       final int kaisuu = int.tryParse(models.first.kaisuu) ?? 0;
+
       final Set<int> seenRaces = <int>{};
+
       for (final SummaryModel m in models) {
         if (seenRaces.add(m.race)) {
           raceParamSet.add('${m.date}|$kaisuu|${m.basho}|${m.race}');
         }
       }
     }
+
     if (raceParamSet.isEmpty) {
       return;
     }
 
     try {
       final Map<String, RaceResultPayoutModel> result = await fetchPayoutMap(ref, racesParam: raceParamSet.join('/'));
+
       if (mounted) {
         setState(() => _payoutMap.addAll(result));
       }
@@ -187,21 +221,27 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
   @override
   void dispose() {
     _repeatTimer?.cancel();
+
     _repeatTimer = null;
+
     _scrollController.dispose();
+
     super.dispose();
   }
 
   ///
   void _startRepeating(VoidCallback action) {
     _repeatTimer?.cancel();
+
     action();
+
     _repeatTimer = Timer.periodic(const Duration(milliseconds: _tickMs), (_) => action());
   }
 
   ///
   void _stopRepeating() {
     _repeatTimer?.cancel();
+
     _repeatTimer = null;
   }
 
@@ -210,16 +250,39 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
     if (!_scrollController.hasClients) {
       return;
     }
+
     final ScrollPosition pos = _scrollController.position;
+
     final double newOffset = (_scrollController.offset + delta).clamp(0.0, pos.maxScrollExtent);
+
     _scrollController.jumpTo(newOffset);
+  }
+
+  ///
+  Widget _buildToggleButton({required bool isOpen, required VoidCallback onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 10),
+        decoration: BoxDecoration(
+          color: isOpen
+              ? const Color(0xFF2196F3).withValues(alpha: 0.4)
+              : const Color(0xFF4CAF50).withValues(alpha: 0.4),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Text(isOpen ? 'CLOSE' : 'OPEN', style: const TextStyle(color: Colors.white, fontSize: 12)),
+      ),
+    );
   }
 
   ///
   @override
   Widget build(BuildContext context) {
     final Map<String, List<String>> summaryDateBashoMap = summaryState.summaryDateBashoMap;
+
     final Map<String, List<SummaryModel>> summaryMap = summaryState.summaryMap;
+
+    final bool allOpen = summaryDateBashoMap.keys.every((String k) => _expandedByDate[k] ?? false);
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -237,53 +300,23 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
                     Row(
                       children: <Widget>[
                         const Text('過去レースのオッズ遷移表', style: TextStyle(fontSize: 12)),
-
                         const SizedBox(width: 5),
-
-                        GestureDetector(
+                        _buildToggleButton(
+                          isOpen: allOpen,
                           onTap: () {
-                            final bool allOpen = summaryDateBashoMap.keys.every(
-                              (String k) => _expandedByDate[k] ?? false,
-                            );
-
                             setState(() {
                               for (final String k in summaryDateBashoMap.keys) {
                                 _expandedByDate[k] = !allOpen;
                               }
                             });
-
                             if (!allOpen) {
                               summaryDateBashoMap.keys.forEach(_fetchPayoutsForDate);
                               summaryDateBashoMap.keys.forEach(_fetchSecondAiForDate);
                             }
                           },
-                          child: Builder(
-                            builder: (BuildContext context) {
-                              final bool allOpen = summaryDateBashoMap.keys.every(
-                                (String k) => _expandedByDate[k] ?? false,
-                              );
-
-                              return Container(
-                                padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 10),
-                                decoration: BoxDecoration(
-                                  color: allOpen
-                                      ? const Color(0xFF2196F3).withValues(alpha: 0.4)
-                                      : const Color(0xFF4CAF50).withValues(alpha: 0.4),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Center(
-                                  child: Text(
-                                    allOpen ? 'CLOSE' : 'OPEN',
-                                    style: const TextStyle(color: Colors.white, fontSize: 12),
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
                         ),
                       ],
                     ),
-
                     Row(
                       children: <Widget>[
                         GestureDetector(
@@ -313,15 +346,14 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
                     ),
                   ],
                 ),
-
                 Divider(color: Colors.white.withValues(alpha: 0.4), thickness: 5),
-
                 Expanded(
                   child: SingleChildScrollView(
                     controller: _scrollController,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: summaryDateBashoMap.entries.map((MapEntry<String, List<String>> e) {
+                        final bool isOpen = _expandedByDate[e.key] ?? false;
                         return Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: <Widget>[
@@ -331,7 +363,7 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
                               margin: const EdgeInsets.only(top: 10),
                               decoration: BoxDecoration(
                                 gradient: LinearGradient(
-                                  colors: <Color>[Colors.greenAccent.withOpacity(0.3), Colors.transparent],
+                                  colors: <Color>[Colors.greenAccent.withValues(alpha: 0.3), Colors.transparent],
                                   stops: const <double>[0.7, 1],
                                 ),
                               ),
@@ -339,31 +371,15 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: <Widget>[
                                   Text(e.key, style: const TextStyle(color: Colors.white)),
-
-                                  GestureDetector(
+                                  _buildToggleButton(
+                                    isOpen: isOpen,
                                     onTap: () {
-                                      final bool nowOpen = !(_expandedByDate[e.key] ?? false);
-                                      setState(() => _expandedByDate[e.key] = nowOpen);
-                                      if (nowOpen) {
+                                      setState(() => _expandedByDate[e.key] = !isOpen);
+                                      if (!isOpen) {
                                         _fetchPayoutsForDate(e.key);
                                         _fetchSecondAiForDate(e.key);
                                       }
                                     },
-                                    child: Container(
-                                      padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 10),
-                                      decoration: BoxDecoration(
-                                        color: (_expandedByDate[e.key] ?? false)
-                                            ? const Color(0xFF2196F3).withValues(alpha: 0.4)
-                                            : const Color(0xFF4CAF50).withValues(alpha: 0.4),
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child: Center(
-                                        child: Text(
-                                          (_expandedByDate[e.key] ?? false) ? 'CLOSE' : 'OPEN',
-                                          style: const TextStyle(color: Colors.white, fontSize: 12),
-                                        ),
-                                      ),
-                                    ),
                                   ),
                                 ],
                               ),
@@ -372,6 +388,10 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: e.value.map((String e2) {
                                 final List<SummaryModel> models = summaryMap['${e.key}_$e2'] ?? <SummaryModel>[];
+                                if (models.isEmpty) {
+                                  return const SizedBox.shrink();
+                                }
+
                                 final Map<int, String> uniqueRaces = <int, String>{};
                                 for (final SummaryModel m in models) {
                                   uniqueRaces.putIfAbsent(m.race, () => m.raceName);
@@ -379,13 +399,9 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
                                 final List<MapEntry<int, String>> races = uniqueRaces.entries.toList()
                                   ..sort((MapEntry<int, String> a, MapEntry<int, String> b) => a.key.compareTo(b.key));
 
-                                if (models.isEmpty) {
-                                  return const SizedBox.shrink();
-                                }
-
                                 return ExpansionTile(
-                                  key: ValueKey<String>('${e.key}_${e2}_${_expandedByDate[e.key] ?? false}'),
-                                  initiallyExpanded: _expandedByDate[e.key] ?? false,
+                                  key: ValueKey<String>('${e.key}_${e2}_$isOpen'),
+                                  initiallyExpanded: isOpen,
                                   onExpansionChanged: (bool expanded) {
                                     if (expanded) {
                                       _fetchPayoutsForDate(e.key);
@@ -430,89 +446,14 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
     );
   }
 
-  // ///
-  // ({int hits, int total, int comboHits, int comboTotal}) _calcHits({
-  //   required String date,
-  //   required List<SummaryModel> models,
-  //   required int race,
-  // }) {
-  //   final int kaisuu = int.tryParse(models.first.kaisuu) ?? 0;
-  //   final RaceIntrospectionModel? introspectionModel = findRaceIntrospection(
-  //     raceIntrospectionState.raceIntrospectionMap,
-  //     date: date,
-  //     kaisuu: kaisuu,
-  //     basho: models.first.basho,
-  //     day: models.first.day,
-  //     race: race,
-  //   );
-  //
-  //   if (introspectionModel == null) {
-  //     return (hits: 0, total: 0, comboHits: 0, comboTotal: 0);
-  //   }
-  //
-  //   final List<String> lines = introspectionModel.introspection.split('\n');
-  //
-  //   final int hits = lines.where((String l) => l.contains('（的中）')).length;
-  //   final int total = lines.where((String l) => l.contains('（的中）') || l.contains('（不的中）')).length;
-  //
-  //   // 三連複: 予想・結果それぞれの馬番号セットを抽出して順不同で一致数を計算
-  //   final Set<int> predictedNumbers = <int>{};
-  //   final Set<int> resultNumbers = <int>{};
-  //   bool inPrediction = false;
-  //   bool inResult = false;
-  //   for (final String line in lines) {
-  //     final String trimmed = line.trim();
-  //     if (trimmed == '## 予想') {
-  //       inPrediction = true;
-  //       inResult = false;
-  //       continue;
-  //     } else if (trimmed == '## 結果') {
-  //       inPrediction = false;
-  //       inResult = true;
-  //       continue;
-  //     } else if (trimmed.startsWith('## ')) {
-  //       inPrediction = false;
-  //       inResult = false;
-  //       continue;
-  //     }
-  //     final RegExpMatch? match = RegExp(r'(\d+)番').firstMatch(line);
-  //     if (match != null) {
-  //       final int number = int.parse(match.group(1)!);
-  //       if (inPrediction) {
-  //         predictedNumbers.add(number);
-  //       } else if (inResult) {
-  //         resultNumbers.add(number);
-  //       }
-  //     }
-  //   }
-  //
-  //   final int comboHits = predictedNumbers.intersection(resultNumbers).length;
-  //   final int comboTotal = predictedNumbers.length;
-  //
-  //   return (hits: hits, total: total, comboHits: comboHits, comboTotal: comboTotal);
-  // }
-
   ///
   Widget _buildRaceRow({required String date, required List<SummaryModel> models, required MapEntry<int, String> r}) {
-    // final (:int hits, :int total, :int comboHits, :int comboTotal) = _calcHits(date: date, models: models, race: r.key);
-
-    // final Color scoreColor = total == 0
-    //     ? Colors.transparent
-    //     : hits == total
-    //     ? Colors.greenAccent
-    //     : hits == 0
-    //     ? Colors.redAccent
-    //     : Colors.yellowAccent;
-
-    // final Color comboColor = comboTotal == 0
-    //     ? Colors.transparent
-    //     : comboHits == comboTotal
-    //     ? Colors.greenAccent
-    //     : comboHits == 0
-    //     ? Colors.redAccent
-    //     : Colors.yellowAccent;
-
     final int kaisuu = int.tryParse(models.first.kaisuu) ?? 0;
+
+    final String lookupKey = '${date}_${kaisuu}_${models.first.basho}_${models.first.day}_${r.key}';
+
+    final String raceKey = '${date}_${models.first.kaisuu}_${models.first.basho}_${models.first.day}_${r.key}';
+
     final RaceIntrospectionModel? introspectionModel = findRaceIntrospection(
       raceIntrospectionState.raceIntrospectionMap,
       date: date,
@@ -521,8 +462,9 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
       day: models.first.day,
       race: r.key,
     );
+
     final String? resultText = introspectionModel != null ? extractResultLine(introspectionModel.introspection) : null;
-    final String lookupKey = '${date}_${kaisuu}_${models.first.basho}_${models.first.day}_${r.key}';
+
     final RaceResultPayoutModel? payout = _payoutMap[lookupKey];
 
     final int? supplementCoveredCount = _calcSupplementCovered(
@@ -536,10 +478,9 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
       style: const TextStyle(color: Colors.white70, fontSize: 11),
       child: Container(
         decoration: BoxDecoration(
-          border: Border(bottom: BorderSide(color: Colors.white.withOpacity(0.3))),
+          border: Border(bottom: BorderSide(color: Colors.white.withValues(alpha: 0.3))),
         ),
         padding: const EdgeInsets.symmetric(vertical: 5),
-
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: <Widget>[
@@ -550,9 +491,7 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
                 Expanded(child: Text(r.value, maxLines: 1, overflow: TextOverflow.ellipsis)),
                 GestureDetector(
                   onTap: () {
-                    appParamNotifier.setSelectedDrawerRace(
-                      race: '${date}_${models.first.kaisuu}_${models.first.basho}_${models.first.day}_${r.key}',
-                    );
+                    appParamNotifier.setSelectedDrawerRace(race: raceKey);
                     summaryNotifier.fetchRaceSummary(
                       date: date,
                       kaisuu: models.first.kaisuu,
@@ -568,99 +507,95 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
                   },
                   child: Icon(
                     Icons.calendar_view_month,
-                    color:
-                        ('${date}_${models.first.kaisuu}_${models.first.basho}_${models.first.day}_${r.key}' ==
-                            appParamState.selectedDrawerRace)
+                    color: raceKey == appParamState.selectedDrawerRace
                         ? Colors.yellowAccent.withValues(alpha: 0.4)
                         : Colors.greenAccent.withValues(alpha: 0.4),
                   ),
                 ),
               ],
             ),
-
-            if (resultText != null) ...<Widget>[
-              () {
-                final bool isMatch = resultText.contains('3頭が合致');
-
-                // 補欠込みで合計3頭になった場合もピンクにする
-                final int claudeMatchCount =
-                    int.tryParse(RegExp(r'(\d+)頭が合致').firstMatch(resultText)?.group(1) ?? '') ?? 0;
-                final bool isMatchWithSupplement = isMatch || (claudeMatchCount + (supplementCoveredCount ?? 0) >= 3);
-
-                final int trioAmount = (payout != null && payout.trio.isNotEmpty)
-                    ? (int.tryParse(payout.trio.split('/').first.split('|').elementAtOrNull(1) ?? '') ?? 0)
-                    : 0;
-
-                final Color textColor = isMatchWithSupplement
-                    ? const Color(0xFFFBB6CE)
-                    : trioAmount >= 10000
-                    ? Colors.yellowAccent.withValues(alpha: 0.5)
-                    : Colors.white60;
-
-                return DefaultTextStyle(
-                  style: TextStyle(fontSize: 10, color: textColor),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: <Widget>[
-                      Text(resultText),
-
-                      if (supplementCoveredCount != null) ...<Widget>[Text('補欠で$supplementCoveredCount頭をカバー')],
-
-                      if (payout != null) ...<Widget>[
-                        if (payout.trifecta.isNotEmpty) ...<Widget>[
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: <Widget>[
-                              const SizedBox.shrink(),
-                              Row(
-                                crossAxisAlignment: CrossAxisAlignment.baseline,
-                                textBaseline: TextBaseline.alphabetic,
-                                children: <Widget>[
-                                  const Text('三連単'),
-                                  Container(
-                                    width: 60,
-                                    alignment: Alignment.bottomRight,
-                                    child: Text(
-                                      payout.trifecta.split('/').first.split('|').elementAtOrNull(1)?.toCurrency() ??
-                                          '',
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ],
-
-                        if (payout.trio.isNotEmpty) ...<Widget>[
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: <Widget>[
-                              const SizedBox.shrink(),
-                              Row(
-                                crossAxisAlignment: CrossAxisAlignment.baseline,
-                                textBaseline: TextBaseline.alphabetic,
-                                children: <Widget>[
-                                  const Text('三連複'),
-                                  Container(
-                                    width: 60,
-                                    alignment: Alignment.bottomRight,
-                                    child: Text(
-                                      payout.trio.split('/').first.split('|').elementAtOrNull(1)?.toCurrency() ?? '',
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ],
-                      ],
-                    ],
-                  ),
-                );
-              }(),
-            ],
+            if (resultText != null)
+              _buildResultTextSection(
+                resultText: resultText,
+                supplementCoveredCount: supplementCoveredCount,
+                payout: payout,
+              ),
           ],
         ),
+      ),
+    );
+  }
+
+  ///
+  Widget _buildResultTextSection({
+    required String resultText,
+    required int? supplementCoveredCount,
+    required RaceResultPayoutModel? payout,
+  }) {
+    final bool isMatch = resultText.contains('3頭が合致');
+
+    final int claudeMatchCount = int.tryParse(RegExp(r'(\d+)頭が合致').firstMatch(resultText)?.group(1) ?? '') ?? 0;
+
+    final bool isMatchWithSupplement = isMatch || (claudeMatchCount + (supplementCoveredCount ?? 0) >= 3);
+
+    final int trioAmount = (payout != null && payout.trio.isNotEmpty)
+        ? (int.tryParse(payout.trio.split('/').first.split('|').elementAtOrNull(1) ?? '') ?? 0)
+        : 0;
+
+    final Color textColor = isMatchWithSupplement
+        ? const Color(0xFFFBB6CE)
+        : trioAmount >= 10000
+        ? Colors.yellowAccent.withValues(alpha: 0.5)
+        : Colors.white60;
+
+    return DefaultTextStyle(
+      style: TextStyle(fontSize: 10, color: textColor),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: <Widget>[
+          Text(resultText),
+          if (supplementCoveredCount != null) Text('補欠で$supplementCoveredCount頭をカバー'),
+          if (payout != null) ...<Widget>[
+            if (payout.trifecta.isNotEmpty)
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: <Widget>[
+                  const SizedBox.shrink(),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                    textBaseline: TextBaseline.alphabetic,
+                    children: <Widget>[
+                      const Text('三連単'),
+                      Container(
+                        width: 60,
+                        alignment: Alignment.bottomRight,
+                        child: Text(payout.trifecta.split('/').first.split('|').elementAtOrNull(1)?.toCurrency() ?? ''),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            if (payout.trio.isNotEmpty)
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: <Widget>[
+                  const SizedBox.shrink(),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                    textBaseline: TextBaseline.alphabetic,
+                    children: <Widget>[
+                      const Text('三連複'),
+                      Container(
+                        width: 60,
+                        alignment: Alignment.bottomRight,
+                        child: Text(payout.trio.split('/').first.split('|').elementAtOrNull(1)?.toCurrency() ?? ''),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+          ],
+        ],
       ),
     );
   }
