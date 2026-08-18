@@ -232,7 +232,7 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
                     ),
                     Row(
                       children: <Widget>[
-                        if (_errorMessage == null && _aiRecommendHorses.isNotEmpty) _buildSecondAiButton(),
+                        _buildSecondAiButton(),
                         if (showResultButton) ...<Widget>[
                           const SizedBox(width: 10),
                           _buildResultButton(
