@@ -470,7 +470,10 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
                   ),
                 ),
                 const SizedBox(height: 5),
-                Text(h.reason, style: const TextStyle(letterSpacing: 0.4, height: 1.7)),
+                Text(
+                  h.reason.replaceAll(RegExp(r'\n?[─]+\n?'), '').trim(),
+                  style: const TextStyle(letterSpacing: 0.4, height: 1.7),
+                ),
                 if (secondAiHorse != null) ...<Widget>[
                   const SizedBox(height: 8),
                   Container(
@@ -485,7 +488,10 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
                       children: <Widget>[
                         const Text('2nd AI', style: TextStyle(fontSize: 10, color: Colors.greenAccent)),
                         const SizedBox(height: 4),
-                        Text(secondAiHorse.reason, style: const TextStyle(letterSpacing: 0.4, height: 1.7)),
+                        Text(
+                          secondAiHorse.reason.replaceAll(RegExp(r'\n?[─]+\n?'), '').trim(),
+                          style: const TextStyle(letterSpacing: 0.4, height: 1.7),
+                        ),
                       ],
                     ),
                   ),

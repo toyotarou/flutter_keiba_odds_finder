@@ -75,16 +75,7 @@ class _AdminMenuAlertState extends ConsumerState<AdminMenuAlert> {
                 SizedBox(height: context.screenSize.height * 0.02),
 
                 GestureDetector(
-                  onTap: () {
-                    // OddsFinderDialog(
-                    //   context: context,
-                    //   widget: PushNotifierUserListDisplayAlert(loggedInUserId: widget.loggedInUserId),
-                    // );
-
-                    ///AAA
-
-                    OddsFinderDialog(context: context, widget: const DataCountDisplayAlert());
-                  },
+                  onTap: () => OddsFinderDialog(context: context, widget: const DataCountDisplayAlert()),
                   child: Container(
                     width: double.infinity,
                     height: context.screenSize.height * 0.1,
