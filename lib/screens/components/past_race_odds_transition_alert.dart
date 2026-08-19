@@ -102,6 +102,11 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
           }
         });
       }
+
+      // 全レースのデータ取得に失敗した場合はリトライを許可
+      if (results.every((MapEntry<String, String?> e) => e.value == null)) {
+        _fetchedSecondAiDates.remove(date);
+      }
     } catch (_) {
       _fetchedSecondAiDates.remove(date);
     }
@@ -259,9 +264,14 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
   }
 
   ///
-  Widget _buildToggleButton({required bool isOpen, required VoidCallback onTap}) {
+  Widget _buildToggleButton({required bool isOpen, required VoidCallback onTap, VoidCallback? onSecondAiFetch}) {
     return GestureDetector(
-      onTap: onTap,
+      onTap: () {
+        onTap();
+        if (!isOpen) {
+          onSecondAiFetch?.call();
+        }
+      },
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 10),
         decoration: BoxDecoration(
@@ -283,6 +293,7 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
     final Map<String, List<SummaryModel>> summaryMap = summaryState.summaryMap;
 
     final bool allOpen = summaryDateBashoMap.keys.every((String k) => _expandedByDate[k] ?? false);
+    final bool anyOpen = summaryDateBashoMap.keys.any((String k) => _expandedByDate[k] ?? false);
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -306,14 +317,14 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
                           onTap: () {
                             setState(() {
                               for (final String k in summaryDateBashoMap.keys) {
-                                _expandedByDate[k] = !allOpen;
+                                _expandedByDate[k] = !anyOpen;
                               }
                             });
-                            if (!allOpen) {
+                            if (!anyOpen) {
                               summaryDateBashoMap.keys.forEach(_fetchPayoutsForDate);
-                              summaryDateBashoMap.keys.forEach(_fetchSecondAiForDate);
                             }
                           },
+                          onSecondAiFetch: () => summaryDateBashoMap.keys.forEach(_fetchSecondAiForDate),
                         ),
                       ],
                     ),
@@ -377,9 +388,9 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
                                       setState(() => _expandedByDate[e.key] = !isOpen);
                                       if (!isOpen) {
                                         _fetchPayoutsForDate(e.key);
-                                        _fetchSecondAiForDate(e.key);
                                       }
                                     },
+                                    onSecondAiFetch: () => _fetchSecondAiForDate(e.key),
                                   ),
                                 ],
                               ),
