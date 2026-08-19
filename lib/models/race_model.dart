@@ -16,6 +16,8 @@ class RaceModel {
 
     required this.course,
     required this.dist,
+
+    required this.grade,
   });
 
   factory RaceModel.fromJson(Map<String, dynamic> json) {
@@ -36,6 +38,8 @@ class RaceModel {
 
       course: (json['course'] as String?) ?? '',
       dist: (json['dist'] as int?) ?? 0,
+
+      grade: (json['grade'] as String?) ?? '',
     );
   }
 
@@ -55,4 +59,6 @@ class RaceModel {
 
   final String course;
   final int dist;
+
+  final String grade;
 }

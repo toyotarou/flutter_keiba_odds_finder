@@ -6,12 +6,6 @@ enum APIPath {
   getHorseOddsFinderConfigs,
   getHorseOddsFinderOddsGetTiming,
   getHorseDetail,
-
-  // getHorseOddsFinderOddsWide,
-  //
-  //
-  //
-  //
   getHorseOddsFinderSummary,
   getHorseOddsFinderSummaryOneRace,
   getHorseOddsFinderRaceOneResult,

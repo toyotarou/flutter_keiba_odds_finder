@@ -16,6 +16,11 @@ class RaceResultPayoutModel {
     required this.umatan,
     required this.trio,
     required this.trifecta,
+
+    required this.grade,
+    required this.course,
+    required this.dist,
+    required this.innerOuter,
   });
 
   factory RaceResultPayoutModel.fromJson(Map<String, dynamic> json) {
@@ -36,6 +41,11 @@ class RaceResultPayoutModel {
       umatan: (json['umatan'] as String?) ?? '',
       trio: (json['trio'] as String?) ?? '',
       trifecta: (json['trifecta'] as String?) ?? '',
+
+      grade: (json['grade'] as String?) ?? '',
+      course: (json['course'] as String?) ?? '',
+      dist: json['dist']?.toString() ?? '',
+      innerOuter: (json['inner_outer'] as String?) ?? '',
     );
   }
 
@@ -56,4 +66,9 @@ class RaceResultPayoutModel {
   final String umatan;
   final String trio;
   final String trifecta;
+
+  final String grade;
+  final String course;
+  final String dist;
+  final String innerOuter;
 }

@@ -474,54 +474,71 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
       payout: payout,
     );
 
+    final String grade = payout?.grade ?? '';
+
     return DefaultTextStyle(
       style: const TextStyle(color: Colors.white70, fontSize: 11),
-      child: Container(
-        decoration: BoxDecoration(
-          border: Border(bottom: BorderSide(color: Colors.white.withValues(alpha: 0.3))),
-        ),
-        padding: const EdgeInsets.symmetric(vertical: 5),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: <Widget>[
-            Row(
+      child: Stack(
+        children: <Widget>[
+          Container(
+            decoration: BoxDecoration(
+              border: Border(bottom: BorderSide(color: Colors.white.withValues(alpha: 0.3))),
+            ),
+            padding: const EdgeInsets.symmetric(vertical: 5),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
               children: <Widget>[
-                Container(width: 20, alignment: Alignment.topRight, child: Text('${r.key}R')),
-                const SizedBox(width: 20),
-                Expanded(child: Text(r.value, maxLines: 1, overflow: TextOverflow.ellipsis)),
-                GestureDetector(
-                  onTap: () {
-                    appParamNotifier.setSelectedDrawerRace(race: raceKey);
-                    summaryNotifier.fetchRaceSummary(
-                      date: date,
-                      kaisuu: models.first.kaisuu,
-                      basho: models.first.basho,
-                      day: models.first.day,
-                      race: r.key,
-                    );
-                    appParamNotifier.setIsShowUpperBox2(flag: true);
-                    OddsFinderDialog(
-                      context: context,
-                      widget: const HorseOddsRankingDisplayAlert(mode: RankingMode.summary),
-                    );
-                  },
-                  child: Icon(
-                    Icons.calendar_view_month,
-                    color: raceKey == appParamState.selectedDrawerRace
-                        ? Colors.yellowAccent.withValues(alpha: 0.4)
-                        : Colors.greenAccent.withValues(alpha: 0.4),
-                  ),
+                Row(
+                  children: <Widget>[
+                    Container(width: 20, alignment: Alignment.topRight, child: Text('${r.key}R')),
+                    const SizedBox(width: 20),
+                    Expanded(child: Text(r.value, maxLines: 1, overflow: TextOverflow.ellipsis)),
+                    GestureDetector(
+                      onTap: () {
+                        appParamNotifier.setSelectedDrawerRace(race: raceKey);
+                        summaryNotifier.fetchRaceSummary(
+                          date: date,
+                          kaisuu: models.first.kaisuu,
+                          basho: models.first.basho,
+                          day: models.first.day,
+                          race: r.key,
+                        );
+                        appParamNotifier.setIsShowUpperBox2(flag: true);
+                        OddsFinderDialog(
+                          context: context,
+                          widget: const HorseOddsRankingDisplayAlert(mode: RankingMode.summary),
+                        );
+                      },
+                      child: Icon(
+                        Icons.calendar_view_month,
+                        color: raceKey == appParamState.selectedDrawerRace
+                            ? Colors.yellowAccent.withValues(alpha: 0.4)
+                            : Colors.greenAccent.withValues(alpha: 0.4),
+                      ),
+                    ),
+                  ],
                 ),
+                if (resultText != null)
+                  _buildResultTextSection(
+                    resultText: resultText,
+                    supplementCoveredCount: supplementCoveredCount,
+                    payout: payout,
+                  ),
               ],
             ),
-            if (resultText != null)
-              _buildResultTextSection(
-                resultText: resultText,
-                supplementCoveredCount: supplementCoveredCount,
-                payout: payout,
+          ),
+
+          if (grade.isNotEmpty) ...<Widget>[
+            Positioned(
+              top: 5,
+              right: 35,
+              child: Opacity(
+                opacity: 0.7,
+                child: Image.asset('assets/race_grade_icon/race_grade_icon_$grade.png', width: 30),
               ),
+            ),
           ],
-        ),
+        ],
       ),
     );
   }
