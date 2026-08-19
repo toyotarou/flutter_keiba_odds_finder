@@ -292,8 +292,13 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
 
     final Map<String, List<SummaryModel>> summaryMap = summaryState.summaryMap;
 
-    final bool allOpen = summaryDateBashoMap.keys.every((String k) => _expandedByDate[k] ?? false);
-    final bool anyOpen = summaryDateBashoMap.keys.any((String k) => _expandedByDate[k] ?? false);
+    final bool allOpen = summaryDateBashoMap.entries.every(
+      (MapEntry<String, List<String>> e) => e.value.every((String e2) => _expandedByDate['${e.key}_$e2'] ?? false),
+    );
+
+    final bool anyOpen = summaryDateBashoMap.entries.any(
+      (MapEntry<String, List<String>> e) => e.value.any((String e2) => _expandedByDate['${e.key}_$e2'] ?? false),
+    );
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -316,8 +321,10 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
                           isOpen: allOpen,
                           onTap: () {
                             setState(() {
-                              for (final String k in summaryDateBashoMap.keys) {
-                                _expandedByDate[k] = !anyOpen;
+                              for (final MapEntry<String, List<String>> entry in summaryDateBashoMap.entries) {
+                                for (final String e2 in entry.value) {
+                                  _expandedByDate['${entry.key}_$e2'] = !anyOpen;
+                                }
                               }
                             });
                             if (!anyOpen) {
@@ -364,7 +371,7 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: summaryDateBashoMap.entries.map((MapEntry<String, List<String>> e) {
-                        final bool isOpen = _expandedByDate[e.key] ?? false;
+                        final bool isOpenForDate = e.value.any((String e2) => _expandedByDate['${e.key}_$e2'] ?? false);
                         return Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: <Widget>[
@@ -383,10 +390,15 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
                                 children: <Widget>[
                                   Text(e.key, style: const TextStyle(color: Colors.white)),
                                   _buildToggleButton(
-                                    isOpen: isOpen,
+                                    isOpen: isOpenForDate,
                                     onTap: () {
-                                      setState(() => _expandedByDate[e.key] = !isOpen);
-                                      if (!isOpen) {
+                                      setState(() {
+                                        for (final String e2 in e.value) {
+                                          _expandedByDate['${e.key}_$e2'] = !isOpenForDate;
+                                        }
+                                      });
+
+                                      if (!isOpenForDate) {
                                         _fetchPayoutsForDate(e.key);
                                       }
                                     },
@@ -410,10 +422,12 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
                                 final List<MapEntry<int, String>> races = uniqueRaces.entries.toList()
                                   ..sort((MapEntry<int, String> a, MapEntry<int, String> b) => a.key.compareTo(b.key));
 
+                                final bool isOpenForBasho = _expandedByDate['${e.key}_$e2'] ?? false;
                                 return ExpansionTile(
-                                  key: ValueKey<String>('${e.key}_${e2}_$isOpen'),
-                                  initiallyExpanded: isOpen,
+                                  key: ValueKey<String>('${e.key}_${e2}_$isOpenForBasho'),
+                                  initiallyExpanded: isOpenForBasho,
                                   onExpansionChanged: (bool expanded) {
+                                    setState(() => _expandedByDate['${e.key}_$e2'] = expanded);
                                     if (expanded) {
                                       _fetchPayoutsForDate(e.key);
                                       _fetchSecondAiForDate(e.key);
