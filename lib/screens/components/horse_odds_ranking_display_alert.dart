@@ -12,6 +12,7 @@ import '../../models/odds_model.dart';
 import '../../models/race_model.dart';
 import '../../models/race_result_model.dart';
 import '../../models/summary_model.dart';
+import '../../utility/functions.dart';
 import '../parts/odds_finder_dialog.dart';
 import '../parts/odds_finder_overlay.dart';
 import 'horse_race_result_display_alert.dart';
@@ -40,6 +41,8 @@ final Map<int, String Function(SummaryModel)> _kOddsGetters = <int, String Funct
   3: (SummaryModel m) => m.oddsTanBefore3,
   0: (SummaryModel m) => m.oddsTanBefore0,
 };
+
+////////////////////////////////////////////////////////////////
 
 class HorseOddsRankingDisplayAlert extends ConsumerStatefulWidget {
   const HorseOddsRankingDisplayAlert({super.key, this.mode = RankingMode.live});
@@ -90,17 +93,23 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
 
     final Map<int, String> horseNameMap;
     if (widget.mode == RankingMode.summary) {
-      // summaryモード: SummaryModelに馬名が入っている
       horseNameMap = Map<int, String>.fromEntries(
         summaryState.oneRaceSummaryList.map((SummaryModel e) => MapEntry<int, String>(e.num, e.horseName)),
       );
     } else {
-      // liveモード: horseStateから日付+レース番号で絞り込む
+      final ({String kaisuu, String basho, String day}) kbd = parseKbdParts(
+        appParamState.selectedScheduleKaisuuBashoDay,
+      );
+      final int dayInt = int.tryParse(kbd.day) ?? 0;
       horseNameMap = Map<int, String>.fromEntries(
         horseState.horseList
             .where(
               (HorseModel e) =>
-                  e.date == appParamState.selectedScheduleDate && e.race == appParamState.selectedRaceNumber,
+                  e.date == appParamState.selectedScheduleDate &&
+                  e.kaisuu == kbd.kaisuu &&
+                  e.basho == kbd.basho &&
+                  e.day == dayInt &&
+                  e.race == appParamState.selectedRaceNumber,
             )
             .map((HorseModel e) => MapEntry<int, String>(e.num, e.name)),
       );
@@ -360,22 +369,6 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
           double.parse(_oddsAt(a, minutes)).compareTo(double.parse(_oddsAt(b, minutes))),
     );
   }
-
-  // ///
-  // static Map<int, int> _computeLatestPopularityRank(List<SummaryModel> horses, List<int> timingMinutes) {
-  //   for (final int minutes in timingMinutes.reversed) {
-  //     final List<SummaryModel> sorted = _sortSummaryByOdds(horses, minutes);
-  //     if (sorted.isNotEmpty) {
-  //       return <int, int>{for (int i = 0; i < sorted.length; i++) sorted[i].num: i + 1};
-  //     }
-  //   }
-  //
-  //   return <int, int>{};
-  // }
-  //
-  //
-  //
-  //
 
   ///
   static List<int> _computeTimingOrder(List<String> timingParts) {
@@ -660,13 +653,19 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
   }
 }
 
-// ─── 馬番選択オーバーレイコンテンツ ────────────────────────
+////////////////////////////////////////////////////////////////
+
 class _HorseSelectorContent extends ConsumerWidget {
   const _HorseSelectorContent({required this.horseNum, required this.horseNameMap});
 
   final int horseNum;
   final Map<int, String> horseNameMap;
 
+
+
+
+
+  ///
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final int? selectedHorse = ref.watch(appParamProvider).selectedHorseLineNum;
@@ -739,7 +738,8 @@ class _HorseSelectorContent extends ConsumerWidget {
   }
 }
 
-// ─── CustomPainter ────────────────────────────────────────
+////////////////////////////////////////////////////////////////
+
 class _HorseLinePainter extends CustomPainter {
   const _HorseLinePainter({required this.grid, required this.selectedHorse, required this.colCount});
 
@@ -747,6 +747,7 @@ class _HorseLinePainter extends CustomPainter {
   final int? selectedHorse;
   final int colCount;
 
+  ///
   Offset _center(int rank, int colIdx) {
     const double rankCellW = 40;
     const double dataCellW = 50;
@@ -754,6 +755,7 @@ class _HorseLinePainter extends CustomPainter {
     return Offset(rankCellW + colIdx * dataCellW + dataCellW / 2, cellH + (rank - 1) * cellH + cellH / 2);
   }
 
+  ///
   @override
   void paint(Canvas canvas, Size size) {
     final int? horse = selectedHorse;
@@ -804,6 +806,7 @@ class _HorseLinePainter extends CustomPainter {
     }
   }
 
+  ///
   @override
   bool shouldRepaint(_HorseLinePainter old) => old.selectedHorse != selectedHorse || old.grid != grid;
 }
