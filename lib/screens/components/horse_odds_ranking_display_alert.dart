@@ -5,10 +5,16 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../const/const.dart';
 import '../../controllers/app_param/app_param.dart';
 import '../../controllers/controllers_mixin.dart';
+import '../../controllers/summary/summary.dart';
 import '../../extensions/extensions.dart';
 import '../../main.dart';
+import '../../models/common/ai_response_recommend_horse_model.dart';
 import '../../models/horse_model.dart';
 import '../../models/odds_model.dart';
+
+// //
+//
+
 import '../../models/race_model.dart';
 import '../../models/race_result_model.dart';
 import '../../models/summary_model.dart';
@@ -129,7 +135,16 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
       height: overlayH,
       color: Colors.black.withValues(alpha: 0.5),
       initialPosition: Offset(leftPos, topPadding),
-      widget: _HorseSelectorContent(horseNum: _currentHorseNum, horseNameMap: horseNameMap),
+      widget: _HorseSelectorContent(
+        horseNum: _currentHorseNum,
+        horseNameMap: horseNameMap,
+        mode: widget.mode,
+        markOverlayDirty: () {
+          if (_firstEntries.isNotEmpty) {
+            _firstEntries.last.markNeedsBuild();
+          }
+        },
+      ),
       onPositionChanged: (_) {},
     );
   }
@@ -655,19 +670,177 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
 
 ////////////////////////////////////////////////////////////////
 
-class _HorseSelectorContent extends ConsumerWidget {
-  const _HorseSelectorContent({required this.horseNum, required this.horseNameMap});
+class _HorseSelectorContent extends ConsumerStatefulWidget {
+  const _HorseSelectorContent({
+    required this.horseNum,
+    required this.horseNameMap,
+    required this.mode,
+    this.markOverlayDirty,
+  });
 
   final int horseNum;
   final Map<int, String> horseNameMap;
+  final RankingMode mode;
+  final VoidCallback? markOverlayDirty;
 
+  @override
+  ConsumerState<_HorseSelectorContent> createState() => _HorseSelectorContentState();
+}
 
+class _HorseSelectorContentState extends ConsumerState<_HorseSelectorContent>
+    with ControllersMixin<_HorseSelectorContent> {
+  Set<int> _aiPickupNums = <int>{};
+  Map<int, String> _aiPickupScores = <int, String>{};
+  Set<int> _secondAiNums = <int>{};
+  Map<int, String> _secondAiScores = <int, String>{};
 
-
+  Set<int> get _supplementNums => _secondAiNums.difference(_aiPickupNums);
 
   ///
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _fetchAiData());
+  }
+
+  ///
+  Future<void> _fetchAiData() async {
+    final String date;
+    final String kaisuu;
+    final String basho;
+    final String day;
+    final int race;
+
+    if (widget.mode == RankingMode.summary) {
+      final List<SummaryModel> list = ref.read(summaryProvider).oneRaceSummaryList;
+      if (list.isEmpty) {
+        return;
+      }
+      final SummaryModel first = list.first;
+      date = first.date;
+      kaisuu = first.kaisuu;
+      basho = first.basho;
+      day = first.day.toString();
+      race = first.race;
+    } else {
+      final AppParamState appParam = ref.read(appParamProvider);
+      date = appParam.selectedScheduleDate;
+      if (date.isEmpty) {
+        return;
+      }
+      final ({String kaisuu, String basho, String day}) kbd = parseKbdParts(appParam.selectedScheduleKaisuuBashoDay);
+      kaisuu = kbd.kaisuu;
+      basho = kbd.basho;
+      day = kbd.day;
+      race = appParam.selectedRaceNumber;
+      if (race == 0) {
+        return;
+      }
+    }
+
+    try {
+      final List<Map<String, dynamic>> results = await Future.wait(<Future<Map<String, dynamic>>>[
+        fetchAiAnalysisData(
+          ref,
+          date: date,
+          kaisuu: kaisuu,
+          basho: basho,
+          day: day,
+          race: race,
+          gapHorseNums: <int>[],
+          upsetPickupHorseNums: <int>[],
+        ),
+        fetchSecondAiOpinionData(ref, date: date, kaisuu: kaisuu, basho: basho, day: day, race: race),
+      ]);
+
+      final List<AiResponseRecommendHorseModel> aiHorses = parseAnalysisText(
+        (results[0]['analysis_text'] as String?) ?? '',
+      );
+      final List<AiResponseRecommendHorseModel> secondHorses = parseAnalysisText(
+        (results[1]['analysis_text'] as String?) ?? '',
+      );
+
+      if (mounted) {
+        setState(() {
+          _aiPickupNums = aiHorses.map((AiResponseRecommendHorseModel h) => h.num).toSet();
+          _aiPickupScores = <int, String>{
+            for (final AiResponseRecommendHorseModel h in aiHorses) h.num: h.score.toString(),
+          };
+          _secondAiNums = secondHorses.map((AiResponseRecommendHorseModel h) => h.num).toSet();
+          _secondAiScores = <int, String>{
+            for (final AiResponseRecommendHorseModel h in secondHorses) h.num: h.score.toString(),
+          };
+        });
+        widget.markOverlayDirty?.call();
+      }
+    } catch (e) {
+      debugPrint('[HorseSelector] _fetchAiData error: $e');
+    }
+  }
+
+  ///
+  Widget _buildAiBadge(int num) {
+    return Stack(
+      children: <Widget>[
+        Container(
+          margin: const EdgeInsets.only(top: 2, bottom: 5, right: 10),
+          padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 6),
+          decoration: BoxDecoration(
+            border: Border.all(color: const Color(0xFFFFD700)),
+            borderRadius: BorderRadius.circular(3),
+          ),
+          child: const Text(
+            'AI',
+            style: TextStyle(fontSize: 9, color: Color(0xFFFFD700), fontWeight: FontWeight.bold),
+          ),
+        ),
+
+        Positioned(
+          right: 0,
+          bottom: 0,
+          child: Text(
+            '${_aiPickupScores[num]} %',
+            style: const TextStyle(fontSize: 11, color: Colors.white, fontWeight: FontWeight.bold),
+          ),
+        ),
+      ],
+    );
+  }
+
+  ///
+  Widget _buildSupplementBadge(int num) {
+    return Stack(
+      children: <Widget>[
+        Container(
+          margin: const EdgeInsets.only(top: 2, bottom: 5, right: 10),
+          padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 4),
+          decoration: BoxDecoration(
+            color: Colors.greenAccent.withValues(alpha: 0.15),
+            border: Border.all(color: Colors.greenAccent),
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: const Text(
+            '補欠',
+            style: TextStyle(fontSize: 8, color: Colors.greenAccent, fontWeight: FontWeight.bold),
+          ),
+        ),
+
+        if (_secondAiScores[num] != null)
+          Positioned(
+            right: 0,
+            bottom: 0,
+            child: Text(
+              '${_secondAiScores[num]} %',
+              style: const TextStyle(fontSize: 11, color: Colors.white, fontWeight: FontWeight.bold),
+            ),
+          ),
+      ],
+    );
+  }
+
+  ///
+  @override
+  Widget build(BuildContext context) {
     final int? selectedHorse = ref.watch(appParamProvider).selectedHorseLineNum;
 
     return Column(
@@ -690,10 +863,12 @@ class _HorseSelectorContent extends ConsumerWidget {
         ),
 
         const SizedBox(height: 8),
-        ...List<Widget>.generate(horseNum, (int i) {
+        ...List<Widget>.generate(widget.horseNum, (int i) {
           final int num = i + 1;
           final bool isSelected = selectedHorse == num;
-          final String name = horseNameMap[num] ?? '';
+          final String name = widget.horseNameMap[num] ?? '';
+          final bool isAi = _aiPickupNums.contains(num);
+          final bool isSupplementary = _supplementNums.contains(num);
           return GestureDetector(
             onTap: () => ref.read(appParamProvider.notifier).setSelectedHorseLineNum(num: isSelected ? null : num),
             child: AnimatedContainer(
@@ -711,20 +886,54 @@ class _HorseSelectorContent extends ConsumerWidget {
                 children: <Widget>[
                   SizedBox(
                     width: 28,
-                    child: Text(
-                      '$num',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 11,
-                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                    child: Align(
+                      alignment: Alignment.topLeft,
+                      child: Column(
+                        children: <Widget>[
+                          Text(
+                            '$num',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 11,
+                              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                            ),
+                          ),
+
+                          const Text('馬番', style: TextStyle(fontSize: 8)),
+                        ],
                       ),
                     ),
                   ),
+
                   Expanded(
-                    child: Text(
-                      name,
-                      style: const TextStyle(color: Colors.white, fontSize: 11),
-                      overflow: TextOverflow.ellipsis,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        Text(
+                          name,
+                          style: const TextStyle(color: Colors.white, fontSize: 11),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+
+                        if (isAi || isSupplementary) ...<Widget>[
+                          const SizedBox(height: 5),
+
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: <Widget>[
+                              const SizedBox.shrink(),
+
+                              Container(
+                                child: isAi
+                                    ? _buildAiBadge(num)
+                                    : isSupplementary
+                                    ? _buildSupplementBadge(num)
+                                    : null,
+                              ),
+                            ],
+                          ),
+                        ],
+                      ],
                     ),
                   ),
                 ],
