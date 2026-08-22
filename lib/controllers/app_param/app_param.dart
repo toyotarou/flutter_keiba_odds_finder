@@ -100,6 +100,8 @@ class AppParamState with _$AppParamState {
     @Default(false) bool allExpanded,
 
     @Default(false) bool isShowSideTabPanel,
+
+    @Default(null) int? selectedHorseLineNum,
   }) = _AppParamState;
 }
 
@@ -238,4 +240,7 @@ class AppParam extends _$AppParam {
 
   ///
   void setIsShowSideTabPanel({required bool flag}) => state = state.copyWith(isShowSideTabPanel: flag);
+
+  ///
+  void setSelectedHorseLineNum({required int? num}) => state = state.copyWith(selectedHorseLineNum: num);
 }

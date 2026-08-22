@@ -13,7 +13,7 @@ import '../../models/race_model.dart';
 import '../../models/race_result_model.dart';
 import '../../models/summary_model.dart';
 import '../parts/odds_finder_dialog.dart';
-import '../parts/widget_display_overlay.dart';
+import '../parts/odds_finder_overlay.dart';
 import 'horse_race_result_display_alert.dart';
 import 'race_introspection_display_alert.dart';
 
@@ -55,10 +55,11 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
   final TransformationController _controller = TransformationController();
   double? _fitScale;
   double? _lastTableWidth;
-  Map<int, HorseModel> _horseMap = <int, HorseModel>{};
-  Offset? _pendingTapPosition;
 
-  String get _mapKey => '${appParamState.selectedScheduleDate}_${appParamState.selectedScheduleKaisuuBashoDay}';
+  // ─── オーバーレイ管理 ──────────────────────────────────
+  final List<OverlayEntry> _firstEntries = <OverlayEntry>[];
+  final List<OverlayEntry> _secondEntries = <OverlayEntry>[];
+  int _currentHorseNum = 0;
 
   ///
   @override
@@ -70,9 +71,58 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
   ///
   @override
   void dispose() {
+    for (final OverlayEntry e in _firstEntries) {
+      e.remove();
+    }
+    for (final OverlayEntry e in _secondEntries) {
+      e.remove();
+    }
     _controller.removeListener(_onTransformChanged);
     _controller.dispose();
     super.dispose();
+  }
+
+  ///
+  void _showHorseSelector() {
+    if (_currentHorseNum == 0) {
+      return;
+    }
+
+    final Map<int, String> horseNameMap;
+    if (widget.mode == RankingMode.summary) {
+      // summaryモード: SummaryModelに馬名が入っている
+      horseNameMap = Map<int, String>.fromEntries(
+        summaryState.oneRaceSummaryList.map((SummaryModel e) => MapEntry<int, String>(e.num, e.horseName)),
+      );
+    } else {
+      // liveモード: horseStateから日付+レース番号で絞り込む
+      horseNameMap = Map<int, String>.fromEntries(
+        horseState.horseList
+            .where(
+              (HorseModel e) =>
+                  e.date == appParamState.selectedScheduleDate && e.race == appParamState.selectedRaceNumber,
+            )
+            .map((HorseModel e) => MapEntry<int, String>(e.num, e.name)),
+      );
+    }
+
+    final double topPadding = context.screenSize.height * 0.5;
+    const double overlayW = 220;
+    const double overlayH = 380;
+    final double leftPos = context.screenSize.width - overlayW - 8;
+
+    addFirstOverlay(
+      context: context,
+      firstEntries: _firstEntries,
+      secondEntries: _secondEntries,
+      setStateCallback: setState,
+      width: overlayW,
+      height: overlayH,
+      color: Colors.black.withValues(alpha: 0.5),
+      initialPosition: Offset(leftPos, topPadding),
+      widget: _HorseSelectorContent(horseNum: _currentHorseNum, horseNameMap: horseNameMap),
+      onPositionChanged: (_) {},
+    );
   }
 
   ///
@@ -95,11 +145,6 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
   ///
   @override
   Widget build(BuildContext context) {
-    _horseMap = Map<int, HorseModel>.fromEntries(
-      (appParamState.keepHorseMap[_mapKey] ?? <HorseModel>[])
-          .where((HorseModel e) => e.race == appParamState.selectedRaceNumber)
-          .map((HorseModel e) => MapEntry<int, HorseModel>(e.num, e)),
-    );
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: SafeArea(
@@ -130,15 +175,36 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
                   ],
                 ),
                 if (appParamState.isShowUpperBox2) ...<Widget>[
-                  const Column(
+                  Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
-                      Text('縦軸：順位、横軸：タイミング、セル内：馬番', style: TextStyle(fontSize: 10)),
-                      SizedBox(height: 5),
-                      Text('青=1上昇、黄=2上昇、赤=3以上上昇、紫=下落（開始時点との比較）', style: TextStyle(fontSize: 10)),
-                      SizedBox(height: 5),
-                      Text('表をダブルタップすると、初期の全体表示に戻ります。', style: TextStyle(fontSize: 10)),
-                      SizedBox(height: 10),
+                      const Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: <Widget>[
+                            Text('縦軸：順位、横軸：タイミング、セル内：馬番', style: TextStyle(fontSize: 10)),
+                            SizedBox(height: 5),
+                            Text('青=1上昇、黄=2上昇、赤=3以上上昇、紫=下落（開始時点との比較）', style: TextStyle(fontSize: 10)),
+                            SizedBox(height: 5),
+                            Text('表をダブルタップすると、初期の全体表示に戻ります。', style: TextStyle(fontSize: 10)),
+                            SizedBox(height: 10),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(width: 20),
+
+                      CircleAvatar(
+                        radius: 16,
+                        backgroundColor: Colors.greenAccent.withValues(alpha: 0.5),
+                        child: CircleAvatar(
+                          radius: 14,
+                          child: GestureDetector(
+                            onTap: _showHorseSelector,
+                            child: const Icon(Icons.stacked_line_chart, color: Colors.white, size: 18),
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ],
@@ -454,24 +520,6 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
       _ => _defaultBgColor,
     };
     return GestureDetector(
-      onTapDown: num == null ? null : (TapDownDetails details) => _pendingTapPosition = details.globalPosition,
-      onTap: num == null
-          ? null
-          : () {
-              final String horseName = _horseMap[num]?.name ?? '';
-
-              final Offset? pos = _pendingTapPosition;
-
-              if (horseName.isEmpty || pos == null) {
-                return;
-              }
-
-              widgetDisplayOverlay(
-                context: context,
-                tapPosition: pos,
-                child: Text(horseName, style: const TextStyle(color: Colors.yellowAccent, fontSize: 12)),
-              );
-            },
       onDoubleTap: () => _controller.value = Matrix4.identity()..scale(_fitScale),
       child: Container(
         width: 50,
@@ -556,9 +604,12 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
       return const Center(child: CircularProgressIndicator(color: Colors.greenAccent));
     }
 
+    _currentHorseNum = data.horseNum;
+
     const String cornerLabel = '分前';
 
     final double tableWidth = 80 + 50.0 * data.timingParts.length;
+    final double tableHeight = 30.0 * (data.horseNum + 2);
 
     return LayoutBuilder(
       builder: (BuildContext ctx, BoxConstraints constraints) {
@@ -574,20 +625,185 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
             constrained: false,
             minScale: _fitScale!,
             maxScale: 4.0,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                _buildHeaderFooterRow(data.timingParts, isTop: true, cornerLabel: cornerLabel),
-                ...List<Widget>.generate(data.horseNum, (int i) {
-                  final int rank = i + 1;
-                  return _buildRankingRow(rank, data.grid[rank] ?? <int?>[], data.horseToStartRank);
-                }),
-                _buildHeaderFooterRow(data.timingParts, isTop: false, cornerLabel: cornerLabel),
-              ],
+            child: SizedBox(
+              width: tableWidth,
+              height: tableHeight,
+              child: Stack(
+                children: <Widget>[
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      _buildHeaderFooterRow(data.timingParts, isTop: true, cornerLabel: cornerLabel),
+                      ...List<Widget>.generate(data.horseNum, (int i) {
+                        final int rank = i + 1;
+                        return _buildRankingRow(rank, data.grid[rank] ?? <int?>[], data.horseToStartRank);
+                      }),
+                      _buildHeaderFooterRow(data.timingParts, isTop: false, cornerLabel: cornerLabel),
+                    ],
+                  ),
+                  Positioned.fill(
+                    child: CustomPaint(
+                      painter: _HorseLinePainter(
+                        grid: data.grid,
+                        selectedHorse: appParamState.selectedHorseLineNum,
+                        colCount: data.timingParts.length,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         );
       },
     );
   }
+}
+
+// ─── 馬番選択オーバーレイコンテンツ ────────────────────────
+class _HorseSelectorContent extends ConsumerWidget {
+  const _HorseSelectorContent({required this.horseNum, required this.horseNameMap});
+
+  final int horseNum;
+  final Map<int, String> horseNameMap;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final int? selectedHorse = ref.watch(appParamProvider).selectedHorseLineNum;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: <Widget>[
+            const SizedBox.shrink(),
+
+            GestureDetector(
+              onTap: () => ref.read(appParamProvider.notifier).setSelectedHorseLineNum(num: null),
+              child: Text(
+                'クリア',
+                style: TextStyle(color: Colors.green[500], fontSize: 11, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
+
+        const SizedBox(height: 8),
+        ...List<Widget>.generate(horseNum, (int i) {
+          final int num = i + 1;
+          final bool isSelected = selectedHorse == num;
+          final String name = horseNameMap[num] ?? '';
+          return GestureDetector(
+            onTap: () => ref.read(appParamProvider.notifier).setSelectedHorseLineNum(num: isSelected ? null : num),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 150),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+              margin: const EdgeInsets.only(bottom: 4),
+              decoration: BoxDecoration(
+                border: Border.all(
+                  color: isSelected ? Colors.green[500]! : Colors.white24,
+                  width: isSelected ? 1.5 : 0.5,
+                ),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Row(
+                children: <Widget>[
+                  SizedBox(
+                    width: 28,
+                    child: Text(
+                      '$num',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 11,
+                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: Text(
+                      name,
+                      style: const TextStyle(color: Colors.white, fontSize: 11),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }),
+        const SizedBox(height: 8),
+      ],
+    );
+  }
+}
+
+// ─── CustomPainter ────────────────────────────────────────
+class _HorseLinePainter extends CustomPainter {
+  const _HorseLinePainter({required this.grid, required this.selectedHorse, required this.colCount});
+
+  final RankingGrid grid;
+  final int? selectedHorse;
+  final int colCount;
+
+  Offset _center(int rank, int colIdx) {
+    const double rankCellW = 40;
+    const double dataCellW = 50;
+    const double cellH = 30;
+    return Offset(rankCellW + colIdx * dataCellW + dataCellW / 2, cellH + (rank - 1) * cellH + cellH / 2);
+  }
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final int? horse = selectedHorse;
+    if (horse == null) {
+      return;
+    }
+
+    final int rowCount = grid.length;
+    final List<Offset> points = <Offset>[];
+
+    for (int col = 0; col < colCount; col++) {
+      for (int rank = 1; rank <= rowCount; rank++) {
+        if (grid[rank]?[col] == horse) {
+          points.add(_center(rank, col));
+          break;
+        }
+      }
+    }
+
+    if (points.length < 2) {
+      return;
+    }
+
+    final Paint linePaint = Paint()
+      ..color = Colors.green[500]!.withValues(alpha: 0.8)
+      ..strokeWidth = 2.5
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+
+    final Path path = Path()..moveTo(points.first.dx, points.first.dy);
+    for (int i = 1; i < points.length; i++) {
+      path.lineTo(points[i].dx, points[i].dy);
+    }
+    canvas.drawPath(path, linePaint);
+
+    final Paint dotPaint = Paint()
+      ..color = Colors.green[500]!.withValues(alpha: 0.8)
+      ..style = PaintingStyle.fill;
+    final Paint borderPaint = Paint()
+      ..color = Colors.black.withValues(alpha: 0.6)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.5;
+
+    for (final Offset p in points) {
+      canvas.drawCircle(p, 5, dotPaint);
+      canvas.drawCircle(p, 5, borderPaint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(_HorseLinePainter old) => old.selectedHorse != selectedHorse || old.grid != grid;
 }

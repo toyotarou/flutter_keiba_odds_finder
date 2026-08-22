@@ -35,7 +35,6 @@ mixin ControllersMixin<T extends ConsumerStatefulWidget> on ConsumerState<T> {
 
   //==========================================//
 
-  //==========================================//
   ScheduleState get scheduleState => ref.watch(scheduleProvider);
 
   Schedule get scheduleNotifier => ref.read(scheduleProvider.notifier);
