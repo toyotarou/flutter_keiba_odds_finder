@@ -89,6 +89,8 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
     }
 
     if (futures.isEmpty) {
+      // summaryMap がまだ空だった場合もリトライできるよう解除する
+      _fetchedSecondAiDates.remove(date);
       return;
     }
 

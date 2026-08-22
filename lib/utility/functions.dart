@@ -267,6 +267,7 @@ Future<Map<String, dynamic>> fetchAiAnalysisData(
 }
 
 /// DeepSeek（第2AI）分析APIを呼び出し、レスポンスの data フィールドを返す。
+/// data が Map の場合はそのまま返し、List の場合は先頭要素を返す。
 Future<Map<String, dynamic>> fetchSecondAiOpinionData(
   WidgetRef ref, {
   required String date,
@@ -287,7 +288,14 @@ Future<Map<String, dynamic>> fetchSecondAiOpinionData(
           'race': race.toString(),
         },
       );
-  return (response as Map<String, dynamic>)['data'] as Map<String, dynamic>? ?? <String, dynamic>{};
+  final dynamic data = (response as Map<String, dynamic>)['data'];
+  if (data is Map<String, dynamic>) {
+    return data;
+  }
+  if (data is List<dynamic> && data.isNotEmpty) {
+    return data.first as Map<String, dynamic>? ?? <String, dynamic>{};
+  }
+  return <String, dynamic>{};
 }
 
 /// analysis_text を解析して推奨馬リストを返す。

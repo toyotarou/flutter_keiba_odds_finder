@@ -107,8 +107,8 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
     }
 
     final double topPadding = context.screenSize.height * 0.5;
-    const double overlayW = 220;
-    const double overlayH = 380;
+    const double overlayW = 180;
+    const double overlayH = 250;
     final double leftPos = context.screenSize.width - overlayW - 8;
 
     addFirstOverlay(
