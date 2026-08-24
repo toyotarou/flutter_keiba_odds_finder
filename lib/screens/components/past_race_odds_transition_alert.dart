@@ -49,7 +49,8 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
 
     final Map<String, List<SummaryModel>> summaryMap = summaryState.summaryMap;
 
-    final List<Future<MapEntry<String, String?>>> futures = <Future<MapEntry<String, String?>>>[];
+    final List<Future<void>> futures = <Future<void>>[];
+    int successCount = 0;
 
     for (final MapEntry<String, List<SummaryModel>> entry in summaryMap.entries) {
       if (!entry.key.startsWith(date)) {
@@ -73,6 +74,7 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
 
         final String key = '${m.date}_${kaisuu}_${m.basho}_${m.day}_${m.race}';
 
+        // 結果が届いた時点で即 setState → キャッシュ済みレースはすぐ表示される
         futures.add(
           fetchSecondAiOpinionData(
                 ref,
@@ -82,8 +84,20 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
                 day: m.day.toString(),
                 race: m.race,
               )
-              .then((Map<String, dynamic> data) => MapEntry<String, String?>(key, data['analysis_text'] as String?))
-              .catchError((_) => MapEntry<String, String?>(key, null)),
+              .then((Map<String, dynamic> data) {
+                final String? text = data['analysis_text'] as String?;
+                if (text != null) {
+                  successCount++;
+                }
+                if (mounted) {
+                  setState(() => _secondAiTextMap[key] = text);
+                }
+              })
+              .catchError((_) {
+                if (mounted) {
+                  setState(() => _secondAiTextMap[key] = null);
+                }
+              }),
         );
       }
     }
@@ -95,18 +109,10 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
     }
 
     try {
-      final List<MapEntry<String, String?>> results = await Future.wait(futures);
-
-      if (mounted) {
-        setState(() {
-          for (final MapEntry<String, String?> e in results) {
-            _secondAiTextMap[e.key] = e.value;
-          }
-        });
-      }
+      await Future.wait(futures);
 
       // 全レースのデータ取得に失敗した場合はリトライを許可
-      if (results.every((MapEntry<String, String?> e) => e.value == null)) {
+      if (successCount == 0) {
         _fetchedSecondAiDates.remove(date);
       }
     } catch (_) {
@@ -545,12 +551,30 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
                     ),
                   ],
                 ),
-                if (resultText != null)
+                if (resultText != null) ...<Widget>[
                   _buildResultTextSection(
                     resultText: resultText,
                     supplementCoveredCount: supplementCoveredCount,
                     payout: payout,
+                    isSecondAiLoading: _fetchedSecondAiDates.contains(date) && !_secondAiTextMap.containsKey(lookupKey),
                   ),
+                ] else ...<Widget>[
+                  const Padding(
+                    padding: EdgeInsets.only(top: 4),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: <Widget>[
+                        SizedBox(
+                          width: 10,
+                          height: 10,
+                          child: CircularProgressIndicator(strokeWidth: 1.5, color: Colors.white38),
+                        ),
+                        SizedBox(width: 5),
+                        Text('分析中...', style: TextStyle(fontSize: 9, color: Colors.white38)),
+                      ],
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
@@ -575,6 +599,7 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
     required String resultText,
     required int? supplementCoveredCount,
     required RaceResultPayoutModel? payout,
+    required bool isSecondAiLoading,
   }) {
     final bool isMatch = resultText.contains('3頭が合致');
 
@@ -598,9 +623,27 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
         crossAxisAlignment: CrossAxisAlignment.end,
         children: <Widget>[
           Text(resultText),
-          if (supplementCoveredCount != null) Text('補欠で$supplementCoveredCount頭をカバー'),
+          if (isSecondAiLoading && supplementCoveredCount == null) ...<Widget>[
+            const Padding(
+              padding: EdgeInsets.only(top: 2),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: <Widget>[
+                  SizedBox(
+                    width: 10,
+                    height: 10,
+                    child: CircularProgressIndicator(strokeWidth: 1.5, color: Colors.white38),
+                  ),
+                  SizedBox(width: 5),
+                  Text('2nd AI 取得中...', style: TextStyle(fontSize: 9, color: Colors.white38)),
+                ],
+              ),
+            ),
+          ] else ...<Widget>[
+            if (supplementCoveredCount != null) ...<Widget>[Text('補欠で$supplementCoveredCount頭をカバー')],
+          ],
           if (payout != null) ...<Widget>[
-            if (payout.trifecta.isNotEmpty)
+            if (payout.trifecta.isNotEmpty) ...<Widget>[
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: <Widget>[
@@ -619,7 +662,9 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
                   ),
                 ],
               ),
-            if (payout.trio.isNotEmpty)
+            ],
+
+            if (payout.trio.isNotEmpty) ...<Widget>[
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: <Widget>[
@@ -638,6 +683,7 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
                   ),
                 ],
               ),
+            ],
           ],
         ],
       ),

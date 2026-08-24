@@ -83,7 +83,7 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
 
   ///
   Future<void> _fetchSecondAiOpinion() async {
-    if (_isLoadingSecondAi) {
+    if (_isLoadingSecondAi || _secondAiHorses.isNotEmpty) {
       return;
     }
     setState(() => _isLoadingSecondAi = true);
