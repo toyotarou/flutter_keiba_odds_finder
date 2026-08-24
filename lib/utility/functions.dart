@@ -348,7 +348,6 @@ List<AiResponseRecommendHorseModel> parseAnalysisText(String text) {
       popularity: extract('人気順: '),
       odds: extract('6分前オッズ: '),
       score: int.tryParse(extract('おすすめ度: ')) ?? 0,
-      index: double.tryParse(extract('馬眼力指数:')),
       reason: reason,
     );
   }).toList();

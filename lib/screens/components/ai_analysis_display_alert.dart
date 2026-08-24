@@ -512,7 +512,7 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
                                 alignment: Alignment.centerLeft,
                                 transform: Matrix4.identity()..setEntry(0, 1, -0.8),
                                 child: Text(
-                                  (_baganrikiIndexMap[h.num] ?? h.index)?.toStringAsFixed(1) ?? '',
+                                  _baganrikiIndexMap[h.num]?.toStringAsFixed(1) ?? '',
                                   style: TextStyle(fontSize: 20, color: Colors.white.withValues(alpha: 0.6)),
                                 ),
                               ),

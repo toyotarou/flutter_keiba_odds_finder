@@ -6,7 +6,6 @@ class AiResponseRecommendHorseModel {
     required this.odds,
     required this.score,
     required this.reason,
-    this.index,
   });
 
   final int num;
@@ -15,6 +14,4 @@ class AiResponseRecommendHorseModel {
   final String odds;
   final int score;
   final String reason;
-  /// 馬眼力指数（算出不可・旧レコードは null）
-  final double? index;
 }
