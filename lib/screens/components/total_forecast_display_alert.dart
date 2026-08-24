@@ -50,6 +50,8 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
   Set<int> _highProbabilityPopularities = <int>{};
   Set<int> _aiPickupNums = <int>{};
   Map<int, String> _aiPickupScores = <int, String>{};
+  Map<int, double?> _aiPickupIndexes = <int, double?>{};
+  int? _upsetRaceValue;
   Set<int> _secondAiNums = <int>{};
   Map<int, String> _secondAiScores = <int, String>{};
 
@@ -166,6 +168,8 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
       final List<AiResponseRecommendHorseModel> horses = parseAnalysisText(analysisText);
       _aiPickupNums = horses.map((AiResponseRecommendHorseModel h) => h.num).toSet();
       _aiPickupScores = <int, String>{for (final AiResponseRecommendHorseModel h in horses) h.num: h.score.toString()};
+      _aiPickupIndexes = <int, double?>{for (final AiResponseRecommendHorseModel h in horses) h.num: h.index};
+      _upsetRaceValue = parseUpsetRaceValue(analysisText);
     } catch (e) {
       debugPrint('[TotalForecast] _fetchAiPickup error: $e');
     }
@@ -304,6 +308,32 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
                         children: <Widget>[
                           _buildColumnHeader(),
                           Divider(color: Colors.white.withValues(alpha: 0.5), thickness: 2),
+                          if (_upsetRaceValue != null) ...<Widget>[
+                            Center(
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: <Widget>[
+                                  if (_upsetRaceValue == 0) Container(width: 20, height: 1, color: Colors.white),
+                                  Text(
+                                    '厳選穴レース',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                      color: _upsetRaceValue == 1
+                                          ? const Color(0xFFFBB6CE)
+                                          : Colors.white.withValues(alpha: 0.4),
+                                      decoration: _upsetRaceValue == 0
+                                          ? TextDecoration.lineThrough
+                                          : TextDecoration.none,
+                                      decorationColor: Colors.white,
+                                    ),
+                                  ),
+                                  if (_upsetRaceValue == 0) Container(width: 20, height: 1, color: Colors.white),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                          ],
                           Expanded(
                             child: ListView.builder(
                               controller: _scrollController,
@@ -449,37 +479,55 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
 
           child: Column(
             children: <Widget>[
-              Padding(
-                padding: const EdgeInsets.only(top: 6),
-                child: Stack(
-                  children: <Widget>[
-                    Column(
-                      children: <Widget>[
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: <Widget>[
-                            SizedBox(
-                              width: _w0,
-                              child: Text('$popularity番人気', style: const TextStyle(fontSize: 11, color: Colors.white)),
-                            ),
-                            SizedBox(
-                              width: _w1,
-                              child: Text('${item.num}番', style: const TextStyle(fontSize: 11, color: Colors.white)),
-                            ),
-                            Expanded(
+              Stack(
+                children: <Widget>[
+                  if (_aiPickupIndexes[item.num] != null) ...[
+                    Positioned(
+                      right: 0,
+                      top: 0,
+                      child: Stack(
+                        children: <Widget>[
+                          Text('馬眼力指数', style: TextStyle(fontSize: 8, color: Colors.white.withValues(alpha: 0.6))),
+                          Container(
+                            margin: const EdgeInsets.only(top: 10),
+                            child: Transform(
+                              alignment: Alignment.centerLeft,
+                              transform: Matrix4.identity()..setEntry(0, 1, -0.8),
                               child: Text(
-                                horseName,
-                                style: const TextStyle(fontSize: 12, color: Colors.white),
-                                overflow: TextOverflow.ellipsis,
-                                maxLines: 1,
+                                _aiPickupIndexes[item.num].toString(),
+                                style: TextStyle(fontSize: 20, color: Colors.white.withValues(alpha: 0.6)),
                               ),
                             ),
-                          ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                  Container(
+                    padding: const EdgeInsets.only(bottom: 20),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        SizedBox(
+                          width: _w0,
+                          child: Text('$popularity番人気', style: const TextStyle(fontSize: 11, color: Colors.white)),
+                        ),
+                        SizedBox(
+                          width: _w1,
+                          child: Text('${item.num}番', style: const TextStyle(fontSize: 11, color: Colors.white)),
+                        ),
+                        Expanded(
+                          child: Text(
+                            horseName,
+                            style: const TextStyle(fontSize: 12, color: Colors.white),
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
+                          ),
                         ),
                       ],
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
 
               Padding(
@@ -585,8 +633,8 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
       children: <Widget>[
         column,
         Positioned(
-          top: 5,
-          right: 5,
+          bottom: 45,
+          left: 5,
           child: Container(
             width: 32,
             height: 18,

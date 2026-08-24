@@ -298,6 +298,19 @@ Future<Map<String, dynamic>> fetchSecondAiOpinionData(
   return <String, dynamic>{};
 }
 
+/// analysis_text から「厳選穴レース」の値を取得する。
+/// テキストの先頭行が "厳選穴レース|{数値}" の形式であれば {数値} を返す。
+/// 該当しない場合は null を返す。
+int? parseUpsetRaceValue(String text) {
+  for (final String line in text.split('\n')) {
+    final String trimmed = line.trim();
+    if (trimmed.startsWith('厳選穴レース|')) {
+      return int.tryParse(trimmed.substring('厳選穴レース|'.length).trim());
+    }
+  }
+  return null;
+}
+
 /// analysis_text を解析して推奨馬リストを返す。
 /// \n\n 区切りでも \n 区切りでも動作するよう、馬番：の出現位置でブロックを分割する。
 List<AiResponseRecommendHorseModel> parseAnalysisText(String text) {
@@ -335,6 +348,7 @@ List<AiResponseRecommendHorseModel> parseAnalysisText(String text) {
       popularity: extract('人気順: '),
       odds: extract('6分前オッズ: '),
       score: int.tryParse(extract('おすすめ度: ')) ?? 0,
+      index: double.tryParse(extract('馬眼力指数:')),
       reason: reason,
     );
   }).toList();

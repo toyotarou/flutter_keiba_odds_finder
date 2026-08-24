@@ -42,6 +42,8 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
 
   List<AiResponseRecommendHorseModel> _secondAiHorses = <AiResponseRecommendHorseModel>[];
 
+  int? _upsetRaceValue;
+
   ///
   List<AiResponseRecommendHorseModel> get _supplementHorses {
     final Set<int> claudeNums = _aiRecommendHorses.map((AiResponseRecommendHorseModel h) => h.num).toSet();
@@ -130,6 +132,7 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
       if (mounted) {
         setState(() {
           _aiRecommendHorses = parseAnalysisText(analysisText);
+          _upsetRaceValue = parseUpsetRaceValue(analysisText);
           _isLoading = false;
         });
       }
@@ -246,6 +249,28 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
                   ],
                 ),
                 Divider(color: Colors.white.withValues(alpha: 0.4), thickness: 5),
+                if (_upsetRaceValue != null) ...<Widget>[
+                  Center(
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        if (_upsetRaceValue == 0) ...<Widget>[Container(width: 20, height: 1, color: Colors.white)],
+                        Text(
+                          '厳選穴レース',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: _upsetRaceValue == 1 ? const Color(0xFFFBB6CE) : Colors.white.withValues(alpha: 0.4),
+                            decoration: _upsetRaceValue == 0 ? TextDecoration.lineThrough : TextDecoration.none,
+                            decorationColor: Colors.white,
+                          ),
+                        ),
+                        if (_upsetRaceValue == 0) ...<Widget>[Container(width: 20, height: 1, color: Colors.white)],
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                ],
                 Expanded(child: _buildHorseList(supplements)),
               ],
             ),
@@ -448,28 +473,53 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
                     ),
                   ],
                 ),
-                const SizedBox(height: 10),
                 DefaultTextStyle(
                   style: const TextStyle(color: Color(0xFFFBB6CE), fontSize: 12),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.baseline,
-                    textBaseline: TextBaseline.alphabetic,
+                  child: Stack(
                     children: <Widget>[
-                      Container(
-                        width: 40,
-                        padding: const EdgeInsets.all(2),
-                        decoration: BoxDecoration(
-                          border: Border.all(color: const Color(0xFFFBB6CE).withValues(alpha: 0.5)),
+                      Positioned(
+                        right: 10,
+                        top: 5,
+                        child: Stack(
+                          children: <Widget>[
+                            Text('馬眼力指数', style: TextStyle(fontSize: 8, color: Colors.white.withValues(alpha: 0.6))),
+                            Container(
+                              margin: const EdgeInsets.only(top: 10),
+                              child: Transform(
+                                alignment: Alignment.centerLeft,
+                                transform: Matrix4.identity()..setEntry(0, 1, -0.8),
+                                child: Text(
+                                  h.index.toString(),
+                                  style: TextStyle(fontSize: 20, color: Colors.white.withValues(alpha: 0.6)),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                        alignment: Alignment.center,
-                        child: Text(h.num.toString()),
                       ),
-                      const SizedBox(width: 10),
-                      Text(h.name),
+                      Padding(
+                        padding: const EdgeInsets.only(top: 15, bottom: 10),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.baseline,
+                          textBaseline: TextBaseline.alphabetic,
+                          children: <Widget>[
+                            Container(
+                              width: 40,
+                              padding: const EdgeInsets.all(2),
+                              decoration: BoxDecoration(
+                                border: Border.all(color: const Color(0xFFFBB6CE).withValues(alpha: 0.5)),
+                              ),
+                              alignment: Alignment.center,
+                              child: Text(h.num.toString()),
+                            ),
+                            const SizedBox(width: 10),
+                            Text(h.name),
+                          ],
+                        ),
+                      ),
                     ],
                   ),
                 ),
-                const SizedBox(height: 5),
                 Text(
                   h.reason.replaceAll(RegExp(r'\n?[─]+\n?'), '').trim(),
                   style: const TextStyle(letterSpacing: 0.4, height: 1.7),
