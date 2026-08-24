@@ -43,6 +43,7 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
   List<AiResponseRecommendHorseModel> _secondAiHorses = <AiResponseRecommendHorseModel>[];
 
   int? _upsetRaceValue;
+  Map<int, double?> _baganrikiIndexMap = <int, double?>{};
 
   ///
   List<AiResponseRecommendHorseModel> get _supplementHorses {
@@ -57,6 +58,7 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _fetchAiAnalysis();
       _fetchPayout();
+      _fetchBaganrikiIndex();
     });
   }
 
@@ -110,6 +112,27 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
         setState(() => _isLoadingSecondAi = false);
       }
     }
+  }
+
+  ///
+  Future<void> _fetchBaganrikiIndex() async {
+    final String date = appParamState.selectedScheduleDate;
+    final (:String kaisuu, :String basho, :String day) = parseKbdParts(appParamState.selectedScheduleKaisuuBashoDay);
+    try {
+      final Map<int, double?> result = await fetchBaganrikiIndexData(
+        ref,
+        date: date,
+        kaisuu: kaisuu,
+        basho: basho,
+        day: day,
+        race: widget.raceNumber,
+      );
+      if (mounted) {
+        setState(() {
+          _baganrikiIndexMap = result;
+        });
+      }
+    } catch (_) {}
   }
 
   ///
@@ -489,7 +512,7 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
                                 alignment: Alignment.centerLeft,
                                 transform: Matrix4.identity()..setEntry(0, 1, -0.8),
                                 child: Text(
-                                  h.index.toString(),
+                                  (_baganrikiIndexMap[h.num] ?? h.index)?.toStringAsFixed(1) ?? '',
                                   style: TextStyle(fontSize: 20, color: Colors.white.withValues(alpha: 0.6)),
                                 ),
                               ),

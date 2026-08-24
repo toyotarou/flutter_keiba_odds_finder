@@ -90,6 +90,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
   Set<int> _aiPickupNums = <int>{};
   Map<int, String> _aiPickupScores = <int, String>{};
   String _aiPickupHorse = '';
+  Map<int, double?> _baganrikiIndexMap = <int, double?>{};
 
   // 初回訪問時にmedianなし&期待数値タブ選択状態でパネルを自動クローズしたかどうか
   bool _autoClosedPanel = false;
@@ -136,6 +137,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         _fetchAiPickup();
+        _fetchBaganrikiIndex();
       }
     });
   }
@@ -181,6 +183,34 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
           _aiPickupHorse = pickupRaw;
           _aiPickupNums = _parsePickupHorse(pickupRaw);
           _aiPickupScores = _parsePickupScores(pickupRaw);
+        });
+      }
+    } catch (_) {}
+  }
+
+  ///
+  Future<void> _fetchBaganrikiIndex() async {
+    final List<OddsModel> allOdds = _oddsForRace;
+    final bool hasFirstTiming = allOdds.any((OddsModel e) => e.minutesBeforeStart == kOddsTimingFirst);
+    final bool hasSixMinTiming = allOdds.any((OddsModel e) => e.minutesBeforeStart == kOddsJudgeTiming);
+    if (!hasFirstTiming || !hasSixMinTiming) {
+      return;
+    }
+    final String date = appParamState.selectedScheduleDate;
+    final int race = widget.raceNumber;
+    final (:String kaisuu, :String basho, :String day) = parseKbdParts(appParamState.selectedScheduleKaisuuBashoDay);
+    try {
+      final Map<int, double?> indexMap = await fetchBaganrikiIndexData(
+        ref,
+        date: date,
+        kaisuu: kaisuu,
+        basho: basho,
+        day: day,
+        race: race,
+      );
+      if (mounted) {
+        setState(() {
+          _baganrikiIndexMap = indexMap;
         });
       }
     } catch (_) {}
@@ -1498,44 +1528,73 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
           margin: const EdgeInsets.only(top: 15),
           child: DefaultTextStyle(
             style: const TextStyle(fontSize: 12, color: Colors.white),
-            child: Row(
+            child: Stack(
               children: <Widget>[
-                const SizedBox(width: 20),
-                Container(
-                  padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
-                  decoration: BoxDecoration(
-                    color: (horseWakuColorMap[horse.waku] != null)
-                        ? horseWakuColorMap[horse.waku]!.withValues(alpha: 0.2)
-                        : Colors.white.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(3),
-                  ),
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
                   child: Row(
                     children: <Widget>[
-                      SizedBox(width: 15, child: Text(horse.waku.toString())),
-                      const Text('枠'),
+                      const SizedBox(width: 20),
+                      Container(
+                        padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
+                        decoration: BoxDecoration(
+                          color: (horseWakuColorMap[horse.waku] != null)
+                              ? horseWakuColorMap[horse.waku]!.withValues(alpha: 0.2)
+                              : Colors.white.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(3),
+                        ),
+                        child: Row(
+                          children: <Widget>[
+                            SizedBox(width: 15, child: Text(horse.waku.toString())),
+                            const Text('枠'),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 20),
+                      SizedBox(width: 20, child: Text(element.num.toString())),
+                      const Text('番'),
+                      const SizedBox(width: 20),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: <Widget>[
+                            Text(horse.name, maxLines: 1, overflow: TextOverflow.ellipsis),
+                            if (horseBestWeightState.horseBestWeightMap[horse.name] != null &&
+                                horseBestWeightState.horseBestWeightMap[horse.name]!.horseWeight != '') ...<Widget>[
+                              const SizedBox(height: 3),
+                              Text(
+                                'Best Weight: ${horseBestWeightState.horseBestWeightMap[horse.name]!.horseWeight}',
+                                style: TextStyle(fontSize: 10, color: Colors.white.withValues(alpha: 0.6)),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
                     ],
                   ),
                 ),
-                const SizedBox(width: 20),
-                SizedBox(width: 20, child: Text(element.num.toString())),
-                const Text('番'),
-                const SizedBox(width: 20),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Text(horse.name, maxLines: 1, overflow: TextOverflow.ellipsis),
-                      if (horseBestWeightState.horseBestWeightMap[horse.name] != null &&
-                          horseBestWeightState.horseBestWeightMap[horse.name]!.horseWeight != '') ...<Widget>[
-                        const SizedBox(height: 3),
-                        Text(
-                          'Best Weight: ${horseBestWeightState.horseBestWeightMap[horse.name]!.horseWeight}',
-                          style: TextStyle(fontSize: 10, color: Colors.white.withValues(alpha: 0.6)),
+                if (_baganrikiIndexMap[element.num] != null) ...<Widget>[
+                  Positioned(
+                    right: 0,
+                    top: 0,
+                    child: Stack(
+                      children: <Widget>[
+                        Text('馬眼力指数', style: TextStyle(fontSize: 8, color: Colors.white.withValues(alpha: 0.6))),
+                        Container(
+                          margin: const EdgeInsets.only(top: 10),
+                          child: Transform(
+                            alignment: Alignment.centerLeft,
+                            transform: Matrix4.identity()..setEntry(0, 1, -0.8),
+                            child: Text(
+                              _baganrikiIndexMap[element.num]!.toStringAsFixed(1),
+                              style: TextStyle(fontSize: 20, color: Colors.white.withValues(alpha: 0.6)),
+                            ),
+                          ),
                         ),
                       ],
-                    ],
+                    ),
                   ),
-                ),
+                ],
               ],
             ),
           ),

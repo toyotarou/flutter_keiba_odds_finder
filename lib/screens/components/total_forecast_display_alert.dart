@@ -121,7 +121,12 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
   }
 
   Future<void> _fetchAll() async {
-    await Future.wait(<Future<void>>[_fetchHighProbabilityHorses(), _fetchAiPickup(), _fetchSecondAiPickup()]);
+    await Future.wait(<Future<void>>[
+      _fetchHighProbabilityHorses(),
+      _fetchAiPickup(),
+      _fetchSecondAiPickup(),
+      _fetchBaganrikiIndex(),
+    ]);
     if (mounted) {
       setState(() => _isLoading = false);
     }
@@ -168,10 +173,33 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
       final List<AiResponseRecommendHorseModel> horses = parseAnalysisText(analysisText);
       _aiPickupNums = horses.map((AiResponseRecommendHorseModel h) => h.num).toSet();
       _aiPickupScores = <int, String>{for (final AiResponseRecommendHorseModel h in horses) h.num: h.score.toString()};
-      _aiPickupIndexes = <int, double?>{for (final AiResponseRecommendHorseModel h in horses) h.num: h.index};
       _upsetRaceValue = parseUpsetRaceValue(analysisText);
     } catch (e) {
       debugPrint('[TotalForecast] _fetchAiPickup error: $e');
+    }
+  }
+
+  ///
+  Future<void> _fetchBaganrikiIndex() async {
+    final String date = appParamState.selectedScheduleDate;
+    final int race = widget.currentRaceModel.race;
+    final (:String kaisuu, :String basho, :String day) = _kbdParts;
+    try {
+      final Map<int, double?> result = await fetchBaganrikiIndexData(
+        ref,
+        date: date,
+        kaisuu: kaisuu,
+        basho: basho,
+        day: day,
+        race: race,
+      );
+      if (mounted) {
+        setState(() {
+          _aiPickupIndexes = result;
+        });
+      }
+    } catch (e) {
+      debugPrint('[TotalForecast] _fetchBaganrikiIndex error: $e');
     }
   }
 
@@ -481,7 +509,7 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
             children: <Widget>[
               Stack(
                 children: <Widget>[
-                  if (_aiPickupIndexes[item.num] != null) ...[
+                  if (_aiPickupIndexes[item.num] != null) ...<Widget>[
                     Positioned(
                       right: 0,
                       top: 0,

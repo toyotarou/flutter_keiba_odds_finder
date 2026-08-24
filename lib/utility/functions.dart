@@ -411,3 +411,34 @@ String? extractResultLine(String introspection) {
   }
   return null;
 }
+
+/// 馬眼力指数APIを呼び出し、馬番 → baganriki_index の Map を返す。
+/// 通信エラーは呼び出し元に伝播する。
+Future<Map<int, double?>> fetchBaganrikiIndexData(
+  WidgetRef ref, {
+  required String date,
+  required String kaisuu,
+  required String basho,
+  required String day,
+  required int race,
+}) async {
+  final dynamic response = await ref
+      .read(httpClientProvider)
+      .get(
+        path: APIPath.getHorseOddsFinderBaganrikiIndex,
+        queryParameters: <String, dynamic>{
+          'date': date,
+          'kaisuu': kaisuu,
+          'basho_code': basho,
+          'day': day,
+          'race': race.toString(),
+        },
+      );
+  final List<dynamic> dataList =
+      (response as Map<String, dynamic>)['data'] as List<dynamic>? ?? <dynamic>[];
+  return <int, double?>{
+    for (final dynamic item in dataList)
+      (item as Map<String, dynamic>)['num'] as int:
+          (item['baganriki_index'] as num?)?.toDouble(),
+  };
+}
