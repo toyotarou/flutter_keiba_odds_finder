@@ -60,7 +60,7 @@ class _DeveloperNewsMinutesDisplayAlertState extends ConsumerState<DeveloperNews
               list.add(
                 Container(
                   padding: const EdgeInsets.all(2),
-                  decoration: BoxDecoration(color: Colors.yellowAccent.withValues(alpha: 0.1)),
+                  decoration: BoxDecoration(color: Colors.greenAccent.withValues(alpha: 0.1)),
                   child: DefaultTextStyle(
                     style: const TextStyle(fontSize: 12),
                     child: Row(
@@ -91,7 +91,12 @@ class _DeveloperNewsMinutesDisplayAlertState extends ConsumerState<DeveloperNews
                           margin: const EdgeInsets.only(top: 2, right: 2, left: 2, bottom: 25),
                           padding: const EdgeInsets.all(2),
                           alignment: Alignment.topRight,
-                          decoration: BoxDecoration(border: Border.all(color: Colors.white.withValues(alpha: 0.5))),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.white.withValues(alpha: 0.5)),
+                            color: (val.diffSeconds >= 60)
+                                ? Colors.yellowAccent.withValues(alpha: 0.2)
+                                : Colors.transparent,
+                          ),
                           child: Text(
                             (val.diffSeconds >= 60)
                                 ? '${val.diffSeconds ~/ 60}分${val.diffSeconds % 60}秒'

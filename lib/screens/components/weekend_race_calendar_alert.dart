@@ -411,6 +411,17 @@ class _RaceBlock extends StatelessWidget {
             ],
           ),
         ),
+
+        if (race.grade.isNotEmpty) ...<Widget>[
+          Positioned(
+            top: 5,
+            right: 5,
+            child: Opacity(
+              opacity: 0.7,
+              child: Image.asset('assets/race_grade_icon/race_grade_icon_${race.grade}.png', width: 30),
+            ),
+          ),
+        ],
       ],
     );
   }
