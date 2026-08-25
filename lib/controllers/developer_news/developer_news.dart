@@ -48,9 +48,9 @@ class DeveloperNews extends _$DeveloperNews {
 
           list.add(val);
 
-          (map[val.kind] ?? <DeveloperNewsModel>[]).add(val);
+          map[val.kind] = (map[val.kind] ?? <DeveloperNewsModel>[])..add(val);
 
-          (map[val.time] ?? <DeveloperNewsModel>[]).add(val);
+          map2[val.time] = (map2[val.time] ?? <DeveloperNewsModel>[])..add(val);
         }
       });
 
