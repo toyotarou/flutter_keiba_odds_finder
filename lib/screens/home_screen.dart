@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../controllers/app_param/app_param.dart';
 import '../controllers/controllers_mixin.dart';
 import '../extensions/extensions.dart';
+import '../models/developer_news_model.dart';
 import '../models/horse_model.dart';
 import '../models/login_user_model.dart';
 import '../models/odds_model.dart';
@@ -62,6 +63,8 @@ class HomeScreen extends ConsumerStatefulWidget {
     required this.horseScoreMap,
     required this.jockeyScoreMap,
     required this.raceIntrospectionMap,
+    required this.developerNewsKindMap,
+    required this.developerNewsTimeMap,
   });
 
   final Map<String, List<ScheduleModel>> scheduleDateBashoMap;
@@ -89,6 +92,9 @@ class HomeScreen extends ConsumerStatefulWidget {
   final Map<String, ScoreModel> jockeyScoreMap;
 
   final Map<String, RaceIntrospectionModel> raceIntrospectionMap;
+
+  final Map<String, List<DeveloperNewsModel>> developerNewsKindMap;
+  final Map<String, List<DeveloperNewsModel>> developerNewsTimeMap;
 
   final String loggedInUserId;
   final VoidCallback onLogout;
@@ -135,6 +141,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
 
     raceIntrospectionNotifier.getAllRaceIntrospectionData();
 
+    developerNewsNotifier.getAllDeveloperNewsData();
+
     // WebSocket接続を開始し、オッズ更新イベントを受信したら再フェッチする
     _wsService.onOddsUpdated = () {
       if (!mounted) {
@@ -176,10 +184,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
         oldWidget.horseMap != widget.horseMap ||
         oldWidget.oddsMap != widget.oddsMap ||
         oldWidget.oddsGetTiming != widget.oddsGetTiming ||
-        // oldWidget.oddsWideMap != widget.oddsWideMap ||
-        //
-        //
-        //
         oldWidget.popularityRankOddsMedianMap != widget.popularityRankOddsMedianMap) {
       WidgetsBinding.instance.addPostFrameCallback((_) => _syncAppParam());
     }
@@ -244,11 +248,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
 
     appParamNotifier.setConfigBaganrikiBrain(str: widget.baganrikiBrain);
 
-    // appParamNotifier.setKeepOddsWideMap(map: widget.oddsWideMap);
-    //
-    //
-    //
-
     appParamNotifier.setKeepSummaryMap(map: widget.summaryMap);
     appParamNotifier.setKeepSummaryDateBashoMap(map: widget.summaryDateBashoMap);
     appParamNotifier.setKeepLoginUserMap(map: widget.loginUserMap);
@@ -259,6 +258,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
     appParamNotifier.setKeepJockeyScoreMap(map: widget.jockeyScoreMap);
 
     appParamNotifier.setKeepRaceIntrospectionMap(map: widget.raceIntrospectionMap);
+
+    appParamNotifier.setKeepDeveloperNews(map: widget.developerNewsKindMap, map2: widget.developerNewsTimeMap);
   }
 
   ///

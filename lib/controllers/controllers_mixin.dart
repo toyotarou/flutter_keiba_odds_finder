@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'app_param/app_param.dart';
+import 'developer_news/developer_news.dart';
 import 'horse/horse.dart';
 import 'horse_best_weight/horse_best_weight.dart';
 import 'horse_score/horse_score.dart';
@@ -152,6 +153,13 @@ mixin ControllersMixin<T extends ConsumerStatefulWidget> on ConsumerState<T> {
   RaceIntrospectionState get raceIntrospectionState => ref.watch(raceIntrospectionProvider);
 
   RaceIntrospection get raceIntrospectionNotifier => ref.read(raceIntrospectionProvider.notifier);
+
+  //==========================================//
+
+  //==========================================//
+  DeveloperNewsState get developerNewsState => ref.watch(developerNewsProvider);
+
+  DeveloperNews get developerNewsNotifier => ref.read(developerNewsProvider.notifier);
 
   //==========================================//
 }

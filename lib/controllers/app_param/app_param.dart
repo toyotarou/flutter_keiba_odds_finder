@@ -2,13 +2,10 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../utility/utility.dart';
+import '../../models/developer_news_model.dart';
 import '../../models/horse_model.dart';
 import '../../models/login_user_model.dart';
 import '../../models/odds_model.dart';
-
-// import '../../models/odds_wide_model.dart';
-//
-//
 
 import '../../models/popularity_rank_odds_median_model.dart';
 import '../../models/push_notifier_user_model.dart';
@@ -33,11 +30,6 @@ class AppParamState with _$AppParamState {
 
     @Default(<String, List<OddsModel>>{}) Map<String, List<OddsModel>> keepOddsMap,
 
-    // @Default(<String, List<OddsWideModel>>{}) Map<String, List<OddsWideModel>> keepOddsWideMap,
-    //
-    //
-    //
-    //
     @Default(<String, List<SummaryModel>>{}) Map<String, List<SummaryModel>> keepSummaryMap,
 
     @Default(<String, List<String>>{}) Map<String, List<String>> keepSummaryDateBashoMap,
@@ -54,6 +46,9 @@ class AppParamState with _$AppParamState {
     @Default(<String, ScoreModel>{}) Map<String, ScoreModel> keepJockeyScoreMap,
 
     @Default(<String, RaceIntrospectionModel>{}) Map<String, RaceIntrospectionModel> keepRaceIntrospectionMap,
+
+    @Default(<String, List<DeveloperNewsModel>>{}) Map<String, List<DeveloperNewsModel>> keepDeveloperNewsKindMap,
+    @Default(<String, List<DeveloperNewsModel>>{}) Map<String, List<DeveloperNewsModel>> keepDeveloperNewsTimeMap,
 
     ///
     @Default('') String configOddsGetTiming,
@@ -161,6 +156,12 @@ class AppParam extends _$AppParam {
   ///
   void setKeepRaceIntrospectionMap({required Map<String, RaceIntrospectionModel> map}) =>
       state = state.copyWith(keepRaceIntrospectionMap: map);
+
+  ///
+  void setKeepDeveloperNews({
+    required Map<String, List<DeveloperNewsModel>> map,
+    required Map<String, List<DeveloperNewsModel>> map2,
+  }) => state = state.copyWith(keepDeveloperNewsKindMap: map, keepDeveloperNewsTimeMap: map2);
 
   //////////////
 

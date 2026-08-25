@@ -274,11 +274,6 @@ class _MyAppState extends ConsumerState<MyApp> with ControllersMixin<MyApp> {
 
                 baganrikiBrain: laravelConfigState.baganrikiBrain,
 
-                //                netkeibaOddsMap: netkeibaOddsState.netkeibaOddsMap,
-                // oddsWideMap: oddsWideState.oddsWideMap,
-                //
-                //
-                //
                 isRankingDialogOpen: widget.reloadIsRankingDialogOpen,
                 summaryMap: summaryState.summaryMap,
                 summaryDateBashoMap: summaryState.summaryDateBashoMap,
@@ -291,6 +286,9 @@ class _MyAppState extends ConsumerState<MyApp> with ControllersMixin<MyApp> {
                 jockeyScoreMap: jockeyScoreState.jockeyScoreMap,
 
                 raceIntrospectionMap: raceIntrospectionState.raceIntrospectionMap,
+
+                developerNewsKindMap: developerNewsState.developerNewsKindMap,
+                developerNewsTimeMap: developerNewsState.developerNewsTimeMap,
 
                 loggedInUserId: _loggedInUserId,
                 onLogout: () => setState(() => _loggedInUserId = ''),
