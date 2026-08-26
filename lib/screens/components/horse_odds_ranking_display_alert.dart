@@ -694,6 +694,8 @@ class _HorseSelectorContentState extends ConsumerState<_HorseSelectorContent>
   Set<int> _secondAiNums = <int>{};
   Map<int, String> _secondAiScores = <int, String>{};
 
+  bool _isAiLoading = true;
+  bool _isSecondAiLoading = true;
   Set<int> get _supplementNums => _secondAiNums.difference(_aiPickupNums);
 
   ///
@@ -714,6 +716,12 @@ class _HorseSelectorContentState extends ConsumerState<_HorseSelectorContent>
     if (widget.mode == RankingMode.summary) {
       final List<SummaryModel> list = ref.read(summaryProvider).oneRaceSummaryList;
       if (list.isEmpty) {
+        if (mounted) {
+          setState(() {
+            _isAiLoading = false;
+            _isSecondAiLoading = false;
+          });
+        }
         return;
       }
       final SummaryModel first = list.first;
@@ -726,6 +734,12 @@ class _HorseSelectorContentState extends ConsumerState<_HorseSelectorContent>
       final AppParamState appParam = ref.read(appParamProvider);
       date = appParam.selectedScheduleDate;
       if (date.isEmpty) {
+        if (mounted) {
+          setState(() {
+            _isAiLoading = false;
+            _isSecondAiLoading = false;
+          });
+        }
         return;
       }
       final ({String kaisuu, String basho, String day}) kbd = parseKbdParts(appParam.selectedScheduleKaisuuBashoDay);
@@ -734,6 +748,12 @@ class _HorseSelectorContentState extends ConsumerState<_HorseSelectorContent>
       day = kbd.day;
       race = appParam.selectedRaceNumber;
       if (race == 0) {
+        if (mounted) {
+          setState(() {
+            _isAiLoading = false;
+            _isSecondAiLoading = false;
+          });
+        }
         return;
       }
     }
@@ -770,16 +790,35 @@ class _HorseSelectorContentState extends ConsumerState<_HorseSelectorContent>
           _secondAiScores = <int, String>{
             for (final AiResponseRecommendHorseModel h in secondHorses) h.num: h.score.toString(),
           };
+          _isAiLoading = false;
+          _isSecondAiLoading = false;
         });
         widget.markOverlayDirty?.call();
       }
     } catch (e) {
       debugPrint('[HorseSelector] _fetchAiData error: $e');
+      if (mounted) {
+        setState(() {
+          _isAiLoading = false;
+          _isSecondAiLoading = false;
+        });
+      }
     }
   }
 
   ///
   Widget _buildAiBadge(int num) {
+    if (_isAiLoading) {
+      return const Row(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          SizedBox(width: 10, height: 10, child: CircularProgressIndicator(strokeWidth: 1.5, color: Colors.white38)),
+          SizedBox(width: 5),
+          Text('読み込み中...', style: TextStyle(fontSize: 9, color: Colors.white38)),
+        ],
+      );
+    }
+
     return Stack(
       children: <Widget>[
         Container(
@@ -809,6 +848,17 @@ class _HorseSelectorContentState extends ConsumerState<_HorseSelectorContent>
 
   ///
   Widget _buildSupplementBadge(int num) {
+    if (_isSecondAiLoading) {
+      return const Row(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          SizedBox(width: 10, height: 10, child: CircularProgressIndicator(strokeWidth: 1.5, color: Colors.white38)),
+          SizedBox(width: 5),
+          Text('2nd AI取得中...', style: TextStyle(fontSize: 9, color: Colors.white38)),
+        ],
+      );
+    }
+
     return Stack(
       children: <Widget>[
         Container(
@@ -836,6 +886,31 @@ class _HorseSelectorContentState extends ConsumerState<_HorseSelectorContent>
           ),
       ],
     );
+  }
+
+  ///
+  Widget _buildBadgeOrLoading(int num) {
+    final bool isAi = _aiPickupNums.contains(num);
+
+    final bool isSupplementary = _supplementNums.contains(num);
+
+    if (isAi) {
+      return _buildAiBadge(num);
+    }
+
+    if (isSupplementary) {
+      return _buildSupplementBadge(num);
+    }
+
+    if (_isAiLoading) {
+      return _buildAiBadge(num);
+    }
+
+    if (_isSecondAiLoading) {
+      return _buildSupplementBadge(num);
+    }
+
+    return const SizedBox.shrink();
   }
 
   ///
@@ -914,22 +989,13 @@ class _HorseSelectorContentState extends ConsumerState<_HorseSelectorContent>
                           style: const TextStyle(color: Colors.white, fontSize: 11),
                           overflow: TextOverflow.ellipsis,
                         ),
-
-                        if (isAi || isSupplementary) ...<Widget>[
+                        if (isAi || isSupplementary || _isAiLoading || _isSecondAiLoading) ...<Widget>[
                           const SizedBox(height: 5),
-
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: <Widget>[
                               const SizedBox.shrink(),
-
-                              Container(
-                                child: isAi
-                                    ? _buildAiBadge(num)
-                                    : isSupplementary
-                                    ? _buildSupplementBadge(num)
-                                    : null,
-                              ),
+                              Container(child: _buildBadgeOrLoading(num)),
                             ],
                           ),
                         ],
