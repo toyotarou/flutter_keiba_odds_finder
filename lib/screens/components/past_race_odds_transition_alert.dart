@@ -34,6 +34,10 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
 
   final Set<String> _fetchedSecondAiDates = <String>{};
 
+  final Map<String, String?> _firstAiTextMap = <String, String?>{};
+
+  final Set<String> _fetchedFirstAiDates = <String>{};
+
   static const double _moveAmount = 18;
 
   static const int _tickMs = 16;
@@ -121,39 +125,73 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
   }
 
   ///
-  Set<int> _extractPickupNums(String introspection) {
-    final int start = introspection.indexOf('## ピックアップ');
-
-    if (start == -1) {
-      return <int>{};
+  Future<void> _fetchFirstAiForDate(String date) async {
+    if (_fetchedFirstAiDates.contains(date)) {
+      return;
     }
+    _fetchedFirstAiDates.add(date);
 
-    final int sectionStart = start + '## ピックアップ'.length;
+    final Map<String, List<SummaryModel>> summaryMap = summaryState.summaryMap;
+    final List<Future<void>> futures = <Future<void>>[];
 
-    final int nextSection = introspection.indexOf('## ', sectionStart);
+    for (final MapEntry<String, List<SummaryModel>> entry in summaryMap.entries) {
+      if (!entry.key.startsWith(date)) {
+        continue;
+      }
+      final List<SummaryModel> models = entry.value;
+      if (models.isEmpty) {
+        continue;
+      }
+      final int kaisuu = int.tryParse(models.first.kaisuu) ?? 0;
+      final Set<int> seenRaces = <int>{};
 
-    final String pickupPart = nextSection != -1
-        ? introspection.substring(sectionStart, nextSection)
-        : introspection.substring(sectionStart);
+      for (final SummaryModel m in models) {
+        if (!seenRaces.add(m.race)) {
+          continue;
+        }
+        final String key = '${m.date}_${kaisuu}_${m.basho}_${m.day}_${m.race}';
 
-    final Set<int> nums = <int>{};
-
-    for (final RegExpMatch m in RegExp(r'(\d+)番').allMatches(pickupPart)) {
-      final int? num = int.tryParse(m.group(1)!);
-
-      if (num != null) {
-        nums.add(num);
+        futures.add(
+          fetchAiAnalysisData(
+                ref,
+                date: m.date,
+                kaisuu: kaisuu.toString(),
+                basho: m.basho,
+                day: m.day.toString(),
+                race: m.race,
+                gapHorseNums: <int>[],
+                upsetPickupHorseNums: <int>[],
+              )
+              .then((Map<String, dynamic> data) {
+                final String? text = data['analysis_text'] as String?;
+                if (mounted) {
+                  setState(() => _firstAiTextMap[key] = text);
+                }
+              })
+              .catchError((_) {
+                if (mounted) {
+                  setState(() => _firstAiTextMap[key] = null);
+                }
+              }),
+        );
       }
     }
 
-    return nums;
+    if (futures.isEmpty) {
+      _fetchedFirstAiDates.remove(date);
+      return;
+    }
+    try {
+      await Future.wait(futures);
+    } catch (_) {
+      _fetchedFirstAiDates.remove(date);
+    }
   }
 
   ///
   int? _calcSupplementCovered({
     required String? resultText,
     required String lookupKey,
-    required RaceIntrospectionModel? introspectionModel,
     required RaceResultPayoutModel? payout,
   }) {
     if (resultText == null || resultText.contains('3頭が合致')) {
@@ -166,13 +204,17 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
       return null;
     }
 
-    if (introspectionModel == null) {
-      return null;
-    }
-
     final List<AiResponseRecommendHorseModel> deepSeekHorses = parseAnalysisText(secondAiText);
 
-    final Set<int> claudeNums = _extractPickupNums(introspectionModel.introspection);
+    // 1st AI の馬番を _firstAiTextMap から取得（_extractPickupNums より正確）
+    final String? firstAiText = _firstAiTextMap[lookupKey];
+    if (firstAiText == null || firstAiText.isEmpty) {
+      return null;
+    }
+    final Set<int> claudeNums = parseAnalysisText(firstAiText).map((AiResponseRecommendHorseModel h) => h.num).toSet();
+    if (claudeNums.isEmpty) {
+      return null;
+    }
 
     final List<AiResponseRecommendHorseModel> supplementHorses = deepSeekHorses
         .where((AiResponseRecommendHorseModel h) => !claudeNums.contains(h.num))
@@ -339,7 +381,10 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
                               summaryDateBashoMap.keys.forEach(_fetchPayoutsForDate);
                             }
                           },
-                          onSecondAiFetch: () => summaryDateBashoMap.keys.forEach(_fetchSecondAiForDate),
+                          onSecondAiFetch: () {
+                            summaryDateBashoMap.keys.forEach(_fetchSecondAiForDate);
+                            summaryDateBashoMap.keys.forEach(_fetchFirstAiForDate);
+                          },
                         ),
                       ],
                     ),
@@ -410,7 +455,10 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
                                         _fetchPayoutsForDate(e.key);
                                       }
                                     },
-                                    onSecondAiFetch: () => _fetchSecondAiForDate(e.key),
+                                    onSecondAiFetch: () {
+                                      _fetchSecondAiForDate(e.key);
+                                      _fetchFirstAiForDate(e.key);
+                                    },
                                   ),
                                 ],
                               ),
@@ -439,6 +487,7 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
                                     if (expanded) {
                                       _fetchPayoutsForDate(e.key);
                                       _fetchSecondAiForDate(e.key);
+                                      _fetchFirstAiForDate(e.key);
                                     }
                                   },
                                   iconColor: Colors.greenAccent,
@@ -503,7 +552,6 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
     final int? supplementCoveredCount = _calcSupplementCovered(
       resultText: resultText,
       lookupKey: lookupKey,
-      introspectionModel: introspectionModel,
       payout: payout,
     );
 

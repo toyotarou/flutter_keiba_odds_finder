@@ -40,6 +40,9 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
 
   bool _isLoadingSecondAi = false;
 
+  // 2nd AI呼び出し済みフラグ（空結果でも再呼び出し防止）
+  bool _secondAiFetched = false;
+
   List<AiResponseRecommendHorseModel> _secondAiHorses = <AiResponseRecommendHorseModel>[];
 
   int? _upsetRaceValue;
@@ -83,9 +86,13 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
 
   ///
   Future<void> _fetchSecondAiOpinion() async {
-    if (_isLoadingSecondAi || _secondAiHorses.isNotEmpty) {
+    // _secondAiHorses.isNotEmpty だけをガードにすると、APIが不正フォーマットを返して
+    // parseAnalysisText が空リストになった場合にガードをすり抜けてしまう。
+    // _secondAiFetched フラグで「一度でも呼び出した」ことを追跡する。
+    if (_isLoadingSecondAi || _secondAiFetched) {
       return;
     }
+    _secondAiFetched = true; // 非同期処理前にセット（二重呼び出し防止）
     setState(() => _isLoadingSecondAi = true);
 
     final String date = appParamState.selectedScheduleDate;
