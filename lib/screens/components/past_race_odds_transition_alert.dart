@@ -191,27 +191,35 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
   ///
   int? _calcSupplementCovered({
     required String? resultText,
+    required String? introspectionText,
     required String lookupKey,
     required RaceResultPayoutModel? payout,
   }) {
-    if (resultText == null || resultText.contains('3頭が合致')) {
+    // '3頭が合致' = 1st AI が既にすべてカバー済み → 補欠表示不要
+    if (resultText != null && resultText.contains('3頭が合致')) {
       return null;
     }
 
     final String? secondAiText = _secondAiTextMap[lookupKey];
-
     if (secondAiText == null || secondAiText.isEmpty) {
       return null;
     }
 
     final List<AiResponseRecommendHorseModel> deepSeekHorses = parseAnalysisText(secondAiText);
 
-    // 1st AI の馬番を _firstAiTextMap から取得（_extractPickupNums より正確）
+    // Claude馬番の取得（優先順）:
+    // 1. _firstAiTextMap（生AIテキスト）からパース
+    // 2. なければ introspectionText の ## ピックアップ から ○X番 をパース
+    // 3. どちらも取得できなければ補欠計算不可
     final String? firstAiText = _firstAiTextMap[lookupKey];
-    if (firstAiText == null || firstAiText.isEmpty) {
-      return null;
+    Set<int> claudeNums = <int>{};
+    if (firstAiText != null && firstAiText.isNotEmpty) {
+      claudeNums = parseAnalysisText(firstAiText).map((AiResponseRecommendHorseModel h) => h.num).toSet();
+    } else if (introspectionText != null && introspectionText.contains('## ピックアップ')) {
+      claudeNums = RegExp(
+        r'○(\d+)番',
+      ).allMatches(introspectionText).map((RegExpMatch m) => int.parse(m.group(1)!)).toSet();
     }
-    final Set<int> claudeNums = parseAnalysisText(firstAiText).map((AiResponseRecommendHorseModel h) => h.num).toSet();
     if (claudeNums.isEmpty) {
       return null;
     }
@@ -551,6 +559,7 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
 
     final int? supplementCoveredCount = _calcSupplementCovered(
       resultText: resultText,
+      introspectionText: introspectionModel?.introspection,
       lookupKey: lookupKey,
       payout: payout,
     );
@@ -622,6 +631,12 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
                       ],
                     ),
                   ),
+                  if (supplementCoveredCount != null) ...<Widget>[
+                    Text(
+                      '補欠で$supplementCoveredCount頭をカバー',
+                      style: const TextStyle(fontSize: 10, color: Color(0xFFFBB6CE)),
+                    ),
+                  ],
                 ],
               ],
             ),
@@ -655,15 +670,17 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
 
     final bool isMatchWithSupplement = isMatch || (claudeMatchCount + (supplementCoveredCount ?? 0) >= 3);
 
-    final int trioAmount = (payout != null && payout.trio.isNotEmpty)
-        ? (int.tryParse(payout.trio.split('/').first.split('|').elementAtOrNull(1) ?? '') ?? 0)
-        : 0;
+    // final int trioAmount = (payout != null && payout.trio.isNotEmpty)
+    //     ? (int.tryParse(payout.trio.split('/').first.split('|').elementAtOrNull(1) ?? '') ?? 0)
+    //     : 0;
+    //
+    // final Color textColor = isMatchWithSupplement
+    //     ? const Color(0xFFFBB6CE)
+    //     : trioAmount >= 10000
+    //     ? Colors.yellowAccent.withValues(alpha: 0.5)
+    //     : Colors.white60;
 
-    final Color textColor = isMatchWithSupplement
-        ? const Color(0xFFFBB6CE)
-        : trioAmount >= 10000
-        ? Colors.yellowAccent.withValues(alpha: 0.5)
-        : Colors.white60;
+    final Color textColor = isMatchWithSupplement ? const Color(0xFFFBB6CE) : Colors.white60;
 
     return DefaultTextStyle(
       style: TextStyle(fontSize: 10, color: textColor),
