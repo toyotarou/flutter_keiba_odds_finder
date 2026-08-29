@@ -957,7 +957,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                             if (oddsTimeline != null) ...<Widget>[
                               const SizedBox(height: 5),
 
-                              const Text('発走のX分前のオッズ:', style: TextStyle(color: Colors.grey, fontSize: 10)),
+                              const Text('発走のX分前のオッズ:', style: TextStyle(color: Colors.orangeAccent, fontSize: 10)),
 
                               const SizedBox(height: 3),
 

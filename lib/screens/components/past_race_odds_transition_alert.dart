@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../controllers/controllers_mixin.dart';
+import '../../controllers/summary/summary.dart';
 import '../../extensions/extensions.dart';
 import '../../models/common/ai_response_recommend_horse_model.dart';
 import '../../models/race_introspection_model.dart';
@@ -25,6 +26,19 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
   final ScrollController _scrollController = ScrollController();
 
   final Map<String, bool> _expandedByDate = <String, bool>{};
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+      if (ref.read(summaryProvider).summaryDateBashoMap.isEmpty) {
+        ref.read(summaryProvider.notifier).getAllSummaryData();
+      }
+    });
+  }
 
   final Set<String> _fetchedDates = <String>{};
 

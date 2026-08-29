@@ -10,8 +10,7 @@ String _$summaryHash() => r'72a3b1f9d8e01e8851076939b59c3420356b3909';
 
 /// See also [Summary].
 @ProviderFor(Summary)
-final summaryProvider =
-    AutoDisposeNotifierProvider<Summary, SummaryState>.internal(
+final summaryProvider = NotifierProvider<Summary, SummaryState>.internal(
   Summary.new,
   name: r'summaryProvider',
   debugGetCreateSourceHash:
@@ -20,6 +19,6 @@ final summaryProvider =
   allTransitiveDependencies: null,
 );
 
-typedef _$Summary = AutoDisposeNotifier<SummaryState>;
+typedef _$Summary = Notifier<SummaryState>;
 // ignore_for_file: type=lint
 // ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member

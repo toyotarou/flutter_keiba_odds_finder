@@ -21,7 +21,7 @@ class SummaryState with _$SummaryState {
   }) = _SummaryState;
 }
 
-@riverpod
+@Riverpod(keepAlive: true)
 class Summary extends _$Summary {
   final Utility utility = Utility();
 
