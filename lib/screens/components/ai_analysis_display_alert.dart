@@ -303,10 +303,7 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
                   ),
                   const SizedBox(height: 6),
                 ],
-                if (_raceMetrics != null) ...<Widget>[
-                  _buildRaceMetrics(_raceMetrics!),
-                  const SizedBox(height: 6),
-                ],
+                if (_raceMetrics != null) ...<Widget>[_buildRaceMetrics(_raceMetrics!), const SizedBox(height: 6)],
                 Expanded(child: _buildHorseList(supplements)),
               ],
             ),
@@ -469,10 +466,82 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
         Positioned(
           right: 15,
           bottom: 10,
-          child: Transform(
-            alignment: Alignment.centerLeft,
-            transform: Matrix4.identity()..setEntry(0, 1, -0.8),
-            child: Text(h.score.toString(), style: const TextStyle(fontSize: 40)),
+          child: Stack(
+            children: <Widget>[
+              Builder(
+                builder: (BuildContext context) {
+                  final double? idx = _baganrikiIndexMap[h.num];
+                  String? activeLabel;
+                  if (idx != null) {
+                    if (idx >= 150) {
+                      activeLabel = '◎有力';
+                    } else if (idx >= 120) {
+                      activeLabel = '○注目';
+                    } else if (idx >= 100) {
+                      activeLabel = '△様子見';
+                    } else {
+                      activeLabel = '✕妙味薄';
+                    }
+                  }
+                  const List<(String, String)> labels = <(String, String)>[
+                    ('◎有力', '150↑'),
+                    ('○注目', '120↑'),
+                    ('△様子見', '100↑'),
+                    ('✕妙味薄', '~99'),
+                  ];
+
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: <Widget>[
+                      Stack(
+                        children: <Widget>[
+                          const Text('馬眼力指数', style: TextStyle(fontSize: 8, color: Colors.white)),
+                          Container(
+                            margin: const EdgeInsets.only(top: 10),
+                            child: Transform(
+                              alignment: Alignment.centerLeft,
+                              transform: Matrix4.identity()..setEntry(0, 1, -0.8),
+                              child: Text(
+                                idx?.toStringAsFixed(1) ?? '',
+                                style: const TextStyle(fontSize: 25, color: Colors.white),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: labels.map(((String, String) entry) {
+                          final String label = entry.$1;
+                          final String range = entry.$2;
+                          final bool isActive = label == activeLabel;
+                          final Color col = isActive ? Colors.greenAccent : Colors.white;
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 2),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: <Widget>[
+                                Text(
+                                  label,
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    color: col,
+                                    fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+                                  ),
+                                ),
+                                Text(range, style: TextStyle(fontSize: 10, color: col)),
+                              ],
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ],
           ),
         ),
         Container(
@@ -546,26 +615,6 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
                   style: const TextStyle(color: Color(0xFFFBB6CE), fontSize: 12),
                   child: Stack(
                     children: <Widget>[
-                      Positioned(
-                        right: 10,
-                        top: 5,
-                        child: Stack(
-                          children: <Widget>[
-                            Text('馬眼力指数', style: TextStyle(fontSize: 8, color: Colors.white.withValues(alpha: 0.6))),
-                            Container(
-                              margin: const EdgeInsets.only(top: 10),
-                              child: Transform(
-                                alignment: Alignment.centerLeft,
-                                transform: Matrix4.identity()..setEntry(0, 1, -0.8),
-                                child: Text(
-                                  _baganrikiIndexMap[h.num]?.toStringAsFixed(1) ?? '',
-                                  style: TextStyle(fontSize: 20, color: Colors.white.withValues(alpha: 0.6)),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
                       Padding(
                         padding: const EdgeInsets.only(top: 15, bottom: 10),
                         child: Row(
@@ -615,7 +664,7 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
                     ),
                   ),
                 ],
-                const SizedBox(height: 40),
+                const SizedBox(height: 60),
               ],
             ),
           ),
