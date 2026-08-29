@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../controllers/app_param/app_param.dart';
 import '../controllers/controllers_mixin.dart';
 import '../extensions/extensions.dart';
+import '../models/ai_analysis_model.dart';
 import '../models/developer_news_model.dart';
 import '../models/horse_model.dart';
 import '../models/login_user_model.dart';
@@ -65,6 +66,7 @@ class HomeScreen extends ConsumerStatefulWidget {
     required this.raceIntrospectionMap,
     required this.developerNewsKindMap,
     required this.developerNewsTimeMap,
+    required this.aiAnalysisMap,
   });
 
   final Map<String, List<ScheduleModel>> scheduleDateBashoMap;
@@ -95,6 +97,8 @@ class HomeScreen extends ConsumerStatefulWidget {
 
   final Map<String, List<DeveloperNewsModel>> developerNewsKindMap;
   final Map<String, List<DeveloperNewsModel>> developerNewsTimeMap;
+
+  final Map<String, List<AiAnalysisModel>> aiAnalysisMap;
 
   final String loggedInUserId;
   final VoidCallback onLogout;
@@ -142,6 +146,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
     raceIntrospectionNotifier.getAllRaceIntrospectionData();
 
     developerNewsNotifier.getAllDeveloperNewsData();
+
+    aiAnalysisNotifier.getAllAiAnalysisData();
 
     // WebSocket接続を開始し、オッズ更新イベントを受信したら再フェッチする
     _wsService.onOddsUpdated = () {
@@ -260,6 +266,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
     appParamNotifier.setKeepRaceIntrospectionMap(map: widget.raceIntrospectionMap);
 
     appParamNotifier.setKeepDeveloperNews(map: widget.developerNewsKindMap, map2: widget.developerNewsTimeMap);
+
+    appParamNotifier.setKeepAiAnalysisMap(map: widget.aiAnalysisMap);
   }
 
   ///

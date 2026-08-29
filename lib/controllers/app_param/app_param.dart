@@ -2,6 +2,7 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../utility/utility.dart';
+import '../../models/ai_analysis_model.dart';
 import '../../models/developer_news_model.dart';
 import '../../models/horse_model.dart';
 import '../../models/login_user_model.dart';
@@ -49,6 +50,8 @@ class AppParamState with _$AppParamState {
 
     @Default(<String, List<DeveloperNewsModel>>{}) Map<String, List<DeveloperNewsModel>> keepDeveloperNewsKindMap,
     @Default(<String, List<DeveloperNewsModel>>{}) Map<String, List<DeveloperNewsModel>> keepDeveloperNewsTimeMap,
+
+    @Default(<String, List<AiAnalysisModel>>{}) Map<String, List<AiAnalysisModel>> keepAiAnalysisMap,
 
     ///
     @Default('') String configOddsGetTiming,
@@ -162,6 +165,10 @@ class AppParam extends _$AppParam {
     required Map<String, List<DeveloperNewsModel>> map,
     required Map<String, List<DeveloperNewsModel>> map2,
   }) => state = state.copyWith(keepDeveloperNewsKindMap: map, keepDeveloperNewsTimeMap: map2);
+
+  ///
+  void setKeepAiAnalysisMap({required Map<String, List<AiAnalysisModel>> map}) =>
+      state = state.copyWith(keepAiAnalysisMap: map);
 
   //////////////
 

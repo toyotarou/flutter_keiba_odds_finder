@@ -44,6 +44,8 @@ mixin _$AppParamState {
       throw _privateConstructorUsedError;
   Map<String, List<DeveloperNewsModel>> get keepDeveloperNewsTimeMap =>
       throw _privateConstructorUsedError;
+  Map<String, List<AiAnalysisModel>> get keepAiAnalysisMap =>
+      throw _privateConstructorUsedError;
 
   ///
   String get configOddsGetTiming => throw _privateConstructorUsedError;
@@ -103,6 +105,7 @@ abstract class $AppParamStateCopyWith<$Res> {
       Map<String, RaceIntrospectionModel> keepRaceIntrospectionMap,
       Map<String, List<DeveloperNewsModel>> keepDeveloperNewsKindMap,
       Map<String, List<DeveloperNewsModel>> keepDeveloperNewsTimeMap,
+      Map<String, List<AiAnalysisModel>> keepAiAnalysisMap,
       String configOddsGetTiming,
       String configOddsDropRateHonmei,
       String configOddsDropRateChuana,
@@ -157,6 +160,7 @@ class _$AppParamStateCopyWithImpl<$Res, $Val extends AppParamState>
     Object? keepRaceIntrospectionMap = null,
     Object? keepDeveloperNewsKindMap = null,
     Object? keepDeveloperNewsTimeMap = null,
+    Object? keepAiAnalysisMap = null,
     Object? configOddsGetTiming = null,
     Object? configOddsDropRateHonmei = null,
     Object? configOddsDropRateChuana = null,
@@ -240,6 +244,10 @@ class _$AppParamStateCopyWithImpl<$Res, $Val extends AppParamState>
           ? _value.keepDeveloperNewsTimeMap
           : keepDeveloperNewsTimeMap // ignore: cast_nullable_to_non_nullable
               as Map<String, List<DeveloperNewsModel>>,
+      keepAiAnalysisMap: null == keepAiAnalysisMap
+          ? _value.keepAiAnalysisMap
+          : keepAiAnalysisMap // ignore: cast_nullable_to_non_nullable
+              as Map<String, List<AiAnalysisModel>>,
       configOddsGetTiming: null == configOddsGetTiming
           ? _value.configOddsGetTiming
           : configOddsGetTiming // ignore: cast_nullable_to_non_nullable
@@ -369,6 +377,7 @@ abstract class _$$AppParamStateImplCopyWith<$Res>
       Map<String, RaceIntrospectionModel> keepRaceIntrospectionMap,
       Map<String, List<DeveloperNewsModel>> keepDeveloperNewsKindMap,
       Map<String, List<DeveloperNewsModel>> keepDeveloperNewsTimeMap,
+      Map<String, List<AiAnalysisModel>> keepAiAnalysisMap,
       String configOddsGetTiming,
       String configOddsDropRateHonmei,
       String configOddsDropRateChuana,
@@ -421,6 +430,7 @@ class __$$AppParamStateImplCopyWithImpl<$Res>
     Object? keepRaceIntrospectionMap = null,
     Object? keepDeveloperNewsKindMap = null,
     Object? keepDeveloperNewsTimeMap = null,
+    Object? keepAiAnalysisMap = null,
     Object? configOddsGetTiming = null,
     Object? configOddsDropRateHonmei = null,
     Object? configOddsDropRateChuana = null,
@@ -504,6 +514,10 @@ class __$$AppParamStateImplCopyWithImpl<$Res>
           ? _value._keepDeveloperNewsTimeMap
           : keepDeveloperNewsTimeMap // ignore: cast_nullable_to_non_nullable
               as Map<String, List<DeveloperNewsModel>>,
+      keepAiAnalysisMap: null == keepAiAnalysisMap
+          ? _value._keepAiAnalysisMap
+          : keepAiAnalysisMap // ignore: cast_nullable_to_non_nullable
+              as Map<String, List<AiAnalysisModel>>,
       configOddsGetTiming: null == configOddsGetTiming
           ? _value.configOddsGetTiming
           : configOddsGetTiming // ignore: cast_nullable_to_non_nullable
@@ -641,6 +655,8 @@ class _$AppParamStateImpl implements _AppParamState {
           const <String, List<DeveloperNewsModel>>{},
       final Map<String, List<DeveloperNewsModel>> keepDeveloperNewsTimeMap =
           const <String, List<DeveloperNewsModel>>{},
+      final Map<String, List<AiAnalysisModel>> keepAiAnalysisMap =
+          const <String, List<AiAnalysisModel>>{},
       this.configOddsGetTiming = '',
       this.configOddsDropRateHonmei = '',
       this.configOddsDropRateChuana = '',
@@ -679,7 +695,8 @@ class _$AppParamStateImpl implements _AppParamState {
         _keepJockeyScoreMap = keepJockeyScoreMap,
         _keepRaceIntrospectionMap = keepRaceIntrospectionMap,
         _keepDeveloperNewsKindMap = keepDeveloperNewsKindMap,
-        _keepDeveloperNewsTimeMap = keepDeveloperNewsTimeMap;
+        _keepDeveloperNewsTimeMap = keepDeveloperNewsTimeMap,
+        _keepAiAnalysisMap = keepAiAnalysisMap;
 
   final Map<String, List<ScheduleModel>> _keepScheduleDateBashoMap;
   @override
@@ -818,6 +835,16 @@ class _$AppParamStateImpl implements _AppParamState {
     return EqualUnmodifiableMapView(_keepDeveloperNewsTimeMap);
   }
 
+  final Map<String, List<AiAnalysisModel>> _keepAiAnalysisMap;
+  @override
+  @JsonKey()
+  Map<String, List<AiAnalysisModel>> get keepAiAnalysisMap {
+    if (_keepAiAnalysisMap is EqualUnmodifiableMapView)
+      return _keepAiAnalysisMap;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableMapView(_keepAiAnalysisMap);
+  }
+
   ///
   @override
   @JsonKey()
@@ -899,7 +926,7 @@ class _$AppParamStateImpl implements _AppParamState {
 
   @override
   String toString() {
-    return 'AppParamState(keepScheduleDateBashoMap: $keepScheduleDateBashoMap, keepRaceMap: $keepRaceMap, keepHorseMap: $keepHorseMap, keepOddsMap: $keepOddsMap, keepSummaryMap: $keepSummaryMap, keepSummaryDateBashoMap: $keepSummaryDateBashoMap, keepLoginUserMap: $keepLoginUserMap, keepPushNotifierUserList: $keepPushNotifierUserList, keepPopularityRankOddsMedianMap: $keepPopularityRankOddsMedianMap, keepHorseScoreMap: $keepHorseScoreMap, keepJockeyScoreMap: $keepJockeyScoreMap, keepRaceIntrospectionMap: $keepRaceIntrospectionMap, keepDeveloperNewsKindMap: $keepDeveloperNewsKindMap, keepDeveloperNewsTimeMap: $keepDeveloperNewsTimeMap, configOddsGetTiming: $configOddsGetTiming, configOddsDropRateHonmei: $configOddsDropRateHonmei, configOddsDropRateChuana: $configOddsDropRateChuana, configOddsDropRateDaiana: $configOddsDropRateDaiana, configBaganrikiBrain: $configBaganrikiBrain, selectedScheduleDate: $selectedScheduleDate, selectedScheduleKaisuuBashoDay: $selectedScheduleKaisuuBashoDay, selectedScheduleKaisuuBashoDayName: $selectedScheduleKaisuuBashoDayName, selectedRaceNumber: $selectedRaceNumber, selectedTiming: $selectedTiming, selectedTiming2: $selectedTiming2, queryUser: $queryUser, isShowUpperBox: $isShowUpperBox, isShowUpperBox2: $isShowUpperBox2, selectedDrawerRace: $selectedDrawerRace, isZoomed: $isZoomed, selectedUpsetBoxNum: $selectedUpsetBoxNum, selectedPopularityRank: $selectedPopularityRank, selectedPopularityRankYear: $selectedPopularityRankYear, selectedHistoryYear: $selectedHistoryYear, selectedHorseNameChar1: $selectedHorseNameChar1, selectedHorseNameChar2: $selectedHorseNameChar2, allExpanded: $allExpanded, isShowSideTabPanel: $isShowSideTabPanel, selectedHorseLineNum: $selectedHorseLineNum)';
+    return 'AppParamState(keepScheduleDateBashoMap: $keepScheduleDateBashoMap, keepRaceMap: $keepRaceMap, keepHorseMap: $keepHorseMap, keepOddsMap: $keepOddsMap, keepSummaryMap: $keepSummaryMap, keepSummaryDateBashoMap: $keepSummaryDateBashoMap, keepLoginUserMap: $keepLoginUserMap, keepPushNotifierUserList: $keepPushNotifierUserList, keepPopularityRankOddsMedianMap: $keepPopularityRankOddsMedianMap, keepHorseScoreMap: $keepHorseScoreMap, keepJockeyScoreMap: $keepJockeyScoreMap, keepRaceIntrospectionMap: $keepRaceIntrospectionMap, keepDeveloperNewsKindMap: $keepDeveloperNewsKindMap, keepDeveloperNewsTimeMap: $keepDeveloperNewsTimeMap, keepAiAnalysisMap: $keepAiAnalysisMap, configOddsGetTiming: $configOddsGetTiming, configOddsDropRateHonmei: $configOddsDropRateHonmei, configOddsDropRateChuana: $configOddsDropRateChuana, configOddsDropRateDaiana: $configOddsDropRateDaiana, configBaganrikiBrain: $configBaganrikiBrain, selectedScheduleDate: $selectedScheduleDate, selectedScheduleKaisuuBashoDay: $selectedScheduleKaisuuBashoDay, selectedScheduleKaisuuBashoDayName: $selectedScheduleKaisuuBashoDayName, selectedRaceNumber: $selectedRaceNumber, selectedTiming: $selectedTiming, selectedTiming2: $selectedTiming2, queryUser: $queryUser, isShowUpperBox: $isShowUpperBox, isShowUpperBox2: $isShowUpperBox2, selectedDrawerRace: $selectedDrawerRace, isZoomed: $isZoomed, selectedUpsetBoxNum: $selectedUpsetBoxNum, selectedPopularityRank: $selectedPopularityRank, selectedPopularityRankYear: $selectedPopularityRankYear, selectedHistoryYear: $selectedHistoryYear, selectedHorseNameChar1: $selectedHorseNameChar1, selectedHorseNameChar2: $selectedHorseNameChar2, allExpanded: $allExpanded, isShowSideTabPanel: $isShowSideTabPanel, selectedHorseLineNum: $selectedHorseLineNum)';
   }
 
   @override
@@ -936,13 +963,16 @@ class _$AppParamStateImpl implements _AppParamState {
                 other._keepDeveloperNewsKindMap, _keepDeveloperNewsKindMap) &&
             const DeepCollectionEquality().equals(
                 other._keepDeveloperNewsTimeMap, _keepDeveloperNewsTimeMap) &&
+            const DeepCollectionEquality()
+                .equals(other._keepAiAnalysisMap, _keepAiAnalysisMap) &&
             (identical(other.configOddsGetTiming, configOddsGetTiming) ||
                 other.configOddsGetTiming == configOddsGetTiming) &&
             (identical(other.configOddsDropRateHonmei, configOddsDropRateHonmei) ||
                 other.configOddsDropRateHonmei == configOddsDropRateHonmei) &&
             (identical(other.configOddsDropRateChuana, configOddsDropRateChuana) ||
                 other.configOddsDropRateChuana == configOddsDropRateChuana) &&
-            (identical(other.configOddsDropRateDaiana, configOddsDropRateDaiana) ||
+            (identical(
+                    other.configOddsDropRateDaiana, configOddsDropRateDaiana) ||
                 other.configOddsDropRateDaiana == configOddsDropRateDaiana) &&
             (identical(other.configBaganrikiBrain, configBaganrikiBrain) ||
                 other.configBaganrikiBrain == configBaganrikiBrain) &&
@@ -968,10 +998,8 @@ class _$AppParamStateImpl implements _AppParamState {
                 other.isShowUpperBox2 == isShowUpperBox2) &&
             (identical(other.selectedDrawerRace, selectedDrawerRace) ||
                 other.selectedDrawerRace == selectedDrawerRace) &&
-            (identical(other.isZoomed, isZoomed) ||
-                other.isZoomed == isZoomed) &&
-            (identical(other.selectedUpsetBoxNum, selectedUpsetBoxNum) ||
-                other.selectedUpsetBoxNum == selectedUpsetBoxNum) &&
+            (identical(other.isZoomed, isZoomed) || other.isZoomed == isZoomed) &&
+            (identical(other.selectedUpsetBoxNum, selectedUpsetBoxNum) || other.selectedUpsetBoxNum == selectedUpsetBoxNum) &&
             (identical(other.selectedPopularityRank, selectedPopularityRank) || other.selectedPopularityRank == selectedPopularityRank) &&
             (identical(other.selectedPopularityRankYear, selectedPopularityRankYear) || other.selectedPopularityRankYear == selectedPopularityRankYear) &&
             (identical(other.selectedHistoryYear, selectedHistoryYear) || other.selectedHistoryYear == selectedHistoryYear) &&
@@ -999,6 +1027,7 @@ class _$AppParamStateImpl implements _AppParamState {
         const DeepCollectionEquality().hash(_keepRaceIntrospectionMap),
         const DeepCollectionEquality().hash(_keepDeveloperNewsKindMap),
         const DeepCollectionEquality().hash(_keepDeveloperNewsTimeMap),
+        const DeepCollectionEquality().hash(_keepAiAnalysisMap),
         configOddsGetTiming,
         configOddsDropRateHonmei,
         configOddsDropRateChuana,
@@ -1050,6 +1079,7 @@ abstract class _AppParamState implements AppParamState {
       final Map<String, RaceIntrospectionModel> keepRaceIntrospectionMap,
       final Map<String, List<DeveloperNewsModel>> keepDeveloperNewsKindMap,
       final Map<String, List<DeveloperNewsModel>> keepDeveloperNewsTimeMap,
+      final Map<String, List<AiAnalysisModel>> keepAiAnalysisMap,
       final String configOddsGetTiming,
       final String configOddsDropRateHonmei,
       final String configOddsDropRateChuana,
@@ -1105,6 +1135,8 @@ abstract class _AppParamState implements AppParamState {
   Map<String, List<DeveloperNewsModel>> get keepDeveloperNewsKindMap;
   @override
   Map<String, List<DeveloperNewsModel>> get keepDeveloperNewsTimeMap;
+  @override
+  Map<String, List<AiAnalysisModel>> get keepAiAnalysisMap;
   @override
 
   ///

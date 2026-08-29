@@ -37,6 +37,7 @@ enum APIPath {
   getHorseOddsFinderSecondAiOpinion,
   getHorseOddsFinderBaganrikiIndex,
   getHorseOddsFinderPushSendLogsDeveloperNews,
+  getHorseOddsFinderAiAnalysisRecord,
 }
 
 extension APIPathExtension on APIPath {
@@ -62,12 +63,6 @@ extension APIPathExtension on APIPath {
 
       case APIPath.getHorseDetail:
         return 'getHorseDetail';
-
-      // case APIPath.getHorseOddsFinderOddsWide:
-      //   return 'getHorseOddsFinderOddsWide';
-      //
-      //
-      //
 
       case APIPath.getHorseOddsFinderSummary:
         return 'getHorseOddsFinderSummary';
@@ -153,6 +148,9 @@ extension APIPathExtension on APIPath {
         return 'getHorseOddsFinderBaganrikiIndex';
       case APIPath.getHorseOddsFinderPushSendLogsDeveloperNews:
         return 'getHorseOddsFinderPushSendLogsDeveloperNews';
+
+      case APIPath.getHorseOddsFinderAiAnalysisRecord:
+        return 'getHorseOddsFinderAiAnalysisRecord';
     }
   }
 }

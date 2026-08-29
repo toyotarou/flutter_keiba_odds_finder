@@ -1,24 +1,25 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'summary.dart';
+part of 'ai_analysis.dart';
 
 // **************************************************************************
 // RiverpodGenerator
 // **************************************************************************
 
-String _$summaryHash() => r'5dbd34d0a7bc69f3fd26b724c0848d6d503b59b5';
+String _$aiAnalysisHash() => r'e403b761158fde935b1380f71d6a77cf3627abe8';
 
-/// See also [Summary].
-@ProviderFor(Summary)
-final summaryProvider = NotifierProvider<Summary, SummaryState>.internal(
-  Summary.new,
-  name: r'summaryProvider',
+/// See also [AiAnalysis].
+@ProviderFor(AiAnalysis)
+final aiAnalysisProvider =
+    AutoDisposeNotifierProvider<AiAnalysis, AiAnalysisState>.internal(
+  AiAnalysis.new,
+  name: r'aiAnalysisProvider',
   debugGetCreateSourceHash:
-      const bool.fromEnvironment('dart.vm.product') ? null : _$summaryHash,
+      const bool.fromEnvironment('dart.vm.product') ? null : _$aiAnalysisHash,
   dependencies: null,
   allTransitiveDependencies: null,
 );
 
-typedef _$Summary = Notifier<SummaryState>;
+typedef _$AiAnalysis = AutoDisposeNotifier<AiAnalysisState>;
 // ignore_for_file: type=lint
 // ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member
