@@ -46,6 +46,7 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
   List<AiResponseRecommendHorseModel> _secondAiHorses = <AiResponseRecommendHorseModel>[];
 
   int? _upsetRaceValue;
+  Map<String, int>? _raceMetrics;
   Map<int, double?> _baganrikiIndexMap = <int, double?>{};
 
   ///
@@ -163,6 +164,7 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
         setState(() {
           _aiRecommendHorses = parseAnalysisText(analysisText);
           _upsetRaceValue = parseUpsetRaceValue(analysisText);
+          _raceMetrics = parseRaceMetrics(analysisText);
           _isLoading = false;
         });
       }
@@ -301,6 +303,10 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
                   ),
                   const SizedBox(height: 6),
                 ],
+                if (_raceMetrics != null) ...<Widget>[
+                  _buildRaceMetrics(_raceMetrics!),
+                  const SizedBox(height: 6),
+                ],
                 Expanded(child: _buildHorseList(supplements)),
               ],
             ),
@@ -413,6 +419,39 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
             const SizedBox(height: 10),
           ],
         ),
+      ],
+    );
+  }
+
+  ///
+  Widget _buildRaceMetrics(Map<String, int> metrics) {
+    String stars(int v) => '★' * v + '☆' * (5 - v);
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.05),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: <Widget>[
+          _buildMetricItem('波乱度', metrics['波乱度']!, stars(metrics['波乱度']!)),
+          _buildMetricItem('下位進入度', metrics['下位進入度']!, stars(metrics['下位進入度']!)),
+          _buildMetricItem('大穴進入度', metrics['大穴進入度']!, stars(metrics['大穴進入度']!)),
+        ],
+      ),
+    );
+  }
+
+  ///
+  Widget _buildMetricItem(String label, int value, String stars) {
+    return Column(
+      children: <Widget>[
+        Text(label, style: const TextStyle(fontSize: 9, color: Colors.white70)),
+        const SizedBox(height: 2),
+        Text(stars, style: const TextStyle(fontSize: 10, color: Colors.yellowAccent, letterSpacing: 1)),
+        Text(value.toString(), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
       ],
     );
   }

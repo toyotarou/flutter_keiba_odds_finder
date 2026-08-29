@@ -312,6 +312,33 @@ int? parseUpsetRaceValue(String text) {
 }
 
 /// analysis_text を解析して推奨馬リストを返す。
+/// analysis_text から波乱度・下位進入度・大穴進入度を取得する。
+/// 「レース指標|波乱度: X|下位進入度: X|大穴進入度: X」の行をパースして返す。
+/// 該当行がない・パース不能な場合は null を返す。
+Map<String, int>? parseRaceMetrics(String text) {
+  for (final String line in text.split('\n')) {
+    final String trimmed = line.trim();
+    if (trimmed.startsWith('レース指標|')) {
+      final List<String> parts = trimmed.split('|');
+      int? extract(String key) {
+        for (final String p in parts) {
+          if (p.startsWith(key)) {
+            return int.tryParse(p.substring(key.length).trim());
+          }
+        }
+        return null;
+      }
+      final int? upset    = extract('波乱度: ');
+      final int? lower    = extract('下位進入度: ');
+      final int? longShot = extract('大穴進入度: ');
+      if (upset != null && lower != null && longShot != null) {
+        return <String, int>{'波乱度': upset, '下位進入度': lower, '大穴進入度': longShot};
+      }
+    }
+  }
+  return null;
+}
+
 /// \n\n 区切りでも \n 区切りでも動作するよう、馬番：の出現位置でブロックを分割する。
 List<AiResponseRecommendHorseModel> parseAnalysisText(String text) {
   final RegExp horseStart = RegExp(r'馬番：\d+');

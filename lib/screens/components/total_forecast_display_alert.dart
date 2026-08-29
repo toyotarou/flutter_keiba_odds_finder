@@ -52,6 +52,7 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
   Map<int, String> _aiPickupScores = <int, String>{};
   Map<int, double?> _aiPickupIndexes = <int, double?>{};
   int? _upsetRaceValue;
+  Map<String, int>? _raceMetrics;
   Set<int> _secondAiNums = <int>{};
   Map<int, String> _secondAiScores = <int, String>{};
 
@@ -174,6 +175,7 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
       _aiPickupNums = horses.map((AiResponseRecommendHorseModel h) => h.num).toSet();
       _aiPickupScores = <int, String>{for (final AiResponseRecommendHorseModel h in horses) h.num: h.score.toString()};
       _upsetRaceValue = parseUpsetRaceValue(analysisText);
+      _raceMetrics = parseRaceMetrics(analysisText);
     } catch (e) {
       debugPrint('[TotalForecast] _fetchAiPickup error: $e');
     }
@@ -362,6 +364,10 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
                             ),
                             const SizedBox(height: 4),
                           ],
+                          if (_raceMetrics != null) ...<Widget>[
+                            _buildRaceMetrics(_raceMetrics!),
+                            const SizedBox(height: 4),
+                          ],
                           Expanded(
                             child: ListView.builder(
                               controller: _scrollController,
@@ -414,6 +420,40 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
           ],
         ),
       ),
+    );
+  }
+
+  ///
+  Widget _buildRaceMetrics(Map<String, int> metrics) {
+    String stars(int v) => '★' * v + '☆' * (5 - v);
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+      padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.05),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: <Widget>[
+          _buildMetricItem('波乱度', metrics['波乱度']!, stars(metrics['波乱度']!)),
+          _buildMetricItem('下位進入度', metrics['下位進入度']!, stars(metrics['下位進入度']!)),
+          _buildMetricItem('大穴進入度', metrics['大穴進入度']!, stars(metrics['大穴進入度']!)),
+        ],
+      ),
+    );
+  }
+
+  ///
+  Widget _buildMetricItem(String label, int value, String stars) {
+    return Column(
+      children: <Widget>[
+        Text(label, style: const TextStyle(fontSize: 9, color: Colors.white70)),
+        const SizedBox(height: 2),
+        Text(stars, style: const TextStyle(fontSize: 10, color: Colors.yellowAccent, letterSpacing: 1)),
+        Text(value.toString(), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+      ],
     );
   }
 
