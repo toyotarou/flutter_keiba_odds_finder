@@ -388,27 +388,8 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
   }
 
   ///
-  static int? _resolveFilterMinutes(String selectedTiming, List<OddsModel> oddsModelList, int firstTiming) {
-    if (selectedTiming.isNotEmpty) {
-      if (selectedTiming == kOddsTimingLastLabel) {
-        return kOddsTimingLast;
-      }
-      final int parsed = int.tryParse(selectedTiming) ?? 0;
-      if (parsed == firstTiming) {
-        return oddsModelList.any((OddsModel e) => e.minutesBeforeStart == firstTiming) ? firstTiming : kOddsTimingFirst;
-      }
-      return parsed;
-    }
-    if (oddsModelList.any((OddsModel e) => e.minutesBeforeStart == kOddsTimingLast)) {
-      return kOddsTimingLast;
-    }
-    if (oddsModelList.isNotEmpty && oddsModelList.every((OddsModel e) => e.minutesBeforeStart == kOddsTimingFirst)) {
-      return kOddsTimingFirst;
-    }
-    final List<int> validValues =
-        oddsModelList.map((OddsModel e) => e.minutesBeforeStart).where((int v) => v >= 0).toList()..sort();
-    return validValues.isNotEmpty ? validValues.first : null;
-  }
+  static int? _resolveFilterMinutes(String selectedTiming, List<OddsModel> oddsModelList, int firstTiming) =>
+      resolveFilterMinutes(selectedTiming, oddsModelList, firstTiming);
 
   ///
   static String _filterMinutesToTimingKey(int? filterMinutes, String firstTimingKey, String lastTimingKey) {
@@ -435,18 +416,11 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
   }
 
   ///
-  List<OddsModel> _buildDisplayList() {
-    final List<OddsModel> allOdds = _oddsForRace;
-    final int firstTiming = int.tryParse(_configFirstKey) ?? 0;
-    final int? filterMinutes = _resolveFilterMinutes(appParamState.selectedTiming, allOdds, firstTiming);
-
-    return (filterMinutes != null
-            ? allOdds.where((OddsModel e) => e.minutesBeforeStart == filterMinutes).toList()
-            : allOdds)
-        .where((OddsModel e) => (double.tryParse(e.odds) ?? 0) > 0)
-        .toList()
-      ..sort((OddsModel a, OddsModel b) => (double.tryParse(a.odds) ?? 0).compareTo(double.tryParse(b.odds) ?? 0));
-  }
+  List<OddsModel> _buildDisplayList() => buildOddsDisplayList(
+    oddsForRace: _oddsForRace,
+    selectedTiming: appParamState.selectedTiming,
+    configFirstKey: _configFirstKey,
+  );
 
   ///
   Widget _buildRaceInfoBar({
@@ -1417,78 +1391,14 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
   }
 
   ///
-  List<int> _calcOddsGapHorseNums() {
-    final List<OddsModel> allOdds = _oddsForRace;
-    if (!allOdds.any((OddsModel e) => e.minutesBeforeStart == kOddsTimingFirst) ||
-        !allOdds.any((OddsModel e) => e.minutesBeforeStart == kOddsJudgeTiming)) {
-      return <int>[];
-    }
-
-    final List<OddsModel> sixMinList =
-        allOdds
-            .where((OddsModel e) => e.minutesBeforeStart == kOddsJudgeTiming && (double.tryParse(e.odds) ?? 0) > 0)
-            .toList()
-          ..sort((OddsModel a, OddsModel b) => (double.tryParse(a.odds) ?? 0).compareTo(double.tryParse(b.odds) ?? 0));
-
-    final List<int> gapHorseNums = <int>[];
-    for (int i = 0; i < sixMinList.length - 1; i++) {
-      final double oddsA = double.tryParse(sixMinList[i].odds) ?? 0;
-      final double oddsB = double.tryParse(sixMinList[i + 1].odds) ?? 0;
-      if (oddsA <= 0) {
-        continue;
-      }
-      if (oddsB / oddsA > 2.0) {
-        gapHorseNums.add(sixMinList[i].num);
-      }
-    }
-    return gapHorseNums;
-  }
+  List<int> _calcOddsGapHorseNums() => calcOddsGapHorseNums(_oddsForRace);
 
   ///
-  List<int> _calcUpsetPickupHorseNums() {
-    final List<OddsModel> allOdds = _oddsForRace;
-    if (!allOdds.any((OddsModel e) => e.minutesBeforeStart == kOddsTimingFirst) ||
-        !allOdds.any((OddsModel e) => e.minutesBeforeStart == kOddsJudgeTiming)) {
-      return <int>[];
-    }
-
-    final PopularityRankOddsMedianModel? medianModel = _makeMedianList();
-    if (medianModel == null) {
-      return <int>[];
-    }
-
-    final Map<int, String> sixMinOddsMap = <int, String>{
-      for (final OddsModel o in _oddsForRace.where((OddsModel e) => e.minutesBeforeStart == kOddsJudgeTiming))
-        o.num: o.odds,
-    };
-
-    final List<OddsModel> baseList = _buildDisplayList();
-    final List<OddsModel> sixMinSortedList = sixMinOddsMap.isEmpty
-        ? baseList
-        : (List<OddsModel>.from(baseList)..sort((OddsModel a, OddsModel b) {
-            final double aOdds = double.tryParse(sixMinOddsMap[a.num] ?? '') ?? double.infinity;
-            final double bOdds = double.tryParse(sixMinOddsMap[b.num] ?? '') ?? double.infinity;
-            return aOdds.compareTo(bOdds);
-          }));
-
-    final int pickupCount = sixMinSortedList.length <= 8
-        ? 4
-        : sixMinSortedList.length <= 13
-        ? 5
-        : 6;
-
-    final Set<int> pickupPopularitySet = calcPickupPopularitySet(
-      sixMinSortedList,
-      medianModel,
-      pickupCount,
-      sixMinOddsMap: sixMinOddsMap,
-    );
-
-    return <int>[
-      for (int i = 0; i < sixMinSortedList.length; i++)
-        if (pickupPopularitySet.contains(i + 1)) sixMinSortedList[i].num,
-    ];
-  }
+  List<int> _calcUpsetPickupHorseNums() => calcUpsetPickupHorseNums(
+    oddsForRace: _oddsForRace,
+    medianModel: _makeMedianList(),
+    displayList: _buildDisplayList(),
+  );
 
   ///
   double? _calcOddsDropRatio(List<String>? timeline) {

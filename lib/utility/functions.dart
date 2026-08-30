@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../const/const.dart';
 import '../data/http/client.dart';
 import '../data/http/path.dart';
 import '../models/common/ai_response_recommend_horse_model.dart';
@@ -328,8 +329,9 @@ Map<String, int>? parseRaceMetrics(String text) {
         }
         return null;
       }
-      final int? upset    = extract('波乱度: ');
-      final int? lower    = extract('下位進入度: ');
+
+      final int? upset = extract('波乱度: ');
+      final int? lower = extract('下位進入度: ');
       final int? longShot = extract('大穴進入度: ');
       if (upset != null && lower != null && longShot != null) {
         return <String, int>{'波乱度': upset, '下位進入度': lower, '大穴進入度': longShot};
@@ -460,11 +462,118 @@ Future<Map<int, double?>> fetchBaganrikiIndexData(
           'race': race.toString(),
         },
       );
-  final List<dynamic> dataList =
-      (response as Map<String, dynamic>)['data'] as List<dynamic>? ?? <dynamic>[];
+  final List<dynamic> dataList = (response as Map<String, dynamic>)['data'] as List<dynamic>? ?? <dynamic>[];
   return <int, double?>{
     for (final dynamic item in dataList)
-      (item as Map<String, dynamic>)['num'] as int:
-          (item['baganriki_index'] as num?)?.toDouble(),
+      (item as Map<String, dynamic>)['num'] as int: (item['baganriki_index'] as num?)?.toDouble(),
   };
+}
+
+// ============================================================
+// オッズ計算ユーティリティ（複数画面から共用）
+// ============================================================
+
+/// selectedTiming と オッズリストから表示に使うminutesBeforeStartを解決する。
+int? resolveFilterMinutes(String selectedTiming, List<OddsModel> oddsModelList, int firstTiming) {
+  if (selectedTiming.isNotEmpty) {
+    if (selectedTiming == kOddsTimingLastLabel) {
+      return kOddsTimingLast;
+    }
+    final int parsed = int.tryParse(selectedTiming) ?? 0;
+    if (parsed == firstTiming) {
+      return oddsModelList.any((OddsModel e) => e.minutesBeforeStart == firstTiming) ? firstTiming : kOddsTimingFirst;
+    }
+    return parsed;
+  }
+  if (oddsModelList.any((OddsModel e) => e.minutesBeforeStart == kOddsTimingLast)) {
+    return kOddsTimingLast;
+  }
+  if (oddsModelList.isNotEmpty && oddsModelList.every((OddsModel e) => e.minutesBeforeStart == kOddsTimingFirst)) {
+    return kOddsTimingFirst;
+  }
+  final List<int> validValues =
+      oddsModelList.map((OddsModel e) => e.minutesBeforeStart).where((int v) => v >= 0).toList()..sort();
+  return validValues.isNotEmpty ? validValues.first : null;
+}
+
+/// 特定レースのオッズリストを selectedTiming に基づいて絞り込み・ソートして返す。
+List<OddsModel> buildOddsDisplayList({
+  required List<OddsModel> oddsForRace,
+  required String selectedTiming,
+  required String configFirstKey,
+}) {
+  final int firstTiming = int.tryParse(configFirstKey) ?? 0;
+  final int? filterMinutes = resolveFilterMinutes(selectedTiming, oddsForRace, firstTiming);
+  return (filterMinutes != null
+          ? oddsForRace.where((OddsModel e) => e.minutesBeforeStart == filterMinutes).toList()
+          : oddsForRace)
+      .where((OddsModel e) => (double.tryParse(e.odds) ?? 0) > 0)
+      .toList()
+    ..sort((OddsModel a, OddsModel b) => (double.tryParse(a.odds) ?? 0).compareTo(double.tryParse(b.odds) ?? 0));
+}
+
+/// オッズの大きな断絶がある馬番リストを返す。
+List<int> calcOddsGapHorseNums(List<OddsModel> oddsForRace) {
+  if (!oddsForRace.any((OddsModel e) => e.minutesBeforeStart == kOddsTimingFirst) ||
+      !oddsForRace.any((OddsModel e) => e.minutesBeforeStart == kOddsJudgeTiming)) {
+    return <int>[];
+  }
+  final List<OddsModel> sixMinList =
+      oddsForRace
+          .where((OddsModel e) => e.minutesBeforeStart == kOddsJudgeTiming && (double.tryParse(e.odds) ?? 0) > 0)
+          .toList()
+        ..sort((OddsModel a, OddsModel b) => (double.tryParse(a.odds) ?? 0).compareTo(double.tryParse(b.odds) ?? 0));
+  final List<int> gapHorseNums = <int>[];
+  for (int i = 0; i < sixMinList.length - 1; i++) {
+    final double oddsA = double.tryParse(sixMinList[i].odds) ?? 0;
+    final double oddsB = double.tryParse(sixMinList[i + 1].odds) ?? 0;
+    if (oddsA <= 0) {
+      continue;
+    }
+    if (oddsB / oddsA > 2.0) {
+      gapHorseNums.add(sixMinList[i].num);
+    }
+  }
+  return gapHorseNums;
+}
+
+/// 波乱馬ピックアップの馬番リストを返す。
+List<int> calcUpsetPickupHorseNums({
+  required List<OddsModel> oddsForRace,
+  required PopularityRankOddsMedianModel? medianModel,
+  required List<OddsModel> displayList,
+}) {
+  if (!oddsForRace.any((OddsModel e) => e.minutesBeforeStart == kOddsTimingFirst) ||
+      !oddsForRace.any((OddsModel e) => e.minutesBeforeStart == kOddsJudgeTiming)) {
+    return <int>[];
+  }
+  if (medianModel == null) {
+    return <int>[];
+  }
+  final Map<int, String> sixMinOddsMap = <int, String>{
+    for (final OddsModel o in oddsForRace.where((OddsModel e) => e.minutesBeforeStart == kOddsJudgeTiming))
+      o.num: o.odds,
+  };
+  final List<OddsModel> sixMinSortedList = sixMinOddsMap.isEmpty
+      ? displayList
+      : (List<OddsModel>.from(displayList)..sort((OddsModel a, OddsModel b) {
+          final double aOdds = double.tryParse(sixMinOddsMap[a.num] ?? '') ?? double.infinity;
+          final double bOdds = double.tryParse(sixMinOddsMap[b.num] ?? '') ?? double.infinity;
+          return aOdds.compareTo(bOdds);
+        }));
+  final int pickupCount = sixMinSortedList.length <= 8
+      ? 4
+      : sixMinSortedList.length <= 13
+      ? 5
+      : 6;
+  final Set<int> pickupPopularitySet = calcPickupPopularitySet(
+    sixMinSortedList,
+    medianModel,
+    pickupCount,
+    sixMinOddsMap: sixMinOddsMap,
+  );
+  return <int>[
+    for (int i = 0; i < sixMinSortedList.length; i++)
+      if (pickupPopularitySet.contains(i + 1)) sixMinSortedList[i].num,
+  ];
 }

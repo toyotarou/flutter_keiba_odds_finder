@@ -4,7 +4,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../controllers/controllers_mixin.dart';
 import '../../extensions/extensions.dart';
 import '../../models/ai_analysis_model.dart';
+import '../../models/odds_model.dart';
+import '../../models/popularity_rank_odds_median_model.dart';
 import '../../models/schedule_model.dart';
+import '../../utility/functions.dart';
+import '../parts/odds_finder_dialog.dart';
+import 'ai_analysis_display_alert.dart';
 
 class AiAnalysisGetStatusAlert extends ConsumerStatefulWidget {
   const AiAnalysisGetStatusAlert({super.key});
@@ -96,22 +101,71 @@ class _AiAnalysisGetStatusAlertState extends ConsumerState<AiAnalysisGetStatusAl
                     final List<AiAnalysisModel> aiList2 =
                         appParamState.keepAiAnalysisMap2[aiKey] ?? <AiAnalysisModel>[];
                     final bool hasAi2 = aiList2.any((AiAnalysisModel m) => m.race == raceNum);
-                    return Container(
-                      width: context.screenSize.width / 7,
-                      height: 28,
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        border: Border(
-                          top: BorderSide(color: hasAi ? Colors.green : Colors.white.withValues(alpha: 0.5), width: 3),
-                          bottom: BorderSide(
-                            color: hasAi2 ? Colors.blue : Colors.white.withValues(alpha: 0.5),
-                            width: 3,
+                    return Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: () {
+                          // ── 選択状態をタップした会場・日付に合わせる ──
+                          appParamNotifier.setSelectedScheduleDate(date: schedule.date);
+                          appParamNotifier.setSelectedScheduleKaisuuBashoDay(
+                            kbd: '${schedule.kaisuu}_${schedule.basho}_${schedule.day}',
+                            name: '${schedule.kaisuu}回 ${schedule.bashoName} ${schedule.day}日',
+                          );
+                          final String oddsKey =
+                              '${schedule.date}_${schedule.kaisuu}_${schedule.basho}_${schedule.day}';
+                          final List<OddsModel> oddsForRace = (appParamState.keepOddsMap[oddsKey] ?? <OddsModel>[])
+                              .where((OddsModel e) => e.race == raceNum)
+                              .toList();
+                          final List<int> gapHorseNums = calcOddsGapHorseNums(oddsForRace);
+                          final String configFirstKey = appParamState.configOddsGetTiming.split('|').first;
+                          final List<OddsModel> displayList = buildOddsDisplayList(
+                            oddsForRace: oddsForRace,
+                            selectedTiming: appParamState.selectedTiming,
+                            configFirstKey: configFirstKey,
+                          );
+                          final PopularityRankOddsMedianModel? medianModel =
+                              (appParamState.keepPopularityRankOddsMedianMap[oddsKey] ??
+                                      <PopularityRankOddsMedianModel>[])
+                                  .where((PopularityRankOddsMedianModel e) => e.race == raceNum)
+                                  .firstOrNull;
+                          final List<int> upsetPickupHorseNums = calcUpsetPickupHorseNums(
+                            oddsForRace: oddsForRace,
+                            medianModel: medianModel,
+                            displayList: displayList,
+                          );
+                          OddsFinderDialog(
+                            context: context,
+                            widget: AiAnalysisDisplayAlert(
+                              raceNumber: raceNum,
+                              gapHorseNums: gapHorseNums,
+                              upsetPickupHorseNums: upsetPickupHorseNums,
+                              numToRankMap: const <int, int>{},
+                            ),
+                          );
+                        },
+                        splashColor: Colors.white.withValues(alpha: 0.2),
+                        highlightColor: Colors.white.withValues(alpha: 0.1),
+                        child: Container(
+                          width: context.screenSize.width / 7,
+                          height: 28,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            border: Border(
+                              top: BorderSide(
+                                color: hasAi ? Colors.green : Colors.white.withValues(alpha: 0.5),
+                                width: 3,
+                              ),
+                              bottom: BorderSide(
+                                color: hasAi2 ? Colors.blue : Colors.white.withValues(alpha: 0.5),
+                                width: 3,
+                              ),
+                              right: BorderSide(color: Colors.white.withValues(alpha: 0.5)),
+                              left: BorderSide(color: Colors.white.withValues(alpha: 0.5)),
+                            ),
                           ),
-                          right: BorderSide(color: Colors.white.withValues(alpha: 0.5)),
-                          left: BorderSide(color: Colors.white.withValues(alpha: 0.5)),
+                          child: Text('$raceNum', style: const TextStyle(color: Colors.white70, fontSize: 11)),
                         ),
                       ),
-                      child: Text('$raceNum', style: const TextStyle(color: Colors.white70, fontSize: 11)),
                     );
                   }),
                 ),
