@@ -67,6 +67,7 @@ class HomeScreen extends ConsumerStatefulWidget {
     required this.developerNewsKindMap,
     required this.developerNewsTimeMap,
     required this.aiAnalysisMap,
+    required this.aiAnalysisMap2,
   });
 
   final Map<String, List<ScheduleModel>> scheduleDateBashoMap;
@@ -99,6 +100,7 @@ class HomeScreen extends ConsumerStatefulWidget {
   final Map<String, List<DeveloperNewsModel>> developerNewsTimeMap;
 
   final Map<String, List<AiAnalysisModel>> aiAnalysisMap;
+  final Map<String, List<AiAnalysisModel>> aiAnalysisMap2;
 
   final String loggedInUserId;
   final VoidCallback onLogout;
@@ -148,6 +150,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
     developerNewsNotifier.getAllDeveloperNewsData();
 
     aiAnalysisNotifier.getAllAiAnalysisData();
+    aiAnalysisNotifier2.getAllAiAnalysisData2();
 
     // WebSocket接続を開始し、オッズ更新イベントを受信したら再フェッチする
     _wsService.onOddsUpdated = () {
@@ -268,6 +271,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
     appParamNotifier.setKeepDeveloperNews(map: widget.developerNewsKindMap, map2: widget.developerNewsTimeMap);
 
     appParamNotifier.setKeepAiAnalysisMap(map: widget.aiAnalysisMap);
+    appParamNotifier.setKeepAiAnalysisMap2(map: widget.aiAnalysisMap2);
   }
 
   ///

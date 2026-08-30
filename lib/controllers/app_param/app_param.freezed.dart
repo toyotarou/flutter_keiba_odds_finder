@@ -46,6 +46,8 @@ mixin _$AppParamState {
       throw _privateConstructorUsedError;
   Map<String, List<AiAnalysisModel>> get keepAiAnalysisMap =>
       throw _privateConstructorUsedError;
+  Map<String, List<AiAnalysisModel>> get keepAiAnalysisMap2 =>
+      throw _privateConstructorUsedError;
 
   ///
   String get configOddsGetTiming => throw _privateConstructorUsedError;
@@ -106,6 +108,7 @@ abstract class $AppParamStateCopyWith<$Res> {
       Map<String, List<DeveloperNewsModel>> keepDeveloperNewsKindMap,
       Map<String, List<DeveloperNewsModel>> keepDeveloperNewsTimeMap,
       Map<String, List<AiAnalysisModel>> keepAiAnalysisMap,
+      Map<String, List<AiAnalysisModel>> keepAiAnalysisMap2,
       String configOddsGetTiming,
       String configOddsDropRateHonmei,
       String configOddsDropRateChuana,
@@ -161,6 +164,7 @@ class _$AppParamStateCopyWithImpl<$Res, $Val extends AppParamState>
     Object? keepDeveloperNewsKindMap = null,
     Object? keepDeveloperNewsTimeMap = null,
     Object? keepAiAnalysisMap = null,
+    Object? keepAiAnalysisMap2 = null,
     Object? configOddsGetTiming = null,
     Object? configOddsDropRateHonmei = null,
     Object? configOddsDropRateChuana = null,
@@ -247,6 +251,10 @@ class _$AppParamStateCopyWithImpl<$Res, $Val extends AppParamState>
       keepAiAnalysisMap: null == keepAiAnalysisMap
           ? _value.keepAiAnalysisMap
           : keepAiAnalysisMap // ignore: cast_nullable_to_non_nullable
+              as Map<String, List<AiAnalysisModel>>,
+      keepAiAnalysisMap2: null == keepAiAnalysisMap2
+          ? _value.keepAiAnalysisMap2
+          : keepAiAnalysisMap2 // ignore: cast_nullable_to_non_nullable
               as Map<String, List<AiAnalysisModel>>,
       configOddsGetTiming: null == configOddsGetTiming
           ? _value.configOddsGetTiming
@@ -378,6 +386,7 @@ abstract class _$$AppParamStateImplCopyWith<$Res>
       Map<String, List<DeveloperNewsModel>> keepDeveloperNewsKindMap,
       Map<String, List<DeveloperNewsModel>> keepDeveloperNewsTimeMap,
       Map<String, List<AiAnalysisModel>> keepAiAnalysisMap,
+      Map<String, List<AiAnalysisModel>> keepAiAnalysisMap2,
       String configOddsGetTiming,
       String configOddsDropRateHonmei,
       String configOddsDropRateChuana,
@@ -431,6 +440,7 @@ class __$$AppParamStateImplCopyWithImpl<$Res>
     Object? keepDeveloperNewsKindMap = null,
     Object? keepDeveloperNewsTimeMap = null,
     Object? keepAiAnalysisMap = null,
+    Object? keepAiAnalysisMap2 = null,
     Object? configOddsGetTiming = null,
     Object? configOddsDropRateHonmei = null,
     Object? configOddsDropRateChuana = null,
@@ -517,6 +527,10 @@ class __$$AppParamStateImplCopyWithImpl<$Res>
       keepAiAnalysisMap: null == keepAiAnalysisMap
           ? _value._keepAiAnalysisMap
           : keepAiAnalysisMap // ignore: cast_nullable_to_non_nullable
+              as Map<String, List<AiAnalysisModel>>,
+      keepAiAnalysisMap2: null == keepAiAnalysisMap2
+          ? _value._keepAiAnalysisMap2
+          : keepAiAnalysisMap2 // ignore: cast_nullable_to_non_nullable
               as Map<String, List<AiAnalysisModel>>,
       configOddsGetTiming: null == configOddsGetTiming
           ? _value.configOddsGetTiming
@@ -657,6 +671,8 @@ class _$AppParamStateImpl implements _AppParamState {
           const <String, List<DeveloperNewsModel>>{},
       final Map<String, List<AiAnalysisModel>> keepAiAnalysisMap =
           const <String, List<AiAnalysisModel>>{},
+      final Map<String, List<AiAnalysisModel>> keepAiAnalysisMap2 =
+          const <String, List<AiAnalysisModel>>{},
       this.configOddsGetTiming = '',
       this.configOddsDropRateHonmei = '',
       this.configOddsDropRateChuana = '',
@@ -696,7 +712,8 @@ class _$AppParamStateImpl implements _AppParamState {
         _keepRaceIntrospectionMap = keepRaceIntrospectionMap,
         _keepDeveloperNewsKindMap = keepDeveloperNewsKindMap,
         _keepDeveloperNewsTimeMap = keepDeveloperNewsTimeMap,
-        _keepAiAnalysisMap = keepAiAnalysisMap;
+        _keepAiAnalysisMap = keepAiAnalysisMap,
+        _keepAiAnalysisMap2 = keepAiAnalysisMap2;
 
   final Map<String, List<ScheduleModel>> _keepScheduleDateBashoMap;
   @override
@@ -845,6 +862,16 @@ class _$AppParamStateImpl implements _AppParamState {
     return EqualUnmodifiableMapView(_keepAiAnalysisMap);
   }
 
+  final Map<String, List<AiAnalysisModel>> _keepAiAnalysisMap2;
+  @override
+  @JsonKey()
+  Map<String, List<AiAnalysisModel>> get keepAiAnalysisMap2 {
+    if (_keepAiAnalysisMap2 is EqualUnmodifiableMapView)
+      return _keepAiAnalysisMap2;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableMapView(_keepAiAnalysisMap2);
+  }
+
   ///
   @override
   @JsonKey()
@@ -926,7 +953,7 @@ class _$AppParamStateImpl implements _AppParamState {
 
   @override
   String toString() {
-    return 'AppParamState(keepScheduleDateBashoMap: $keepScheduleDateBashoMap, keepRaceMap: $keepRaceMap, keepHorseMap: $keepHorseMap, keepOddsMap: $keepOddsMap, keepSummaryMap: $keepSummaryMap, keepSummaryDateBashoMap: $keepSummaryDateBashoMap, keepLoginUserMap: $keepLoginUserMap, keepPushNotifierUserList: $keepPushNotifierUserList, keepPopularityRankOddsMedianMap: $keepPopularityRankOddsMedianMap, keepHorseScoreMap: $keepHorseScoreMap, keepJockeyScoreMap: $keepJockeyScoreMap, keepRaceIntrospectionMap: $keepRaceIntrospectionMap, keepDeveloperNewsKindMap: $keepDeveloperNewsKindMap, keepDeveloperNewsTimeMap: $keepDeveloperNewsTimeMap, keepAiAnalysisMap: $keepAiAnalysisMap, configOddsGetTiming: $configOddsGetTiming, configOddsDropRateHonmei: $configOddsDropRateHonmei, configOddsDropRateChuana: $configOddsDropRateChuana, configOddsDropRateDaiana: $configOddsDropRateDaiana, configBaganrikiBrain: $configBaganrikiBrain, selectedScheduleDate: $selectedScheduleDate, selectedScheduleKaisuuBashoDay: $selectedScheduleKaisuuBashoDay, selectedScheduleKaisuuBashoDayName: $selectedScheduleKaisuuBashoDayName, selectedRaceNumber: $selectedRaceNumber, selectedTiming: $selectedTiming, selectedTiming2: $selectedTiming2, queryUser: $queryUser, isShowUpperBox: $isShowUpperBox, isShowUpperBox2: $isShowUpperBox2, selectedDrawerRace: $selectedDrawerRace, isZoomed: $isZoomed, selectedUpsetBoxNum: $selectedUpsetBoxNum, selectedPopularityRank: $selectedPopularityRank, selectedPopularityRankYear: $selectedPopularityRankYear, selectedHistoryYear: $selectedHistoryYear, selectedHorseNameChar1: $selectedHorseNameChar1, selectedHorseNameChar2: $selectedHorseNameChar2, allExpanded: $allExpanded, isShowSideTabPanel: $isShowSideTabPanel, selectedHorseLineNum: $selectedHorseLineNum)';
+    return 'AppParamState(keepScheduleDateBashoMap: $keepScheduleDateBashoMap, keepRaceMap: $keepRaceMap, keepHorseMap: $keepHorseMap, keepOddsMap: $keepOddsMap, keepSummaryMap: $keepSummaryMap, keepSummaryDateBashoMap: $keepSummaryDateBashoMap, keepLoginUserMap: $keepLoginUserMap, keepPushNotifierUserList: $keepPushNotifierUserList, keepPopularityRankOddsMedianMap: $keepPopularityRankOddsMedianMap, keepHorseScoreMap: $keepHorseScoreMap, keepJockeyScoreMap: $keepJockeyScoreMap, keepRaceIntrospectionMap: $keepRaceIntrospectionMap, keepDeveloperNewsKindMap: $keepDeveloperNewsKindMap, keepDeveloperNewsTimeMap: $keepDeveloperNewsTimeMap, keepAiAnalysisMap: $keepAiAnalysisMap, keepAiAnalysisMap2: $keepAiAnalysisMap2, configOddsGetTiming: $configOddsGetTiming, configOddsDropRateHonmei: $configOddsDropRateHonmei, configOddsDropRateChuana: $configOddsDropRateChuana, configOddsDropRateDaiana: $configOddsDropRateDaiana, configBaganrikiBrain: $configBaganrikiBrain, selectedScheduleDate: $selectedScheduleDate, selectedScheduleKaisuuBashoDay: $selectedScheduleKaisuuBashoDay, selectedScheduleKaisuuBashoDayName: $selectedScheduleKaisuuBashoDayName, selectedRaceNumber: $selectedRaceNumber, selectedTiming: $selectedTiming, selectedTiming2: $selectedTiming2, queryUser: $queryUser, isShowUpperBox: $isShowUpperBox, isShowUpperBox2: $isShowUpperBox2, selectedDrawerRace: $selectedDrawerRace, isZoomed: $isZoomed, selectedUpsetBoxNum: $selectedUpsetBoxNum, selectedPopularityRank: $selectedPopularityRank, selectedPopularityRankYear: $selectedPopularityRankYear, selectedHistoryYear: $selectedHistoryYear, selectedHorseNameChar1: $selectedHorseNameChar1, selectedHorseNameChar2: $selectedHorseNameChar2, allExpanded: $allExpanded, isShowSideTabPanel: $isShowSideTabPanel, selectedHorseLineNum: $selectedHorseLineNum)';
   }
 
   @override
@@ -965,6 +992,8 @@ class _$AppParamStateImpl implements _AppParamState {
                 other._keepDeveloperNewsTimeMap, _keepDeveloperNewsTimeMap) &&
             const DeepCollectionEquality()
                 .equals(other._keepAiAnalysisMap, _keepAiAnalysisMap) &&
+            const DeepCollectionEquality()
+                .equals(other._keepAiAnalysisMap2, _keepAiAnalysisMap2) &&
             (identical(other.configOddsGetTiming, configOddsGetTiming) ||
                 other.configOddsGetTiming == configOddsGetTiming) &&
             (identical(other.configOddsDropRateHonmei, configOddsDropRateHonmei) ||
@@ -1028,6 +1057,7 @@ class _$AppParamStateImpl implements _AppParamState {
         const DeepCollectionEquality().hash(_keepDeveloperNewsKindMap),
         const DeepCollectionEquality().hash(_keepDeveloperNewsTimeMap),
         const DeepCollectionEquality().hash(_keepAiAnalysisMap),
+        const DeepCollectionEquality().hash(_keepAiAnalysisMap2),
         configOddsGetTiming,
         configOddsDropRateHonmei,
         configOddsDropRateChuana,
@@ -1080,6 +1110,7 @@ abstract class _AppParamState implements AppParamState {
       final Map<String, List<DeveloperNewsModel>> keepDeveloperNewsKindMap,
       final Map<String, List<DeveloperNewsModel>> keepDeveloperNewsTimeMap,
       final Map<String, List<AiAnalysisModel>> keepAiAnalysisMap,
+      final Map<String, List<AiAnalysisModel>> keepAiAnalysisMap2,
       final String configOddsGetTiming,
       final String configOddsDropRateHonmei,
       final String configOddsDropRateChuana,
@@ -1137,6 +1168,8 @@ abstract class _AppParamState implements AppParamState {
   Map<String, List<DeveloperNewsModel>> get keepDeveloperNewsTimeMap;
   @override
   Map<String, List<AiAnalysisModel>> get keepAiAnalysisMap;
+  @override
+  Map<String, List<AiAnalysisModel>> get keepAiAnalysisMap2;
   @override
 
   ///

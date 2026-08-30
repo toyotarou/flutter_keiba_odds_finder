@@ -52,6 +52,7 @@ class AppParamState with _$AppParamState {
     @Default(<String, List<DeveloperNewsModel>>{}) Map<String, List<DeveloperNewsModel>> keepDeveloperNewsTimeMap,
 
     @Default(<String, List<AiAnalysisModel>>{}) Map<String, List<AiAnalysisModel>> keepAiAnalysisMap,
+    @Default(<String, List<AiAnalysisModel>>{}) Map<String, List<AiAnalysisModel>> keepAiAnalysisMap2,
 
     ///
     @Default('') String configOddsGetTiming,
@@ -124,14 +125,6 @@ class AppParam extends _$AppParam {
   ///
   void setKeepOddsMap({required Map<String, List<OddsModel>> map}) => state = state.copyWith(keepOddsMap: map);
 
-  // ///
-  // void setKeepOddsWideMap({required Map<String, List<OddsWideModel>> map}) =>
-  //     state = state.copyWith(keepOddsWideMap: map);
-  //
-  //
-  //
-  //
-
   ///
   void setKeepSummaryMap({required Map<String, List<SummaryModel>> map}) => state = state.copyWith(keepSummaryMap: map);
 
@@ -169,6 +162,10 @@ class AppParam extends _$AppParam {
   ///
   void setKeepAiAnalysisMap({required Map<String, List<AiAnalysisModel>> map}) =>
       state = state.copyWith(keepAiAnalysisMap: map);
+
+  ///
+  void setKeepAiAnalysisMap2({required Map<String, List<AiAnalysisModel>> map}) =>
+      state = state.copyWith(keepAiAnalysisMap2: map);
 
   //////////////
 

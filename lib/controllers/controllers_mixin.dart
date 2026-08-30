@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'ai_analysis/ai_analysis.dart';
+import 'ai_analysis2/ai_analysis2.dart';
 import 'app_param/app_param.dart';
 import 'developer_news/developer_news.dart';
 import 'horse/horse.dart';
@@ -168,6 +169,13 @@ mixin ControllersMixin<T extends ConsumerStatefulWidget> on ConsumerState<T> {
   AiAnalysisState get aiAnalysisState => ref.watch(aiAnalysisProvider);
 
   AiAnalysis get aiAnalysisNotifier => ref.read(aiAnalysisProvider.notifier);
+
+  //==========================================//
+
+  //==========================================//
+  AiAnalysisState2 get aiAnalysisState2 => ref.watch(aiAnalysis2Provider);
+
+  AiAnalysis2 get aiAnalysisNotifier2 => ref.read(aiAnalysis2Provider.notifier);
 
   //==========================================//
 }

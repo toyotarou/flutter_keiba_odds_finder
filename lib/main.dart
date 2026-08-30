@@ -291,6 +291,7 @@ class _MyAppState extends ConsumerState<MyApp> with ControllersMixin<MyApp> {
                 developerNewsTimeMap: developerNewsState.developerNewsTimeMap,
 
                 aiAnalysisMap: aiAnalysisState.aiAnalysisMap,
+                aiAnalysisMap2: aiAnalysisState2.aiAnalysisMap2,
 
                 loggedInUserId: _loggedInUserId,
                 onLogout: () => setState(() => _loggedInUserId = ''),
