@@ -12,6 +12,8 @@ import 'ai_analysis_payout_result_alert.dart';
 
 class AiAnalysisDisplayAlert extends ConsumerStatefulWidget {
   const AiAnalysisDisplayAlert({
+    this.overrideDate,
+    this.overrideKaisuuBashoDay,
     super.key,
     required this.raceNumber,
     required this.gapHorseNums,
@@ -23,6 +25,8 @@ class AiAnalysisDisplayAlert extends ConsumerStatefulWidget {
   final List<int> gapHorseNums;
   final List<int> upsetPickupHorseNums;
   final Map<int, int> numToRankMap;
+  final String? overrideDate;
+  final String? overrideKaisuuBashoDay;
 
   @override
   ConsumerState<AiAnalysisDisplayAlert> createState() => _AiAnalysisDisplayAlertState();
@@ -49,6 +53,11 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
   Map<String, int>? _raceMetrics;
   Map<int, double?> _baganrikiIndexMap = <int, double?>{};
 
+  /// 過去レースから呼ばれた場合は override 値を、そうでなければ appParamState の値を使う
+  String get _effectiveDate => widget.overrideDate ?? appParamState.selectedScheduleDate;
+
+  String get _effectiveKbd => widget.overrideKaisuuBashoDay ?? appParamState.selectedScheduleKaisuuBashoDay;
+
   ///
   List<AiResponseRecommendHorseModel> get _supplementHorses {
     final Set<int> claudeNums = _aiRecommendHorses.map((AiResponseRecommendHorseModel h) => h.num).toSet();
@@ -68,8 +77,8 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
 
   ///
   Future<void> _fetchPayout() async {
-    final String date = appParamState.selectedScheduleDate;
-    final (:String kaisuu, :String basho, day: _) = parseKbdParts(appParamState.selectedScheduleKaisuuBashoDay);
+    final String date = _effectiveDate;
+    final (:String kaisuu, :String basho, day: _) = parseKbdParts(_effectiveKbd);
     if (kaisuu.isEmpty || basho.isEmpty) {
       return;
     }
@@ -96,8 +105,8 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
     _secondAiFetched = true; // 非同期処理前にセット（二重呼び出し防止）
     setState(() => _isLoadingSecondAi = true);
 
-    final String date = appParamState.selectedScheduleDate;
-    final (:String kaisuu, :String basho, :String day) = parseKbdParts(appParamState.selectedScheduleKaisuuBashoDay);
+    final String date = _effectiveDate;
+    final (:String kaisuu, :String basho, :String day) = parseKbdParts(_effectiveKbd);
 
     try {
       final Map<String, dynamic> data = await fetchSecondAiOpinionData(
@@ -124,8 +133,8 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
 
   ///
   Future<void> _fetchBaganrikiIndex() async {
-    final String date = appParamState.selectedScheduleDate;
-    final (:String kaisuu, :String basho, :String day) = parseKbdParts(appParamState.selectedScheduleKaisuuBashoDay);
+    final String date = _effectiveDate;
+    final (:String kaisuu, :String basho, :String day) = parseKbdParts(_effectiveKbd);
     try {
       final Map<int, double?> result = await fetchBaganrikiIndexData(
         ref,
@@ -145,8 +154,8 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
 
   ///
   Future<void> _fetchAiAnalysis() async {
-    final String date = appParamState.selectedScheduleDate;
-    final (:String kaisuu, :String basho, :String day) = parseKbdParts(appParamState.selectedScheduleKaisuuBashoDay);
+    final String date = _effectiveDate;
+    final (:String kaisuu, :String basho, :String day) = parseKbdParts(_effectiveKbd);
 
     try {
       final Map<String, dynamic> data = await fetchAiAnalysisData(
@@ -197,21 +206,19 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
       );
     }
 
-    final (:String kaisuu, :String basho, day: String dayStr) = parseKbdParts(
-      appParamState.selectedScheduleKaisuuBashoDay,
-    );
+    final (:String kaisuu, :String basho, day: String dayStr) = parseKbdParts(_effectiveKbd);
 
     final int kaisuuInt = int.tryParse(kaisuu) ?? 0;
 
     final int day = int.tryParse(dayStr) ?? 0;
 
-    final String lookupKey = '${appParamState.selectedScheduleDate}_${kaisuuInt}_${basho}_${day}_${widget.raceNumber}';
+    final String lookupKey = '${_effectiveDate}_${kaisuuInt}_${basho}_${day}_${widget.raceNumber}';
 
     final RaceResultPayoutModel? payout = _payoutMap[lookupKey];
 
     final RaceIntrospectionModel? introspectionModel = findRaceIntrospection(
       raceIntrospectionState.raceIntrospectionMap,
-      date: appParamState.selectedScheduleDate,
+      date: _effectiveDate,
       kaisuu: kaisuuInt,
       basho: basho,
       day: day,

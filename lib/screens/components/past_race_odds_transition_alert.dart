@@ -7,12 +7,19 @@ import '../../controllers/controllers_mixin.dart';
 import '../../controllers/summary/summary.dart';
 import '../../extensions/extensions.dart';
 import '../../models/common/ai_response_recommend_horse_model.dart';
+import '../../models/horse_model.dart';
+import '../../models/odds_model.dart';
+import '../../models/popularity_rank_odds_median_model.dart';
 import '../../models/race_introspection_model.dart';
+import '../../models/race_model.dart';
+import '../../models/race_result_model.dart';
 import '../../models/race_result_payout_model.dart';
 import '../../models/summary_model.dart';
 import '../../utility/functions.dart';
+import '../../utility/utility.dart';
 import '../parts/odds_finder_dialog.dart';
 import 'horse_odds_ranking_display_alert.dart';
+import 'total_forecast_display_alert.dart';
 
 class PastRaceOddsTransitionAlert extends ConsumerStatefulWidget {
   const PastRaceOddsTransitionAlert({super.key});
@@ -23,6 +30,8 @@ class PastRaceOddsTransitionAlert extends ConsumerStatefulWidget {
 
 class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransitionAlert>
     with ControllersMixin<PastRaceOddsTransitionAlert> {
+  final Utility _utility = Utility();
+
   final ScrollController _scrollController = ScrollController();
 
   final Map<String, bool> _expandedByDate = <String, bool>{};
@@ -580,6 +589,40 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
 
     final String grade = payout?.grade ?? '';
 
+    // ═══ NNN: keepRaceMap からこのレースの RaceModel を特定 ═══════════════
+    // キー形式: date_kaisuu_basho_day （race は含まない）
+    final String keepRaceMapKey = '${date}_${models.first.kaisuu}_${models.first.basho}_${models.first.day}';
+    final RaceModel? currentRaceModel = (appParamState.keepRaceMap[keepRaceMapKey] ?? <RaceModel>[])
+        .where((RaceModel e) => e.race == r.key)
+        .firstOrNull;
+
+    // オッズ・馬・結果データを各 State から取得
+    final List<OddsModel> oddsForRace = buildOddsForRace(appParamState.keepOddsMap, keepRaceMapKey, r.key);
+    final Map<int, HorseModel> horseModelMap = buildHorseModelMap(appParamState.keepHorseMap, keepRaceMapKey, r.key);
+    final Map<int, int> numToRankMap = _utility.buildNumToRankMap(
+      raceResultState.raceResultMap[keepRaceMapKey] ?? <RaceResultModel>[],
+      r.key,
+    );
+    final PopularityRankOddsMedianModel? medianModel = lookupMedianModel(
+      appParamState.keepPopularityRankOddsMedianMap,
+      keepRaceMapKey,
+      r.key,
+    );
+    final String configFirstKey = appParamState.configOddsGetTiming.split('|').first;
+    final List<OddsModel> displayList = buildOddsDisplayList(
+      oddsForRace: oddsForRace,
+      selectedTiming: appParamState.selectedTiming,
+      configFirstKey: configFirstKey,
+    );
+    final List<OddsModel> sixMinDisplayList = buildSixMinDisplayList(oddsForRace, displayList);
+    final List<int> gapHorseNums = calcOddsGapHorseNums(oddsForRace);
+    final List<int> upsetPickupHorseNums = calcUpsetPickupHorseNums(
+      oddsForRace: oddsForRace,
+      medianModel: medianModel,
+      displayList: displayList,
+    );
+    // ════════════════════════════════════════════════════════════════════════
+
     return DefaultTextStyle(
       style: const TextStyle(color: Colors.white70, fontSize: 11),
       child: Stack(
@@ -597,31 +640,103 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
                     Container(width: 20, alignment: Alignment.topRight, child: Text('${r.key}R')),
                     const SizedBox(width: 20),
                     Expanded(child: Text(r.value, maxLines: 1, overflow: TextOverflow.ellipsis)),
-                    GestureDetector(
-                      onTap: () {
-                        appParamNotifier.setSelectedDrawerRace(race: raceKey);
-                        summaryNotifier.fetchRaceSummary(
-                          date: date,
-                          kaisuu: models.first.kaisuu,
-                          basho: models.first.basho,
-                          day: models.first.day,
-                          race: r.key,
-                        );
-                        appParamNotifier.setIsShowUpperBox2(flag: true);
-                        OddsFinderDialog(
-                          context: context,
-                          widget: const HorseOddsRankingDisplayAlert(mode: RankingMode.summary),
-                        );
-                      },
-                      child: Icon(
-                        Icons.calendar_view_month,
-                        color: raceKey == appParamState.selectedDrawerRace
-                            ? Colors.yellowAccent.withValues(alpha: 0.4)
-                            : Colors.greenAccent.withValues(alpha: 0.4),
-                      ),
-                    ),
                   ],
                 ),
+
+                if (currentRaceModel != null) ...<Widget>[
+                  const SizedBox(height: 30),
+
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: <Widget>[
+                      Expanded(
+                        child: Row(
+                          children: <Widget>[
+                            const SizedBox(width: 40),
+                            Text('${currentRaceModel.course} ${currentRaceModel.dist}m'),
+                          ],
+                        ),
+                      ),
+
+                      Row(
+                        children: <Widget>[
+                          ...<Widget>[
+                            Material(
+                              color: Colors.transparent,
+                              borderRadius: BorderRadius.circular(10),
+                              child: InkWell(
+                                onTap: () {
+                                  OddsFinderDialog(
+                                    context: context,
+                                    widget: TotalForecastDisplayAlert(
+                                      overrideDate: date,
+                                      overrideKaisuuBashoDay:
+                                          r'${models.first.kaisuu}_${models.first.basho}_${models.first.day}',
+                                      overrideMedianModel: medianModel,
+                                      displayList: sixMinDisplayList,
+                                      horseModelMap: horseModelMap,
+                                      numToRankMap: numToRankMap,
+                                      currentRaceModel: currentRaceModel,
+                                      gapHorseNums: gapHorseNums,
+                                      upsetPickupHorseNums: upsetPickupHorseNums,
+                                    ),
+                                  );
+                                },
+                                borderRadius: BorderRadius.circular(10),
+                                splashColor: const Color(0xFFFBB6CE).withValues(alpha: 0.35),
+                                highlightColor: const Color(0xFFFBB6CE).withValues(alpha: 0.1),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 10),
+                                  decoration: BoxDecoration(
+                                    border: Border.all(color: const Color(0xFFFBB6CE)),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: const Text(
+                                    '予想総括',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      color: Color(0xFFFBB6CE),
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+
+                          const SizedBox(width: 10),
+
+                          GestureDetector(
+                            onTap: () {
+                              appParamNotifier.setSelectedDrawerRace(race: raceKey);
+                              summaryNotifier.fetchRaceSummary(
+                                date: date,
+                                kaisuu: models.first.kaisuu,
+                                basho: models.first.basho,
+                                day: models.first.day,
+                                race: r.key,
+                              );
+                              appParamNotifier.setIsShowUpperBox2(flag: true);
+                              OddsFinderDialog(
+                                context: context,
+                                widget: const HorseOddsRankingDisplayAlert(mode: RankingMode.summary),
+                              );
+                            },
+                            child: Icon(
+                              Icons.calendar_view_month,
+                              color: raceKey == appParamState.selectedDrawerRace
+                                  ? Colors.yellowAccent.withValues(alpha: 0.4)
+                                  : Colors.greenAccent.withValues(alpha: 0.4),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 30),
+                ],
+
                 if (resultText != null) ...<Widget>[
                   _buildResultTextSection(
                     resultText: resultText,

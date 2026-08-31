@@ -577,3 +577,36 @@ List<int> calcUpsetPickupHorseNums({
       if (pickupPopularitySet.contains(i + 1)) sixMinSortedList[i].num,
   ];
 }
+
+/// oddsMap から特定レースのオッズリストを返す。
+List<OddsModel> buildOddsForRace(Map<String, List<OddsModel>> oddsMap, String mapKey, int race) =>
+    (oddsMap[mapKey] ?? <OddsModel>[]).where((OddsModel e) => e.race == race).toList();
+
+/// horseMap から特定レースの 馬番→HorseModel マップを返す。
+Map<int, HorseModel> buildHorseModelMap(Map<String, List<HorseModel>> horseMap, String mapKey, int race) =>
+    <int, HorseModel>{
+      for (final HorseModel e in (horseMap[mapKey] ?? <HorseModel>[]).where((HorseModel e) => e.race == race)) e.num: e,
+    };
+
+/// oddsForRace から 6分前オッズのリスト（オッズ昇順）を返す。データがない場合は fallbackList を返す。
+List<OddsModel> buildSixMinDisplayList(List<OddsModel> oddsForRace, List<OddsModel> fallbackList) {
+  final List<OddsModel> list = oddsForRace.where((OddsModel e) => e.minutesBeforeStart == kOddsJudgeTiming).toList()
+    ..sort((OddsModel a, OddsModel b) {
+      final double aOdds = double.tryParse(a.odds) ?? double.infinity;
+      final double bOdds = double.tryParse(b.odds) ?? double.infinity;
+      return aOdds.compareTo(bOdds);
+    });
+  return list.isNotEmpty ? list : fallbackList;
+}
+
+/// keepPopularityRankOddsMedianMap から特定レースの中央値モデルを返す。
+PopularityRankOddsMedianModel? lookupMedianModel(
+  Map<String, List<PopularityRankOddsMedianModel>> medianMap,
+  String mapKey,
+  int race,
+) {
+  final List<PopularityRankOddsMedianModel> list = (medianMap[mapKey] ?? <PopularityRankOddsMedianModel>[])
+      .where((PopularityRankOddsMedianModel e) => e.race == race)
+      .toList();
+  return list.isNotEmpty ? list.first : null;
+}

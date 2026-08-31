@@ -16,6 +16,9 @@ import '../parts/dashed_line_painter.dart';
 
 class TotalForecastDisplayAlert extends ConsumerStatefulWidget {
   const TotalForecastDisplayAlert({
+    this.overrideDate,
+    this.overrideKaisuuBashoDay,
+    this.overrideMedianModel,
     super.key,
     required this.displayList,
     required this.horseModelMap,
@@ -34,6 +37,9 @@ class TotalForecastDisplayAlert extends ConsumerStatefulWidget {
   final String pickupHorse;
   final List<int> gapHorseNums;
   final List<int> upsetPickupHorseNums;
+  final String? overrideDate;
+  final String? overrideKaisuuBashoDay;
+  final PopularityRankOddsMedianModel? overrideMedianModel;
 
   @override
   ConsumerState<TotalForecastDisplayAlert> createState() => _TotalForecastDisplayAlertState();
@@ -72,10 +78,13 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
     ),
   );
 
-  /// selectedScheduleKaisuuBashoDay を分解する省略記法。
-  /// 内部実装は functions.dart の parseKbdParts に委譲する。
+  /// 過去レース文脈では override 値を、通常は appParamState の値を使う。
+  String get _effectiveDate => widget.overrideDate ?? appParamState.selectedScheduleDate;
+
+  String get _effectiveKbd => widget.overrideKaisuuBashoDay ?? appParamState.selectedScheduleKaisuuBashoDay;
+
   ({String kaisuu, String basho, String day}) get _kbdParts {
-    return parseKbdParts(appParamState.selectedScheduleKaisuuBashoDay);
+    return parseKbdParts(_effectiveKbd);
   }
 
   ///
@@ -135,7 +144,7 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
 
   ///
   Future<void> _fetchHighProbabilityHorses() async {
-    final String date = appParamState.selectedScheduleDate;
+    final String date = _effectiveDate;
     final int race = widget.currentRaceModel.race;
     final (:String kaisuu, :String basho, :String day) = _kbdParts;
     try {
@@ -156,7 +165,7 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
 
   ///
   Future<void> _fetchAiPickup() async {
-    final String date = appParamState.selectedScheduleDate;
+    final String date = _effectiveDate;
     final int race = widget.currentRaceModel.race;
     final (:String kaisuu, :String basho, :String day) = _kbdParts;
     try {
@@ -183,7 +192,7 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
 
   ///
   Future<void> _fetchBaganrikiIndex() async {
-    final String date = appParamState.selectedScheduleDate;
+    final String date = _effectiveDate;
     final int race = widget.currentRaceModel.race;
     final (:String kaisuu, :String basho, :String day) = _kbdParts;
     try {
@@ -207,7 +216,7 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
 
   ///
   Future<void> _fetchSecondAiPickup() async {
-    final String date = appParamState.selectedScheduleDate;
+    final String date = _effectiveDate;
     final int race = widget.currentRaceModel.race;
     final (:String kaisuu, :String basho, :String day) = _kbdParts;
     try {
@@ -235,15 +244,17 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
       return const Center(child: CircularProgressIndicator(color: Colors.yellowAccent));
     }
 
-    final String mapKey = '${appParamState.selectedScheduleDate}_${appParamState.selectedScheduleKaisuuBashoDay}';
-    final PopularityRankOddsMedianModel? medianModel = () {
-      final List<PopularityRankOddsMedianModel> list =
-          appParamState.keepPopularityRankOddsMedianMap[mapKey] ?? <PopularityRankOddsMedianModel>[];
-      final List<PopularityRankOddsMedianModel> filtered = list
-          .where((PopularityRankOddsMedianModel e) => e.race == widget.currentRaceModel.race)
-          .toList();
-      return filtered.isNotEmpty ? filtered.first : null;
-    }();
+    final String mapKey = '${_effectiveDate}_$_effectiveKbd';
+    final PopularityRankOddsMedianModel? medianModel =
+        widget.overrideMedianModel ??
+        () {
+          final List<PopularityRankOddsMedianModel> list =
+              appParamState.keepPopularityRankOddsMedianMap[mapKey] ?? <PopularityRankOddsMedianModel>[];
+          final List<PopularityRankOddsMedianModel> filtered = list
+              .where((PopularityRankOddsMedianModel e) => e.race == widget.currentRaceModel.race)
+              .toList();
+          return filtered.isNotEmpty ? filtered.first : null;
+        }();
 
     final int pickupCount = widget.displayList.length <= 8
         ? 4
@@ -414,10 +425,7 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
         style: const TextStyle(fontSize: 12, color: Colors.white),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: <Widget>[
-            Text(appParamState.selectedScheduleDate),
-            Text(appParamState.selectedScheduleKaisuuBashoDayName),
-          ],
+          children: <Widget>[Text(_effectiveDate), Text(appParamState.selectedScheduleKaisuuBashoDayName)],
         ),
       ),
     );
