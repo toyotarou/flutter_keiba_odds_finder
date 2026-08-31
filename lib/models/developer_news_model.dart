@@ -1,5 +1,11 @@
 class DeveloperNewsModel {
-  DeveloperNewsModel({required this.kind, required this.sentDate, required this.diffSeconds, required this.time});
+  DeveloperNewsModel({
+    required this.kind,
+    required this.sentDate,
+    required this.diffSeconds,
+    required this.time,
+    required this.description,
+  });
 
   factory DeveloperNewsModel.fromJson(Map<String, dynamic> json) {
     return DeveloperNewsModel(
@@ -7,6 +13,7 @@ class DeveloperNewsModel {
       sentDate: (json['sent_date'] as String?) ?? '',
       diffSeconds: (json['diff_seconds'] as int?) ?? 0,
       time: (json['time'] as String?) ?? '',
+      description: (json['description'] as String?) ?? '',
     );
   }
 
@@ -14,4 +21,5 @@ class DeveloperNewsModel {
   final String sentDate;
   final int diffSeconds;
   final String time;
+  final String description;
 }

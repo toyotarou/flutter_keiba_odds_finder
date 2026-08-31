@@ -93,6 +93,8 @@ class _DeveloperNewsMinutesDisplayAlertState extends ConsumerState<DeveloperNews
               Divider(color: Colors.white.withValues(alpha: 0.4), thickness: 5, height: 10),
               _buildDayHeader(),
               Expanded(child: _buildCalendar()),
+              Divider(color: Colors.white.withValues(alpha: 0.4), thickness: 5, height: 10),
+              const SizedBox(height: 100),
             ],
           ),
         ),
@@ -120,14 +122,22 @@ class _DeveloperNewsMinutesDisplayAlertState extends ConsumerState<DeveloperNews
                 border: Border(bottom: BorderSide(color: Colors.white.withValues(alpha: 0.3))),
               ),
               child: Container(
+                width: double.infinity,
+                margin: const EdgeInsets.symmetric(horizontal: 2),
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
                   color: isToday ? Colors.green[800]!.withValues(alpha: 0.4) : Colors.black.withValues(alpha: 0.5),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Text(
-                  '${dayNames[i]} ${date.month}/${date.day}',
+                child: DefaultTextStyle(
                   style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: Colors.white),
+                  child: Column(
+                    children: <Widget>[
+                      Text(dayNames[i]),
+                      Text(date.month.toString().padLeft(2, '0')),
+                      Text(date.day.toString().padLeft(2, '0')),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -199,7 +209,11 @@ class _DeveloperNewsMinutesDisplayAlertState extends ConsumerState<DeveloperNews
               physics: const NeverScrollableScrollPhysics(),
               child: SizedBox(
                 height: _gridHeight,
-                child: const _TimeGutter(startMinutes: _kStartMinutes, endMinutes: _kEndMinutes, pxPerMinute: _kPxPerMinute),
+                child: const _TimeGutter(
+                  startMinutes: _kStartMinutes,
+                  endMinutes: _kEndMinutes,
+                  pxPerMinute: _kPxPerMinute,
+                ),
               ),
             ),
           ),
@@ -327,6 +341,7 @@ class _NewsBlockState extends State<_NewsBlock> {
                           Text(
                             '（${(item.diffSeconds >= 60) ? '${item.diffSeconds ~/ 60}分${item.diffSeconds % 60}秒' : '${item.diffSeconds}秒'}）',
                           ),
+                          Text(item.description),
                         ],
                       ),
                     ),
@@ -361,16 +376,6 @@ class _NewsBlockState extends State<_NewsBlock> {
               maxLines: 1,
               overflow: TextOverflow.clip,
             ),
-
-            // if (totalDiffSeconds > 0)
-            //   Text(
-            //     (totalDiffSeconds >= 60)
-            //         ? '${totalDiffSeconds ~/ 60}分${totalDiffSeconds % 60}秒'
-            //         : '${totalDiffSeconds % 60}秒',
-            //     style: const TextStyle(fontSize: 9, color: Colors.white),
-            //   ),
-            // if (widget.items.length > 1)
-            //   Text('×${widget.items.length}', style: const TextStyle(fontSize: 8, color: Colors.white54)),
           ],
         ),
       ),
@@ -434,9 +439,13 @@ class _TimeGutter extends StatelessWidget {
           Positioned(
             top: (h * 60 - startMinutes) * pxPerMinute - 7,
             left: 2,
-            child: Text(
-              '${h.toString().padLeft(2, '0')}:00',
-              style: const TextStyle(fontSize: 9, color: Colors.yellowAccent, fontWeight: FontWeight.bold),
+            child: Column(
+              children: [
+                Text(
+                  '${h.toString().padLeft(2, '0')}:00',
+                  style: const TextStyle(fontSize: 9, color: Colors.yellowAccent, fontWeight: FontWeight.bold),
+                ),
+              ],
             ),
           ),
       ],
