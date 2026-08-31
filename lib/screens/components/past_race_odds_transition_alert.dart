@@ -18,6 +18,7 @@ import '../../models/summary_model.dart';
 import '../../utility/functions.dart';
 import '../../utility/utility.dart';
 import '../parts/odds_finder_dialog.dart';
+import 'ai_analysis_display_alert.dart';
 import 'horse_odds_ranking_display_alert.dart';
 import 'total_forecast_display_alert.dart';
 
@@ -644,97 +645,150 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
                 ),
 
                 if (currentRaceModel != null) ...<Widget>[
-                  const SizedBox(height: 30),
+                  const SizedBox(height: 10),
 
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  Stack(
                     children: <Widget>[
-                      Expanded(
-                        child: Row(
-                          children: <Widget>[
-                            const SizedBox(width: 40),
-                            Text('${currentRaceModel.course} ${currentRaceModel.dist}m'),
-                          ],
-                        ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: <Widget>[
+                          Expanded(
+                            child: Row(
+                              children: <Widget>[
+                                const SizedBox(width: 40),
+                                Text('${currentRaceModel.course} ${currentRaceModel.dist}m'),
+                              ],
+                            ),
+                          ),
+
+                          const SizedBox.shrink(),
+                        ],
                       ),
 
                       Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: <Widget>[
-                          ...<Widget>[
-                            Material(
-                              color: Colors.transparent,
-                              borderRadius: BorderRadius.circular(10),
-                              child: InkWell(
-                                onTap: () {
-                                  OddsFinderDialog(
-                                    context: context,
-                                    widget: TotalForecastDisplayAlert(
-                                      overrideDate: date,
-                                      overrideKaisuuBashoDay:
-                                          r'${models.first.kaisuu}_${models.first.basho}_${models.first.day}',
-                                      overrideMedianModel: medianModel,
-                                      displayList: sixMinDisplayList,
-                                      horseModelMap: horseModelMap,
-                                      numToRankMap: numToRankMap,
-                                      currentRaceModel: currentRaceModel,
-                                      gapHorseNums: gapHorseNums,
-                                      upsetPickupHorseNums: upsetPickupHorseNums,
-                                    ),
-                                  );
-                                },
+                          const SizedBox.shrink(),
+
+                          Row(
+                            children: <Widget>[
+                              Material(
+                                color: Colors.transparent,
                                 borderRadius: BorderRadius.circular(10),
-                                splashColor: const Color(0xFFFBB6CE).withValues(alpha: 0.35),
-                                highlightColor: const Color(0xFFFBB6CE).withValues(alpha: 0.1),
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 10),
-                                  decoration: BoxDecoration(
-                                    border: Border.all(color: const Color(0xFFFBB6CE)),
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  child: const Text(
-                                    '予想総括',
-                                    style: TextStyle(
-                                      fontSize: 10,
-                                      color: Color(0xFFFBB6CE),
-                                      fontWeight: FontWeight.bold,
+                                child: InkWell(
+                                  onTap: () {
+                                    OddsFinderDialog(
+                                      context: context,
+                                      widget: AiAnalysisDisplayAlert(
+                                        overrideDate: date,
+                                        overrideKaisuuBashoDay:
+                                            '${models.first.kaisuu}_${models.first.basho}_${models.first.day}',
+                                        raceNumber: r.key,
+                                        gapHorseNums: gapHorseNums,
+                                        upsetPickupHorseNums: upsetPickupHorseNums,
+                                        numToRankMap: numToRankMap,
+                                      ),
+                                    );
+                                  },
+                                  borderRadius: BorderRadius.circular(10),
+                                  splashColor: const Color(0xFFFFD700).withValues(alpha: 0.35),
+                                  highlightColor: const Color(0xFFFFD700).withValues(alpha: 0.1),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 10),
+                                    decoration: BoxDecoration(
+                                      border: Border.all(color: const Color(0xFFFFD700)),
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: const Text(
+                                      'AI予想',
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        color: Color(0xFFFFD700),
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
                                   ),
                                 ),
                               ),
-                            ),
-                          ],
+                              const SizedBox(width: 10),
 
-                          const SizedBox(width: 10),
+                              ...<Widget>[
+                                Material(
+                                  color: Colors.transparent,
+                                  borderRadius: BorderRadius.circular(10),
+                                  child: InkWell(
+                                    onTap: () {
+                                      OddsFinderDialog(
+                                        context: context,
+                                        widget: TotalForecastDisplayAlert(
+                                          overrideDate: date,
+                                          overrideKaisuuBashoDay:
+                                              '${models.first.kaisuu}_${models.first.basho}_${models.first.day}',
+                                          overrideMedianModel: medianModel,
+                                          displayList: sixMinDisplayList,
+                                          horseModelMap: horseModelMap,
+                                          numToRankMap: numToRankMap,
+                                          currentRaceModel: currentRaceModel,
+                                          gapHorseNums: gapHorseNums,
+                                          upsetPickupHorseNums: upsetPickupHorseNums,
+                                        ),
+                                      );
+                                    },
+                                    borderRadius: BorderRadius.circular(10),
+                                    splashColor: const Color(0xFFFBB6CE).withValues(alpha: 0.35),
+                                    highlightColor: const Color(0xFFFBB6CE).withValues(alpha: 0.1),
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 10),
+                                      decoration: BoxDecoration(
+                                        border: Border.all(color: const Color(0xFFFBB6CE)),
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      child: const Text(
+                                        '予想総括',
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          color: Color(0xFFFBB6CE),
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
 
-                          GestureDetector(
-                            onTap: () {
-                              appParamNotifier.setSelectedDrawerRace(race: raceKey);
-                              summaryNotifier.fetchRaceSummary(
-                                date: date,
-                                kaisuu: models.first.kaisuu,
-                                basho: models.first.basho,
-                                day: models.first.day,
-                                race: r.key,
-                              );
-                              appParamNotifier.setIsShowUpperBox2(flag: true);
-                              OddsFinderDialog(
-                                context: context,
-                                widget: const HorseOddsRankingDisplayAlert(mode: RankingMode.summary),
-                              );
-                            },
-                            child: Icon(
-                              Icons.calendar_view_month,
-                              color: raceKey == appParamState.selectedDrawerRace
-                                  ? Colors.yellowAccent.withValues(alpha: 0.4)
-                                  : Colors.greenAccent.withValues(alpha: 0.4),
-                            ),
+                              const SizedBox(width: 10),
+
+                              GestureDetector(
+                                onTap: () {
+                                  appParamNotifier.setSelectedDrawerRace(race: raceKey);
+                                  summaryNotifier.fetchRaceSummary(
+                                    date: date,
+                                    kaisuu: models.first.kaisuu,
+                                    basho: models.first.basho,
+                                    day: models.first.day,
+                                    race: r.key,
+                                  );
+                                  appParamNotifier.setIsShowUpperBox2(flag: true);
+                                  OddsFinderDialog(
+                                    context: context,
+                                    widget: const HorseOddsRankingDisplayAlert(mode: RankingMode.summary),
+                                  );
+                                },
+                                child: Icon(
+                                  Icons.calendar_view_month,
+                                  color: raceKey == appParamState.selectedDrawerRace
+                                      ? Colors.yellowAccent.withValues(alpha: 0.4)
+                                      : Colors.greenAccent.withValues(alpha: 0.4),
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
                     ],
                   ),
 
-                  const SizedBox(height: 30),
+                  const SizedBox(height: 10),
                 ],
 
                 if (resultText != null) ...<Widget>[
