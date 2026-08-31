@@ -440,7 +440,7 @@ class _TimeGutter extends StatelessWidget {
             top: (h * 60 - startMinutes) * pxPerMinute - 7,
             left: 2,
             child: Column(
-              children: [
+              children: <Widget>[
                 Text(
                   '${h.toString().padLeft(2, '0')}:00',
                   style: const TextStyle(fontSize: 9, color: Colors.yellowAccent, fontWeight: FontWeight.bold),
