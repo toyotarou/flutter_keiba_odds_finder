@@ -48,12 +48,6 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
         ref.read(summaryProvider.notifier).getAllSummaryData();
       }
     });
-
-    _timeoutTimer = Timer(const Duration(seconds: 15), () {
-      if (mounted) {
-        setState(() => _resultTimedOut = true);
-      }
-    });
   }
 
   final Set<String> _fetchedDates = <String>{};
@@ -68,9 +62,7 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
 
   final Set<String> _fetchedFirstAiDates = <String>{};
 
-  bool _resultTimedOut = false;
-
-  Timer? _timeoutTimer;
+  final Set<String> _payoutFetchDone = <String>{};
 
   static const double _moveAmount = 18;
 
@@ -254,9 +246,10 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
         r'○(\d+)番',
       ).allMatches(introspectionText).map((RegExpMatch m) => int.parse(m.group(1)!)).toSet();
     }
-    if (claudeNums.isEmpty) {
-      return null;
-    }
+    // claudeNums が取得できない場合は 2nd AI の全選出馬を補欠とみなす。
+    // supplementHorses の where 条件が空集合との差分になるため全馬が残る。
+    // これにより「2nd AI が独自選出したが入賞しなかった」ケースで
+    // covered=0 → '補欠での補完なし' が正しく表示される。
 
     final List<AiResponseRecommendHorseModel> supplementHorses = deepSeekHorses
         .where((AiResponseRecommendHorseModel h) => !claudeNums.contains(h.num))
@@ -307,7 +300,10 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
       final Map<String, RaceResultPayoutModel> result = await fetchPayoutMap(ref, racesParam: raceParamSet.join('/'));
 
       if (mounted) {
-        setState(() => _payoutMap.addAll(result));
+        setState(() {
+          _payoutMap.addAll(result);
+          _payoutFetchDone.add(date);
+        });
       }
     } catch (_) {
       _fetchedDates.remove(date);
@@ -320,10 +316,6 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
     _repeatTimer?.cancel();
 
     _repeatTimer = null;
-
-    _timeoutTimer?.cancel();
-
-    _timeoutTimer = null;
 
     _scrollController.dispose();
 
@@ -813,34 +805,28 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
                     isSecondAiLoading: _fetchedSecondAiDates.contains(date) && !_secondAiTextMap.containsKey(lookupKey),
                   ),
                 ] else ...<Widget>[
-                  if (!_resultTimedOut) ...<Widget>[
-                    const Padding(
-                      padding: EdgeInsets.only(top: 4),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: <Widget>[
-                          SizedBox(
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: <Widget>[
+                        if (_payoutFetchDone.contains(date) && payout == null) ...<Widget>[
+                          const Text('―', style: TextStyle(fontSize: 9, color: Colors.white24)),
+                        ] else ...<Widget>[
+                          const SizedBox(
                             width: 10,
                             height: 10,
                             child: CircularProgressIndicator(strokeWidth: 1.5, color: Colors.white38),
                           ),
-                          SizedBox(width: 5),
-                          Text('分析中...', style: TextStyle(fontSize: 9, color: Colors.white38)),
+                          const SizedBox(width: 5),
+                          const Text('分析中...', style: TextStyle(fontSize: 9, color: Colors.white38)),
                         ],
-                      ),
+                      ],
                     ),
-                  ] else ...<Widget>[
-                    const Padding(
-                      padding: EdgeInsets.only(top: 4),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: <Widget>[Text('―', style: TextStyle(fontSize: 9, color: Colors.white24))],
-                      ),
-                    ),
-                  ],
+                  ),
                   if (supplementCoveredCount != null) ...<Widget>[
                     Text(
-                      '補欠で$supplementCoveredCount頭をカバー',
+                      supplementCoveredCount > 0 ? '補欠で$supplementCoveredCount頭をカバー' : '補欠での補完なし',
                       style: const TextStyle(fontSize: 10, color: Color(0xFFFBB6CE)),
                     ),
                   ],
@@ -912,7 +898,9 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
               ),
             ),
           ] else ...<Widget>[
-            if (supplementCoveredCount != null) ...<Widget>[Text('補欠で$supplementCoveredCount頭をカバー')],
+            if (supplementCoveredCount != null) ...<Widget>[
+              Text(supplementCoveredCount > 0 ? '補欠で$supplementCoveredCount頭をカバー' : '補欠での補完なし'),
+            ],
           ],
           if (payout != null) ...<Widget>[
             if (payout.trifecta.isNotEmpty) ...<Widget>[

@@ -402,16 +402,21 @@ int? calcSupplementCoveredCount({
   required List<AiResponseRecommendHorseModel> supplementHorses,
   required RaceResultPayoutModel? payout,
 }) {
-  if (supplementHorses.isEmpty || payout == null) {
+  // 配当データなし → 計算不可
+  if (payout == null) {
     return null;
   }
   final Set<int> resultNums = extractResultNumsFromPayout(payout);
   if (resultNums.isEmpty) {
     return null;
   }
+  // 補欠馬ゼロ → カバー頭数 0（1st AI と 2nd AI の選出が完全一致）
+  if (supplementHorses.isEmpty) {
+    return 0;
+  }
   final Set<int> supplementNums = supplementHorses.map((AiResponseRecommendHorseModel h) => h.num).toSet();
   final int covered = supplementNums.intersection(resultNums).length;
-  return covered > 0 ? covered : null;
+  return covered; // 0 の場合も返す（呼び出し側で「補欠での補完なし」と表示）
 }
 
 /// 振り返りテキストから "## 結果" セクションの最初の非空行を返す。
