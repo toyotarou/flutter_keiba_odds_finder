@@ -48,6 +48,12 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
         ref.read(summaryProvider.notifier).getAllSummaryData();
       }
     });
+
+    _timeoutTimer = Timer(const Duration(seconds: 15), () {
+      if (mounted) {
+        setState(() => _resultTimedOut = true);
+      }
+    });
   }
 
   final Set<String> _fetchedDates = <String>{};
@@ -61,6 +67,10 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
   final Map<String, String?> _firstAiTextMap = <String, String?>{};
 
   final Set<String> _fetchedFirstAiDates = <String>{};
+
+  bool _resultTimedOut = false;
+
+  Timer? _timeoutTimer;
 
   static const double _moveAmount = 18;
 
@@ -310,6 +320,10 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
     _repeatTimer?.cancel();
 
     _repeatTimer = null;
+
+    _timeoutTimer?.cancel();
+
+    _timeoutTimer = null;
 
     _scrollController.dispose();
 
@@ -799,21 +813,31 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
                     isSecondAiLoading: _fetchedSecondAiDates.contains(date) && !_secondAiTextMap.containsKey(lookupKey),
                   ),
                 ] else ...<Widget>[
-                  const Padding(
-                    padding: EdgeInsets.only(top: 4),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: <Widget>[
-                        SizedBox(
-                          width: 10,
-                          height: 10,
-                          child: CircularProgressIndicator(strokeWidth: 1.5, color: Colors.white38),
-                        ),
-                        SizedBox(width: 5),
-                        Text('分析中...', style: TextStyle(fontSize: 9, color: Colors.white38)),
-                      ],
+                  if (!_resultTimedOut) ...<Widget>[
+                    const Padding(
+                      padding: EdgeInsets.only(top: 4),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: <Widget>[
+                          SizedBox(
+                            width: 10,
+                            height: 10,
+                            child: CircularProgressIndicator(strokeWidth: 1.5, color: Colors.white38),
+                          ),
+                          SizedBox(width: 5),
+                          Text('分析中...', style: TextStyle(fontSize: 9, color: Colors.white38)),
+                        ],
+                      ),
                     ),
-                  ),
+                  ] else ...<Widget>[
+                    const Padding(
+                      padding: EdgeInsets.only(top: 4),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: <Widget>[Text('―', style: TextStyle(fontSize: 9, color: Colors.white24))],
+                      ),
+                    ),
+                  ],
                   if (supplementCoveredCount != null) ...<Widget>[
                     Text(
                       '補欠で$supplementCoveredCount頭をカバー',
