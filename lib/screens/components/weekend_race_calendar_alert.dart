@@ -355,6 +355,17 @@ class _RaceBlock extends StatelessWidget {
   Widget build(BuildContext context) {
     return Stack(
       children: <Widget>[
+        if (race.grade.isNotEmpty) ...<Widget>[
+          Positioned(
+            top: 5,
+            right: 5,
+            child: Opacity(
+              opacity: 0.7,
+              child: Image.asset('assets/race_grade_icon/race_grade_icon_${race.grade}.png', width: 30),
+            ),
+          ),
+        ],
+
         Positioned(bottom: 5, right: 5, child: Text('${race.race}R')),
 
         Positioned(
@@ -411,17 +422,6 @@ class _RaceBlock extends StatelessWidget {
             ],
           ),
         ),
-
-        if (race.grade.isNotEmpty) ...<Widget>[
-          Positioned(
-            top: 5,
-            right: 5,
-            child: Opacity(
-              opacity: 0.7,
-              child: Image.asset('assets/race_grade_icon/race_grade_icon_${race.grade}.png', width: 30),
-            ),
-          ),
-        ],
       ],
     );
   }

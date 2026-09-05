@@ -634,6 +634,17 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
       style: const TextStyle(color: Colors.white70, fontSize: 11),
       child: Stack(
         children: <Widget>[
+          if (grade.isNotEmpty) ...<Widget>[
+            Positioned(
+              top: 5,
+              right: 35,
+              child: Opacity(
+                opacity: 0.7,
+                child: Image.asset('assets/race_grade_icon/race_grade_icon_$grade.png', width: 30),
+              ),
+            ),
+          ],
+
           Container(
             decoration: BoxDecoration(
               border: Border(bottom: BorderSide(color: Colors.white.withValues(alpha: 0.3))),
@@ -834,17 +845,6 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
               ],
             ),
           ),
-
-          if (grade.isNotEmpty) ...<Widget>[
-            Positioned(
-              top: 5,
-              right: 35,
-              child: Opacity(
-                opacity: 0.7,
-                child: Image.asset('assets/race_grade_icon/race_grade_icon_$grade.png', width: 30),
-              ),
-            ),
-          ],
         ],
       ),
     );
