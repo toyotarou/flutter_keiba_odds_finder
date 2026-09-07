@@ -58,10 +58,20 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
 
   String get _effectiveKbd => widget.overrideKaisuuBashoDay ?? appParamState.selectedScheduleKaisuuBashoDay;
 
-  ///
+  /// 補欠馬リスト（表示用）: 1st AI の選出馬との差分
   List<AiResponseRecommendHorseModel> get _supplementHorses {
     final Set<int> claudeNums = _aiRecommendHorses.map((AiResponseRecommendHorseModel h) => h.num).toSet();
     return _secondAiHorses.where((AiResponseRecommendHorseModel h) => !claudeNums.contains(h.num)).toList();
+  }
+
+  /// 補欠カバー数（集計用）: ai_analysis（1st AI 4頭）を基準にして計算
+  /// 7番など ai_analysis にいない 2nd AI 馬が入賞した頭数を返す
+  int _calcSupplementCoveredCount({required String? introspectionText, required RaceResultPayoutModel? payout}) {
+    final Set<int> aiNums = _aiRecommendHorses.map((AiResponseRecommendHorseModel h) => h.num).toSet();
+    final List<AiResponseRecommendHorseModel> supplementHorses = _secondAiHorses
+        .where((AiResponseRecommendHorseModel h) => !aiNums.contains(h.num))
+        .toList();
+    return calcSupplementCoveredCount(supplementHorses: supplementHorses, payout: payout) ?? 0;
   }
 
   ///
@@ -227,11 +237,38 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
 
     final String? resultText = introspectionModel != null ? extractResultLine(introspectionModel.introspection) : null;
 
-    final String matchCount = resultText != null ? (RegExp(r'(\d+)頭が合致').firstMatch(resultText)?.group(1) ?? '') : '';
-
+    // 表示用: 開いた時は 1st AI（ai_analysis 4頭）のみ。2nd AI ボタンタップ後に補欠を追加表示
     final List<AiResponseRecommendHorseModel> supplements = _supplementHorses;
 
-    final int supplementCoveredCount = calcSupplementCoveredCount(supplementHorses: supplements, payout: payout) ?? 0;
+    // 補欠カバー数: ai_analysis（4頭）基準 — 7番など 2nd AI 補欠が入賞した頭数
+    // ※ 2nd AI 未取得時は _secondAiHorses が空なので 0 になる（正常）
+    final int supplementCoveredCount = _calcSupplementCoveredCount(
+      introspectionText: introspectionModel?.introspection,
+      payout: payout,
+    );
+
+    // 1st AI（ai_analysis 4頭）が 3着以内に入った頭数を numToRankMap から直接計算
+    // → 2nd AI のロード状態に関係なく常に正しい値を返す
+    final int firstAiMatchCount = _aiRecommendHorses
+        .where((AiResponseRecommendHorseModel h) => (widget.numToRankMap[h.num] ?? 99) <= 3)
+        .length;
+
+    // DB の resultText はピックアップ（6頭）ベースで生成されているため、
+    // 1st AI の実際の合致数（firstAiMatchCount）で数字部分を上書きして表示する
+    // 例: "6頭中2頭が合致" → "6頭中1頭が合致"
+    String? adjustedResultText = resultText;
+    if (resultText != null && firstAiMatchCount > 0) {
+      final RegExpMatch? m = RegExp(r'(\d+)頭が合致').firstMatch(resultText);
+      if (m != null) {
+        final int origCount = int.tryParse(m.group(1) ?? '') ?? 0;
+        if (origCount != firstAiMatchCount) {
+          adjustedResultText = resultText.replaceFirst(RegExp(r'\d+頭が合致'), '$firstAiMatchCount頭が合致');
+        }
+      }
+    }
+
+    // 結果ボタンの主数字: 1st AI の合致数（numToRankMap ベース）
+    final String matchCount = firstAiMatchCount > 0 ? firstAiMatchCount.toString() : '';
 
     final bool showResultButton = payout != null && resultText != null && !resultText.contains('0頭が合致');
 
@@ -252,9 +289,9 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
                         const Text('馬眼力ピックアップ', style: TextStyle(fontSize: 12)),
-                        if (resultText != null)
+                        if (adjustedResultText != null)
                           Text(
-                            resultText,
+                            adjustedResultText,
                             style: const TextStyle(
                               fontSize: 11,
                               color: Colors.yellowAccent,
@@ -311,7 +348,9 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
                   const SizedBox(height: 6),
                 ],
                 if (_raceMetrics != null) ...<Widget>[_buildRaceMetrics(_raceMetrics!), const SizedBox(height: 6)],
-                Expanded(child: _buildHorseList(supplements)),
+                Expanded(
+                  child: _buildHorseList(firstAiHorses: _aiRecommendHorses, supplements: supplements),
+                ),
               ],
             ),
           ),
@@ -461,8 +500,12 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
   }
 
   ///
-  Widget _buildHorseCard(AiResponseRecommendHorseModel h, {bool isSupplementary = false}) {
-    final AiResponseRecommendHorseModel? secondAiHorse = isSupplementary
+  Widget _buildHorseCard(
+    AiResponseRecommendHorseModel h, {
+    bool isSupplementary = false,
+    bool hideSecondAiSection = false,
+  }) {
+    final AiResponseRecommendHorseModel? secondAiHorse = (isSupplementary || hideSecondAiSection)
         ? null
         : _secondAiHorses.where((AiResponseRecommendHorseModel s) => s.num == h.num).firstOrNull;
 
@@ -712,10 +755,15 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
   }
 
   ///
-  Widget _buildHorseList(List<AiResponseRecommendHorseModel> supplements) {
+  Widget _buildHorseList({
+    required List<AiResponseRecommendHorseModel> firstAiHorses,
+    required List<AiResponseRecommendHorseModel> supplements,
+  }) {
     return ListView(
       children: <Widget>[
-        ..._aiRecommendHorses.map((AiResponseRecommendHorseModel h) => _buildHorseCard(h)),
+        // 1st AI（ai_analysis 4頭）のみ表示。2nd AI ボタンタップ後に補欠セクションを追加
+        ...firstAiHorses.map((AiResponseRecommendHorseModel h) => _buildHorseCard(h)),
+        // 補欠：ai_analysis にいない DeepSeek 選出馬（7番、9番など）
         if (supplements.isNotEmpty) ...<Widget>[
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 8),

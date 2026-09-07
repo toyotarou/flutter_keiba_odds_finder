@@ -237,19 +237,25 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
     // 1. _firstAiTextMap（生AIテキスト）からパース
     // 2. なければ introspectionText の ## ピックアップ から ○X番 をパース
     // 3. どちらも取得できなければ補欠計算不可
-    final String? firstAiText = _firstAiTextMap[lookupKey];
+    // ai_analysis（1st AI 正式picks）を最優先で claudeNums に使う
+    // ピックアップには DeepSeek 補欠馬（7番など）も含まれるため、
+    // ai_analysis を基準にしないと補欠カバーが正しく計算できない
     Set<int> claudeNums = <int>{};
+    final String? firstAiText = _firstAiTextMap[lookupKey];
     if (firstAiText != null && firstAiText.isNotEmpty) {
       claudeNums = parseAnalysisText(firstAiText).map((AiResponseRecommendHorseModel h) => h.num).toSet();
-    } else if (introspectionText != null && introspectionText.contains('## ピックアップ')) {
-      claudeNums = RegExp(
-        r'○(\d+)番',
-      ).allMatches(introspectionText).map((RegExpMatch m) => int.parse(m.group(1)!)).toSet();
+    }
+
+    // フォールバック: ai_analysis が取得できない場合のみピックアップを使う
+    if (claudeNums.isEmpty && introspectionText != null && introspectionText.contains('## ピックアップ')) {
+      final RegExpMatch? pickupMatch = RegExp(r'## ピックアップ\n([\s\S]*?)(?=\n##|$)').firstMatch(introspectionText);
+      if (pickupMatch != null) {
+        claudeNums = RegExp(
+          r'(\d+)番',
+        ).allMatches(pickupMatch.group(1) ?? '').map((RegExpMatch m) => int.parse(m.group(1)!)).toSet();
+      }
     }
     // claudeNums が取得できない場合は 2nd AI の全選出馬を補欠とみなす。
-    // supplementHorses の where 条件が空集合との差分になるため全馬が残る。
-    // これにより「2nd AI が独自選出したが入賞しなかった」ケースで
-    // covered=0 → '補欠での補完なし' が正しく表示される。
 
     final List<AiResponseRecommendHorseModel> supplementHorses = deepSeekHorses
         .where((AiResponseRecommendHorseModel h) => !claudeNums.contains(h.num))
@@ -594,6 +600,19 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
       payout: payout,
     );
 
+    // DBのresultTextはピックアップ（6頭）ベースで生成されているため、
+    // ai_analysis基準の補欠カバー分（7番など）を差し引いて表示テキストを補正する
+    // 例: "6頭中2頭が合致" + supplementCoveredCount=1 → "6頭中1頭が合致"
+    String? adjustedResultText = resultText;
+    if (resultText != null && supplementCoveredCount != null && supplementCoveredCount > 0) {
+      final RegExpMatch? m = RegExp(r'(\d+)頭が合致').firstMatch(resultText);
+      if (m != null) {
+        final int origCount = int.tryParse(m.group(1) ?? '') ?? 0;
+        final int adjCount = (origCount - supplementCoveredCount).clamp(0, origCount);
+        adjustedResultText = resultText.replaceFirst(RegExp(r'\d+頭が合致'), '$adjCount頭が合致');
+      }
+    }
+
     final String grade = payout?.grade ?? '';
 
     // ═══ NNN: keepRaceMap からこのレースの RaceModel を特定 ═══════════════
@@ -808,9 +827,9 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
                   const SizedBox(height: 10),
                 ],
 
-                if (resultText != null) ...<Widget>[
+                if (adjustedResultText != null) ...<Widget>[
                   _buildResultTextSection(
-                    resultText: resultText,
+                    resultText: adjustedResultText,
                     supplementCoveredCount: supplementCoveredCount,
                     payout: payout,
                     isSecondAiLoading: _fetchedSecondAiDates.contains(date) && !_secondAiTextMap.containsKey(lookupKey),
