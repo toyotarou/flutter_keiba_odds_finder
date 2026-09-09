@@ -4,13 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../controllers/controllers_mixin.dart';
-
 import '../../models/common/ai_response_recommend_horse_model.dart';
 import '../../models/horse_model.dart';
 import '../../models/odds_model.dart';
 import '../../models/popularity_rank_odds_median_model.dart';
 import '../../models/race_model.dart';
-
 import '../../utility/functions.dart';
 import '../parts/dashed_line_painter.dart';
 
@@ -27,6 +25,10 @@ class TotalForecastDisplayAlert extends ConsumerStatefulWidget {
     this.pickupHorse = '',
     required this.gapHorseNums,
     required this.upsetPickupHorseNums,
+    required this.aiHorseList,
+    this.upsetRaceValue,
+    this.raceMetrics,
+    required this.secondAiHorseList,
   });
 
   /// 6分前オッズのリスト（オッズ昇順ソート済み）。
@@ -37,6 +39,10 @@ class TotalForecastDisplayAlert extends ConsumerStatefulWidget {
   final String pickupHorse;
   final List<int> gapHorseNums;
   final List<int> upsetPickupHorseNums;
+  final List<AiResponseRecommendHorseModel> aiHorseList;
+  final int? upsetRaceValue;
+  final Map<String, int>? raceMetrics;
+  final List<AiResponseRecommendHorseModel> secondAiHorseList;
   final String? overrideDate;
   final String? overrideKaisuuBashoDay;
   final PopularityRankOddsMedianModel? overrideMedianModel;
@@ -47,20 +53,15 @@ class TotalForecastDisplayAlert extends ConsumerStatefulWidget {
 
 class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplayAlert>
     with ControllersMixin<TotalForecastDisplayAlert> {
-  bool _isLoading = true;
+  bool _isLoading = false;
+  Timer? _loadingTimer;
 
   final ScrollController _scrollController = ScrollController();
   Timer? _repeatTimer;
   static const double _moveAmount = 18;
   static const int _tickMs = 16;
   Set<int> _highProbabilityPopularities = <int>{};
-  Set<int> _aiPickupNums = <int>{};
-  Map<int, String> _aiPickupScores = <int, String>{};
   Map<int, double?> _aiPickupIndexes = <int, double?>{};
-  int? _upsetRaceValue;
-  Map<String, int>? _raceMetrics;
-  Set<int> _secondAiNums = <int>{};
-  Map<int, String> _secondAiScores = <int, String>{};
 
   static const double _w0 = 60;
   static const double _w1 = 40;
@@ -98,6 +99,7 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
   @override
   void dispose() {
     _repeatTimer?.cancel();
+    _loadingTimer?.cancel();
     _scrollController.dispose();
     super.dispose();
   }
@@ -126,17 +128,30 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
   }
 
   ///
-  Set<int> get _supplementNums {
-    return _secondAiNums.difference(_aiPickupNums);
-  }
+  Set<int> get _aiPickupNums => widget.aiHorseList.map((AiResponseRecommendHorseModel h) => h.num).toSet();
+
+  Map<int, String> get _aiPickupScores => <int, String>{
+    for (final AiResponseRecommendHorseModel h in widget.aiHorseList) h.num: h.score.toString(),
+  };
+
+  Set<int> get _secondAiNums => widget.secondAiHorseList.map((AiResponseRecommendHorseModel h) => h.num).toSet();
+
+  Map<int, String> get _secondAiScores => <int, String>{
+    for (final AiResponseRecommendHorseModel h in widget.secondAiHorseList) h.num: h.score.toString(),
+  };
+
+  Set<int> get _supplementNums => _secondAiNums.difference(_aiPickupNums);
 
   Future<void> _fetchAll() async {
-    await Future.wait(<Future<void>>[
-      _fetchHighProbabilityHorses(),
-      _fetchAiPickup(),
-      _fetchSecondAiPickup(),
-      _fetchBaganrikiIndex(),
-    ]);
+    _loadingTimer?.cancel();
+    _loadingTimer = Timer(const Duration(milliseconds: 800), () {
+      if (mounted) {
+        setState(() => _isLoading = true);
+      }
+    });
+    await Future.wait(<Future<void>>[_fetchHighProbabilityHorses(), _fetchBaganrikiIndex()]);
+    _loadingTimer?.cancel();
+    _loadingTimer = null;
     if (mounted) {
       setState(() => _isLoading = false);
     }
@@ -164,33 +179,6 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
   }
 
   ///
-  Future<void> _fetchAiPickup() async {
-    final String date = _effectiveDate;
-    final int race = widget.currentRaceModel.race;
-    final (:String kaisuu, :String basho, :String day) = _kbdParts;
-    try {
-      final Map<String, dynamic> data = await fetchAiAnalysisData(
-        ref,
-        date: date,
-        kaisuu: kaisuu,
-        basho: basho,
-        day: day,
-        race: race,
-        gapHorseNums: widget.gapHorseNums,
-        upsetPickupHorseNums: widget.upsetPickupHorseNums,
-      );
-      final String analysisText = (data['analysis_text'] as String?) ?? '';
-      final List<AiResponseRecommendHorseModel> horses = parseAnalysisText(analysisText);
-      _aiPickupNums = horses.map((AiResponseRecommendHorseModel h) => h.num).toSet();
-      _aiPickupScores = <int, String>{for (final AiResponseRecommendHorseModel h in horses) h.num: h.score.toString()};
-      _upsetRaceValue = parseUpsetRaceValue(analysisText);
-      _raceMetrics = parseRaceMetrics(analysisText);
-    } catch (e) {
-      debugPrint('[TotalForecast] _fetchAiPickup error: $e');
-    }
-  }
-
-  ///
   Future<void> _fetchBaganrikiIndex() async {
     final String date = _effectiveDate;
     final int race = widget.currentRaceModel.race;
@@ -211,29 +199,6 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
       }
     } catch (e) {
       debugPrint('[TotalForecast] _fetchBaganrikiIndex error: $e');
-    }
-  }
-
-  ///
-  Future<void> _fetchSecondAiPickup() async {
-    final String date = _effectiveDate;
-    final int race = widget.currentRaceModel.race;
-    final (:String kaisuu, :String basho, :String day) = _kbdParts;
-    try {
-      final Map<String, dynamic> data = await fetchSecondAiOpinionData(
-        ref,
-        date: date,
-        kaisuu: kaisuu,
-        basho: basho,
-        day: day,
-        race: race,
-      );
-      final String analysisText = (data['analysis_text'] as String?) ?? '';
-      final List<AiResponseRecommendHorseModel> horses = parseAnalysisText(analysisText);
-      _secondAiNums = horses.map((AiResponseRecommendHorseModel h) => h.num).toSet();
-      _secondAiScores = <int, String>{for (final AiResponseRecommendHorseModel h in horses) h.num: h.score.toString()};
-    } catch (e) {
-      debugPrint('[TotalForecast] _fetchSecondAiPickup error: $e');
     }
   }
 
@@ -349,34 +314,34 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
                         children: <Widget>[
                           _buildColumnHeader(),
                           Divider(color: Colors.white.withValues(alpha: 0.5), thickness: 2),
-                          if (_upsetRaceValue != null) ...<Widget>[
+                          if (widget.upsetRaceValue != null) ...<Widget>[
                             Center(
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: <Widget>[
-                                  if (_upsetRaceValue == 0) Container(width: 20, height: 1, color: Colors.white),
+                                  if (widget.upsetRaceValue == 0) Container(width: 20, height: 1, color: Colors.white),
                                   Text(
                                     '厳選穴レース',
                                     style: TextStyle(
                                       fontSize: 12,
                                       fontWeight: FontWeight.bold,
-                                      color: _upsetRaceValue == 1
+                                      color: widget.upsetRaceValue == 1
                                           ? const Color(0xFFFBB6CE)
                                           : Colors.white.withValues(alpha: 0.4),
-                                      decoration: _upsetRaceValue == 0
+                                      decoration: widget.upsetRaceValue == 0
                                           ? TextDecoration.lineThrough
                                           : TextDecoration.none,
                                       decorationColor: Colors.white,
                                     ),
                                   ),
-                                  if (_upsetRaceValue == 0) Container(width: 20, height: 1, color: Colors.white),
+                                  if (widget.upsetRaceValue == 0) Container(width: 20, height: 1, color: Colors.white),
                                 ],
                               ),
                             ),
                             const SizedBox(height: 4),
                           ],
-                          if (_raceMetrics != null) ...<Widget>[
-                            _buildRaceMetrics(_raceMetrics!),
+                          if (widget.raceMetrics != null) ...<Widget>[
+                            _buildRaceMetrics(widget.raceMetrics!),
                             const SizedBox(height: 4),
                           ],
                           Expanded(

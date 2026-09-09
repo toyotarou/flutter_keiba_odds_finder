@@ -11,6 +11,7 @@ import '../../const/const.dart';
 import '../../controllers/controllers_mixin.dart';
 import '../../extensions/extensions.dart';
 import '../../main.dart';
+import '../../models/common/ai_response_recommend_horse_model.dart';
 import '../../models/horse_model.dart';
 import '../../models/odds_model.dart';
 import '../../models/popularity_rank_odds_median_model.dart';
@@ -91,6 +92,15 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
   Map<int, String> _aiPickupScores = <int, String>{};
   String _aiPickupHorse = '';
   Map<int, double?> _baganrikiIndexMap = <int, double?>{};
+  List<AiResponseRecommendHorseModel> _totalForecastAiHorseList = <AiResponseRecommendHorseModel>[];
+  int? _totalForecastUpsetRaceValue;
+  Map<String, int>? _totalForecastRaceMetrics;
+  List<AiResponseRecommendHorseModel> _secondAiHorseList = <AiResponseRecommendHorseModel>[];
+
+  // AI取得中ローディング管理
+  int _aiPendingCount = 0;
+  bool _showAiLoading = false;
+  Timer? _aiLoadingTimer;
 
   // 初回訪問時にmedianなし&期待数値タブ選択状態でパネルを自動クローズしたかどうか
   bool _autoClosedPanel = false;
@@ -138,6 +148,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
       if (mounted) {
         _fetchAiPickup();
         _fetchBaganrikiIndex();
+        _fetchSecondAiOpinion();
       }
     });
   }
@@ -146,6 +157,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
   @override
   void dispose() {
     _countdownTimer?.cancel();
+    _aiLoadingTimer?.cancel();
     _remainingSecondsNotifier.dispose();
     _horseListScrollController.dispose();
     super.dispose();
@@ -159,6 +171,8 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     if (!hasFirstTiming || !hasSixMinTiming) {
       return;
     }
+
+    _beginAiFetch();
 
     final String date = appParamState.selectedScheduleDate;
     final int race = widget.raceNumber;
@@ -178,14 +192,22 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
         upsetPickupHorseNums: upsetPickupHorseNums,
       );
       final String pickupRaw = (data['pickup_horse'] as String?) ?? '';
+      final String analysisText = (data['analysis_text'] as String?) ?? '';
+      final List<AiResponseRecommendHorseModel> horses = parseAnalysisText(analysisText);
       if (mounted) {
         setState(() {
           _aiPickupHorse = pickupRaw;
           _aiPickupNums = _parsePickupHorse(pickupRaw);
           _aiPickupScores = _parsePickupScores(pickupRaw);
+          _totalForecastAiHorseList = horses;
+          _totalForecastUpsetRaceValue = parseUpsetRaceValue(analysisText);
+          _totalForecastRaceMetrics = parseRaceMetrics(analysisText);
         });
       }
-    } catch (_) {}
+    } catch (_) {
+    } finally {
+      _endAiFetch();
+    }
   }
 
   ///
@@ -214,6 +236,67 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
         });
       }
     } catch (_) {}
+  }
+
+  ///
+  Future<void> _fetchSecondAiOpinion() async {
+    final List<OddsModel> allOdds = _oddsForRace;
+    final bool hasFirstTiming = allOdds.any((OddsModel e) => e.minutesBeforeStart == kOddsTimingFirst);
+    final bool hasSixMinTiming = allOdds.any((OddsModel e) => e.minutesBeforeStart == kOddsJudgeTiming);
+    if (!hasFirstTiming || !hasSixMinTiming) {
+      return;
+    }
+
+    _beginAiFetch();
+
+    final String date = appParamState.selectedScheduleDate;
+    final int race = widget.raceNumber;
+    final (:String kaisuu, :String basho, :String day) = parseKbdParts(appParamState.selectedScheduleKaisuuBashoDay);
+    try {
+      final Map<String, dynamic> data = await fetchSecondAiOpinionData(
+        ref,
+        date: date,
+        kaisuu: kaisuu,
+        basho: basho,
+        day: day,
+        race: race,
+      );
+      final String analysisText = (data['analysis_text'] as String?) ?? '';
+      final List<AiResponseRecommendHorseModel> horses = parseAnalysisText(analysisText);
+      if (mounted) {
+        setState(() {
+          _secondAiHorseList = horses;
+        });
+      }
+    } catch (_) {
+    } finally {
+      _endAiFetch();
+    }
+  }
+
+  /// AI fetch 開始: カウント 0→1 の時だけタイマーを起動
+  void _beginAiFetch() {
+    if (_aiPendingCount == 0) {
+      _aiLoadingTimer?.cancel();
+      _aiLoadingTimer = Timer(const Duration(milliseconds: 800), () {
+        if (mounted && _aiPendingCount > 0) {
+          setState(() => _showAiLoading = true);
+        }
+      });
+    }
+    _aiPendingCount++;
+  }
+
+  /// AI fetch 終了: 全完了時にタイマーをキャンセルしてインジケータを消す
+  void _endAiFetch() {
+    _aiPendingCount--;
+    if (_aiPendingCount == 0) {
+      _aiLoadingTimer?.cancel();
+      _aiLoadingTimer = null;
+      if (mounted && _showAiLoading) {
+        setState(() => _showAiLoading = false);
+      }
+    }
   }
 
   ///
@@ -1619,218 +1702,235 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
           .map((RaceResultModel e) => MapEntry<int, RaceResultModel>(e.result, e)),
     );
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return Stack(
       children: <Widget>[
-        _buildRaceInfoBar(startTime: startTime, raceName: raceName, course: course, dist: dist),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            _buildRaceInfoBar(startTime: startTime, raceName: raceName, course: course, dist: dist),
 
-        _buildControlButtons(raceIdx: raceIdx),
+            _buildControlButtons(raceIdx: raceIdx),
 
-        Divider(color: Colors.white.withValues(alpha: 0.5)),
+            Divider(color: Colors.white.withValues(alpha: 0.5)),
 
-        SizedBox(height: 40, child: _displayRaceMinutesRow()),
+            SizedBox(height: 40, child: _displayRaceMinutesRow()),
 
-        const SizedBox(height: 10),
+            const SizedBox(height: 10),
 
-        if (displayList.isNotEmpty && (median != null || raceResultByRank.isNotEmpty)) ...<Widget>[
-          Stack(
-            children: <Widget>[
-              if (appParamState.isShowSideTabPanel && (median != null || raceResultByRank.isNotEmpty)) ...<Widget>[
-                SideTabPanel(
-                  tabLabels: <String>[if (median != null) '期待数値', if (raceResultByRank.isNotEmpty) 'レース結果'],
-
-                  tabWidth: 90,
-                  tabGap: 0,
-                  height: 100,
-                  borderColor: Colors.white.withValues(alpha: 0.4),
-                  selectedIndex: (median != null && raceResultByRank.isNotEmpty)
-                      ? appParamState.selectedUpsetBoxNum
-                      : 0,
-                  onSelected: (int i) => appParamNotifier.setSelectedUpsetBoxNum(num: i),
-
-                  panelChild: median == null
-                      ? _buildRaceResultBox(raceResultByRank: raceResultByRank)
-                      : (raceResultByRank.isEmpty || appParamState.selectedUpsetBoxNum == 0)
-                      ? _buildPopularityHorseRow(displayList: displayList, median: median, raceModel: currentRaceModel)
-                      : _buildRaceResultBox(raceResultByRank: raceResultByRank),
-                ),
-              ],
-
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
+            if (displayList.isNotEmpty && (median != null || raceResultByRank.isNotEmpty)) ...<Widget>[
+              Stack(
                 children: <Widget>[
-                  GestureDetector(
-                    onTap: () => appParamNotifier.setIsShowSideTabPanel(flag: !appParamState.isShowSideTabPanel),
-                    child: ClipPath(
-                      clipper: _TriangleClipper(),
-                      child: Container(
-                        width: 30,
-                        height: 30,
-                        decoration: BoxDecoration(
-                          color: (appParamState.isShowSideTabPanel)
-                              ? Colors.green[500]!.withValues(alpha: 0.4)
-                              : Colors.grey.withValues(alpha: 0.4),
-                        ),
-                      ),
-                    ),
-                  ),
+                  if (appParamState.isShowSideTabPanel && (median != null || raceResultByRank.isNotEmpty)) ...<Widget>[
+                    SideTabPanel(
+                      tabLabels: <String>[if (median != null) '期待数値', if (raceResultByRank.isNotEmpty) 'レース結果'],
 
-                  if (!appParamState.isShowSideTabPanel) ...<Widget>[
-                    GestureDetector(
-                      onTap: () => appParamNotifier.setIsShowSideTabPanel(flag: true),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 12),
-                        child: Text(
-                          median != null && raceResultByRank.isNotEmpty
-                              ? '期待数値、レース結果の表示'
-                              : median != null
-                              ? '期待数値の表示'
-                              : 'レース結果の表示',
-                          style: TextStyle(fontSize: 10, color: Colors.white.withValues(alpha: 0.6)),
-                        ),
-                      ),
+                      tabWidth: 90,
+                      tabGap: 0,
+                      height: 100,
+                      borderColor: Colors.white.withValues(alpha: 0.4),
+                      selectedIndex: (median != null && raceResultByRank.isNotEmpty)
+                          ? appParamState.selectedUpsetBoxNum
+                          : 0,
+                      onSelected: (int i) => appParamNotifier.setSelectedUpsetBoxNum(num: i),
+
+                      panelChild: median == null
+                          ? _buildRaceResultBox(raceResultByRank: raceResultByRank)
+                          : (raceResultByRank.isEmpty || appParamState.selectedUpsetBoxNum == 0)
+                          ? _buildPopularityHorseRow(
+                              displayList: displayList,
+                              median: median,
+                              raceModel: currentRaceModel,
+                            )
+                          : _buildRaceResultBox(raceResultByRank: raceResultByRank),
                     ),
                   ],
+
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      GestureDetector(
+                        onTap: () => appParamNotifier.setIsShowSideTabPanel(flag: !appParamState.isShowSideTabPanel),
+                        child: ClipPath(
+                          clipper: _TriangleClipper(),
+                          child: Container(
+                            width: 30,
+                            height: 30,
+                            decoration: BoxDecoration(
+                              color: (appParamState.isShowSideTabPanel)
+                                  ? Colors.green[500]!.withValues(alpha: 0.4)
+                                  : Colors.grey.withValues(alpha: 0.4),
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      if (!appParamState.isShowSideTabPanel) ...<Widget>[
+                        GestureDetector(
+                          onTap: () => appParamNotifier.setIsShowSideTabPanel(flag: true),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 12),
+                            child: Text(
+                              median != null && raceResultByRank.isNotEmpty
+                                  ? '期待数値、レース結果の表示'
+                                  : median != null
+                                  ? '期待数値の表示'
+                                  : 'レース結果の表示',
+                              style: TextStyle(fontSize: 10, color: Colors.white.withValues(alpha: 0.6)),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
                 ],
               ),
             ],
-          ),
-        ],
 
-        const SizedBox(height: 5),
+            const SizedBox(height: 5),
 
-        if (hasBothTimings) ...<Widget>[
-          const SizedBox(height: 5),
+            if (hasBothTimings) ...<Widget>[
+              const SizedBox(height: 5),
 
-          Row(
-            children: <Widget>[
-              Material(
-                key: _analysisButtonKey,
-                color: Colors.transparent,
-                borderRadius: BorderRadius.circular(10),
-                child: InkWell(
-                  onTap: () async {
-                    final BuildContext ctx = context;
-                    final bool found = await _fetchAnalysis();
-                    if (!found && ctx.mounted) {
-                      final RenderBox? renderBox = _analysisButtonKey.currentContext?.findRenderObject() as RenderBox?;
-                      if (renderBox != null) {
-                        final Offset offset = renderBox.localToGlobal(Offset.zero);
-                        widgetDisplayOverlay(
-                          context: ctx,
-                          tapPosition: Offset(offset.dx, offset.dy - 10),
-                          displayDuration: const Duration(seconds: 3),
-                          child: const Text('合致がありません', style: TextStyle(fontSize: 12, color: Colors.yellowAccent)),
+              Row(
+                children: <Widget>[
+                  Material(
+                    key: _analysisButtonKey,
+                    color: Colors.transparent,
+                    borderRadius: BorderRadius.circular(10),
+                    child: InkWell(
+                      onTap: () async {
+                        final BuildContext ctx = context;
+                        final bool found = await _fetchAnalysis();
+                        if (!found && ctx.mounted) {
+                          final RenderBox? renderBox =
+                              _analysisButtonKey.currentContext?.findRenderObject() as RenderBox?;
+                          if (renderBox != null) {
+                            final Offset offset = renderBox.localToGlobal(Offset.zero);
+                            widgetDisplayOverlay(
+                              context: ctx,
+                              tapPosition: Offset(offset.dx, offset.dy - 10),
+                              displayDuration: const Duration(seconds: 3),
+                              child: const Text('合致がありません', style: TextStyle(fontSize: 12, color: Colors.yellowAccent)),
+                            );
+                          }
+                        }
+                      },
+                      borderRadius: BorderRadius.circular(10),
+                      splashColor: Colors.yellowAccent.withValues(alpha: 0.35),
+                      highlightColor: Colors.yellowAccent.withValues(alpha: 0.1),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 10),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.yellowAccent),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Text(
+                          '過去データからの分析',
+                          style: TextStyle(fontSize: 10, color: Colors.yellowAccent, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(width: 10),
+
+                  Material(
+                    color: Colors.transparent,
+                    borderRadius: BorderRadius.circular(10),
+                    child: InkWell(
+                      onTap: () {
+                        final List<int> gapHorseNums = _calcOddsGapHorseNums();
+
+                        final List<int> upsetPickupHorseNums = _calcUpsetPickupHorseNums();
+
+                        OddsFinderDialog(
+                          context: context,
+                          widget: AiAnalysisDisplayAlert(
+                            raceNumber: widget.raceNumber,
+                            gapHorseNums: gapHorseNums,
+                            upsetPickupHorseNums: upsetPickupHorseNums,
+                            numToRankMap: numToRankMap,
+                          ),
                         );
-                      }
-                    }
-                  },
-                  borderRadius: BorderRadius.circular(10),
-                  splashColor: Colors.yellowAccent.withValues(alpha: 0.35),
-                  highlightColor: Colors.yellowAccent.withValues(alpha: 0.1),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 10),
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.yellowAccent),
+                      },
+
                       borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: const Text(
-                      '過去データからの分析',
-                      style: TextStyle(fontSize: 10, color: Colors.yellowAccent, fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                ),
-              ),
-
-              const SizedBox(width: 10),
-
-              Material(
-                color: Colors.transparent,
-                borderRadius: BorderRadius.circular(10),
-                child: InkWell(
-                  onTap: () {
-                    final List<int> gapHorseNums = _calcOddsGapHorseNums();
-
-                    final List<int> upsetPickupHorseNums = _calcUpsetPickupHorseNums();
-
-                    OddsFinderDialog(
-                      context: context,
-                      widget: AiAnalysisDisplayAlert(
-                        raceNumber: widget.raceNumber,
-                        gapHorseNums: gapHorseNums,
-                        upsetPickupHorseNums: upsetPickupHorseNums,
-                        numToRankMap: numToRankMap,
+                      splashColor: const Color(0xFFFFD700).withValues(alpha: 0.35),
+                      highlightColor: const Color(0xFFFFD700).withValues(alpha: 0.1),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 10),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: const Color(0xFFFFD700)),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Text(
+                          'AI予想',
+                          style: TextStyle(fontSize: 10, color: Color(0xFFFFD700), fontWeight: FontWeight.bold),
+                        ),
                       ),
-                    );
-                  },
-
-                  borderRadius: BorderRadius.circular(10),
-                  splashColor: const Color(0xFFFFD700).withValues(alpha: 0.35),
-                  highlightColor: const Color(0xFFFFD700).withValues(alpha: 0.1),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 10),
-                    decoration: BoxDecoration(
-                      border: Border.all(color: const Color(0xFFFFD700)),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: const Text(
-                      'AI予想',
-                      style: TextStyle(fontSize: 10, color: Color(0xFFFFD700), fontWeight: FontWeight.bold),
                     ),
                   ),
-                ),
-              ),
 
-              const SizedBox(width: 10),
+                  const SizedBox(width: 10),
 
-              Material(
-                color: Colors.transparent,
-                borderRadius: BorderRadius.circular(10),
-                child: InkWell(
-                  onTap: () {
-                    final List<int> gapHorseNums = _calcOddsGapHorseNums();
+                  Material(
+                    color: Colors.transparent,
+                    borderRadius: BorderRadius.circular(10),
+                    child: InkWell(
+                      onTap: () {
+                        final List<int> gapHorseNums = _calcOddsGapHorseNums();
 
-                    final List<int> upsetPickupHorseNums = _calcUpsetPickupHorseNums();
+                        final List<int> upsetPickupHorseNums = _calcUpsetPickupHorseNums();
 
-                    OddsFinderDialog(
-                      context: context,
-                      widget: TotalForecastDisplayAlert(
-                        displayList: sixMinDisplayList,
-                        horseModelMap: horseModelMap,
-                        numToRankMap: numToRankMap,
-                        currentRaceModel: currentRaceModel!,
-                        pickupHorse: _aiPickupHorse,
-                        gapHorseNums: gapHorseNums,
-                        upsetPickupHorseNums: upsetPickupHorseNums,
+                        OddsFinderDialog(
+                          context: context,
+                          widget: TotalForecastDisplayAlert(
+                            displayList: sixMinDisplayList,
+                            horseModelMap: horseModelMap,
+                            numToRankMap: numToRankMap,
+                            currentRaceModel: currentRaceModel!,
+                            pickupHorse: _aiPickupHorse,
+                            gapHorseNums: gapHorseNums,
+                            upsetPickupHorseNums: upsetPickupHorseNums,
+                            aiHorseList: _totalForecastAiHorseList,
+                            upsetRaceValue: _totalForecastUpsetRaceValue,
+                            raceMetrics: _totalForecastRaceMetrics,
+                            secondAiHorseList: _secondAiHorseList,
+                          ),
+                        );
+                      },
+                      borderRadius: BorderRadius.circular(10),
+                      splashColor: const Color(0xFFFBB6CE).withValues(alpha: 0.35),
+                      highlightColor: const Color(0xFFFBB6CE).withValues(alpha: 0.1),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 10),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: const Color(0xFFFBB6CE)),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Text(
+                          '予想総括',
+                          style: TextStyle(fontSize: 10, color: Color(0xFFFBB6CE), fontWeight: FontWeight.bold),
+                        ),
                       ),
-                    );
-                  },
-                  borderRadius: BorderRadius.circular(10),
-                  splashColor: const Color(0xFFFBB6CE).withValues(alpha: 0.35),
-                  highlightColor: const Color(0xFFFBB6CE).withValues(alpha: 0.1),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 10),
-                    decoration: BoxDecoration(
-                      border: Border.all(color: const Color(0xFFFBB6CE)),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: const Text(
-                      '予想総括',
-                      style: TextStyle(fontSize: 10, color: Color(0xFFFBB6CE), fontWeight: FontWeight.bold),
                     ),
                   ),
-                ),
+                ],
               ),
+
+              const SizedBox(height: 5),
             ],
-          ),
 
-          const SizedBox(height: 5),
-        ],
-
-        const SizedBox(height: 5),
-        Expanded(
-          child: _displayRaceHorseList(course: course, dist: dist),
+            const SizedBox(height: 5),
+            Expanded(
+              child: _displayRaceHorseList(course: course, dist: dist),
+            ),
+          ],
         ),
+        if (_showAiLoading)
+          const Positioned.fill(
+            child: Center(child: CircularProgressIndicator(color: Colors.white70, strokeWidth: 2)),
+          ),
       ],
     );
   }

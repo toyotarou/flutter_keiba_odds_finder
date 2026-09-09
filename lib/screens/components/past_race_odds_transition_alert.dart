@@ -749,6 +749,14 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
                                   borderRadius: BorderRadius.circular(10),
                                   child: InkWell(
                                     onTap: () {
+                                      final String firstAiText = _firstAiTextMap[lookupKey] ?? '';
+                                      final String secondAiText = _secondAiTextMap[lookupKey] ?? '';
+                                      final List<AiResponseRecommendHorseModel> firstHorses = parseAnalysisText(
+                                        firstAiText,
+                                      );
+                                      final List<AiResponseRecommendHorseModel> secondHorses = parseAnalysisText(
+                                        secondAiText,
+                                      );
                                       OddsFinderDialog(
                                         context: context,
                                         widget: TotalForecastDisplayAlert(
@@ -762,6 +770,10 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
                                           currentRaceModel: currentRaceModel,
                                           gapHorseNums: gapHorseNums,
                                           upsetPickupHorseNums: upsetPickupHorseNums,
+                                          aiHorseList: firstHorses,
+                                          upsetRaceValue: parseUpsetRaceValue(firstAiText),
+                                          raceMetrics: parseRaceMetrics(firstAiText),
+                                          secondAiHorseList: secondHorses,
                                         ),
                                       );
                                     },
