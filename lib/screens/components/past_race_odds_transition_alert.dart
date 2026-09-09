@@ -221,11 +221,6 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
     required String lookupKey,
     required RaceResultPayoutModel? payout,
   }) {
-    // '3頭が合致' = 1st AI が既にすべてカバー済み → 補欠表示不要
-    if (resultText != null && resultText.contains('3頭が合致')) {
-      return null;
-    }
-
     final String? secondAiText = _secondAiTextMap[lookupKey];
     if (secondAiText == null || secondAiText.isEmpty) {
       return null;
@@ -876,9 +871,9 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
     required RaceResultPayoutModel? payout,
     required bool isSecondAiLoading,
   }) {
-    final bool isMatch = resultText.contains('3頭が合致');
-
     final int claudeMatchCount = int.tryParse(RegExp(r'(\d+)頭が合致').firstMatch(resultText)?.group(1) ?? '') ?? 0;
+
+    final bool isMatch = claudeMatchCount >= 3;
 
     final bool isMatchWithSupplement = isMatch || (claudeMatchCount + (supplementCoveredCount ?? 0) >= 3);
 

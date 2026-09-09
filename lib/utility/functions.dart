@@ -615,3 +615,27 @@ PopularityRankOddsMedianModel? lookupMedianModel(
       .toList();
   return list.isNotEmpty ? list.first : null;
 }
+
+/// merged_horses JSON リストを AiResponseRecommendHorseModel リストに変換する。
+/// PHP の _mergeAiResults() が返す構造に対応する。
+/// num が 0 以下の不正な要素は除外する。
+List<AiResponseRecommendHorseModel> parseMergedHorses(List<dynamic> list) {
+  return list
+      .map((dynamic item) {
+        final Map<String, dynamic> m = item as Map<String, dynamic>;
+        return AiResponseRecommendHorseModel(
+          num:          (m['num']        as int?)    ?? 0,
+          name:         (m['name']       as String?) ?? '',
+          popularity:   (m['popularity'] as int?)?.toString() ?? '',
+          odds:         (m['odds_6']     as num?)?.toStringAsFixed(1) ?? '',
+          score:        (m['score']      as int?)    ?? 0,
+          reason:       (m['reason']     as String?) ?? '',
+          category:     (m['category']   as String?) ?? 'first_only',
+          score1st:     m['score_1st']   as int?,
+          score2nd:     m['score_2nd']   as int?,
+          reasonSecond: m['reason_2nd']  as String?,
+        );
+      })
+      .where((AiResponseRecommendHorseModel h) => h.num > 0)
+      .toList();
+}

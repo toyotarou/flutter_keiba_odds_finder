@@ -49,6 +49,9 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
 
   List<AiResponseRecommendHorseModel> _secondAiHorses = <AiResponseRecommendHorseModel>[];
 
+  // merged_horses モード用（PHP統合結果）
+  List<AiResponseRecommendHorseModel> _mergedHorses = <AiResponseRecommendHorseModel>[];
+
   int? _upsetRaceValue;
   Map<String, int>? _raceMetrics;
   Map<int, double?> _baganrikiIndexMap = <int, double?>{};
@@ -60,6 +63,13 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
 
   /// 補欠馬リスト（表示用）: 1st AI の選出馬との差分
   List<AiResponseRecommendHorseModel> get _supplementHorses {
+    // merged_horses モードでは category == 'second_only' のみを補欠とする
+    if (_mergedHorses.isNotEmpty) {
+      return _mergedHorses
+          .where((AiResponseRecommendHorseModel h) => h.category == 'second_only')
+          .toList();
+    }
+    // フォールバック: 旧ロジック（テキストパース結果）
     final Set<int> claudeNums = _aiRecommendHorses.map((AiResponseRecommendHorseModel h) => h.num).toSet();
     return _secondAiHorses.where((AiResponseRecommendHorseModel h) => !claudeNums.contains(h.num)).toList();
   }
@@ -128,9 +138,15 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
         race: widget.raceNumber,
       );
       final String analysisText = (data['analysis_text'] as String?) ?? '';
+      final List<dynamic>? mergedRaw = data['merged_horses'] as List<dynamic>?;
       if (mounted) {
         setState(() {
-          _secondAiHorses = parseAnalysisText(analysisText);
+          if (mergedRaw != null && mergedRaw.isNotEmpty) {
+            _mergedHorses   = parseMergedHorses(mergedRaw);
+            _secondAiHorses = parseAnalysisText(analysisText); // 旧互換用
+          } else {
+            _secondAiHorses = parseAnalysisText(analysisText);
+          }
           _isLoadingSecondAi = false;
         });
       }
@@ -505,9 +521,12 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
     bool isSupplementary = false,
     bool hideSecondAiSection = false,
   }) {
-    final AiResponseRecommendHorseModel? secondAiHorse = (isSupplementary || hideSecondAiSection)
+    // merged_horses モードでは reasonSecond を直接使用、旧モードでは _secondAiHorses を参照
+    final String? secondAiReason = (isSupplementary || hideSecondAiSection)
         ? null
-        : _secondAiHorses.where((AiResponseRecommendHorseModel s) => s.num == h.num).firstOrNull;
+        : _mergedHorses.isNotEmpty
+            ? h.reasonSecond
+            : _secondAiHorses.where((AiResponseRecommendHorseModel s) => s.num == h.num).firstOrNull?.reason;
 
     final int? rank = widget.numToRankMap[h.num];
 
@@ -692,7 +711,7 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
                   h.reason.replaceAll(RegExp(r'\n?[─]+\n?'), '').trim(),
                   style: const TextStyle(letterSpacing: 0.4, height: 1.7),
                 ),
-                if (secondAiHorse != null) ...<Widget>[
+                if (secondAiReason != null && secondAiReason.isNotEmpty) ...<Widget>[
                   const SizedBox(height: 8),
                   Container(
                     width: double.infinity,
@@ -707,7 +726,7 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
                         const Text('2nd AI', style: TextStyle(fontSize: 10, color: Colors.greenAccent)),
                         const SizedBox(height: 4),
                         Text(
-                          secondAiHorse.reason.replaceAll(RegExp(r'\n?[─]+\n?'), '').trim(),
+                          secondAiReason.replaceAll(RegExp(r'\n?[─]+\n?'), '').trim(),
                           style: const TextStyle(letterSpacing: 0.4, height: 1.7),
                         ),
                       ],
@@ -745,8 +764,25 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
                 borderRadius: BorderRadius.circular(6),
               ),
               child: const Text(
-                '補欠',
+                '2nd AI独自',
                 style: TextStyle(fontSize: 10, color: Colors.greenAccent, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ),
+        if (!isSupplementary && h.category == 'matched')
+          Positioned(
+            top: 30,
+            right: 10,
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFD700).withValues(alpha: 0.15),
+                border: Border.all(color: const Color(0xFFFFD700)),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: const Text(
+                '両AI一致',
+                style: TextStyle(fontSize: 10, color: Color(0xFFFFD700), fontWeight: FontWeight.bold),
               ),
             ),
           ),
@@ -759,27 +795,53 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
     required List<AiResponseRecommendHorseModel> firstAiHorses,
     required List<AiResponseRecommendHorseModel> supplements,
   }) {
+    // merged_horses がある場合は統合表示モード
+    if (_mergedHorses.isNotEmpty) {
+      final List<AiResponseRecommendHorseModel> mainHorses = _mergedHorses
+          .where((AiResponseRecommendHorseModel h) => h.category != 'second_only')
+          .toList();
+      final List<AiResponseRecommendHorseModel> supHorses = _mergedHorses
+          .where((AiResponseRecommendHorseModel h) => h.category == 'second_only')
+          .toList();
+      return ListView(
+        children: <Widget>[
+          ...mainHorses.map(
+            (AiResponseRecommendHorseModel h) => _buildHorseCard(h, hideSecondAiSection: true),
+          ),
+          if (supHorses.isNotEmpty) ...<Widget>[
+            _buildSupplementDivider(),
+            ...supHorses.map((AiResponseRecommendHorseModel h) => _buildHorseCard(h, isSupplementary: true)),
+          ],
+        ],
+      );
+    }
+    // フォールバック: 旧ロジック
     return ListView(
       children: <Widget>[
-        // 1st AI（ai_analysis 4頭）のみ表示。2nd AI ボタンタップ後に補欠セクションを追加
         ...firstAiHorses.map((AiResponseRecommendHorseModel h) => _buildHorseCard(h)),
-        // 補欠：ai_analysis にいない DeepSeek 選出馬（7番、9番など）
         if (supplements.isNotEmpty) ...<Widget>[
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            child: Row(
-              children: <Widget>[
-                Expanded(child: Divider(color: Colors.greenAccent.withValues(alpha: 0.4))),
-                const SizedBox(width: 8),
-                const Text('2nd AI 補欠', style: TextStyle(fontSize: 11, color: Colors.greenAccent)),
-                const SizedBox(width: 8),
-                Expanded(child: Divider(color: Colors.greenAccent.withValues(alpha: 0.4))),
-              ],
-            ),
-          ),
+          _buildSupplementDivider(),
           ...supplements.map((AiResponseRecommendHorseModel h) => _buildHorseCard(h, isSupplementary: true)),
         ],
       ],
+    );
+  }
+
+  Widget _buildSupplementDivider() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        children: <Widget>[
+          Expanded(child: Divider(color: Colors.greenAccent.withValues(alpha: 0.4))),
+          const SizedBox(width: 8),
+          Text(
+            _mergedHorses.isNotEmpty ? '2nd AI 独自発見' : '2nd AI 補欠',
+            style: const TextStyle(fontSize: 11, color: Colors.greenAccent),
+          ),
+          const SizedBox(width: 8),
+          Expanded(child: Divider(color: Colors.greenAccent.withValues(alpha: 0.4))),
+        ],
+      ),
     );
   }
 }
