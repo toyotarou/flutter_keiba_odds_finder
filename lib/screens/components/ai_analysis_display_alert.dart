@@ -382,8 +382,10 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
     bool isSupplementary = false,
     bool hideSecondAiSection = false,
   }) {
-    // merged_horses モードでは reasonSecond を直接使用、旧モードでは widget.secondAiHorseList を参照
-    final String? secondAiReason = (isSupplementary || hideSecondAiSection)
+    // supplementary の場合は reason 自体が 2nd AI のコメント → 緑ボックスで表示
+    final String? secondAiReason = isSupplementary
+        ? h.reason
+        : hideSecondAiSection
         ? null
         : _mergedHorses.isNotEmpty
         ? h.reasonSecond
@@ -478,10 +480,8 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
           margin: const EdgeInsets.symmetric(vertical: 4),
           padding: const EdgeInsets.all(5),
           decoration: BoxDecoration(
-            color: isSupplementary ? Colors.greenAccent.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.4),
-            border: Border.all(
-              color: isSupplementary ? Colors.greenAccent.withValues(alpha: 0.4) : Colors.white.withValues(alpha: 0.5),
-            ),
+            color: Colors.black.withValues(alpha: 0.4),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.5)),
             borderRadius: BorderRadius.circular(6),
           ),
           child: DefaultTextStyle(
@@ -568,10 +568,11 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
                     ],
                   ),
                 ),
-                Text(
-                  h.reason.replaceAll(RegExp(r'\n?[─]+\n?'), '').trim(),
-                  style: const TextStyle(letterSpacing: 0.4, height: 1.7),
-                ),
+                if (!isSupplementary)
+                  Text(
+                    h.reason.replaceAll(RegExp(r'\n?[─]+\n?'), '').trim(),
+                    style: const TextStyle(letterSpacing: 0.4, height: 1.7),
+                  ),
                 if (secondAiReason != null && secondAiReason.isNotEmpty) ...<Widget>[
                   const SizedBox(height: 8),
                   Container(
@@ -613,23 +614,6 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
               child: Text('$rank位', style: const TextStyle(fontSize: 12, color: Colors.white)),
             ),
           ),
-        if (isSupplementary)
-          Positioned(
-            top: 30,
-            right: 10,
-            child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 8),
-              decoration: BoxDecoration(
-                color: Colors.greenAccent.withValues(alpha: 0.15),
-                border: Border.all(color: Colors.greenAccent),
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: const Text(
-                '2nd AI独自',
-                style: TextStyle(fontSize: 10, color: Colors.greenAccent, fontWeight: FontWeight.bold),
-              ),
-            ),
-          ),
         if (!isSupplementary && h.category == 'matched')
           Positioned(
             top: 30,
@@ -656,51 +640,20 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
     required List<AiResponseRecommendHorseModel> firstAiHorses,
     required List<AiResponseRecommendHorseModel> supplements,
   }) {
-    // merged_horses がある場合は統合表示モード
+    // merged_horses がある場合は統合表示モード（仕切りなし）
     if (_mergedHorses.isNotEmpty) {
-      final List<AiResponseRecommendHorseModel> mainHorses = _mergedHorses
-          .where((AiResponseRecommendHorseModel h) => h.category != 'second_only')
-          .toList();
-      final List<AiResponseRecommendHorseModel> supHorses = _mergedHorses
-          .where((AiResponseRecommendHorseModel h) => h.category == 'second_only')
-          .toList();
       return ListView(
-        children: <Widget>[
-          ...mainHorses.map((AiResponseRecommendHorseModel h) => _buildHorseCard(h, hideSecondAiSection: true)),
-          if (supHorses.isNotEmpty) ...<Widget>[
-            _buildSupplementDivider(),
-            ...supHorses.map((AiResponseRecommendHorseModel h) => _buildHorseCard(h, isSupplementary: true)),
-          ],
-        ],
+        children: _mergedHorses
+            .map((AiResponseRecommendHorseModel h) => _buildHorseCard(h, isSupplementary: h.category == 'second_only'))
+            .toList(),
       );
     }
-    // フォールバック: 旧ロジック
+    // フォールバック: 旧ロジック（仕切りなし）
     return ListView(
       children: <Widget>[
         ...firstAiHorses.map((AiResponseRecommendHorseModel h) => _buildHorseCard(h)),
-        if (supplements.isNotEmpty) ...<Widget>[
-          _buildSupplementDivider(),
-          ...supplements.map((AiResponseRecommendHorseModel h) => _buildHorseCard(h, isSupplementary: true)),
-        ],
+        ...supplements.map((AiResponseRecommendHorseModel h) => _buildHorseCard(h, isSupplementary: true)),
       ],
-    );
-  }
-
-  Widget _buildSupplementDivider() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        children: <Widget>[
-          Expanded(child: Divider(color: Colors.greenAccent.withValues(alpha: 0.4))),
-          const SizedBox(width: 8),
-          Text(
-            _mergedHorses.isNotEmpty ? '2nd AI 独自発見' : '2nd AI 補欠',
-            style: const TextStyle(fontSize: 11, color: Colors.greenAccent),
-          ),
-          const SizedBox(width: 8),
-          Expanded(child: Divider(color: Colors.greenAccent.withValues(alpha: 0.4))),
-        ],
-      ),
     );
   }
 }
