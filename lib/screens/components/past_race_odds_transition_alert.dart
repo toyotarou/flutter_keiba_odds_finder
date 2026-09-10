@@ -774,10 +774,9 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
                                           currentRaceModel: currentRaceModel,
                                           gapHorseNums: gapHorseNums,
                                           upsetPickupHorseNums: upsetPickupHorseNums,
-                                          aiHorseList: firstHorses,
+                                          aiHorseList: mergeAiHorseLists(firstHorses, secondHorses),
                                           upsetRaceValue: parseUpsetRaceValue(firstAiText),
                                           raceMetrics: parseRaceMetrics(firstAiText),
-                                          secondAiHorseList: secondHorses,
                                         ),
                                       );
                                     },

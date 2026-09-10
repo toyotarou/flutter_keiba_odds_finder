@@ -28,7 +28,6 @@ class TotalForecastDisplayAlert extends ConsumerStatefulWidget {
     required this.aiHorseList,
     this.upsetRaceValue,
     this.raceMetrics,
-    required this.secondAiHorseList,
   });
 
   /// 6分前オッズのリスト（オッズ昇順ソート済み）。
@@ -42,7 +41,6 @@ class TotalForecastDisplayAlert extends ConsumerStatefulWidget {
   final List<AiResponseRecommendHorseModel> aiHorseList;
   final int? upsetRaceValue;
   final Map<String, int>? raceMetrics;
-  final List<AiResponseRecommendHorseModel> secondAiHorseList;
   final String? overrideDate;
   final String? overrideKaisuuBashoDay;
   final PopularityRankOddsMedianModel? overrideMedianModel;
@@ -134,14 +132,7 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
     for (final AiResponseRecommendHorseModel h in widget.aiHorseList) h.num: h.score.toString(),
   };
 
-  Set<int> get _secondAiNums => widget.secondAiHorseList.map((AiResponseRecommendHorseModel h) => h.num).toSet();
-
-  Map<int, String> get _secondAiScores => <int, String>{
-    for (final AiResponseRecommendHorseModel h in widget.secondAiHorseList) h.num: h.score.toString(),
-  };
-
-  Set<int> get _supplementNums => _secondAiNums.difference(_aiPickupNums);
-
+  ///
   Future<void> _fetchAll() async {
     _loadingTimer?.cancel();
     _loadingTimer = Timer(const Duration(milliseconds: 800), () {
@@ -485,7 +476,6 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
     final String horseName = widget.horseModelMap[item.num]?.name ?? '';
     final int? rank = widget.numToRankMap[item.num];
     final bool isAiPickup = _aiPickupNums.contains(item.num);
-    final bool isSupplementary = !isAiPickup && _supplementNums.contains(item.num);
     final bool hasAnalysis = _highProbabilityPopularities.contains(popularity);
     final bool isInHighlight = pickupPopularitySet.contains(popularity);
 
@@ -613,13 +603,7 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
                       ),
                     ),
 
-                    Expanded(
-                      child: isAiPickup
-                          ? _buildAiBadge(item.num)
-                          : isSupplementary
-                          ? _buildSupplementBadge(item.num)
-                          : const SizedBox.shrink(),
-                    ),
+                    Expanded(child: isAiPickup ? _buildAiBadge(item.num) : const SizedBox.shrink()),
                     Expanded(child: hasAnalysis ? _buildPastBadge() : const SizedBox.shrink()),
                   ],
                 ),
@@ -714,38 +698,6 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
               bottom: 0,
               child: Text(
                 '${_aiPickupScores[horseNum]} %',
-                style: const TextStyle(fontSize: 12, color: Colors.white, fontWeight: FontWeight.bold),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-
-  ///
-  Widget _buildSupplementBadge(int horseNum) {
-    return Center(
-      child: Stack(
-        children: <Widget>[
-          Container(
-            margin: const EdgeInsets.only(top: 5, right: 15, left: 5, bottom: 5),
-            padding: const EdgeInsets.symmetric(vertical: 3, horizontal: 10),
-            decoration: BoxDecoration(
-              color: Colors.greenAccent.withValues(alpha: 0.15),
-              border: Border.all(color: Colors.greenAccent),
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: const Text(
-              '補欠',
-              style: TextStyle(fontSize: 9, color: Colors.greenAccent, fontWeight: FontWeight.bold),
-            ),
-          ),
-          if (_secondAiScores[horseNum] != null)
-            Positioned(
-              right: 0,
-              bottom: 0,
-              child: Text(
-                '${_secondAiScores[horseNum]} %',
                 style: const TextStyle(fontSize: 12, color: Colors.white, fontWeight: FontWeight.bold),
               ),
             ),

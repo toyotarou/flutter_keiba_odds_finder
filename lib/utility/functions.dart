@@ -639,3 +639,15 @@ List<AiResponseRecommendHorseModel> parseMergedHorses(List<dynamic> list) {
       .where((AiResponseRecommendHorseModel h) => h.num > 0)
       .toList();
 }
+
+/// 1st AI / 2nd AI のリストを1本に統合する。重複（同じ馬番）は 1st AI を優先。
+List<AiResponseRecommendHorseModel> mergeAiHorseLists(
+  List<AiResponseRecommendHorseModel> first,
+  List<AiResponseRecommendHorseModel> second,
+) {
+  final Set<int> firstNums = first.map((AiResponseRecommendHorseModel h) => h.num).toSet();
+  return <AiResponseRecommendHorseModel>[
+    ...first,
+    ...second.where((AiResponseRecommendHorseModel h) => !firstNums.contains(h.num)),
+  ];
+}

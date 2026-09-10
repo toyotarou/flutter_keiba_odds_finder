@@ -1896,10 +1896,9 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                             pickupHorse: _aiPickupHorse,
                             gapHorseNums: gapHorseNums,
                             upsetPickupHorseNums: upsetPickupHorseNums,
-                            aiHorseList: _totalForecastAiHorseList,
+                            aiHorseList: mergeAiHorseLists(_totalForecastAiHorseList, _secondAiHorseList),
                             upsetRaceValue: _totalForecastUpsetRaceValue,
                             raceMetrics: _totalForecastRaceMetrics,
-                            secondAiHorseList: _secondAiHorseList,
                           ),
                         );
                       },
