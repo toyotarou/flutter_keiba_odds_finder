@@ -96,6 +96,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
   int? _totalForecastUpsetRaceValue;
   Map<String, int>? _totalForecastRaceMetrics;
   List<AiResponseRecommendHorseModel> _secondAiHorseList = <AiResponseRecommendHorseModel>[];
+  List<AiResponseRecommendHorseModel> _mergedHorseList = <AiResponseRecommendHorseModel>[];
 
   // AI取得中ローディング管理
   int _aiPendingCount = 0;
@@ -262,10 +263,14 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
         race: race,
       );
       final String analysisText = (data['analysis_text'] as String?) ?? '';
+      final List<dynamic>? mergedRaw = data['merged_horses'] as List<dynamic>?;
       final List<AiResponseRecommendHorseModel> horses = parseAnalysisText(analysisText);
       if (mounted) {
         setState(() {
           _secondAiHorseList = horses;
+          if (mergedRaw != null && mergedRaw.isNotEmpty) {
+            _mergedHorseList = parseMergedHorses(mergedRaw);
+          }
         });
       }
     } catch (_) {
@@ -1839,17 +1844,16 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                     borderRadius: BorderRadius.circular(10),
                     child: InkWell(
                       onTap: () {
-                        final List<int> gapHorseNums = _calcOddsGapHorseNums();
-
-                        final List<int> upsetPickupHorseNums = _calcUpsetPickupHorseNums();
-
                         OddsFinderDialog(
                           context: context,
                           widget: AiAnalysisDisplayAlert(
                             raceNumber: widget.raceNumber,
-                            gapHorseNums: gapHorseNums,
-                            upsetPickupHorseNums: upsetPickupHorseNums,
                             numToRankMap: numToRankMap,
+                            aiHorseList: _totalForecastAiHorseList,
+                            secondAiHorseList: _secondAiHorseList,
+                            mergedHorseList: _mergedHorseList.isNotEmpty ? _mergedHorseList : null,
+                            upsetRaceValue: _totalForecastUpsetRaceValue,
+                            raceMetrics: _totalForecastRaceMetrics,
                           ),
                         );
                       },

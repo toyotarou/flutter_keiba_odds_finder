@@ -708,6 +708,8 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
                                 borderRadius: BorderRadius.circular(10),
                                 child: InkWell(
                                   onTap: () {
+                                    final String firstText = _firstAiTextMap[lookupKey] ?? '';
+                                    final String secondText = _secondAiTextMap[lookupKey] ?? '';
                                     OddsFinderDialog(
                                       context: context,
                                       widget: AiAnalysisDisplayAlert(
@@ -715,9 +717,11 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
                                         overrideKaisuuBashoDay:
                                             '${models.first.kaisuu}_${models.first.basho}_${models.first.day}',
                                         raceNumber: r.key,
-                                        gapHorseNums: gapHorseNums,
-                                        upsetPickupHorseNums: upsetPickupHorseNums,
                                         numToRankMap: numToRankMap,
+                                        aiHorseList: parseAnalysisText(firstText),
+                                        secondAiHorseList: parseAnalysisText(secondText),
+                                        upsetRaceValue: parseUpsetRaceValue(firstText),
+                                        raceMetrics: parseRaceMetrics(firstText),
                                       ),
                                     );
                                   },

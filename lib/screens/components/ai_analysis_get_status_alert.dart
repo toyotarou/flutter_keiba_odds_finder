@@ -4,8 +4,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../controllers/controllers_mixin.dart';
 import '../../extensions/extensions.dart';
 import '../../models/ai_analysis_model.dart';
-import '../../models/odds_model.dart';
-import '../../models/popularity_rank_odds_median_model.dart';
+import '../../models/common/ai_response_recommend_horse_model.dart';
+
+// import '../../models/odds_model.dart';
+//
+//
+//
+
 import '../../models/schedule_model.dart';
 import '../../utility/functions.dart';
 import '../parts/odds_finder_dialog.dart';
@@ -111,35 +116,37 @@ class _AiAnalysisGetStatusAlertState extends ConsumerState<AiAnalysisGetStatusAl
                             kbd: '${schedule.kaisuu}_${schedule.basho}_${schedule.day}',
                             name: '${schedule.kaisuu}回 ${schedule.bashoName} ${schedule.day}日',
                           );
-                          final String oddsKey =
-                              '${schedule.date}_${schedule.kaisuu}_${schedule.basho}_${schedule.day}';
-                          final List<OddsModel> oddsForRace = (appParamState.keepOddsMap[oddsKey] ?? <OddsModel>[])
-                              .where((OddsModel e) => e.race == raceNum)
-                              .toList();
-                          final List<int> gapHorseNums = calcOddsGapHorseNums(oddsForRace);
-                          final String configFirstKey = appParamState.configOddsGetTiming.split('|').first;
-                          final List<OddsModel> displayList = buildOddsDisplayList(
-                            oddsForRace: oddsForRace,
-                            selectedTiming: appParamState.selectedTiming,
-                            configFirstKey: configFirstKey,
-                          );
-                          final PopularityRankOddsMedianModel? medianModel =
-                              (appParamState.keepPopularityRankOddsMedianMap[oddsKey] ??
-                                      <PopularityRankOddsMedianModel>[])
-                                  .where((PopularityRankOddsMedianModel e) => e.race == raceNum)
-                                  .firstOrNull;
-                          final List<int> upsetPickupHorseNums = calcUpsetPickupHorseNums(
-                            oddsForRace: oddsForRace,
-                            medianModel: medianModel,
-                            displayList: displayList,
-                          );
+                          // final String oddsKey =
+                          //     '${schedule.date}_${schedule.kaisuu}_${schedule.basho}_${schedule.day}';
+                          //
+                          //
+                          //
+
+                          // final List<OddsModel> oddsForRace = (appParamState.keepOddsMap[oddsKey] ?? <OddsModel>[])
+                          //     .where((OddsModel e) => e.race == raceNum)
+                          //     .toList();
+
+                          final AiAnalysisModel? aiModel = aiList
+                              .where((AiAnalysisModel m) => m.race == raceNum)
+                              .firstOrNull;
+                          final AiAnalysisModel? ai2Model = aiList2
+                              .where((AiAnalysisModel m) => m.race == raceNum)
+                              .firstOrNull;
+                          final List<AiResponseRecommendHorseModel> aiHorseList = aiModel != null
+                              ? parseAnalysisText(aiModel.analysisText)
+                              : <AiResponseRecommendHorseModel>[];
+                          final List<AiResponseRecommendHorseModel> secondAiHorseList = ai2Model != null
+                              ? parseAnalysisText(ai2Model.analysisText)
+                              : <AiResponseRecommendHorseModel>[];
                           OddsFinderDialog(
                             context: context,
                             widget: AiAnalysisDisplayAlert(
                               raceNumber: raceNum,
-                              gapHorseNums: gapHorseNums,
-                              upsetPickupHorseNums: upsetPickupHorseNums,
                               numToRankMap: const <int, int>{},
+                              aiHorseList: aiHorseList,
+                              secondAiHorseList: secondAiHorseList,
+                              upsetRaceValue: aiModel != null ? parseUpsetRaceValue(aiModel.analysisText) : null,
+                              raceMetrics: aiModel != null ? parseRaceMetrics(aiModel.analysisText) : null,
                             ),
                           );
                         },

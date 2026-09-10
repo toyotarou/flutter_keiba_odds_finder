@@ -16,17 +16,23 @@ class AiAnalysisDisplayAlert extends ConsumerStatefulWidget {
     this.overrideKaisuuBashoDay,
     super.key,
     required this.raceNumber,
-    required this.gapHorseNums,
-    required this.upsetPickupHorseNums,
     required this.numToRankMap,
+    required this.aiHorseList,
+    required this.secondAiHorseList,
+    this.mergedHorseList,
+    this.upsetRaceValue,
+    this.raceMetrics,
   });
 
   final int raceNumber;
-  final List<int> gapHorseNums;
-  final List<int> upsetPickupHorseNums;
   final Map<int, int> numToRankMap;
   final String? overrideDate;
   final String? overrideKaisuuBashoDay;
+  final List<AiResponseRecommendHorseModel> aiHorseList;
+  final List<AiResponseRecommendHorseModel> secondAiHorseList;
+  final List<AiResponseRecommendHorseModel>? mergedHorseList;
+  final int? upsetRaceValue;
+  final Map<String, int>? raceMetrics;
 
   @override
   ConsumerState<AiAnalysisDisplayAlert> createState() => _AiAnalysisDisplayAlertState();
@@ -34,26 +40,7 @@ class AiAnalysisDisplayAlert extends ConsumerStatefulWidget {
 
 class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
     with ControllersMixin<AiAnalysisDisplayAlert> {
-  bool _isLoading = true;
-
-  List<AiResponseRecommendHorseModel> _aiRecommendHorses = <AiResponseRecommendHorseModel>[];
-
-  String? _errorMessage;
-
   final Map<String, RaceResultPayoutModel> _payoutMap = <String, RaceResultPayoutModel>{};
-
-  bool _isLoadingSecondAi = false;
-
-  // 2nd AI呼び出し済みフラグ（空結果でも再呼び出し防止）
-  bool _secondAiFetched = false;
-
-  List<AiResponseRecommendHorseModel> _secondAiHorses = <AiResponseRecommendHorseModel>[];
-
-  // merged_horses モード用（PHP統合結果）
-  List<AiResponseRecommendHorseModel> _mergedHorses = <AiResponseRecommendHorseModel>[];
-
-  int? _upsetRaceValue;
-  Map<String, int>? _raceMetrics;
   Map<int, double?> _baganrikiIndexMap = <int, double?>{};
 
   /// 過去レースから呼ばれた場合は override 値を、そうでなければ appParamState の値を使う
@@ -61,24 +48,22 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
 
   String get _effectiveKbd => widget.overrideKaisuuBashoDay ?? appParamState.selectedScheduleKaisuuBashoDay;
 
+  List<AiResponseRecommendHorseModel> get _mergedHorses => widget.mergedHorseList ?? <AiResponseRecommendHorseModel>[];
+
   /// 補欠馬リスト（表示用）: 1st AI の選出馬との差分
   List<AiResponseRecommendHorseModel> get _supplementHorses {
-    // merged_horses モードでは category == 'second_only' のみを補欠とする
     if (_mergedHorses.isNotEmpty) {
-      return _mergedHorses
-          .where((AiResponseRecommendHorseModel h) => h.category == 'second_only')
-          .toList();
+      return _mergedHorses.where((AiResponseRecommendHorseModel h) => h.category == 'second_only').toList();
     }
-    // フォールバック: 旧ロジック（テキストパース結果）
-    final Set<int> claudeNums = _aiRecommendHorses.map((AiResponseRecommendHorseModel h) => h.num).toSet();
-    return _secondAiHorses.where((AiResponseRecommendHorseModel h) => !claudeNums.contains(h.num)).toList();
+    final Set<int> claudeNums = widget.aiHorseList.map((AiResponseRecommendHorseModel h) => h.num).toSet();
+    return widget.secondAiHorseList.where((AiResponseRecommendHorseModel h) => !claudeNums.contains(h.num)).toList();
   }
 
   /// 補欠カバー数（集計用）: ai_analysis（1st AI 4頭）を基準にして計算
   /// 7番など ai_analysis にいない 2nd AI 馬が入賞した頭数を返す
   int _calcSupplementCoveredCount({required String? introspectionText, required RaceResultPayoutModel? payout}) {
-    final Set<int> aiNums = _aiRecommendHorses.map((AiResponseRecommendHorseModel h) => h.num).toSet();
-    final List<AiResponseRecommendHorseModel> supplementHorses = _secondAiHorses
+    final Set<int> aiNums = widget.aiHorseList.map((AiResponseRecommendHorseModel h) => h.num).toSet();
+    final List<AiResponseRecommendHorseModel> supplementHorses = widget.secondAiHorseList
         .where((AiResponseRecommendHorseModel h) => !aiNums.contains(h.num))
         .toList();
     return calcSupplementCoveredCount(supplementHorses: supplementHorses, payout: payout) ?? 0;
@@ -89,7 +74,6 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _fetchAiAnalysis();
       _fetchPayout();
       _fetchBaganrikiIndex();
     });
@@ -115,49 +99,6 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
   }
 
   ///
-  Future<void> _fetchSecondAiOpinion() async {
-    // _secondAiHorses.isNotEmpty だけをガードにすると、APIが不正フォーマットを返して
-    // parseAnalysisText が空リストになった場合にガードをすり抜けてしまう。
-    // _secondAiFetched フラグで「一度でも呼び出した」ことを追跡する。
-    if (_isLoadingSecondAi || _secondAiFetched) {
-      return;
-    }
-    _secondAiFetched = true; // 非同期処理前にセット（二重呼び出し防止）
-    setState(() => _isLoadingSecondAi = true);
-
-    final String date = _effectiveDate;
-    final (:String kaisuu, :String basho, :String day) = parseKbdParts(_effectiveKbd);
-
-    try {
-      final Map<String, dynamic> data = await fetchSecondAiOpinionData(
-        ref,
-        date: date,
-        kaisuu: kaisuu,
-        basho: basho,
-        day: day,
-        race: widget.raceNumber,
-      );
-      final String analysisText = (data['analysis_text'] as String?) ?? '';
-      final List<dynamic>? mergedRaw = data['merged_horses'] as List<dynamic>?;
-      if (mounted) {
-        setState(() {
-          if (mergedRaw != null && mergedRaw.isNotEmpty) {
-            _mergedHorses   = parseMergedHorses(mergedRaw);
-            _secondAiHorses = parseAnalysisText(analysisText); // 旧互換用
-          } else {
-            _secondAiHorses = parseAnalysisText(analysisText);
-          }
-          _isLoadingSecondAi = false;
-        });
-      }
-    } catch (_) {
-      if (mounted) {
-        setState(() => _isLoadingSecondAi = false);
-      }
-    }
-  }
-
-  ///
   Future<void> _fetchBaganrikiIndex() async {
     final String date = _effectiveDate;
     final (:String kaisuu, :String basho, :String day) = parseKbdParts(_effectiveKbd);
@@ -179,59 +120,8 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
   }
 
   ///
-  Future<void> _fetchAiAnalysis() async {
-    final String date = _effectiveDate;
-    final (:String kaisuu, :String basho, :String day) = parseKbdParts(_effectiveKbd);
-
-    try {
-      final Map<String, dynamic> data = await fetchAiAnalysisData(
-        ref,
-        date: date,
-        kaisuu: kaisuu,
-        basho: basho,
-        day: day,
-        race: widget.raceNumber,
-        gapHorseNums: widget.gapHorseNums,
-        upsetPickupHorseNums: widget.upsetPickupHorseNums,
-      );
-      final String analysisText = (data['analysis_text'] as String?) ?? '';
-      if (mounted) {
-        setState(() {
-          _aiRecommendHorses = parseAnalysisText(analysisText);
-          _upsetRaceValue = parseUpsetRaceValue(analysisText);
-          _raceMetrics = parseRaceMetrics(analysisText);
-          _isLoading = false;
-        });
-      }
-    } catch (_) {
-      if (mounted) {
-        setState(() {
-          _errorMessage = 'データの取得に失敗しました';
-          _isLoading = false;
-        });
-      }
-    }
-  }
-
-  ///
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
-      return const Padding(
-        padding: EdgeInsets.all(48),
-        child: Center(child: CircularProgressIndicator(color: Colors.yellowAccent)),
-      );
-    }
-
-    if (_errorMessage != null) {
-      return Padding(
-        padding: const EdgeInsets.all(24),
-        child: Center(
-          child: Text(_errorMessage!, style: const TextStyle(color: Colors.redAccent, fontSize: 14)),
-        ),
-      );
-    }
-
     final (:String kaisuu, :String basho, day: String dayStr) = parseKbdParts(_effectiveKbd);
 
     final int kaisuuInt = int.tryParse(kaisuu) ?? 0;
@@ -257,7 +147,7 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
     final List<AiResponseRecommendHorseModel> supplements = _supplementHorses;
 
     // 補欠カバー数: ai_analysis（4頭）基準 — 7番など 2nd AI 補欠が入賞した頭数
-    // ※ 2nd AI 未取得時は _secondAiHorses が空なので 0 になる（正常）
+    // ※ 2nd AI 未取得時は widget.secondAiHorseList が空なので 0 になる（正常）
     final int supplementCoveredCount = _calcSupplementCoveredCount(
       introspectionText: introspectionModel?.introspection,
       payout: payout,
@@ -265,7 +155,7 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
 
     // 1st AI（ai_analysis 4頭）が 3着以内に入った頭数を numToRankMap から直接計算
     // → 2nd AI のロード状態に関係なく常に正しい値を返す
-    final int firstAiMatchCount = _aiRecommendHorses
+    final int firstAiMatchCount = widget.aiHorseList
         .where((AiResponseRecommendHorseModel h) => (widget.numToRankMap[h.num] ?? 99) <= 3)
         .length;
 
@@ -325,82 +215,53 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
                           ),
                       ],
                     ),
-                    Row(
-                      children: <Widget>[
-                        _buildSecondAiButton(),
-                        if (showResultButton) ...<Widget>[
-                          const SizedBox(width: 10),
-                          _buildResultButton(
-                            matchCount: matchCount,
-                            supplementCoveredCount: supplementCoveredCount,
-                            supplements: supplements,
-                          ),
-                        ],
-                      ],
-                    ),
+                    if (showResultButton)
+                      _buildResultButton(
+                        matchCount: matchCount,
+                        supplementCoveredCount: supplementCoveredCount,
+                        supplements: supplements,
+                      ),
                   ],
                 ),
                 Divider(color: Colors.white.withValues(alpha: 0.4), thickness: 5),
-                if (_upsetRaceValue != null) ...<Widget>[
+                if (widget.upsetRaceValue != null) ...<Widget>[
                   Center(
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: <Widget>[
-                        if (_upsetRaceValue == 0) ...<Widget>[Container(width: 20, height: 1, color: Colors.white)],
+                        if (widget.upsetRaceValue == 0) ...<Widget>[
+                          Container(width: 20, height: 1, color: Colors.white),
+                        ],
                         Text(
                           '厳選穴レース',
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.bold,
-                            color: _upsetRaceValue == 1 ? const Color(0xFFFBB6CE) : Colors.white.withValues(alpha: 0.4),
-                            decoration: _upsetRaceValue == 0 ? TextDecoration.lineThrough : TextDecoration.none,
+                            color: widget.upsetRaceValue == 1
+                                ? const Color(0xFFFBB6CE)
+                                : Colors.white.withValues(alpha: 0.4),
+                            decoration: widget.upsetRaceValue == 0 ? TextDecoration.lineThrough : TextDecoration.none,
                             decorationColor: Colors.white,
                           ),
                         ),
-                        if (_upsetRaceValue == 0) ...<Widget>[Container(width: 20, height: 1, color: Colors.white)],
+                        if (widget.upsetRaceValue == 0) ...<Widget>[
+                          Container(width: 20, height: 1, color: Colors.white),
+                        ],
                       ],
                     ),
                   ),
                   const SizedBox(height: 6),
                 ],
-                if (_raceMetrics != null) ...<Widget>[_buildRaceMetrics(_raceMetrics!), const SizedBox(height: 6)],
+                if (widget.raceMetrics != null) ...<Widget>[
+                  _buildRaceMetrics(widget.raceMetrics!),
+                  const SizedBox(height: 6),
+                ],
                 Expanded(
-                  child: _buildHorseList(firstAiHorses: _aiRecommendHorses, supplements: supplements),
+                  child: _buildHorseList(firstAiHorses: widget.aiHorseList, supplements: supplements),
                 ),
               ],
             ),
           ),
-        ),
-      ),
-    );
-  }
-
-  ///
-  Widget _buildSecondAiButton() {
-    return Material(
-      color: Colors.transparent,
-      borderRadius: BorderRadius.circular(10),
-      child: InkWell(
-        onTap: _isLoadingSecondAi ? null : _fetchSecondAiOpinion,
-        borderRadius: BorderRadius.circular(10),
-        splashColor: Colors.greenAccent.withValues(alpha: 0.35),
-        highlightColor: Colors.greenAccent.withValues(alpha: 0.1),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 10),
-          decoration: BoxDecoration(
-            border: Border.all(color: Colors.greenAccent),
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: _isLoadingSecondAi
-              ? const SizedBox(
-                  width: 12,
-                  height: 12,
-                  child: CircularProgressIndicator(color: Colors.greenAccent, strokeWidth: 1.5),
-                )
-              : const Text(
-                  '2nd AI',
-                  style: TextStyle(fontSize: 10, color: Colors.greenAccent, fontWeight: FontWeight.bold),
-                ),
         ),
       ),
     );
@@ -451,7 +312,7 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
                   OddsFinderDialog(
                     context: context,
                     widget: AiAnalysisPayoutResultAlert(
-                      aiRecommendHorses: _aiRecommendHorses,
+                      aiRecommendHorses: widget.aiHorseList,
                       raceNumber: widget.raceNumber,
                       supplementHorses: supplements,
                       supplementCoveredCount: supplementCoveredCount,
@@ -521,12 +382,12 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
     bool isSupplementary = false,
     bool hideSecondAiSection = false,
   }) {
-    // merged_horses モードでは reasonSecond を直接使用、旧モードでは _secondAiHorses を参照
+    // merged_horses モードでは reasonSecond を直接使用、旧モードでは widget.secondAiHorseList を参照
     final String? secondAiReason = (isSupplementary || hideSecondAiSection)
         ? null
         : _mergedHorses.isNotEmpty
-            ? h.reasonSecond
-            : _secondAiHorses.where((AiResponseRecommendHorseModel s) => s.num == h.num).firstOrNull?.reason;
+        ? h.reasonSecond
+        : widget.secondAiHorseList.where((AiResponseRecommendHorseModel s) => s.num == h.num).firstOrNull?.reason;
 
     final int? rank = widget.numToRankMap[h.num];
 
@@ -805,9 +666,7 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
           .toList();
       return ListView(
         children: <Widget>[
-          ...mainHorses.map(
-            (AiResponseRecommendHorseModel h) => _buildHorseCard(h, hideSecondAiSection: true),
-          ),
+          ...mainHorses.map((AiResponseRecommendHorseModel h) => _buildHorseCard(h, hideSecondAiSection: true)),
           if (supHorses.isNotEmpty) ...<Widget>[
             _buildSupplementDivider(),
             ...supHorses.map((AiResponseRecommendHorseModel h) => _buildHorseCard(h, isSupplementary: true)),
