@@ -175,10 +175,10 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
 
     _beginAiFetch();
 
-    final String date = appParamState.selectedScheduleDate;
-    final int race = widget.raceNumber;
-    final (:String kaisuu, :String basho, :String day) = parseKbdParts(appParamState.selectedScheduleKaisuuBashoDay);
     try {
+      final String date = appParamState.selectedScheduleDate;
+      final int race = widget.raceNumber;
+      final (:String kaisuu, :String basho, :String day) = parseKbdParts(appParamState.selectedScheduleKaisuuBashoDay);
       final List<int> gapHorseNums = _calcOddsGapHorseNums();
       final List<int> upsetPickupHorseNums = _calcUpsetPickupHorseNums();
 
@@ -250,10 +250,10 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
 
     _beginAiFetch();
 
-    final String date = appParamState.selectedScheduleDate;
-    final int race = widget.raceNumber;
-    final (:String kaisuu, :String basho, :String day) = parseKbdParts(appParamState.selectedScheduleKaisuuBashoDay);
     try {
+      final String date = appParamState.selectedScheduleDate;
+      final int race = widget.raceNumber;
+      final (:String kaisuu, :String basho, :String day) = parseKbdParts(appParamState.selectedScheduleKaisuuBashoDay);
       final Map<String, dynamic> data = await fetchSecondAiOpinionData(
         ref,
         date: date,
@@ -298,8 +298,9 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     if (_aiPendingCount == 0) {
       _aiLoadingTimer?.cancel();
       _aiLoadingTimer = null;
-      if (mounted && _showAiLoading) {
-        setState(() => _showAiLoading = false);
+      _showAiLoading = false;
+      if (mounted) {
+        setState(() {});
       }
     }
   }
