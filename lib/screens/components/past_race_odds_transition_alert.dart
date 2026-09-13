@@ -595,19 +595,6 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
       payout: payout,
     );
 
-    // DBのresultTextはピックアップ（6頭）ベースで生成されているため、
-    // ai_analysis基準の補欠カバー分（7番など）を差し引いて表示テキストを補正する
-    // 例: "6頭中2頭が合致" + supplementCoveredCount=1 → "6頭中1頭が合致"
-    String? adjustedResultText = resultText;
-    if (resultText != null && supplementCoveredCount != null && supplementCoveredCount > 0) {
-      final RegExpMatch? m = RegExp(r'(\d+)頭が合致').firstMatch(resultText);
-      if (m != null) {
-        final int origCount = int.tryParse(m.group(1) ?? '') ?? 0;
-        final int adjCount = (origCount - supplementCoveredCount).clamp(0, origCount);
-        adjustedResultText = resultText.replaceFirst(RegExp(r'\d+頭が合致'), '$adjCount頭が合致');
-      }
-    }
-
     final String grade = payout?.grade ?? '';
 
     // ═══ NNN: keepRaceMap からこのレースの RaceModel を特定 ═══════════════
@@ -643,6 +630,23 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
       displayList: displayList,
     );
     // ════════════════════════════════════════════════════════════════════════
+
+    // 1st AI の馬番リストと numToRankMap から直接合致数を計算する（ai_analysis_display_alert と同じロジック）
+    final List<AiResponseRecommendHorseModel> firstAiHorses = parseAnalysisText(_firstAiTextMap[lookupKey] ?? '');
+    final int firstAiMatchCount = firstAiHorses
+        .where((AiResponseRecommendHorseModel h) => (numToRankMap[h.num] ?? 99) <= 3)
+        .length;
+
+    String? adjustedResultText = resultText;
+    if (resultText != null && firstAiHorses.isNotEmpty) {
+      final RegExpMatch? m = RegExp(r'(\d+)頭が合致').firstMatch(resultText);
+      if (m != null) {
+        final int origCount = int.tryParse(m.group(1) ?? '') ?? 0;
+        if (origCount != firstAiMatchCount) {
+          adjustedResultText = resultText.replaceFirst(RegExp(r'\d+頭が合致'), '$firstAiMatchCount頭が合致');
+        }
+      }
+    }
 
     return DefaultTextStyle(
       style: const TextStyle(color: Colors.white70, fontSize: 11),
