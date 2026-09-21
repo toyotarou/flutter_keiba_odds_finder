@@ -56,6 +56,16 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
 
   final Map<String, String?> _secondAiTextMap = <String, String?>{};
 
+  /// 2nd AI API が返す統合結果（merged_horses）をレースキー単位で保持する。
+  final Map<String, List<AiResponseRecommendHorseModel>> _mergedHorsesMap =
+      <String, List<AiResponseRecommendHorseModel>>{};
+
+  /// 統合後にサーバーが再判定した厳選穴レース値（1st AI テキストの値より優先する）。
+  final Map<String, int> _mergedUpsetRaceMap = <String, int>{};
+
+  /// サーバーが確定させたレース指標（波乱度・下位進入度・大穴進入度）。
+  final Map<String, Map<String, int>> _mergedRaceMetricsMap = <String, Map<String, int>>{};
+
   final Set<String> _fetchedSecondAiDates = <String>{};
 
   final Map<String, String?> _firstAiTextMap = <String, String?>{};
@@ -116,11 +126,27 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
               )
               .then((Map<String, dynamic> data) {
                 final String? text = data['analysis_text'] as String?;
+                final List<dynamic>? mergedRaw = data['merged_horses'] as List<dynamic>?;
                 if (text != null) {
                   successCount++;
                 }
                 if (mounted) {
-                  setState(() => _secondAiTextMap[key] = text);
+                  setState(() {
+                    _secondAiTextMap[key] = text;
+                    // 統合結果は捨てずに保持する（以前は analysis_text だけ拾っており、
+                    // 過去レースでは統合結果が一度も使われていなかった）
+                    if (mergedRaw != null && mergedRaw.isNotEmpty) {
+                      _mergedHorsesMap[key] = parseMergedHorses(mergedRaw);
+                    }
+                    final int? upsetRace = (data['upset_race'] as num?)?.toInt();
+                    if (upsetRace != null) {
+                      _mergedUpsetRaceMap[key] = upsetRace;
+                    }
+                    final Map<String, int>? metrics = parseRaceMetricsJson(data['race_metrics']);
+                    if (metrics != null) {
+                      _mergedRaceMetricsMap[key] = metrics;
+                    }
+                  });
                 }
               })
               .catchError((_) {
@@ -212,51 +238,6 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
     } catch (_) {
       _fetchedFirstAiDates.remove(date);
     }
-  }
-
-  ///
-  int? _calcSupplementCovered({
-    required String? resultText,
-    required String? introspectionText,
-    required String lookupKey,
-    required RaceResultPayoutModel? payout,
-  }) {
-    final String? secondAiText = _secondAiTextMap[lookupKey];
-    if (secondAiText == null || secondAiText.isEmpty) {
-      return null;
-    }
-
-    final List<AiResponseRecommendHorseModel> deepSeekHorses = parseAnalysisText(secondAiText);
-
-    // Claude馬番の取得（優先順）:
-    // 1. _firstAiTextMap（生AIテキスト）からパース
-    // 2. なければ introspectionText の ## ピックアップ から ○X番 をパース
-    // 3. どちらも取得できなければ補欠計算不可
-    // ai_analysis（1st AI 正式picks）を最優先で claudeNums に使う
-    // ピックアップには DeepSeek 補欠馬（7番など）も含まれるため、
-    // ai_analysis を基準にしないと補欠カバーが正しく計算できない
-    Set<int> claudeNums = <int>{};
-    final String? firstAiText = _firstAiTextMap[lookupKey];
-    if (firstAiText != null && firstAiText.isNotEmpty) {
-      claudeNums = parseAnalysisText(firstAiText).map((AiResponseRecommendHorseModel h) => h.num).toSet();
-    }
-
-    // フォールバック: ai_analysis が取得できない場合のみピックアップを使う
-    if (claudeNums.isEmpty && introspectionText != null && introspectionText.contains('## ピックアップ')) {
-      final RegExpMatch? pickupMatch = RegExp(r'## ピックアップ\n([\s\S]*?)(?=\n##|$)').firstMatch(introspectionText);
-      if (pickupMatch != null) {
-        claudeNums = RegExp(
-          r'(\d+)番',
-        ).allMatches(pickupMatch.group(1) ?? '').map((RegExpMatch m) => int.parse(m.group(1)!)).toSet();
-      }
-    }
-    // claudeNums が取得できない場合は 2nd AI の全選出馬を補欠とみなす。
-
-    final List<AiResponseRecommendHorseModel> supplementHorses = deepSeekHorses
-        .where((AiResponseRecommendHorseModel h) => !claudeNums.contains(h.num))
-        .toList();
-
-    return calcSupplementCoveredCount(supplementHorses: supplementHorses, payout: payout);
   }
 
   ///
@@ -588,13 +569,6 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
 
     final RaceResultPayoutModel? payout = _payoutMap[lookupKey];
 
-    final int? supplementCoveredCount = _calcSupplementCovered(
-      resultText: resultText,
-      introspectionText: introspectionModel?.introspection,
-      lookupKey: lookupKey,
-      payout: payout,
-    );
-
     final String grade = payout?.grade ?? '';
 
     // ═══ NNN: keepRaceMap からこのレースの RaceModel を特定 ═══════════════
@@ -631,20 +605,26 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
     );
     // ════════════════════════════════════════════════════════════════════════
 
-    // 1st AI の馬番リストと numToRankMap から直接合致数を計算する（ai_analysis_display_alert と同じロジック）
-    final List<AiResponseRecommendHorseModel> firstAiHorses = parseAnalysisText(_firstAiTextMap[lookupKey] ?? '');
-    final int firstAiMatchCount = firstAiHorses
+    // AI予想画面に並ぶのと同じ候補リストから合致数を計算する（ai_analysis_display_alert と同じ基準）
+    final List<AiResponseRecommendHorseModel> displayHorses =
+        (_mergedHorsesMap[lookupKey]?.isNotEmpty ?? false)
+        ? _mergedHorsesMap[lookupKey]!
+        : mergeAiHorseLists(
+            parseAnalysisText(_firstAiTextMap[lookupKey] ?? ''),
+            parseAnalysisText(_secondAiTextMap[lookupKey] ?? ''),
+          );
+    final int matchedCount = displayHorses
         .where((AiResponseRecommendHorseModel h) => (numToRankMap[h.num] ?? 99) <= 3)
         .length;
 
     String? adjustedResultText = resultText;
-    if (resultText != null && firstAiHorses.isNotEmpty) {
-      final RegExpMatch? m = RegExp(r'(\d+)頭が合致').firstMatch(resultText);
-      if (m != null) {
-        final int origCount = int.tryParse(m.group(1) ?? '') ?? 0;
-        if (origCount != firstAiMatchCount) {
-          adjustedResultText = resultText.replaceFirst(RegExp(r'\d+頭が合致'), '$firstAiMatchCount頭が合致');
-        }
+    if (resultText != null && displayHorses.isNotEmpty) {
+      final RegExp pattern = RegExp(r'\d+頭中\d+頭が合致');
+      if (pattern.hasMatch(resultText)) {
+        adjustedResultText = resultText.replaceFirst(
+          pattern,
+          '${displayHorses.length}頭中$matchedCount頭が合致',
+        );
       }
     }
 
@@ -724,8 +704,11 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
                                         numToRankMap: numToRankMap,
                                         aiHorseList: parseAnalysisText(firstText),
                                         secondAiHorseList: parseAnalysisText(secondText),
-                                        upsetRaceValue: parseUpsetRaceValue(firstText),
-                                        raceMetrics: parseRaceMetrics(firstText),
+                                        mergedHorseList: _mergedHorsesMap[lookupKey],
+                                        upsetRaceValue:
+                                            _mergedUpsetRaceMap[lookupKey] ?? parseUpsetRaceValue(firstText),
+                                        raceMetrics:
+                                            _mergedRaceMetricsMap[lookupKey] ?? parseRaceMetrics(firstText),
                                       ),
                                     );
                                   },
@@ -778,9 +761,15 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
                                           currentRaceModel: currentRaceModel,
                                           gapHorseNums: gapHorseNums,
                                           upsetPickupHorseNums: upsetPickupHorseNums,
-                                          aiHorseList: mergeAiHorseLists(firstHorses, secondHorses),
-                                          upsetRaceValue: parseUpsetRaceValue(firstAiText),
-                                          raceMetrics: parseRaceMetrics(firstAiText),
+                                          // 統合結果があればそれを使う（サーバー側フィルター適用後の本当の候補）
+                                          aiHorseList:
+                                              (_mergedHorsesMap[lookupKey]?.isNotEmpty ?? false)
+                                              ? _mergedHorsesMap[lookupKey]!
+                                              : mergeAiHorseLists(firstHorses, secondHorses),
+                                          upsetRaceValue:
+                                              _mergedUpsetRaceMap[lookupKey] ?? parseUpsetRaceValue(firstAiText),
+                                          raceMetrics:
+                                              _mergedRaceMetricsMap[lookupKey] ?? parseRaceMetrics(firstAiText),
                                         ),
                                       );
                                     },
@@ -844,7 +833,7 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
                 if (adjustedResultText != null) ...<Widget>[
                   _buildResultTextSection(
                     resultText: adjustedResultText,
-                    supplementCoveredCount: supplementCoveredCount,
+                    matchedCount: matchedCount,
                     payout: payout,
                     isSecondAiLoading: _fetchedSecondAiDates.contains(date) && !_secondAiTextMap.containsKey(lookupKey),
                   ),
@@ -868,12 +857,6 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
                       ],
                     ),
                   ),
-                  if (supplementCoveredCount != null) ...<Widget>[
-                    Text(
-                      supplementCoveredCount > 0 ? '補欠で$supplementCoveredCount頭をカバー' : '補欠での補完なし',
-                      style: const TextStyle(fontSize: 10, color: Color(0xFFFBB6CE)),
-                    ),
-                  ],
                 ],
               ],
             ),
@@ -886,27 +869,23 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
   ///
   Widget _buildResultTextSection({
     required String resultText,
-    required int? supplementCoveredCount,
+    required int matchedCount,
     required RaceResultPayoutModel? payout,
     required bool isSecondAiLoading,
   }) {
-    final int claudeMatchCount = int.tryParse(RegExp(r'(\d+)頭が合致').firstMatch(resultText)?.group(1) ?? '') ?? 0;
-
-    final bool isMatch = claudeMatchCount >= 3;
-
-    final bool isMatchWithSupplement = isMatch || (claudeMatchCount + (supplementCoveredCount ?? 0) >= 3);
+    final bool isMatch = matchedCount >= 3;
 
     // final int trioAmount = (payout != null && payout.trio.isNotEmpty)
     //     ? (int.tryParse(payout.trio.split('/').first.split('|').elementAtOrNull(1) ?? '') ?? 0)
     //     : 0;
     //
-    // final Color textColor = isMatchWithSupplement
+    // final Color textColor = isMatch
     //     ? const Color(0xFFFBB6CE)
     //     : trioAmount >= 10000
     //     ? Colors.yellowAccent.withValues(alpha: 0.5)
     //     : Colors.white60;
 
-    final Color textColor = isMatchWithSupplement ? const Color(0xFFFBB6CE) : Colors.white60;
+    final Color textColor = isMatch ? const Color(0xFFFBB6CE) : Colors.white60;
 
     return DefaultTextStyle(
       style: TextStyle(fontSize: 10, color: textColor),
@@ -914,7 +893,7 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
         crossAxisAlignment: CrossAxisAlignment.end,
         children: <Widget>[
           Text(resultText),
-          if (isSecondAiLoading && supplementCoveredCount == null) ...<Widget>[
+          if (isSecondAiLoading) ...<Widget>[
             const Padding(
               padding: EdgeInsets.only(top: 2),
               child: Row(
@@ -926,14 +905,10 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
                     child: CircularProgressIndicator(strokeWidth: 1.5, color: Colors.white38),
                   ),
                   SizedBox(width: 5),
-                  Text('2nd AI 取得中...', style: TextStyle(fontSize: 9, color: Colors.white38)),
+                  Text('AI予想を取得中...', style: TextStyle(fontSize: 9, color: Colors.white38)),
                 ],
               ),
             ),
-          ] else ...<Widget>[
-            if (supplementCoveredCount != null) ...<Widget>[
-              Text(supplementCoveredCount > 0 ? '補欠で$supplementCoveredCount頭をカバー' : '補欠での補完なし'),
-            ],
           ],
           if (payout != null) ...<Widget>[
             if (payout.trifecta.isNotEmpty) ...<Widget>[

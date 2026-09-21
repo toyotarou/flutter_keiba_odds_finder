@@ -265,11 +265,21 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
       final String analysisText = (data['analysis_text'] as String?) ?? '';
       final List<dynamic>? mergedRaw = data['merged_horses'] as List<dynamic>?;
       final List<AiResponseRecommendHorseModel> horses = parseAnalysisText(analysisText);
+      // 厳選穴レースは統合後にサーバーが再判定した値が正。
+      // 1st AI テキストの行をパースした値とは食い違うことがある。
+      final int? mergedUpsetRace = (data['upset_race'] as num?)?.toInt();
+      final Map<String, int>? mergedMetrics = parseRaceMetricsJson(data['race_metrics']);
       if (mounted) {
         setState(() {
           _secondAiHorseList = horses;
           if (mergedRaw != null && mergedRaw.isNotEmpty) {
             _mergedHorseList = parseMergedHorses(mergedRaw);
+          }
+          if (mergedUpsetRace != null) {
+            _totalForecastUpsetRaceValue = mergedUpsetRace;
+          }
+          if (mergedMetrics != null) {
+            _totalForecastRaceMetrics = mergedMetrics;
           }
         });
       }
@@ -1897,7 +1907,10 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                             pickupHorse: _aiPickupHorse,
                             gapHorseNums: gapHorseNums,
                             upsetPickupHorseNums: upsetPickupHorseNums,
-                            aiHorseList: mergeAiHorseLists(_totalForecastAiHorseList, _secondAiHorseList),
+                            // 統合結果があればそれを使う（サーバー側フィルター適用後の本当の候補）
+                            aiHorseList: _mergedHorseList.isNotEmpty
+                                ? _mergedHorseList
+                                : mergeAiHorseLists(_totalForecastAiHorseList, _secondAiHorseList),
                             upsetRaceValue: _totalForecastUpsetRaceValue,
                             raceMetrics: _totalForecastRaceMetrics,
                           ),

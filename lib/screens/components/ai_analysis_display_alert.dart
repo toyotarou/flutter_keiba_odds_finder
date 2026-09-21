@@ -50,23 +50,25 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
 
   List<AiResponseRecommendHorseModel> get _mergedHorses => widget.mergedHorseList ?? <AiResponseRecommendHorseModel>[];
 
-  /// 補欠馬リスト（表示用）: 1st AI の選出馬との差分
-  List<AiResponseRecommendHorseModel> get _supplementHorses {
+  /// 画面に並べる候補リスト（表示・集計・払戻計算で共通の基準）。
+  ///
+  /// どちらのAIが選んだかで列を分けたりはしない。統合結果をおすすめ度順のまま1本で出す。
+  /// 統合結果が無いとき（2nd AI 未取得・通信失敗）は、1st AI の選出馬に
+  /// 1st AI が選ばなかった 2nd AI の馬を後ろへ足したものを使う。
+  List<AiResponseRecommendHorseModel> get _displayHorses {
     if (_mergedHorses.isNotEmpty) {
-      return _mergedHorses.where((AiResponseRecommendHorseModel h) => h.category == 'second_only').toList();
+      return _mergedHorses;
     }
-    final Set<int> claudeNums = widget.aiHorseList.map((AiResponseRecommendHorseModel h) => h.num).toSet();
-    return widget.secondAiHorseList.where((AiResponseRecommendHorseModel h) => !claudeNums.contains(h.num)).toList();
+    return mergeAiHorseLists(widget.aiHorseList, widget.secondAiHorseList);
   }
 
-  /// 補欠カバー数（集計用）: ai_analysis（1st AI 4頭）を基準にして計算
-  /// 7番など ai_analysis にいない 2nd AI 馬が入賞した頭数を返す
-  int _calcSupplementCoveredCount({required String? introspectionText, required RaceResultPayoutModel? payout}) {
-    final Set<int> aiNums = widget.aiHorseList.map((AiResponseRecommendHorseModel h) => h.num).toSet();
-    final List<AiResponseRecommendHorseModel> supplementHorses = widget.secondAiHorseList
-        .where((AiResponseRecommendHorseModel h) => !aiNums.contains(h.num))
-        .toList();
-    return calcSupplementCoveredCount(supplementHorses: supplementHorses, payout: payout) ?? 0;
+  /// この馬が「2nd AI だけが選んだ馬」か。
+  /// 選出理由を枠線付きで出すかどうかの判定にだけ使う（順番や集計には影響しない）。
+  bool _isSecondAiOnly(AiResponseRecommendHorseModel h) {
+    if (_mergedHorses.isNotEmpty) {
+      return h.category == 'second_only';
+    }
+    return !widget.aiHorseList.any((AiResponseRecommendHorseModel a) => a.num == h.num);
   }
 
   ///
@@ -143,40 +145,29 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
 
     final String? resultText = introspectionModel != null ? extractResultLine(introspectionModel.introspection) : null;
 
-    // 表示用: 開いた時は 1st AI（ai_analysis 4頭）のみ。2nd AI ボタンタップ後に補欠を追加表示
-    final List<AiResponseRecommendHorseModel> supplements = _supplementHorses;
+    // 表示用: 2nd AI 取得後は統合結果に切り替わる
+    final List<AiResponseRecommendHorseModel> displayHorses = _displayHorses;
 
-    // 補欠カバー数: ai_analysis（4頭）基準 — 7番など 2nd AI 補欠が入賞した頭数
-    // ※ 2nd AI 未取得時は widget.secondAiHorseList が空なので 0 になる（正常）
-    final int supplementCoveredCount = _calcSupplementCoveredCount(
-      introspectionText: introspectionModel?.introspection,
-      payout: payout,
-    );
-
-    // 1st AI（ai_analysis 4頭）が 3着以内に入った頭数を numToRankMap から直接計算
-    // → 2nd AI のロード状態に関係なく常に正しい値を返す
-    final int firstAiMatchCount = widget.aiHorseList
+    // 画面に並んでいる馬のうち 3着以内に入った頭数を numToRankMap から直接計算
+    final int matchedCount = displayHorses
         .where((AiResponseRecommendHorseModel h) => (widget.numToRankMap[h.num] ?? 99) <= 3)
         .length;
 
-    // DB の resultText はピックアップ（6頭）ベースで生成されているため、
-    // 1st AI の実際の合致数（firstAiMatchCount）で数字部分を上書きして表示する
-    // 例: "6頭中2頭が合致" → "6頭中1頭が合致"
+    // DB の resultText は振り返りAIのピックアップ頭数ベースで生成されているため、
+    // 実際に画面へ並んでいる本候補の「頭数」と「合致数」で上書きして表示する
+    // 例: "6頭中2頭が合致" → "5頭中1頭が合致"
     String? adjustedResultText = resultText;
-    if (resultText != null && firstAiMatchCount > 0) {
-      final RegExpMatch? m = RegExp(r'(\d+)頭が合致').firstMatch(resultText);
-      if (m != null) {
-        final int origCount = int.tryParse(m.group(1) ?? '') ?? 0;
-        if (origCount != firstAiMatchCount) {
-          adjustedResultText = resultText.replaceFirst(RegExp(r'\d+頭が合致'), '$firstAiMatchCount頭が合致');
-        }
+    if (resultText != null && displayHorses.isNotEmpty) {
+      final RegExp pattern = RegExp(r'\d+頭中\d+頭が合致');
+      if (pattern.hasMatch(resultText)) {
+        adjustedResultText = resultText.replaceFirst(pattern, '${displayHorses.length}頭中$matchedCount頭が合致');
       }
     }
 
-    // 結果ボタンの主数字: 1st AI の合致数（numToRankMap ベース）
-    final String matchCount = firstAiMatchCount > 0 ? firstAiMatchCount.toString() : '';
+    // 結果ボタンの主数字: 画面に並んでいる馬の合致数（numToRankMap ベース）
+    final String matchCount = matchedCount > 0 ? matchedCount.toString() : '';
 
-    final bool showResultButton = payout != null && resultText != null && !resultText.contains('0頭が合致');
+    final bool showResultButton = payout != null && resultText != null && matchedCount > 0;
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -204,23 +195,9 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                        if (supplementCoveredCount > 0)
-                          Text(
-                            '補欠で$supplementCoveredCount頭をカバー',
-                            style: const TextStyle(
-                              fontSize: 11,
-                              color: Colors.greenAccent,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
                       ],
                     ),
-                    if (showResultButton)
-                      _buildResultButton(
-                        matchCount: matchCount,
-                        supplementCoveredCount: supplementCoveredCount,
-                        supplements: supplements,
-                      ),
+                    if (showResultButton) _buildResultButton(matchCount: matchCount, displayHorses: displayHorses),
                   ],
                 ),
                 Divider(color: Colors.white.withValues(alpha: 0.4), thickness: 5),
@@ -256,9 +233,7 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
                   _buildRaceMetrics(widget.raceMetrics!),
                   const SizedBox(height: 6),
                 ],
-                Expanded(
-                  child: _buildHorseList(firstAiHorses: widget.aiHorseList, supplements: supplements),
-                ),
+                Expanded(child: _buildHorseList(displayHorses)),
               ],
             ),
           ),
@@ -268,11 +243,7 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
   }
 
   ///
-  Widget _buildResultButton({
-    required String matchCount,
-    required int supplementCoveredCount,
-    required List<AiResponseRecommendHorseModel> supplements,
-  }) {
+  Widget _buildResultButton({required String matchCount, required List<AiResponseRecommendHorseModel> displayHorses}) {
     return Stack(
       children: <Widget>[
         Positioned(
@@ -289,15 +260,6 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
                   style: const TextStyle(fontSize: 20, color: Color(0xFFFBB6CE), fontWeight: FontWeight.bold),
                 ),
               ),
-              if (supplementCoveredCount > 0)
-                Transform(
-                  alignment: Alignment.centerLeft,
-                  transform: Matrix4.identity()..setEntry(0, 1, -0.8),
-                  child: Text(
-                    '+$supplementCoveredCount',
-                    style: const TextStyle(fontSize: 14, color: Colors.greenAccent, fontWeight: FontWeight.bold),
-                  ),
-                ),
             ],
           ),
         ),
@@ -312,10 +274,8 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
                   OddsFinderDialog(
                     context: context,
                     widget: AiAnalysisPayoutResultAlert(
-                      aiRecommendHorses: widget.aiHorseList,
+                      aiRecommendHorses: displayHorses,
                       raceNumber: widget.raceNumber,
-                      supplementHorses: supplements,
-                      supplementCoveredCount: supplementCoveredCount,
                     ),
                     paddingLeft: context.screenSize.width * 0.2,
                   );
@@ -377,16 +337,12 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
   }
 
   ///
-  Widget _buildHorseCard(
-    AiResponseRecommendHorseModel h, {
-    bool isSupplementary = false,
-    bool hideSecondAiSection = false,
-  }) {
-    // supplementary の場合は reason 自体が 2nd AI のコメント → 緑ボックスで表示
-    final String? secondAiReason = isSupplementary
+  Widget _buildHorseCard(AiResponseRecommendHorseModel h) {
+    // 2nd AI だけが選んだ馬は reason 自体が 2nd AI の文章なので、枠線ボックス側へ回す。
+    // 両AIが選んだ馬は reason が 1st AI・reasonSecond が 2nd AI の文章。
+    final bool isSecondAiOnly = _isSecondAiOnly(h);
+    final String? secondAiReason = isSecondAiOnly
         ? h.reason
-        : hideSecondAiSection
-        ? null
         : _mergedHorses.isNotEmpty
         ? h.reasonSecond
         : widget.secondAiHorseList.where((AiResponseRecommendHorseModel s) => s.num == h.num).firstOrNull?.reason;
@@ -568,30 +524,24 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
                     ],
                   ),
                 ),
-                if (!isSupplementary)
+                if (!isSecondAiOnly)
                   Text(
                     h.reason.replaceAll(RegExp(r'\n?[─]+\n?'), '').trim(),
                     style: const TextStyle(letterSpacing: 0.4, height: 1.7),
                   ),
+                // 2nd AI が書いた選出理由は枠線で囲って出す（ラベルは付けない）
                 if (secondAiReason != null && secondAiReason.isNotEmpty) ...<Widget>[
-                  const SizedBox(height: 8),
+                  if (!isSecondAiOnly) const SizedBox(height: 8),
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      border: Border.all(color: Colors.greenAccent.withValues(alpha: 0.5)),
+                      border: Border.all(color: Colors.white.withValues(alpha: 0.35)),
                       borderRadius: BorderRadius.circular(4),
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        const Text('2nd AI', style: TextStyle(fontSize: 10, color: Colors.greenAccent)),
-                        const SizedBox(height: 4),
-                        Text(
-                          secondAiReason.replaceAll(RegExp(r'\n?[─]+\n?'), '').trim(),
-                          style: const TextStyle(letterSpacing: 0.4, height: 1.7),
-                        ),
-                      ],
+                    child: Text(
+                      secondAiReason.replaceAll(RegExp(r'\n?[─]+\n?'), '').trim(),
+                      style: const TextStyle(letterSpacing: 0.4, height: 1.7),
                     ),
                   ),
                 ],
@@ -614,46 +564,13 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
               child: Text('$rank位', style: const TextStyle(fontSize: 12, color: Colors.white)),
             ),
           ),
-        if (!isSupplementary && h.category == 'matched')
-          Positioned(
-            top: 30,
-            right: 10,
-            child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 8),
-              decoration: BoxDecoration(
-                color: const Color(0xFFFFD700).withValues(alpha: 0.15),
-                border: Border.all(color: const Color(0xFFFFD700)),
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: const Text(
-                '両AI一致',
-                style: TextStyle(fontSize: 10, color: Color(0xFFFFD700), fontWeight: FontWeight.bold),
-              ),
-            ),
-          ),
       ],
     );
   }
 
   ///
-  Widget _buildHorseList({
-    required List<AiResponseRecommendHorseModel> firstAiHorses,
-    required List<AiResponseRecommendHorseModel> supplements,
-  }) {
-    // merged_horses がある場合は統合表示モード（仕切りなし）
-    if (_mergedHorses.isNotEmpty) {
-      return ListView(
-        children: _mergedHorses
-            .map((AiResponseRecommendHorseModel h) => _buildHorseCard(h, isSupplementary: h.category == 'second_only'))
-            .toList(),
-      );
-    }
-    // フォールバック: 旧ロジック（仕切りなし）
-    return ListView(
-      children: <Widget>[
-        ...firstAiHorses.map((AiResponseRecommendHorseModel h) => _buildHorseCard(h)),
-        ...supplements.map((AiResponseRecommendHorseModel h) => _buildHorseCard(h, isSupplementary: true)),
-      ],
-    );
+  Widget _buildHorseList(List<AiResponseRecommendHorseModel> displayHorses) {
+    // どちらのAIが選んだかで列を分けず、おすすめ度順のまま1本で並べる
+    return ListView(children: displayHorses.map((AiResponseRecommendHorseModel h) => _buildHorseCard(h)).toList());
   }
 }

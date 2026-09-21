@@ -341,6 +341,36 @@ Map<String, int>? parseRaceMetrics(String text) {
   return null;
 }
 
+/// API 応答の race_metrics（{"波乱度":x,"下位進入度":y,"大穴進入度":z}）を Map<String,int> に変換する。
+///
+/// 1st AI テキストを再パースする parseRaceMetrics と違い、
+/// サーバーが確定させた値をそのまま受け取るために使う。
+/// 3項目すべてが数値で揃っていない場合は null を返す。
+Map<String, int>? parseRaceMetricsJson(dynamic raw) {
+  if (raw is! Map) {
+    return null;
+  }
+
+  int? pick(String key) {
+    final dynamic v = raw[key];
+    if (v is num) {
+      return v.toInt();
+    }
+    if (v is String) {
+      return int.tryParse(v);
+    }
+    return null;
+  }
+
+  final int? upset = pick('波乱度');
+  final int? lower = pick('下位進入度');
+  final int? longShot = pick('大穴進入度');
+  if (upset == null || lower == null || longShot == null) {
+    return null;
+  }
+  return <String, int>{'波乱度': upset, '下位進入度': lower, '大穴進入度': longShot};
+}
+
 /// \n\n 区切りでも \n 区切りでも動作するよう、馬番：の出現位置でブロックを分割する。
 List<AiResponseRecommendHorseModel> parseAnalysisText(String text) {
   final RegExp horseStart = RegExp(r'馬番：\d+');
@@ -394,29 +424,6 @@ Set<int> extractResultNumsFromPayout(RaceResultPayoutModel payout) {
     }
   }
   return <int>{};
-}
-
-/// 補欠馬（DeepSeek選出でClaudeにない馬）が入賞馬と何頭一致したかを返す。
-/// 合致なし・データ不足の場合は null。
-int? calcSupplementCoveredCount({
-  required List<AiResponseRecommendHorseModel> supplementHorses,
-  required RaceResultPayoutModel? payout,
-}) {
-  // 配当データなし → 計算不可
-  if (payout == null) {
-    return null;
-  }
-  final Set<int> resultNums = extractResultNumsFromPayout(payout);
-  if (resultNums.isEmpty) {
-    return null;
-  }
-  // 補欠馬ゼロ → カバー頭数 0（1st AI と 2nd AI の選出が完全一致）
-  if (supplementHorses.isEmpty) {
-    return 0;
-  }
-  final Set<int> supplementNums = supplementHorses.map((AiResponseRecommendHorseModel h) => h.num).toSet();
-  final int covered = supplementNums.intersection(resultNums).length;
-  return covered; // 0 の場合も返す（呼び出し側で「補欠での補完なし」と表示）
 }
 
 /// 振り返りテキストから "## 結果" セクションの最初の非空行を返す。
@@ -620,20 +627,39 @@ PopularityRankOddsMedianModel? lookupMedianModel(
 /// PHP の _mergeAiResults() が返す構造に対応する。
 /// num が 0 以下の不正な要素は除外する。
 List<AiResponseRecommendHorseModel> parseMergedHorses(List<dynamic> list) {
+  // 【型に寛容にしている理由】
+  //   PHP 側の統合おすすめ度は round(min(100.0, 両AI平均 + 5), 1) で算出される float。
+  //   json_encode は 85.0 を 85（整数）、97.5 を 97.5（小数）として出力するため、
+  //   JSON 上の型は一致馬のスコア次第で int にも double にもなる。
+  //   以前は `as int?` で受けており、小数になった瞬間に TypeError が飛んで
+  //   parseMergedHorses ごと失敗していた。例外は呼び出し元の catch で握り潰されるため、
+  //   統合表示（merged_horses）が丸ごと捨てられ、フォールバック表示のままになっていた。
+  //   数値はすべて num で受けてから丸める。
+  int? asInt(dynamic v) {
+    if (v is num) {
+      return v.round();
+    }
+    if (v is String) {
+      return int.tryParse(v) ?? double.tryParse(v)?.round();
+    }
+    return null;
+  }
+
   return list
-      .map((dynamic item) {
-        final Map<String, dynamic> m = item as Map<String, dynamic>;
+      .whereType<Map<String, dynamic>>()
+      .map((Map<String, dynamic> m) {
+        final dynamic odds6 = m['odds_6'];
         return AiResponseRecommendHorseModel(
-          num:          (m['num']        as int?)    ?? 0,
-          name:         (m['name']       as String?) ?? '',
-          popularity:   (m['popularity'] as int?)?.toString() ?? '',
-          odds:         (m['odds_6']     as num?)?.toStringAsFixed(1) ?? '',
-          score:        (m['score']      as int?)    ?? 0,
-          reason:       (m['reason']     as String?) ?? '',
-          category:     (m['category']   as String?) ?? 'first_only',
-          score1st:     m['score_1st']   as int?,
-          score2nd:     m['score_2nd']   as int?,
-          reasonSecond: m['reason_2nd']  as String?,
+          num:          asInt(m['num'])        ?? 0,
+          name:         (m['name'] as String?) ?? '',
+          popularity:   asInt(m['popularity'])?.toString() ?? '',
+          odds:         odds6 is num ? odds6.toStringAsFixed(1) : '',
+          score:        asInt(m['score'])      ?? 0,
+          reason:       (m['reason'] as String?)   ?? '',
+          category:     (m['category'] as String?) ?? 'first_only',
+          score1st:     asInt(m['score_1st']),
+          score2nd:     asInt(m['score_2nd']),
+          reasonSecond: m['reason_2nd'] as String?,
         );
       })
       .where((AiResponseRecommendHorseModel h) => h.num > 0)

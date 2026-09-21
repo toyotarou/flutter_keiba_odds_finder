@@ -14,14 +14,11 @@ class AiAnalysisPayoutResultAlert extends ConsumerStatefulWidget {
     super.key,
     required this.aiRecommendHorses,
     required this.raceNumber,
-    this.supplementHorses = const <AiResponseRecommendHorseModel>[],
-    this.supplementCoveredCount = 0,
   });
 
+  /// 画面に並んでいる候補（どちらのAIが選んだかで分けない）。
   final List<AiResponseRecommendHorseModel> aiRecommendHorses;
   final int raceNumber;
-  final List<AiResponseRecommendHorseModel> supplementHorses;
-  final int supplementCoveredCount;
 
   @override
   ConsumerState<AiAnalysisPayoutResultAlert> createState() => _AiAnalysisPayoutResultAlertState();
@@ -115,15 +112,12 @@ class _AiAnalysisPayoutResultAlertState extends ConsumerState<AiAnalysisPayoutRe
 
     final String? resultText = introspectionModel != null ? extractResultLine(introspectionModel.introspection) : null;
 
-    final bool useSupplementPool = widget.supplementCoveredCount > 0;
+    final List<AiResponseRecommendHorseModel> allHorses = widget.aiRecommendHorses;
 
-    final List<AiResponseRecommendHorseModel> allHorses = useSupplementPool
-        ? <AiResponseRecommendHorseModel>[...widget.aiRecommendHorses, ...widget.supplementHorses]
-        : widget.aiRecommendHorses;
-
-    final int claudeMatchCount = int.tryParse(RegExp(r'(\d+)頭が合致').firstMatch(resultText ?? '')?.group(1) ?? '') ?? 0;
-
-    final int totalMatchCount = claudeMatchCount + widget.supplementCoveredCount;
+    // 合致数は実際の着順から数える（振り返りテキストの数字に頼らない）
+    final int totalMatchCount = allHorses
+        .where((AiResponseRecommendHorseModel h) => (_finishingPositionMap[h.num] ?? 99) <= 3)
+        .length;
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -148,15 +142,6 @@ class _AiAnalysisPayoutResultAlertState extends ConsumerState<AiAnalysisPayoutRe
                             style: const TextStyle(
                               fontSize: 11,
                               color: Colors.yellowAccent,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        if (widget.supplementCoveredCount > 0)
-                          Text(
-                            '補欠で${widget.supplementCoveredCount}頭をカバー',
-                            style: const TextStyle(
-                              fontSize: 11,
-                              color: Colors.greenAccent,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -289,9 +274,7 @@ class _AiAnalysisPayoutResultAlertState extends ConsumerState<AiAnalysisPayoutRe
 
     final Set<int> fukuNums = _parseSingleHorseNums(payout?.fuku ?? '');
 
-    final bool hasSupplements = widget.supplementCoveredCount > 0 && widget.supplementHorses.isNotEmpty;
-
-    final int totalCount = widget.aiRecommendHorses.length + (hasSupplements ? widget.supplementHorses.length : 0);
+    final int totalCount = widget.aiRecommendHorses.length;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -306,24 +289,6 @@ class _AiAnalysisPayoutResultAlertState extends ConsumerState<AiAnalysisPayoutRe
         ...widget.aiRecommendHorses.map(
           (AiResponseRecommendHorseModel h) => _buildHorseRow(h, horseMap, tanNums, fukuNums),
         ),
-        if (hasSupplements) ...<Widget>[
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 6),
-            child: Row(
-              children: <Widget>[
-                Expanded(child: Divider(color: Colors.greenAccent.withValues(alpha: 0.4))),
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 8),
-                  child: Text('補欠', style: TextStyle(fontSize: 10, color: Colors.greenAccent)),
-                ),
-                Expanded(child: Divider(color: Colors.greenAccent.withValues(alpha: 0.4))),
-              ],
-            ),
-          ),
-          ...widget.supplementHorses.map(
-            (AiResponseRecommendHorseModel h) => _buildHorseRow(h, horseMap, tanNums, fukuNums, isSupplementary: true),
-          ),
-        ],
       ],
     );
   }
@@ -333,9 +298,8 @@ class _AiAnalysisPayoutResultAlertState extends ConsumerState<AiAnalysisPayoutRe
     AiResponseRecommendHorseModel h,
     Map<int, HorseModel> horseMap,
     Set<int> tanNums,
-    Set<int> fukuNums, {
-    bool isSupplementary = false,
-  }) {
+    Set<int> fukuNums,
+  ) {
     final String name = horseMap[h.num]?.name ?? '';
 
     final bool hasTan = tanNums.contains(h.num);
@@ -348,10 +312,7 @@ class _AiAnalysisPayoutResultAlertState extends ConsumerState<AiAnalysisPayoutRe
       padding: const EdgeInsets.symmetric(vertical: 2),
       child: Container(
         decoration: BoxDecoration(
-          border: isSupplementary
-              ? Border.all(color: Colors.greenAccent.withValues(alpha: 0.5))
-              : Border(bottom: BorderSide(color: Colors.white.withValues(alpha: 0.3))),
-          borderRadius: isSupplementary ? BorderRadius.circular(4) : null,
+          border: Border(bottom: BorderSide(color: Colors.white.withValues(alpha: 0.3))),
         ),
         child: Stack(
           children: <Widget>[
@@ -360,16 +321,6 @@ class _AiAnalysisPayoutResultAlertState extends ConsumerState<AiAnalysisPayoutRe
               right: 5,
               child: Row(
                 children: <Widget>[
-                  if (isSupplementary)
-                    Container(
-                      margin: const EdgeInsets.only(left: 4),
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-                      decoration: BoxDecoration(
-                        color: Colors.greenAccent.withValues(alpha: 0.3),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: const Text('補欠', style: TextStyle(fontSize: 10, color: Colors.greenAccent)),
-                    ),
                   if (hasTan)
                     Container(
                       margin: const EdgeInsets.only(left: 4),

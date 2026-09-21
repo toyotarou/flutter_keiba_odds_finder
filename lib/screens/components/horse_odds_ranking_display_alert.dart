@@ -696,7 +696,8 @@ class _HorseSelectorContentState extends ConsumerState<_HorseSelectorContent>
 
   bool _isAiLoading = true;
   bool _isSecondAiLoading = true;
-  Set<int> get _supplementNums => _secondAiNums.difference(_aiPickupNums);
+  /// 1st AI が選ばず 2nd AI だけが選んだ馬番。バッジの見た目は AI 馬と同じにする。
+  Set<int> get _secondOnlyNums => _secondAiNums.difference(_aiPickupNums);
 
   ///
   @override
@@ -847,14 +848,15 @@ class _HorseSelectorContentState extends ConsumerState<_HorseSelectorContent>
   }
 
   ///
-  Widget _buildSupplementBadge(int num) {
+  /// 2nd AI だけが選んだ馬のバッジ。1st AI の馬と同じ見た目にし、スコアだけ差し替える。
+  Widget _buildSecondOnlyBadge(int num) {
     if (_isSecondAiLoading) {
       return const Row(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
           SizedBox(width: 10, height: 10, child: CircularProgressIndicator(strokeWidth: 1.5, color: Colors.white38)),
           SizedBox(width: 5),
-          Text('2nd AI取得中...', style: TextStyle(fontSize: 9, color: Colors.white38)),
+          Text('読み込み中...', style: TextStyle(fontSize: 9, color: Colors.white38)),
         ],
       );
     }
@@ -863,15 +865,14 @@ class _HorseSelectorContentState extends ConsumerState<_HorseSelectorContent>
       children: <Widget>[
         Container(
           margin: const EdgeInsets.only(top: 2, bottom: 5, right: 10),
-          padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 4),
+          padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 6),
           decoration: BoxDecoration(
-            color: Colors.greenAccent.withValues(alpha: 0.15),
-            border: Border.all(color: Colors.greenAccent),
-            borderRadius: BorderRadius.circular(6),
+            border: Border.all(color: const Color(0xFFFFD700)),
+            borderRadius: BorderRadius.circular(3),
           ),
           child: const Text(
-            '補欠',
-            style: TextStyle(fontSize: 8, color: Colors.greenAccent, fontWeight: FontWeight.bold),
+            'AI',
+            style: TextStyle(fontSize: 9, color: Color(0xFFFFD700), fontWeight: FontWeight.bold),
           ),
         ),
 
@@ -892,14 +893,14 @@ class _HorseSelectorContentState extends ConsumerState<_HorseSelectorContent>
   Widget _buildBadgeOrLoading(int num) {
     final bool isAi = _aiPickupNums.contains(num);
 
-    final bool isSupplementary = _supplementNums.contains(num);
+    final bool isSecondOnly = _secondOnlyNums.contains(num);
 
     if (isAi) {
       return _buildAiBadge(num);
     }
 
-    if (isSupplementary) {
-      return _buildSupplementBadge(num);
+    if (isSecondOnly) {
+      return _buildSecondOnlyBadge(num);
     }
 
     if (_isAiLoading) {
@@ -907,7 +908,7 @@ class _HorseSelectorContentState extends ConsumerState<_HorseSelectorContent>
     }
 
     if (_isSecondAiLoading) {
-      return _buildSupplementBadge(num);
+      return _buildSecondOnlyBadge(num);
     }
 
     return const SizedBox.shrink();
@@ -943,7 +944,7 @@ class _HorseSelectorContentState extends ConsumerState<_HorseSelectorContent>
           final bool isSelected = selectedHorse == num;
           final String name = widget.horseNameMap[num] ?? '';
           final bool isAi = _aiPickupNums.contains(num);
-          final bool isSupplementary = _supplementNums.contains(num);
+          final bool isSecondOnly = _secondOnlyNums.contains(num);
           return GestureDetector(
             onTap: () => ref.read(appParamProvider.notifier).setSelectedHorseLineNum(num: isSelected ? null : num),
             child: AnimatedContainer(
@@ -989,7 +990,7 @@ class _HorseSelectorContentState extends ConsumerState<_HorseSelectorContent>
                           style: const TextStyle(color: Colors.white, fontSize: 11),
                           overflow: TextOverflow.ellipsis,
                         ),
-                        if (isAi || isSupplementary || _isAiLoading || _isSecondAiLoading) ...<Widget>[
+                        if (isAi || isSecondOnly || _isAiLoading || _isSecondAiLoading) ...<Widget>[
                           const SizedBox(height: 5),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
