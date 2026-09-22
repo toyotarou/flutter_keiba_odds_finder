@@ -46,6 +46,33 @@ Future<Map<String, RaceResultPayoutModel>> fetchPayoutMap(WidgetRef ref, {requir
   return map;
 }
 
+/// races パラメータ（"date|kaisuu|basho|race" を "/" で複数結合）で払戻データを取得し
+/// レスポンス順のまま List で返す。
+///
+/// キー引きが不要な呼び出し元（similar_races など）はこちらを使う。
+/// キー引きが必要な場合は [fetchPayoutMap] を使うこと。
+/// 通信エラーは呼び出し元に伝播する。
+Future<List<RaceResultPayoutModel>> fetchPayoutList(WidgetRef ref, {required String racesParam}) async {
+  final dynamic response = await ref
+      .read(httpClientProvider)
+      .get(path: APIPath.getHorseOddsFinderRaceResultPayout, queryParameters: <String, dynamic>{'races': racesParam});
+  final List<dynamic> dataList = (response as Map<String, dynamic>)['data'] as List<dynamic>? ?? <dynamic>[];
+  return dataList
+      .map((dynamic item) => RaceResultPayoutModel.fromJson(item as Map<String, dynamic>))
+      .toList();
+}
+
+/// 払戻文字列（"3-5-7|99999/1-2-3|88888" 形式）から 1 点目の金額部分だけを返す。
+///
+/// 該当が無い場合は空文字を返す。
+String extractFirstPayoutAmount(String raw) {
+  if (raw.isEmpty) {
+    return '';
+  }
+  final List<String> parts = raw.split('/').first.split('|');
+  return parts.length > 1 ? parts[1].trim() : '';
+}
+
 /// 馬名リストで過去戦績を取得し、馬名 → 戦績リスト の Map を返す。
 /// 通信エラーは呼び出し元に伝播する。
 Future<Map<String, List<RaceResultHistoryModel>>> fetchBattleRecordsByName(

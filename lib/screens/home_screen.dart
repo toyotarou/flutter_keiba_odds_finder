@@ -428,7 +428,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                 borderRadius: BorderRadius.circular(3),
               ),
               alignment: Alignment.center,
-              child: Text(e.key, style: const TextStyle(color: Colors.white)),
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  e.key,
+                  maxLines: 1,
+                  softWrap: false,
+                  overflow: TextOverflow.visible,
+                  style: const TextStyle(color: Colors.white),
+                ),
+              ),
             ),
           ),
         );

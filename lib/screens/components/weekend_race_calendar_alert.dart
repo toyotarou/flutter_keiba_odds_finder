@@ -64,7 +64,16 @@ class _WeekendRaceCalendarAlertState extends ConsumerState<WeekendRaceCalendarAl
               const SizedBox(height: 8),
               TabBar(
                 controller: _tabController,
-                tabs: _tabDates.map((String date) => Tab(text: date)).toList(),
+                tabs: _tabDates
+                    .map(
+                      (String date) => Tab(
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(date, maxLines: 1, softWrap: false, overflow: TextOverflow.visible),
+                        ),
+                      ),
+                    )
+                    .toList(),
                 labelColor: Colors.white,
                 unselectedLabelColor: Colors.white54,
                 indicatorColor: Colors.greenAccent,
@@ -210,9 +219,15 @@ class _DateCalendarViewState extends ConsumerState<_DateCalendarView> with Contr
                       : Colors.black.withValues(alpha: 0.5),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Text(
-                  s.bashoName,
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.white),
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    s.bashoName,
+                    maxLines: 1,
+                    softWrap: false,
+                    overflow: TextOverflow.visible,
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.white),
+                  ),
                 ),
               ),
             ),

@@ -71,21 +71,12 @@ class _SimilarRacesDisplayAlertState extends ConsumerState<SimilarRacesDisplayAl
 
       // API 2: payout results — races param = "date|kaisuu|basho|race" joined by "/"
       // ※ dayではなくraceを渡す（PHP側: list($date,$kaisuu,$basho_code,$race)）
+      // 取得処理は utility/functions.dart の fetchPayoutList に集約している
       final String racesParam = popularityList
           .map((RacesPopularityRatioModel m) => '${m.date}|${m.kaisuu}|${m.basho}|${m.race}')
           .join('/');
 
-      final dynamic resp2 = await client.get(
-        path: APIPath.getHorseOddsFinderRaceResultPayout,
-        queryParameters: <String, dynamic>{'races': racesParam},
-      );
-
-      final List<RaceResultPayoutModel> payoutList = <RaceResultPayoutModel>[];
-
-      // ignore: avoid_dynamic_calls
-      for (final dynamic item in resp2['data'] as List<dynamic>) {
-        payoutList.add(RaceResultPayoutModel.fromJson(item as Map<String, dynamic>));
-      }
+      final List<RaceResultPayoutModel> payoutList = await fetchPayoutList(ref, racesParam: racesParam);
 
       // API 3: race result history — 1レースずつ並列で取得
       final List<List<RaceResultHistoryModel>> historyResults = await Future.wait(

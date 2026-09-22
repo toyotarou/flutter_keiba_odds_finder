@@ -153,6 +153,19 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
         .where((AiResponseRecommendHorseModel h) => (widget.numToRankMap[h.num] ?? 99) <= 3)
         .length;
 
+    // 画面に並んでいる馬で 1着・2着・3着 がすべて揃っているか
+    final Set<int> hitRankSet = displayHorses
+        .map((AiResponseRecommendHorseModel h) => widget.numToRankMap[h.num] ?? 99)
+        .where((int r) => r <= 3)
+        .toSet();
+
+    final bool isTop3AllHit = hitRankSet.containsAll(<int>[1, 2, 3]);
+
+    // 未発走レースは払戻が無いので、金額が取れたものだけ表示する
+    final String trifectaAmount = extractFirstPayoutAmount(payout?.trifecta ?? '');
+
+    final String trioAmount = extractFirstPayoutAmount(payout?.trio ?? '');
+
     // DB の resultText は振り返りAIのピックアップ頭数ベースで生成されているため、
     // 実際に画面へ並んでいる本候補の「頭数」と「合致数」で上書きして表示する
     // 例: "6頭中2頭が合致" → "5頭中1頭が合致"
@@ -233,6 +246,49 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
                   _buildRaceMetrics(widget.raceMetrics!),
                   const SizedBox(height: 6),
                 ],
+
+                if (trifectaAmount.isNotEmpty || trioAmount.isNotEmpty) ...<Widget>[
+                  const SizedBox(height: 10),
+
+                  Align(
+                    child: Column(
+                      children: <Widget>[
+                        // 各ブロック左下のバッジ（$rank位）と同じものを、合致した着順だけ昇順で並べる
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: <int>[1, 2, 3]
+                              .where(hitRankSet.contains)
+                              .map(
+                                (int rank) => Container(
+                                  width: 32,
+                                  margin: const EdgeInsets.symmetric(horizontal: 2),
+                                  alignment: Alignment.center,
+                                  decoration: BoxDecoration(
+                                    color: raceRankColor(rank, fallback: Colors.grey.withValues(alpha: 0.6)),
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: Text('$rank位', style: const TextStyle(fontSize: 12, color: Colors.white)),
+                                ),
+                              )
+                              .toList(),
+                        ),
+
+                        const SizedBox(height: 6),
+
+                        Text(
+                          <String>[
+                            if (trifectaAmount.isNotEmpty) '3連単: ${trifectaAmount.toCurrency()}',
+                            if (trioAmount.isNotEmpty) '3連複: ${trioAmount.toCurrency()}',
+                          ].join('\u3000'),
+                          style: TextStyle(color: isTop3AllHit ? const Color(0xFFFBB6CE) : Colors.grey),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 10),
+                ],
+
                 Expanded(child: _buildHorseList(displayHorses)),
               ],
             ),
