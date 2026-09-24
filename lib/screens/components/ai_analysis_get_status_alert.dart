@@ -27,6 +27,21 @@ class _AiAnalysisGetStatusAlertState extends ConsumerState<AiAnalysisGetStatusAl
     with ControllersMixin<AiAnalysisGetStatusAlert> {
   ///
   @override
+  void initState() {
+    super.initState();
+
+    // 20260924: AI分析の全件は起動時に取得しなくなったため、このダイアログを開いたときに取得する
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+      aiAnalysisNotifier.getAllAiAnalysisData();
+      aiAnalysisNotifier2.getAllAiAnalysisData2();
+    });
+  }
+
+  ///
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -101,10 +116,10 @@ class _AiAnalysisGetStatusAlertState extends ConsumerState<AiAnalysisGetStatusAl
                   children: List<Widget>.generate(12, (int i) {
                     final int raceNum = i + 1;
                     final String aiKey = '${schedule.date}_${schedule.kaisuu}_${schedule.bashoName}_${schedule.day}';
-                    final List<AiAnalysisModel> aiList = appParamState.keepAiAnalysisMap[aiKey] ?? <AiAnalysisModel>[];
+                    final List<AiAnalysisModel> aiList = aiAnalysisState.aiAnalysisMap[aiKey] ?? <AiAnalysisModel>[];
                     final bool hasAi = aiList.any((AiAnalysisModel m) => m.race == raceNum);
                     final List<AiAnalysisModel> aiList2 =
-                        appParamState.keepAiAnalysisMap2[aiKey] ?? <AiAnalysisModel>[];
+                        aiAnalysisState2.aiAnalysisMap2[aiKey] ?? <AiAnalysisModel>[];
                     final bool hasAi2 = aiList2.any((AiAnalysisModel m) => m.race == raceNum);
                     return Material(
                       color: Colors.transparent,

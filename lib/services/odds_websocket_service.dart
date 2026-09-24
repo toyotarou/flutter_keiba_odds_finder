@@ -22,7 +22,8 @@ class OddsWebSocketService {
   bool _disposed = false;
 
   /// オッズ更新イベント到着時に呼ばれるコールバック
-  void Function()? onOddsUpdated;
+  /// 引数はイベントの data（date / kaisuu / basho / day / race / odds）。解析できなかった場合は null。
+  void Function(Map<String, dynamic>? data)? onOddsUpdated;
 
   /// 接続を開始する（HomeScreen.initState から呼ぶ）
   void connect() {
@@ -72,11 +73,25 @@ class OddsWebSocketService {
           break; // pong受信 → 正常、何もしない
 
         case _eventName: // 'BaganrikiOddsSent'
-          onOddsUpdated?.call();
+          onOddsUpdated?.call(_parseEventData(msg['data']));
       }
     } catch (_) {
       // パースエラーは無視して接続を維持
     }
+  }
+
+  /// Pusher プロトコルでは data が JSON 文字列で届くため Map に変換する（20260924 追加）
+  Map<String, dynamic>? _parseEventData(dynamic data) {
+    try {
+      if (data is String) {
+        final dynamic decoded = jsonDecode(data);
+        return decoded is Map<String, dynamic> ? decoded : null;
+      }
+      if (data is Map<String, dynamic>) {
+        return data;
+      }
+    } catch (_) {}
+    return null;
   }
 
   void _ping() {

@@ -3,6 +3,7 @@ import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../controllers/controllers_mixin.dart';
+import '../../controllers/race_introspection/race_introspection.dart';
 import '../../models/race_introspection_model.dart';
 import '../../models/race_result_history_model.dart';
 import '../../models/summary_model.dart';
@@ -23,7 +24,14 @@ class _RaceIntrospectionDisplayAlertState extends ConsumerState<RaceIntrospectio
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _fetchHorseBattleRecords());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _fetchHorseBattleRecords();
+
+      // 20260924: 振り返りは起動時に取得しなくなったため、未取得ならここで取得する
+      if (ref.read(raceIntrospectionProvider).raceIntrospectionMap.isEmpty) {
+        raceIntrospectionNotifier.getAllRaceIntrospectionData();
+      }
+    });
   }
 
   ///

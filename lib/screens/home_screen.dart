@@ -119,6 +119,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
   final OddsWebSocketService _wsService = OddsWebSocketService();
   Timer? _wsDebounceTimer;
 
+  // レース単位のデバウンス（同じレースの通知が短時間に重なったら1回だけ再取得する）
+  final Map<String, Timer> _wsRaceDebounceTimers = <String, Timer>{};
+
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   String get _mapKey => '${appParamState.selectedScheduleDate}_${appParamState.selectedScheduleKaisuuBashoDay}';
@@ -135,7 +138,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
     laravelConfigNotifier.getAllLaravelConfigData();
     oddsGetTimingNotifier.getAllOddsGetTimingData();
 
-    summaryNotifier.getAllSummaryData();
+    // 20260924: summary（全期間・1万件超）は起動時に取得しない。
+    // 使用するのは PastRaceOddsTransitionAlert のみで、同画面を開いたときに未取得なら取得している。
+    // summaryNotifier.getAllSummaryData();
     raceResultNotifier.getAllRaceResultData();
     loginUserNotifier.getAllLoginUserData();
     pushNotifierUserNotifier.getAllPushNotifierUserData();
@@ -145,18 +150,43 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
     horseScoreNotifier.getAllHorseScoreData();
     jockeyScoreNotifier.getAllJockeyScoreData();
 
-    raceIntrospectionNotifier.getAllRaceIntrospectionData();
+    // 20260924: 振り返り（全期間の長文）は起動時に取得しない。
+    // 使用する各ダイアログ（AI分析表示・振り返り表示・過去レース）を開いたときに未取得なら取得する。
+    // raceIntrospectionNotifier.getAllRaceIntrospectionData();
 
     developerNewsNotifier.getAllDeveloperNewsData();
 
-    aiAnalysisNotifier.getAllAiAnalysisData();
-    aiAnalysisNotifier2.getAllAiAnalysisData2();
+    // 20260924: AI分析の全件（1st / 2nd）は管理者用「AI取得ステータス」でしか使わないため起動時に取得しない。
+    // 同ダイアログを開いたときに取得する。
+    // aiAnalysisNotifier.getAllAiAnalysisData();
+    // aiAnalysisNotifier2.getAllAiAnalysisData2();
 
     // WebSocket接続を開始し、オッズ更新イベントを受信したら再フェッチする
-    _wsService.onOddsUpdated = () {
+    _wsService.onOddsUpdated = (Map<String, dynamic>? data) {
       if (!mounted) {
         return;
       }
+
+      // 20260924: 通知に含まれるレース情報を使い、そのレースのオッズだけを再取得する
+      final String date = (data?['date'] ?? '').toString();
+      final String kaisuu = (data?['kaisuu'] ?? '').toString();
+      final String basho = (data?['basho'] ?? '').toString();
+      final String day = (data?['day'] ?? '').toString();
+      final int race = int.tryParse((data?['race'] ?? '').toString()) ?? 0;
+
+      if (date.isNotEmpty && kaisuu.isNotEmpty && basho.isNotEmpty && day.isNotEmpty && race > 0) {
+        final String raceKey = '${date}_${kaisuu}_${basho}_${day}_$race';
+        _wsRaceDebounceTimers[raceKey]?.cancel();
+        _wsRaceDebounceTimers[raceKey] = Timer(const Duration(milliseconds: 500), () {
+          _wsRaceDebounceTimers.remove(raceKey);
+          if (mounted) {
+            oddsNotifier.refreshRaceOdds(date: date, kaisuu: kaisuu, basho: basho, day: day, race: race);
+          }
+        });
+        return;
+      }
+
+      // レース情報が読み取れない通知は従来どおり全件再取得
       _wsDebounceTimer?.cancel();
       // 500ms以内に複数イベントが届いた場合まとめて1回だけ再フェッチする
       _wsDebounceTimer = Timer(const Duration(milliseconds: 500), () {
@@ -202,6 +232,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
   @override
   void dispose() {
     _wsDebounceTimer?.cancel();
+    for (final Timer t in _wsRaceDebounceTimers.values) {
+      t.cancel();
+    }
+    _wsRaceDebounceTimers.clear();
     _wsService.dispose();
     try {
       _raceTabController?.removeListener(_onRaceTabChanged);

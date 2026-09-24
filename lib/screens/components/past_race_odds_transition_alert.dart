@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../controllers/controllers_mixin.dart';
+import '../../controllers/race_introspection/race_introspection.dart';
 import '../../controllers/summary/summary.dart';
 import '../../extensions/extensions.dart';
 import '../../models/common/ai_response_recommend_horse_model.dart';
@@ -46,6 +47,11 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
       }
       if (ref.read(summaryProvider).summaryDateBashoMap.isEmpty) {
         ref.read(summaryProvider.notifier).getAllSummaryData();
+      }
+
+      // 20260924: 振り返りは起動時に取得しなくなったため、未取得ならここで取得する
+      if (ref.read(raceIntrospectionProvider).raceIntrospectionMap.isEmpty) {
+        ref.read(raceIntrospectionProvider.notifier).getAllRaceIntrospectionData();
       }
     });
   }
@@ -135,7 +141,8 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
                     _secondAiTextMap[key] = text;
                     // 統合結果は捨てずに保持する（以前は analysis_text だけ拾っており、
                     // 過去レースでは統合結果が一度も使われていなかった）
-                    if (mergedRaw != null && mergedRaw.isNotEmpty) {
+                    // 0頭の統合結果も「受け取った」として保持する（サーバーが除外した馬を出さないため）
+                    if (mergedRaw != null) {
                       _mergedHorsesMap[key] = parseMergedHorses(mergedRaw);
                     }
                     final int? upsetRace = (data['upset_race'] as num?)?.toInt();
@@ -607,7 +614,7 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
 
     // AI予想画面に並ぶのと同じ候補リストから合致数を計算する（ai_analysis_display_alert と同じ基準）
     final List<AiResponseRecommendHorseModel> displayHorses =
-        (_mergedHorsesMap[lookupKey]?.isNotEmpty ?? false)
+        _mergedHorsesMap.containsKey(lookupKey)
         ? _mergedHorsesMap[lookupKey]!
         : mergeAiHorseLists(
             parseAnalysisText(_firstAiTextMap[lookupKey] ?? ''),
@@ -763,7 +770,7 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
                                           upsetPickupHorseNums: upsetPickupHorseNums,
                                           // 統合結果があればそれを使う（サーバー側フィルター適用後の本当の候補）
                                           aiHorseList:
-                                              (_mergedHorsesMap[lookupKey]?.isNotEmpty ?? false)
+                                              _mergedHorsesMap.containsKey(lookupKey)
                                               ? _mergedHorsesMap[lookupKey]!
                                               : mergeAiHorseLists(firstHorses, secondHorses),
                                           upsetRaceValue:

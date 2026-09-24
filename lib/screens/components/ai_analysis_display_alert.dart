@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../controllers/controllers_mixin.dart';
+import '../../controllers/race_introspection/race_introspection.dart';
 import '../../extensions/extensions.dart';
 import '../../models/common/ai_response_recommend_horse_model.dart';
 import '../../models/race_introspection_model.dart';
@@ -59,7 +60,8 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
   /// 統合結果が無いとき（2nd AI 未取得・通信失敗）は、1st AI の選出馬に
   /// 1st AI が選ばなかった 2nd AI の馬を後ろへ足したものを使う。
   List<AiResponseRecommendHorseModel> get _displayHorses {
-    if (_mergedHorses.isNotEmpty) {
+    // 統合結果を受け取っていれば 0頭でもそれを正とする（サーバーが除外した馬を出さない）
+    if (widget.mergedHorseList != null) {
       return _mergedHorses;
     }
     return mergeAiHorseLists(widget.aiHorseList, widget.secondAiHorseList);
@@ -68,7 +70,7 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
   /// この馬が「2nd AI だけが選んだ馬」か。
   /// 選出理由を枠線付きで出すかどうかの判定にだけ使う（順番や集計には影響しない）。
   bool _isSecondAiOnly(AiResponseRecommendHorseModel h) {
-    if (_mergedHorses.isNotEmpty) {
+    if (widget.mergedHorseList != null) {
       return h.category == 'second_only';
     }
     return !widget.aiHorseList.any((AiResponseRecommendHorseModel a) => a.num == h.num);
@@ -81,6 +83,11 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _fetchPayout();
       _fetchBaganrikiIndex();
+
+      // 20260924: 振り返りは起動時に取得しなくなったため、未取得ならここで取得する
+      if (ref.read(raceIntrospectionProvider).raceIntrospectionMap.isEmpty) {
+        raceIntrospectionNotifier.getAllRaceIntrospectionData();
+      }
     });
   }
 
@@ -432,7 +439,7 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
     final bool isSecondAiOnly = _isSecondAiOnly(h);
     final String? secondAiReason = isSecondAiOnly
         ? h.reason
-        : _mergedHorses.isNotEmpty
+        : widget.mergedHorseList != null
         ? h.reasonSecond
         : widget.secondAiHorseList.where((AiResponseRecommendHorseModel s) => s.num == h.num).firstOrNull?.reason;
 
@@ -659,6 +666,15 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
 
   ///
   Widget _buildHorseList(List<AiResponseRecommendHorseModel> displayHorses) {
+    // 統合の結果、基準を満たす馬が1頭もいなかったレース（無理に候補を埋めない仕様）
+    if (displayHorses.isEmpty && widget.mergedHorseList != null) {
+      return const Center(
+        child: Text(
+          'このレースは基準を満たす候補馬がいませんでした',
+          style: TextStyle(fontSize: 12, color: Colors.white70),
+        ),
+      );
+    }
     // どちらのAIが選んだかで列を分けず、おすすめ度順のまま1本で並べる
     return ListView(children: displayHorses.map((AiResponseRecommendHorseModel h) => _buildHorseCard(h)).toList());
   }

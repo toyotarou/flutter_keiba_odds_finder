@@ -98,6 +98,14 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
   List<AiResponseRecommendHorseModel> _secondAiHorseList = <AiResponseRecommendHorseModel>[];
   List<AiResponseRecommendHorseModel> _mergedHorseList = <AiResponseRecommendHorseModel>[];
 
+  /// サーバーから統合結果（merged_horses）を受け取ったか。
+  /// 受け取った場合は、0頭（全頭がフィルターで除外）でもその結果を正とし、
+  /// 1st/2nd の生リストを足し合わせた表示（サーバーが除外した馬が混ざる）へは戻さない。
+  bool _mergedReceived = false;
+
+  /// 1st AI の取得に成功したか（失敗・未完了なら 2nd AI は呼ばない）
+  bool _firstAiOk = false;
+
   // AI取得中ローディング管理
   int _aiPendingCount = 0;
   bool _showAiLoading = false;
@@ -147,9 +155,14 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        _fetchAiPickup();
         _fetchBaganrikiIndex();
-        _fetchSecondAiOpinion();
+        // 1st AI → 2nd AI の順に呼ぶ（仕様: 2nd AI は 1st AI と同じ入力で独立評価し、その後に統合する）。
+        // 同時に呼ぶと 1st AI 未保存のまま 2nd AI が走り、統合できない／失敗時も 2nd AI を呼んでしまう。
+        _fetchAiPickup().then((_) {
+          if (mounted && _firstAiOk) {
+            _fetchSecondAiOpinion();
+          }
+        });
       }
     });
   }
@@ -203,6 +216,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
           _totalForecastAiHorseList = horses;
           _totalForecastUpsetRaceValue = parseUpsetRaceValue(analysisText);
           _totalForecastRaceMetrics = parseRaceMetrics(analysisText);
+          _firstAiOk = true;
         });
       }
     } catch (_) {
@@ -272,8 +286,9 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
       if (mounted) {
         setState(() {
           _secondAiHorseList = horses;
-          if (mergedRaw != null && mergedRaw.isNotEmpty) {
+          if (mergedRaw != null) {
             _mergedHorseList = parseMergedHorses(mergedRaw);
+            _mergedReceived = true;
           }
           if (mergedUpsetRace != null) {
             _totalForecastUpsetRaceValue = mergedUpsetRace;
@@ -1862,7 +1877,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                             numToRankMap: numToRankMap,
                             aiHorseList: _totalForecastAiHorseList,
                             secondAiHorseList: _secondAiHorseList,
-                            mergedHorseList: _mergedHorseList.isNotEmpty ? _mergedHorseList : null,
+                            mergedHorseList: _mergedReceived ? _mergedHorseList : null,
                             upsetRaceValue: _totalForecastUpsetRaceValue,
                             raceMetrics: _totalForecastRaceMetrics,
                           ),
@@ -1908,7 +1923,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                             gapHorseNums: gapHorseNums,
                             upsetPickupHorseNums: upsetPickupHorseNums,
                             // 統合結果があればそれを使う（サーバー側フィルター適用後の本当の候補）
-                            aiHorseList: _mergedHorseList.isNotEmpty
+                            aiHorseList: _mergedReceived
                                 ? _mergedHorseList
                                 : mergeAiHorseLists(_totalForecastAiHorseList, _secondAiHorseList),
                             upsetRaceValue: _totalForecastUpsetRaceValue,
