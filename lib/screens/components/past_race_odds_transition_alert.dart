@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../const/const.dart';
 import '../../controllers/controllers_mixin.dart';
 import '../../controllers/race_introspection/race_introspection.dart';
 import '../../controllers/summary/summary.dart';
@@ -588,10 +589,21 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
     // オッズ・馬・結果データを各 State から取得
     final List<OddsModel> oddsForRace = buildOddsForRace(appParamState.keepOddsMap, keepRaceMapKey, r.key);
     final Map<int, HorseModel> horseModelMap = buildHorseModelMap(appParamState.keepHorseMap, keepRaceMapKey, r.key);
-    final Map<int, int> numToRankMap = _utility.buildNumToRankMap(
+    // 20260926: t_horse_odds_finder_race_results は土曜の deleteKeibaTableRecords で毎週 TRUNCATE されるため、
+    // 先週以前のレースは raceResultMap に着順が無く、合致数が全て0頭になっていた。
+    // raceResultMap に無い場合は、この画面の元データである summary の result（着順）から作る。
+    final Map<int, int> raceResultNumToRankMap = _utility.buildNumToRankMap(
       raceResultState.raceResultMap[keepRaceMapKey] ?? <RaceResultModel>[],
       r.key,
     );
+    final Map<int, int> numToRankMap = raceResultNumToRankMap.isNotEmpty
+        ? raceResultNumToRankMap
+        : <int, int>{
+            for (final SummaryModel m in models.where(
+              (SummaryModel m) => m.race == r.key && m.result >= 1 && m.result <= kRaceTopFinishers,
+            ))
+              m.num: m.result,
+          };
     final PopularityRankOddsMedianModel? medianModel = lookupMedianModel(
       appParamState.keepPopularityRankOddsMedianMap,
       keepRaceMapKey,
@@ -613,8 +625,7 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
     // ════════════════════════════════════════════════════════════════════════
 
     // AI予想画面に並ぶのと同じ候補リストから合致数を計算する（ai_analysis_display_alert と同じ基準）
-    final List<AiResponseRecommendHorseModel> displayHorses =
-        _mergedHorsesMap.containsKey(lookupKey)
+    final List<AiResponseRecommendHorseModel> displayHorses = _mergedHorsesMap.containsKey(lookupKey)
         ? _mergedHorsesMap[lookupKey]!
         : mergeAiHorseLists(
             parseAnalysisText(_firstAiTextMap[lookupKey] ?? ''),
@@ -628,10 +639,7 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
     if (resultText != null && displayHorses.isNotEmpty) {
       final RegExp pattern = RegExp(r'\d+頭中\d+頭が合致');
       if (pattern.hasMatch(resultText)) {
-        adjustedResultText = resultText.replaceFirst(
-          pattern,
-          '${displayHorses.length}頭中$matchedCount頭が合致',
-        );
+        adjustedResultText = resultText.replaceFirst(pattern, '${displayHorses.length}頭中$matchedCount頭が合致');
       }
     }
 
@@ -714,8 +722,7 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
                                         mergedHorseList: _mergedHorsesMap[lookupKey],
                                         upsetRaceValue:
                                             _mergedUpsetRaceMap[lookupKey] ?? parseUpsetRaceValue(firstText),
-                                        raceMetrics:
-                                            _mergedRaceMetricsMap[lookupKey] ?? parseRaceMetrics(firstText),
+                                        raceMetrics: _mergedRaceMetricsMap[lookupKey] ?? parseRaceMetrics(firstText),
                                       ),
                                     );
                                   },
@@ -769,8 +776,7 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
                                           gapHorseNums: gapHorseNums,
                                           upsetPickupHorseNums: upsetPickupHorseNums,
                                           // 統合結果があればそれを使う（サーバー側フィルター適用後の本当の候補）
-                                          aiHorseList:
-                                              _mergedHorsesMap.containsKey(lookupKey)
+                                          aiHorseList: _mergedHorsesMap.containsKey(lookupKey)
                                               ? _mergedHorsesMap[lookupKey]!
                                               : mergeAiHorseLists(firstHorses, secondHorses),
                                           upsetRaceValue:
