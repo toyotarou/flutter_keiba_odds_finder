@@ -114,20 +114,68 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
   // 初回訪問時にmedianなし&期待数値タブ選択状態でパネルを自動クローズしたかどうか
   bool _autoClosedPanel = false;
 
-  Map<int, int> get _numToRankMap =>
-      _utility.buildNumToRankMap(widget.raceResultMap[widget.mapKey] ?? <RaceResultModel>[], widget.raceNumber);
+  // 20260925: 以下のゲッターは1回の build で何度も呼ばれるため、
+  // 元データ（oddsMap / horseMap / raceResultMap の該当リスト）が同じインスタンスの間は計算結果を使い回す。
+  // 元データは取得・更新のたびに新しいリストに差し替わる（その場で書き換えられない）ので、インスタンス比較で十分。
+  // ※ 返したリスト・マップは共有されるので、呼び出し側でその場ソートなどの書き換えをしないこと。
+  String _cacheKey = '';
+  List<OddsModel>? _oddsForRaceSource;
+  List<OddsModel>? _oddsForRaceCache;
+  List<HorseModel>? _horseModelMapSource;
+  Map<int, HorseModel>? _horseModelMapCache;
+  List<RaceResultModel>? _numToRankMapSource;
+  Map<int, int>? _numToRankMapCache;
+  List<OddsModel>? _displayListSource;
+  String _displayListTiming = '';
+  String _displayListFirstKey = '';
+  List<OddsModel>? _displayListCache;
+
+  /// mapKey / raceNumber が変わったらキャッシュを破棄する（通常は Key で別 State になるが念のため）
+  void _checkCacheKey() {
+    final String key = '${widget.mapKey}_${widget.raceNumber}';
+    if (key != _cacheKey) {
+      _cacheKey = key;
+      _oddsForRaceCache = null;
+      _horseModelMapCache = null;
+      _numToRankMapCache = null;
+      _displayListCache = null;
+    }
+  }
+
+  Map<int, int> get _numToRankMap {
+    _checkCacheKey();
+    final List<RaceResultModel>? source = widget.raceResultMap[widget.mapKey];
+    if (_numToRankMapCache == null || !identical(source, _numToRankMapSource)) {
+      _numToRankMapSource = source;
+      _numToRankMapCache = _utility.buildNumToRankMap(source ?? <RaceResultModel>[], widget.raceNumber);
+    }
+    return _numToRankMapCache!;
+  }
 
   ///
-  List<OddsModel> get _oddsForRace =>
-      (widget.oddsMap[widget.mapKey] ?? <OddsModel>[]).where((OddsModel e) => e.race == widget.raceNumber).toList();
+  List<OddsModel> get _oddsForRace {
+    _checkCacheKey();
+    final List<OddsModel>? source = widget.oddsMap[widget.mapKey];
+    if (_oddsForRaceCache == null || !identical(source, _oddsForRaceSource)) {
+      _oddsForRaceSource = source;
+      _oddsForRaceCache = (source ?? <OddsModel>[]).where((OddsModel e) => e.race == widget.raceNumber).toList();
+    }
+    return _oddsForRaceCache!;
+  }
 
   ///
-  Map<int, HorseModel> get _horseModelMap => <int, HorseModel>{
-    for (final HorseModel e in (widget.horseMap[widget.mapKey] ?? <HorseModel>[]).where(
-      (HorseModel e) => e.race == widget.raceNumber,
-    ))
-      e.num: e,
-  };
+  Map<int, HorseModel> get _horseModelMap {
+    _checkCacheKey();
+    final List<HorseModel>? source = widget.horseMap[widget.mapKey];
+    if (_horseModelMapCache == null || !identical(source, _horseModelMapSource)) {
+      _horseModelMapSource = source;
+      _horseModelMapCache = <int, HorseModel>{
+        for (final HorseModel e in (source ?? <HorseModel>[]).where((HorseModel e) => e.race == widget.raceNumber))
+          e.num: e,
+      };
+    }
+    return _horseModelMapCache!;
+  }
 
   ///
   List<String> get _configTimingParts => appParamState.configOddsGetTiming.split('|');
@@ -530,11 +578,26 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
   }
 
   ///
-  List<OddsModel> _buildDisplayList() => buildOddsDisplayList(
-    oddsForRace: _oddsForRace,
-    selectedTiming: appParamState.selectedTiming,
-    configFirstKey: _configFirstKey,
-  );
+  List<OddsModel> _buildDisplayList() {
+    final List<OddsModel> oddsForRace = _oddsForRace;
+    final String selectedTiming = appParamState.selectedTiming;
+    final String configFirstKey = _configFirstKey;
+    // 20260925: 元のオッズ・選択タイミング・設定が同じ間は前回の結果を使い回す
+    if (_displayListCache == null ||
+        !identical(oddsForRace, _displayListSource) ||
+        selectedTiming != _displayListTiming ||
+        configFirstKey != _displayListFirstKey) {
+      _displayListSource = oddsForRace;
+      _displayListTiming = selectedTiming;
+      _displayListFirstKey = configFirstKey;
+      _displayListCache = buildOddsDisplayList(
+        oddsForRace: oddsForRace,
+        selectedTiming: selectedTiming,
+        configFirstKey: configFirstKey,
+      );
+    }
+    return _displayListCache!;
+  }
 
   ///
   Widget _buildRaceInfoBar({
@@ -797,7 +860,8 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     final List<String> timingParts = _configTimingParts;
     final String minTiming = _minTiming;
 
-    if (appParamState.selectedTiming.isEmpty && minTiming.isNotEmpty) {
+    // 20260925: 値が変わるときだけセットする（毎 build セットすると再描画が止まらなくなっていた）
+    if (appParamState.selectedTiming.isEmpty && minTiming.isNotEmpty && appParamState.selectedTiming2 != minTiming) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
           appParamNotifier.setSelectedTiming2(timing2: minTiming);
@@ -833,7 +897,8 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
 
   ///
   Widget _displayRaceHorseList({required String course, required int dist}) {
-    final List<OddsModel> oddsModelList = _oddsForRace;
+    // _oddsForRace はキャッシュを共有しているため、コピーしてからソートする
+    final List<OddsModel> oddsModelList = <OddsModel>[..._oddsForRace];
     final Map<int, HorseModel> horseModelMap = _horseModelMap;
 
     oddsModelList.sort((OddsModel a, OddsModel b) {
@@ -1546,6 +1611,8 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
       return const SizedBox.shrink();
     }
 
+    final double? oddsDropRatio = _calcOddsDropRatio(oddsTimeline);
+
     return Stack(
       children: <Widget>[
         Container(
@@ -1624,7 +1691,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
           ),
         ),
 
-        if (_calcOddsDropRatio(oddsTimeline) != null) ...<Widget>[
+        if (oddsDropRatio != null) ...<Widget>[
           Positioned(
             left: 10,
             child: Stack(
@@ -1639,7 +1706,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                   ),
                   child: Center(
                     child: Text(
-                      '+${((1 - _calcOddsDropRatio(oddsTimeline)!) * 100).toStringAsFixed(0)}%',
+                      '+${((1 - oddsDropRatio) * 100).toStringAsFixed(0)}%',
                       style: const TextStyle(fontSize: 10, color: Colors.yellowAccent, fontWeight: FontWeight.bold),
                     ),
                   ),

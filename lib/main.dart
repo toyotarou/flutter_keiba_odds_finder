@@ -11,6 +11,7 @@ import 'controllers/controllers_mixin.dart';
 import 'screens/home_screen.dart';
 import 'screens/login_screen.dart';
 import 'services/fcm_service.dart';
+import 'utility/utility.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -237,6 +238,10 @@ class _MyAppState extends ConsumerState<MyApp> with ControllersMixin<MyApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      // 20260925: Utility.showError が SnackBar を出すために使う（未設定だとエラー表示が一度も出ていなかった）
+      // navigatorKey だと restartApp（MyApp の作り直し）時に Navigator の状態ごと引き継がれるため、SnackBar 専用のキーを使う
+      scaffoldMessengerKey: NavigationService.scaffoldMessengerKey,
+
       // ignore: always_specify_types
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,

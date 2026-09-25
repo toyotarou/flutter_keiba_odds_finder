@@ -218,14 +218,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
   @override
   void didUpdateWidget(HomeScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.scheduleDateBashoMap != widget.scheduleDateBashoMap ||
-        oldWidget.raceMap != widget.raceMap ||
-        oldWidget.horseMap != widget.horseMap ||
-        oldWidget.oddsMap != widget.oddsMap ||
-        oldWidget.oddsGetTiming != widget.oddsGetTiming ||
-        oldWidget.popularityRankOddsMedianMap != widget.popularityRankOddsMedianMap) {
-      WidgetsBinding.instance.addPostFrameCallback((_) => _syncAppParam());
-    }
+    // 20260925: 以前は一部の項目（schedule / race / horse / odds / timing / median）の変化時だけ同期していたため、
+    // loginUser・騎手/馬スコア・開発者ニュース・push通知ユーザーなどが後から届くと appParam に反映されなかった。
+    // 各 setter が「値（インスタンス）が同じなら何もしない」ようになったので、毎回すべて同期しても余計な再描画は起きない。
+    WidgetsBinding.instance.addPostFrameCallback((_) => _syncAppParam());
   }
 
   ///

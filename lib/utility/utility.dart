@@ -6,26 +6,27 @@ import '../models/race_result_model.dart';
 class Utility {
   ///
   void showError(String msg) {
-    final BuildContext? context = NavigationService.navigatorKey.currentContext;
-    if (context == null) {
+    final ScaffoldMessengerState? messenger = NavigationService.scaffoldMessengerKey.currentState;
+    if (messenger == null) {
       return;
     }
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg), duration: const Duration(seconds: 5)));
+    messenger.showSnackBar(SnackBar(content: Text(msg), duration: const Duration(seconds: 5)));
   }
 
   ///
-  Map<int, Color> getHorseWakuColorMap() {
-    return <int, Color>{
-      1: const Color(0xFFFFFFFF),
-      2: const Color(0xFF000000),
-      3: const Color(0xFFFF0000),
-      4: const Color(0xFF0000FF),
-      5: const Color(0xFFFFFF00),
-      6: const Color(0xFF008000),
-      7: const Color(0xFFFFA500),
-      8: const Color(0xFFFFC0CB),
-    };
-  }
+  Map<int, Color> getHorseWakuColorMap() => _horseWakuColorMap;
+
+  // 20260925: 呼ぶたびに作り直さないよう定数にした（読み取り専用）
+  static const Map<int, Color> _horseWakuColorMap = <int, Color>{
+    1: Color(0xFFFFFFFF),
+    2: Color(0xFF000000),
+    3: Color(0xFFFF0000),
+    4: Color(0xFF0000FF),
+    5: Color(0xFFFFFF00),
+    6: Color(0xFF008000),
+    7: Color(0xFFFFA500),
+    8: Color(0xFFFFC0CB),
+  };
 
   ///
   Map<String, dynamic> judgeOdds({
@@ -70,4 +71,7 @@ class NavigationService {
   const NavigationService._();
 
   static GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
+  /// MaterialApp.scaffoldMessengerKey に設定する（Utility.showError の SnackBar 表示用）
+  static final GlobalKey<ScaffoldMessengerState> scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
 }
