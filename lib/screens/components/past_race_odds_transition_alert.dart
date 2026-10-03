@@ -366,7 +366,17 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
   ///
   @override
   Widget build(BuildContext context) {
-    final Map<String, List<String>> summaryDateBashoMap = summaryState.summaryDateBashoMap;
+    // 20260926: JRAの特性で翌日のレースが1レースだけ取得されてしまう場合があるため、本日以前の日付だけを表示する
+    // DateTime.now().toString() は 'yyyy-MM-dd HH:mm:ss.SSS' 形式なので先頭10文字で 'yyyy-MM-dd' を得る
+    final String today = DateTime.now().toString().substring(0, 10);
+
+    // 20261003: 配当が取得できた（＝レースが終了している）日付だけを表示する。判定のため、開く前に配当を先読みする
+    summaryState.summaryDateBashoMap.keys.where((String d) => d.compareTo(today) <= 0).forEach(_fetchPayoutsForDate);
+
+    final Map<String, List<String>> summaryDateBashoMap = <String, List<String>>{
+      for (final MapEntry<String, List<String>> e in summaryState.summaryDateBashoMap.entries)
+        if (e.key.compareTo(today) <= 0 && _payoutMap.keys.any((String k) => k.startsWith(e.key))) e.key: e.value,
+    };
 
     final Map<String, List<SummaryModel>> summaryMap = summaryState.summaryMap;
 
