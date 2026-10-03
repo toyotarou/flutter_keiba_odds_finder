@@ -114,6 +114,14 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
   // 初回訪問時にmedianなし&期待数値タブ選択状態でパネルを自動クローズしたかどうか
   bool _autoClosedPanel = false;
 
+  // 20261003: 人気順カードの展開状態（馬番 → 展開中か）。フロートタイトルを「展開中のカードだけ」に出すために保持する。
+  // 値がない馬は appParamState.allExpanded と同じ扱い。allExpanded が切り替わったらクリアする（ExpansionTile の Key も作り直されるため）。
+  final Map<int, bool> _horseExpandedMap = <int, bool>{};
+  bool? _horseExpandedMapAllExpanded;
+
+  ///
+  bool _isHorseExpanded(int horseNum) => _horseExpandedMap[horseNum] ?? appParamState.allExpanded;
+
   // 20260925: 以下のゲッターは1回の build で何度も呼ばれるため、
   // 元データ（oddsMap / horseMap / raceResultMap の該当リスト）が同じインスタンスの間は計算結果を使い回す。
   // 元データは取得・更新のたびに新しいリストに差し替わる（その場で書き換えられない）ので、インスタンス比較で十分。
@@ -969,6 +977,12 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     final List<int> sortedAnalysisKeys = _analysisMap.keys.toList()..sort();
     final int analysisTotalCount = sortedAnalysisKeys.length;
 
+    // 20261003: OPEN/CLOSE ボタンで allExpanded が切り替わったら、個別の展開状態を捨てる
+    if (_horseExpandedMapAllExpanded != appParamState.allExpanded) {
+      _horseExpandedMapAllExpanded = appParamState.allExpanded;
+      _horseExpandedMap.clear();
+    }
+
     return ListView.builder(
       controller: _horseListScrollController,
       itemCount: displayList.length,
@@ -1084,7 +1098,12 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
 
                         ExpansionTile(
                           key: ValueKey<String>('horse_${element.num}_${appParamState.allExpanded}'),
-                          initiallyExpanded: appParamState.allExpanded,
+                          // 20261003: 画面外で破棄→再生成されても展開状態が戻らないよう、保持している状態から初期化する
+                          // initiallyExpanded: appParamState.allExpanded,
+                          initiallyExpanded: _isHorseExpanded(element.num),
+                          onExpansionChanged: (bool expanded) {
+                            setState(() => _horseExpandedMap[element.num] = expanded);
+                          },
                           tilePadding: const EdgeInsets.symmetric(horizontal: 8),
                           childrenPadding: const EdgeInsets.symmetric(horizontal: 8),
                           expandedAlignment: Alignment.centerLeft,
@@ -1156,6 +1175,16 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                         ),
                       ),
                     ],
+
+                    // 20261003: 展開中カードのフロートタイトル（カード上部が画面外に出たら、表示エリア上端に追従する）
+                    if (_isHorseExpanded(element.num))
+                      Positioned.fill(
+                        child: _FloatingHorseTitle(
+                          popularity: popularity,
+                          horseNum: element.num,
+                          scrollController: _horseListScrollController,
+                        ),
+                      ),
                   ],
                 ),
               ),
@@ -2249,7 +2278,7 @@ class _OddsTimelineRow extends StatelessWidget {
                       const SizedBox(height: 50),
                       Container(
                         width: double.infinity,
-                        height: 50,
+                        height: 30,
                         decoration: BoxDecoration(
                           border: Border.all(
                             color: hasRatio && ratio >= 2.0
@@ -2261,6 +2290,7 @@ class _OddsTimelineRow extends StatelessWidget {
                         child: Column(
                           children: <Widget>[
                             const Spacer(),
+
                             Text(
                               hasRatio ? ratio.toStringAsFixed(2) : '',
                               style: TextStyle(
@@ -2284,4 +2314,115 @@ class _OddsTimelineRow extends StatelessWidget {
       ],
     );
   }
+}
+
+/// 20261003: 人気順カードの上に重ねる、追従タイトル（「◯番人気　馬番X」）。
+/// カード本来のタイトルが画面外にスクロールされたら、表示エリア上端に貼りつく。
+/// カードの下端まで来たら、それ以上は下がらず、カードと一緒にスクロールして消える。
+class _FloatingHorseTitle extends StatefulWidget {
+  const _FloatingHorseTitle({required this.popularity, required this.horseNum, required this.scrollController});
+
+  final int popularity;
+  final int horseNum;
+  final ScrollController scrollController;
+
+  /// カード上端がこの距離（px）以上、表示エリアの上に隠れたら表示する。
+  /// カード本来のタイトル（人気・馬名）の高さに相当。表示が早い／遅いと感じたらここを調整する。
+  static const double showAfter = 90;
+
+  @override
+  State<_FloatingHorseTitle> createState() => _FloatingHorseTitleState();
+}
+
+class _FloatingHorseTitleState extends State<_FloatingHorseTitle> {
+  ///
+  RenderBox? _cardBox() {
+    final RenderObject? ro = context.findRenderObject();
+    return ro is RenderBox ? ro : null;
+  }
+
+  ///
+  RenderBox? _viewportBox() {
+    final RenderObject? ro = Scrollable.maybeOf(context)?.context.findRenderObject();
+    return ro is RenderBox ? ro : null;
+  }
+
+  ///
+  @override
+  Widget build(BuildContext context) {
+    return IgnorePointer(
+      child: Flow(
+        delegate: _FloatingTitleFlowDelegate(
+          scrollController: widget.scrollController,
+          getCardBox: _cardBox,
+          getViewportBox: _viewportBox,
+          showAfter: _FloatingHorseTitle.showAfter,
+        ),
+        children: <Widget>[
+          Container(
+            margin: const EdgeInsets.only(left: 8, top: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.75),
+              border: Border.all(color: Colors.greenAccent.withValues(alpha: 0.6)),
+              borderRadius: BorderRadius.circular(3),
+            ),
+            child: Text(
+              '${widget.popularity}番人気　馬番${widget.horseNum}',
+              style: const TextStyle(fontSize: 12, color: Colors.greenAccent),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// スクロールのたびに「描画時」に位置を計算する（build 時だと1フレーム遅れてガタつくため Flow を使う）。
+class _FloatingTitleFlowDelegate extends FlowDelegate {
+  _FloatingTitleFlowDelegate({
+    required this.scrollController,
+    required this.getCardBox,
+    required this.getViewportBox,
+    required this.showAfter,
+  }) : super(repaint: scrollController);
+
+  final ScrollController scrollController;
+  final RenderBox? Function() getCardBox;
+  final RenderBox? Function() getViewportBox;
+  final double showAfter;
+
+  ///
+  @override
+  BoxConstraints getConstraintsForChild(int i, BoxConstraints constraints) => constraints.loosen();
+
+  ///
+  @override
+  void paintChildren(FlowPaintingContext context) {
+    final RenderBox? card = getCardBox();
+    final RenderBox? viewport = getViewportBox();
+    if (card == null || viewport == null || !card.attached || !viewport.attached) {
+      return;
+    }
+    if (!card.hasSize || !viewport.hasSize) {
+      return;
+    }
+
+    // カード上端が、表示エリア上端からどれだけ上に隠れているか
+    final double hidden = -card.localToGlobal(Offset.zero, ancestor: viewport).dy;
+    if (hidden < showAfter) {
+      return;
+    }
+
+    final Size childSize = context.getChildSize(0) ?? Size.zero;
+    final double maxDy = context.size.height - childSize.height;
+    final double dy = hidden.clamp(0.0, maxDy < 0 ? 0.0 : maxDy);
+
+    context.paintChild(0, transform: Matrix4.translationValues(0, dy, 0));
+  }
+
+  ///
+  @override
+  bool shouldRepaint(_FloatingTitleFlowDelegate oldDelegate) =>
+      oldDelegate.scrollController != scrollController || oldDelegate.showAfter != showAfter;
 }

@@ -612,7 +612,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
       children: <Widget>[
         if (appParamState.isShowUpperBox) ...<Widget>[
           const SizedBox(height: 5),
-          const SizedBox(height: 5),
           Divider(color: Colors.white.withValues(alpha: 0.5)),
         ],
         Expanded(
