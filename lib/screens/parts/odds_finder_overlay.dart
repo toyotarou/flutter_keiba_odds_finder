@@ -27,6 +27,8 @@ OverlayEntry createDraggableOverlayEntry({
   required Widget widget,
   required ValueChanged<Offset> onPositionChanged,
   bool? fixedFlag,
+  String? title,
+  Color? draggingColor,
 }) {
   final Size screenSize = MediaQuery.of(context).size;
 
@@ -37,6 +39,9 @@ OverlayEntry createDraggableOverlayEntry({
     color: color,
   );
 
+  // ドラッグ中かどうか（draggingColor 指定時の背景色切り替え用）
+  bool isDragging = false;
+
   final OverlayEntry entry = OverlayEntry(
     builder: (BuildContext context) {
       return Positioned(
@@ -44,7 +49,8 @@ OverlayEntry createDraggableOverlayEntry({
         top: item.position.dy,
         child: Material(
           elevation: 8,
-          color: item.color,
+          // ドラッグ中で draggingColor 指定があれば、その背景色にする
+          color: (isDragging && draggingColor != null) ? draggingColor : item.color,
           borderRadius: BorderRadius.circular(8),
           child: SizedBox(
             width: item.width,
@@ -56,6 +62,24 @@ OverlayEntry createDraggableOverlayEntry({
                   height: 40,
                   width: double.infinity,
                   child: Listener(
+                    onPointerDown: (draggingColor == null || (fixedFlag ?? false))
+                        ? null
+                        : (PointerDownEvent event) {
+                            isDragging = true;
+                            item.entry.markNeedsBuild();
+                          },
+                    onPointerUp: (draggingColor == null || (fixedFlag ?? false))
+                        ? null
+                        : (PointerUpEvent event) {
+                            isDragging = false;
+                            item.entry.markNeedsBuild();
+                          },
+                    onPointerCancel: (draggingColor == null || (fixedFlag ?? false))
+                        ? null
+                        : (PointerCancelEvent event) {
+                            isDragging = false;
+                            item.entry.markNeedsBuild();
+                          },
                     // ignore: use_if_null_to_convert_nulls_to_bools
                     onPointerMove: (fixedFlag == true)
                         ? null
@@ -86,7 +110,13 @@ OverlayEntry createDraggableOverlayEntry({
                           const Icon(Icons.check_box_outline_blank, color: Colors.transparent)
                         else
                           const Icon(Icons.drag_indicator, color: Colors.white),
-                        const Expanded(child: Text('')),
+                        Expanded(
+                          child: Text(
+                            title ?? '',
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(fontSize: 12, color: Colors.white, fontWeight: FontWeight.bold),
+                          ),
+                        ),
                         IconButton(
                           onPressed: onRemove,
                           icon: const Icon(Icons.close, color: Colors.white),
@@ -134,6 +164,8 @@ void addFirstOverlay({
   required Widget widget,
   required ValueChanged<Offset> onPositionChanged,
   bool? fixedFlag,
+  String? title,
+  Color? draggingColor,
 }) {
   if (firstEntries.isNotEmpty) {
     for (final OverlayEntry e in firstEntries) {
@@ -156,6 +188,8 @@ void addFirstOverlay({
     widget: widget,
     onPositionChanged: onPositionChanged,
     fixedFlag: fixedFlag,
+    title: title,
+    draggingColor: draggingColor,
   );
 
   setStateCallback(() => firstEntries.add(entry));

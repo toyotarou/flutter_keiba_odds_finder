@@ -29,6 +29,7 @@ import 'components/weekend_race_calendar_alert.dart';
 import 'page/race_content_page.dart';
 import 'parts/error_confirm_dialog.dart';
 import 'parts/odds_finder_dialog.dart';
+import 'parts/odds_finder_overlay.dart';
 
 class RaceTabInfo {
   RaceTabInfo(this.raceNumber, this.widget);
@@ -114,6 +115,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
   TabController? _raceTabController;
   TabController? _raceTabControllerPendingDispose;
   String _raceTabMapKey = '';
+
+  // レース一覧オーバーレイ
+  final List<OverlayEntry> _firstEntries = <OverlayEntry>[];
+  final List<OverlayEntry> _secondEntries = <OverlayEntry>[];
+  Offset? _raceOverlayPosition;
 
   // WebSocket
   final OddsWebSocketService _wsService = OddsWebSocketService();
@@ -233,6 +239,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
     }
     _wsRaceDebounceTimers.clear();
     _wsService.dispose();
+    for (final OverlayEntry e in _firstEntries) {
+      try {
+        e.remove();
+      } on Object catch (_) {}
+    }
+    _firstEntries.clear();
     try {
       _raceTabController?.removeListener(_onRaceTabChanged);
       _raceTabController?.dispose();
@@ -378,6 +390,27 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
         initialIndex: initialIdx,
       );
       _raceTabController!.addListener(_onRaceTabChanged);
+
+      // 会場が選ばれた（会場キーが変わった）時にレース一覧オーバーレイを表示する
+      if (currentMapKey != _raceTabMapKey) {
+        final bool hasRaces = _raceTabs.isNotEmpty;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) {
+            return;
+          }
+          if (hasRaces) {
+            _showRaceListOverlay();
+          } else {
+            for (final OverlayEntry e in _firstEntries) {
+              try {
+                e.remove();
+              } on Object catch (_) {}
+            }
+            setState(_firstEntries.clear);
+          }
+        });
+      }
+
       _raceTabMapKey = currentMapKey;
 
       // 旧コントローラーを次フレーム後に破棄（現フレームはまだ旧コントローラーを使用中）
@@ -507,6 +540,70 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
   }
 
   ///
+  void _selectRaceByIndex(int idx) {
+    if (_raceTabController == null || idx < 0 || idx >= _raceTabs.length) {
+      return;
+    }
+    _raceTabController!.animateTo(idx);
+    appParamNotifier.setSelectedRaceNumber(num: _raceTabs[idx].raceNumber);
+  }
+
+  ///
+  void _showRaceListOverlay() {
+    if (_raceTabs.isEmpty) {
+      return;
+    }
+
+    addFirstOverlay(
+      context: context,
+      firstEntries: _firstEntries,
+      secondEntries: _secondEntries,
+      setStateCallback: setState,
+      width: context.screenSize.width * 0.25,
+      height: context.screenSize.height * 0.4,
+      color: Colors.blueGrey.withValues(alpha: 0.3),
+      initialPosition: _raceOverlayPosition ?? Offset(context.screenSize.width * 0.75, context.screenSize.height * 0.3),
+      widget: Consumer(
+        builder: (BuildContext context, WidgetRef ref, Widget? child) {
+          final int selectedRaceNumber = ref.watch(appParamProvider.select((AppParamState s) => s.selectedRaceNumber));
+          return _buildRaceListOverlayContent(selectedRaceNumber: selectedRaceNumber);
+        },
+      ),
+      onPositionChanged: (Offset newPos) => _raceOverlayPosition = newPos,
+      title: 'race',
+      draggingColor: Colors.white.withValues(alpha: 0.2),
+    );
+  }
+
+  ///
+  Widget _buildRaceListOverlayContent({required int selectedRaceNumber}) {
+    // 未選択(0)の時は先頭レースが選択されている扱い
+    final int currentIndex = (selectedRaceNumber > 0)
+        ? _raceTabs.indexWhere((RaceTabInfo t) => t.raceNumber == selectedRaceNumber)
+        : 0;
+
+    return Column(
+      children: _raceTabs.asMap().entries.map((MapEntry<int, RaceTabInfo> e) {
+        return GestureDetector(
+          onTap: () => _selectRaceByIndex(e.key),
+          child: Container(
+            width: double.infinity,
+            margin: const EdgeInsets.all(5),
+            padding: const EdgeInsets.all(5),
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.white.withValues(alpha: 0.4)),
+              // 会場下のRowボタン(黒背景上の greenAccent α0.3)と同じ見た目になる不透明色
+              color: (e.key == currentIndex) ? const Color(0xFF204834) : Colors.transparent,
+            ),
+            child: Text('${e.value.raceNumber}R', style: const TextStyle(fontSize: 12, color: Colors.white)),
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  ///
   Widget _buildRaceTabSection() {
     if (_raceTabController == null || _raceTabs.isEmpty) {
       return const SizedBox.shrink();
@@ -515,18 +612,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
       children: <Widget>[
         if (appParamState.isShowUpperBox) ...<Widget>[
           const SizedBox(height: 5),
-          TabBar(
-            controller: _raceTabController,
-            isScrollable: true,
-            tabAlignment: TabAlignment.start,
-            indicatorColor: Colors.greenAccent,
-            padding: EdgeInsets.zero,
-            tabs: _raceTabs.map((RaceTabInfo tab) {
-              return Tab(
-                child: Text('${tab.raceNumber}R', style: const TextStyle(fontSize: 14, color: Colors.white)),
-              );
-            }).toList(),
-          ),
           const SizedBox(height: 5),
           Divider(color: Colors.white.withValues(alpha: 0.5)),
         ],
