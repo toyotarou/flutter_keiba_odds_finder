@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 
+/// 20261005: レース選択オーバーレイ（home_screen の _firstEntries）を一時的に隠したいときに true にする。
+/// 払戻金ダイアログの表示中だけ true にし、閉じたら false に戻す。home_screen 側がこの値を見て外す／戻す。
+final ValueNotifier<bool> raceOverlayHiddenNotifier = ValueNotifier<bool>(false);
+
 //=======================================================//
 
 class DraggableOverlayItem {

@@ -22,6 +22,7 @@ import '../../utility/utility.dart';
 import '../parts/odds_finder_dialog.dart';
 import 'ai_analysis_display_alert.dart';
 import 'horse_odds_ranking_display_alert.dart';
+import 'payout_data_display_alert.dart';
 import 'total_forecast_display_alert.dart';
 
 class PastRaceOddsTransitionAlert extends ConsumerStatefulWidget {
@@ -641,9 +642,22 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
             parseAnalysisText(_firstAiTextMap[lookupKey] ?? ''),
             parseAnalysisText(_secondAiTextMap[lookupKey] ?? ''),
           );
-    final int matchedCount = displayHorses
-        .where((AiResponseRecommendHorseModel h) => (numToRankMap[h.num] ?? 99) <= 3)
-        .length;
+    // 20261005: 3着以内に入った（合致した）馬の馬番。合致数と最高獲得払戻金額の計算に使う。
+    // AI予想の候補リストが空のとき（1st AI の回答が空で「未確定」になったレースなど）は、
+    // 「X頭中Y頭が合致」が振り返り（DB保存）の文章のまま出る。合致馬が分からず 0頭扱いになるのを防ぐため、
+    // その文章と同じ根拠である振り返りのピックアップ馬のうち、3着以内に入った馬を使う。
+    final Set<int> hitHorseNums = displayHorses.isNotEmpty
+        ? displayHorses
+              .where((AiResponseRecommendHorseModel h) => (numToRankMap[h.num] ?? 99) <= 3)
+              .map((AiResponseRecommendHorseModel h) => h.num)
+              .toSet()
+        : (introspectionModel == null
+              ? <int>{}
+              : extractPickupNums(
+                  introspectionModel.introspection,
+                ).where((int n) => (numToRankMap[n] ?? 99) <= 3).toSet());
+
+    final int matchedCount = hitHorseNums.length;
 
     String? adjustedResultText = resultText;
     if (resultText != null && displayHorses.isNotEmpty) {
@@ -857,7 +871,13 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
                   _buildResultTextSection(
                     resultText: adjustedResultText,
                     matchedCount: matchedCount,
+                    hitHorseNums: hitHorseNums,
                     payout: payout,
+                    date: date,
+                    overrideKaisuuBashoDay: '${models.first.kaisuu}_${models.first.basho}_${models.first.day}',
+                    raceNumber: r.key,
+                    numToRankMap: numToRankMap,
+                    horseModelMap: horseModelMap,
                     isSecondAiLoading: _fetchedSecondAiDates.contains(date) && !_secondAiTextMap.containsKey(lookupKey),
                   ),
                 ] else ...<Widget>[
@@ -893,22 +913,20 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
   Widget _buildResultTextSection({
     required String resultText,
     required int matchedCount,
+    required Set<int> hitHorseNums,
     required RaceResultPayoutModel? payout,
+    required String date,
+    required String overrideKaisuuBashoDay,
+    required int raceNumber,
+    required Map<int, int> numToRankMap,
+    required Map<int, HorseModel> horseModelMap,
     required bool isSecondAiLoading,
   }) {
-    final bool isMatch = matchedCount >= 3;
+    final Color textColor = matchedCount >= 1 ? Colors.white : Colors.white60;
 
-    // final int trioAmount = (payout != null && payout.trio.isNotEmpty)
-    //     ? (int.tryParse(payout.trio.split('/').first.split('|').elementAtOrNull(1) ?? '') ?? 0)
-    //     : 0;
-    //
-    // final Color textColor = isMatch
-    //     ? const Color(0xFFFBB6CE)
-    //     : trioAmount >= 10000
-    //     ? Colors.yellowAccent.withValues(alpha: 0.5)
-    //     : Colors.white60;
-
-    final Color textColor = isMatch ? const Color(0xFFFBB6CE) : Colors.white60;
+    final ({String name, int amount})? maxHit = (matchedCount >= 1 && payout != null)
+        ? findMaxHitPayout(payout, hitHorseNums, numToWaku: buildNumToWakuMap(horseModelMap.values))
+        : null;
 
     return DefaultTextStyle(
       style: TextStyle(fontSize: 10, color: textColor),
@@ -933,48 +951,40 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
               ),
             ),
           ],
-          if (payout != null) ...<Widget>[
-            if (payout.trifecta.isNotEmpty) ...<Widget>[
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: <Widget>[
-                  const SizedBox.shrink(),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.baseline,
-                    textBaseline: TextBaseline.alphabetic,
-                    children: <Widget>[
-                      const Text('三連単'),
-                      Container(
-                        width: 60,
-                        alignment: Alignment.bottomRight,
-                        child: Text(payout.trifecta.split('/').first.split('|').elementAtOrNull(1)?.toCurrency() ?? ''),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ],
 
-            if (payout.trio.isNotEmpty) ...<Widget>[
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: <Widget>[
-                  const SizedBox.shrink(),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.baseline,
-                    textBaseline: TextBaseline.alphabetic,
-                    children: <Widget>[
-                      const Text('三連複'),
-                      Container(
-                        width: 60,
-                        alignment: Alignment.bottomRight,
-                        child: Text(payout.trio.split('/').first.split('|').elementAtOrNull(1)?.toCurrency() ?? ''),
-                      ),
-                    ],
+          if (maxHit != null) ...<Widget>[Text('最高獲得払戻金額：${maxHit.amount.toString().toCurrency()}円（${maxHit.name}）')],
+
+          if (payout != null) ...<Widget>[
+            const SizedBox(height: 5),
+
+            GestureDetector(
+              onTap: () {
+                // 20261005: 払戻金画面を開く。AI予想で3着以内に入った馬の馬番を渡し、合致した払戻にだけ「獲得」を出す
+                OddsFinderDialog(
+                  context: context,
+                  hideRaceOverlay: true,
+                  widget: PayoutDataDisplayAlert(
+                    raceNumber: raceNumber,
+                    overrideDate: date,
+                    overrideKaisuuBashoDay: overrideKaisuuBashoDay,
+                    hitHorseNums: hitHorseNums,
+                    numToRankMap: numToRankMap,
                   ),
-                ],
+                  paddingLeft: context.screenSize.width * 0.2,
+                  paddingTop: context.screenSize.height * 0.1,
+                );
+              },
+              child: Container(
+                width: context.screenSize.width * 0.3,
+                padding: const EdgeInsets.symmetric(vertical: 2),
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFBB6CE).withValues(alpha: 0.4),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Text('払戻金', style: TextStyle(fontSize: 10, color: Colors.white)),
               ),
-            ],
+            ),
           ],
         ],
       ),

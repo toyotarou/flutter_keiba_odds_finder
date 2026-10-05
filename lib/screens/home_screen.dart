@@ -121,6 +121,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
   final List<OverlayEntry> _secondEntries = <OverlayEntry>[];
   Offset? _raceOverlayPosition;
 
+  // 20261005: 払戻金ダイアログ表示中に隠した場合、閉じたあとに戻すかどうか（隠す前に表示されていたときだけ true）
+  bool _restoreRaceOverlay = false;
+
   // WebSocket
   final OddsWebSocketService _wsService = OddsWebSocketService();
   Timer? _wsDebounceTimer;
@@ -136,6 +139,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
   @override
   void initState() {
     super.initState();
+
+    raceOverlayHiddenNotifier.addListener(_onRaceOverlayHiddenChanged);
 
     scheduleNotifier.getAllScheduleData();
     raceNotifier.getAllRaceData();
@@ -233,6 +238,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
   ///
   @override
   void dispose() {
+    raceOverlayHiddenNotifier.removeListener(_onRaceOverlayHiddenChanged);
     _wsDebounceTimer?.cancel();
     for (final Timer t in _wsRaceDebounceTimers.values) {
       t.cancel();
@@ -546,6 +552,31 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
     }
     _raceTabController!.animateTo(idx);
     appParamNotifier.setSelectedRaceNumber(num: _raceTabs[idx].raceNumber);
+  }
+
+  /// 20261005: raceOverlayHiddenNotifier の変化でレース選択オーバーレイを外す／戻す。
+  /// 位置は _raceOverlayPosition に残っているので、戻したときは同じ場所に出る。
+  void _onRaceOverlayHiddenChanged() {
+    if (!mounted) {
+      return;
+    }
+
+    if (raceOverlayHiddenNotifier.value) {
+      // 隠す: 表示中のときだけ外す（ユーザーが × で閉じていた場合は、戻すときも出さない）
+      if (_firstEntries.isEmpty) {
+        return;
+      }
+      _restoreRaceOverlay = true;
+      for (final OverlayEntry e in _firstEntries) {
+        try {
+          e.remove();
+        } on Object catch (_) {}
+      }
+      setState(_firstEntries.clear);
+    } else if (_restoreRaceOverlay) {
+      _restoreRaceOverlay = false;
+      _showRaceListOverlay();
+    }
   }
 
   ///

@@ -17,11 +17,13 @@ import '../../models/odds_model.dart';
 import '../../models/popularity_rank_odds_median_model.dart';
 import '../../models/race_model.dart';
 import '../../models/race_result_model.dart';
+import '../../models/race_result_payout_model.dart';
 import '../../utility/functions.dart';
 import '../../utility/utility.dart';
 import '../components/ai_analysis_display_alert.dart';
 import '../components/horse_detail_display_alert.dart';
 import '../components/horse_odds_ranking_display_alert.dart';
+import '../components/payout_data_display_alert.dart';
 import '../components/similar_races_display_alert.dart';
 
 import '../components/total_forecast_display_alert.dart';
@@ -92,6 +94,9 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
   Map<int, String> _aiPickupScores = <int, String>{};
   String _aiPickupHorse = '';
   Map<int, double?> _baganrikiIndexMap = <int, double?>{};
+
+  // 20261005: 払戻データ（t_horse_odds_finder_race_result_payout）が存在するか。払戻金ボタンの表示判定に使う。
+  bool _hasPayout = false;
   List<AiResponseRecommendHorseModel> _totalForecastAiHorseList = <AiResponseRecommendHorseModel>[];
   int? _totalForecastUpsetRaceValue;
   Map<String, int>? _totalForecastRaceMetrics;
@@ -212,6 +217,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         _fetchBaganrikiIndex();
+        _fetchPayoutExists();
         // 1st AI → 2nd AI の順に呼ぶ（仕様: 2nd AI は 1st AI と同じ入力で独立評価し、その後に統合する）。
         // 同時に呼ぶと 1st AI 未保存のまま 2nd AI が走り、統合できない／失敗時も 2nd AI を呼んでしまう。
         _fetchAiPickup().then((_) {
@@ -305,6 +311,25 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
         setState(() {
           _baganrikiIndexMap = indexMap;
         });
+      }
+    } catch (_) {}
+  }
+
+  /// 20261005: このレースの払戻データがあるかを取得して [_hasPayout] に反映する。
+  Future<void> _fetchPayoutExists() async {
+    final String date = appParamState.selectedScheduleDate;
+    final int race = widget.raceNumber;
+    final (:String kaisuu, :String basho, day: _) = parseKbdParts(appParamState.selectedScheduleKaisuuBashoDay);
+    if (kaisuu.isEmpty || basho.isEmpty) {
+      return;
+    }
+    try {
+      final Map<String, RaceResultPayoutModel> result = await fetchPayoutMap(
+        ref,
+        racesParam: '$date|$kaisuu|$basho|$race',
+      );
+      if (mounted) {
+        setState(() => _hasPayout = result.isNotEmpty);
       }
     } catch (_) {}
   }
@@ -841,10 +866,35 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
               onTap: () {
                 appParamNotifier.setSelectedRaceNumber(num: widget.raceNumber);
                 appParamNotifier.setIsShowUpperBox2(flag: true);
-                OddsFinderDialog(context: context, widget: const HorseOddsRankingDisplayAlert());
+                OddsFinderDialog(context: context, widget: const HorseOddsRankingDisplayAlert(), hideRaceOverlay: true);
               },
               child: Icon(Icons.list, color: Colors.white.withValues(alpha: 0.5)),
             ),
+
+            if (_hasPayout) ...<Widget>[
+              const SizedBox(width: 15),
+
+              GestureDetector(
+                onTap: () {
+                  OddsFinderDialog(
+                    context: context,
+                    hideRaceOverlay: true,
+                    widget: PayoutDataDisplayAlert(raceNumber: widget.raceNumber),
+                    paddingLeft: context.screenSize.width * 0.2,
+                    paddingTop: context.screenSize.height * 0.1,
+                  );
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 3, horizontal: 10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFBB6CE).withValues(alpha: 0.4),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+
+                  child: const Text('払戻金', style: TextStyle(fontSize: 10)),
+                ),
+              ),
+            ],
           ],
         ),
         Row(
@@ -1355,7 +1405,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                 final String horseId = exUrl.length > 1 ? exUrl[1] : '';
                 if (horseId.isNotEmpty) {
                   horseNotifier.fetchHorseDetail(horseId: horseId);
-                  OddsFinderDialog(context: context, widget: const HorseDetailDisplayAlert());
+                  OddsFinderDialog(context: context, widget: const HorseDetailDisplayAlert(), hideRaceOverlay: true);
                 }
               },
               child: FaIcon(FontAwesomeIcons.horse, size: 20, color: Colors.green[500]!.withValues(alpha: 0.6)),
@@ -1552,6 +1602,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                                         child: InkWell(
                                           onTap: () => OddsFinderDialog(
                                             context: context,
+                                            hideRaceOverlay: true,
                                             widget: SimilarRacesDisplayAlert(raceModel: raceModel),
                                           ),
                                           borderRadius: BorderRadius.circular(10),
@@ -1838,8 +1889,6 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
 
             _buildControlButtons(raceIdx: raceIdx),
 
-            Divider(color: Colors.white.withValues(alpha: 0.5)),
-
             SizedBox(height: 40, child: _displayRaceMinutesRow()),
 
             const SizedBox(height: 10),
@@ -1968,6 +2017,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                       onTap: () {
                         OddsFinderDialog(
                           context: context,
+                          hideRaceOverlay: true,
                           widget: AiAnalysisDisplayAlert(
                             raceNumber: widget.raceNumber,
                             numToRankMap: numToRankMap,
@@ -2010,6 +2060,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
 
                         OddsFinderDialog(
                           context: context,
+                          hideRaceOverlay: true,
                           widget: TotalForecastDisplayAlert(
                             displayList: sixMinDisplayList,
                             horseModelMap: horseModelMap,

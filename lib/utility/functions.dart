@@ -57,20 +57,7 @@ Future<List<RaceResultPayoutModel>> fetchPayoutList(WidgetRef ref, {required Str
       .read(httpClientProvider)
       .get(path: APIPath.getHorseOddsFinderRaceResultPayout, queryParameters: <String, dynamic>{'races': racesParam});
   final List<dynamic> dataList = (response as Map<String, dynamic>)['data'] as List<dynamic>? ?? <dynamic>[];
-  return dataList
-      .map((dynamic item) => RaceResultPayoutModel.fromJson(item as Map<String, dynamic>))
-      .toList();
-}
-
-/// 払戻文字列（"3-5-7|99999/1-2-3|88888" 形式）から 1 点目の金額部分だけを返す。
-///
-/// 該当が無い場合は空文字を返す。
-String extractFirstPayoutAmount(String raw) {
-  if (raw.isEmpty) {
-    return '';
-  }
-  final List<String> parts = raw.split('/').first.split('|');
-  return parts.length > 1 ? parts[1].trim() : '';
+  return dataList.map((dynamic item) => RaceResultPayoutModel.fromJson(item as Map<String, dynamic>)).toList();
 }
 
 /// 馬名リストで過去戦績を取得し、馬名 → 戦績リスト の Map を返す。
@@ -453,6 +440,117 @@ Set<int> extractResultNumsFromPayout(RaceResultPayoutModel payout) {
   return <int>{};
 }
 
+/// 払戻の組み合わせ（"1-5-14" など）の馬番がすべて [hitNums] に含まれるか。順序は問わない。
+///
+/// [hitNums] が空、または馬番として読めない要素がある場合は false。
+bool isPayoutComboHit(String combo, Set<int> hitNums) {
+  if (hitNums.isEmpty) {
+    return false;
+  }
+
+  final List<int?> nums = combo.split('-').map((String e) => int.tryParse(e.trim())).toList();
+  if (nums.isEmpty || nums.contains(null)) {
+    return false;
+  }
+
+  return nums.every((int? n) => hitNums.contains(n));
+}
+
+/// 馬のリストから、馬番 → 枠番の Map を作る。枠連の判定（[isWakuComboHit] / [findMaxHitPayout]）に使う。
+Map<int, int> buildNumToWakuMap(Iterable<HorseModel> horses) => <int, int>{
+  for (final HorseModel h in horses) h.num: h.waku,
+};
+
+/// 枠連の組み合わせ（"3-6" など。枠番）が、合致した馬 [hitNums] の枠番で成り立つか。
+///
+/// [numToWaku] は馬番 → 枠番。合致した馬のうち 2頭（別の馬）の枠番が、組み合わせの 2つの枠と一致すれば true
+/// （同枠の組み合わせ "3-3" は、その枠の馬が 2頭合致している場合のみ）。
+/// 枠番が分からない（[numToWaku] が空など）ときは false。
+bool isWakuComboHit(String combo, Set<int> hitNums, Map<int, int> numToWaku) {
+  final List<int?> frames = combo.split('-').map((String e) => int.tryParse(e.trim())).toList();
+  if (frames.length != 2 || frames.contains(null)) {
+    return false;
+  }
+
+  final List<int> hitFrames = <int>[
+    for (final int n in hitNums)
+      if (numToWaku[n] != null) numToWaku[n]!,
+  ];
+
+  final int first = frames[0]!;
+  final int second = frames[1]!;
+  if (first == second) {
+    return hitFrames.where((int w) => w == first).length >= 2;
+  }
+  return hitFrames.contains(first) && hitFrames.contains(second);
+}
+
+/// 合致した馬番 [hitNums] だけで成り立つ払戻のうち、最高金額とその券種名を返す。
+///
+/// 枠連は枠番で払い戻されるため、馬番 → 枠番の [numToWaku] があるときだけ対象にする。成り立つ払戻が無ければ null。
+({String name, int amount})? findMaxHitPayout(
+  RaceResultPayoutModel payout,
+  Set<int> hitNums, {
+  Map<int, int> numToWaku = const <int, int>{},
+}) {
+  final List<(String, String)> tickets = <(String, String)>[
+    ('単勝', payout.tan),
+    ('複勝', payout.fuku),
+    ('枠連', payout.waku),
+    ('馬連', payout.umaren),
+    ('ワイド', payout.wide),
+    ('馬単', payout.umatan),
+    ('三連複', payout.trio),
+    ('三連単', payout.trifecta),
+  ];
+
+  ({String name, int amount})? best;
+  for (final (String name, String raw) in tickets) {
+    for (final String entry in raw.split('/')) {
+      final List<String> parts = entry.split('|');
+      final bool isHit = name == '枠連'
+          ? isWakuComboHit(parts.first, hitNums, numToWaku)
+          : isPayoutComboHit(parts.first, hitNums);
+      if (parts.length < 2 || !isHit) {
+        continue;
+      }
+
+      final int amount = int.tryParse(parts[1].trim().replaceAll(',', '')) ?? 0;
+      if (best == null || amount > best.amount) {
+        best = (name: name, amount: amount);
+      }
+    }
+  }
+  return best;
+}
+
+/// 振り返りテキストの "## ピックアップ" セクションから、ピックアップした馬の馬番を返す。
+///
+/// 行の形式: "○14番 タガノゲイル" / "○4 マーノマエストロ" / "5番 ブライトスクリプト"
+/// セクションが無い場合は空の Set を返す。
+Set<int> extractPickupNums(String introspection) {
+  final Set<int> nums = <int>{};
+  bool inPickup = false;
+  for (final String line in introspection.split('\n')) {
+    final String trimmed = line.trim();
+    if (trimmed == '## ピックアップ') {
+      inPickup = true;
+      continue;
+    }
+    if (!inPickup) {
+      continue;
+    }
+    if (trimmed.startsWith('## ')) {
+      break;
+    }
+    final RegExpMatch? m = RegExp(r'^[○◯]?\s*(\d+)').firstMatch(trimmed);
+    if (m != null) {
+      nums.add(int.parse(m.group(1)!));
+    }
+  }
+  return nums;
+}
+
 /// 振り返りテキストから "## 結果" セクションの最初の非空行を返す。
 ///
 /// 振り返りテキストは "## セクション名\n内容" の形式で構成されている。
@@ -677,15 +775,15 @@ List<AiResponseRecommendHorseModel> parseMergedHorses(List<dynamic> list) {
       .map((Map<String, dynamic> m) {
         final dynamic odds6 = m['odds_6'];
         return AiResponseRecommendHorseModel(
-          num:          asInt(m['num'])        ?? 0,
-          name:         (m['name'] as String?) ?? '',
-          popularity:   asInt(m['popularity'])?.toString() ?? '',
-          odds:         odds6 is num ? odds6.toStringAsFixed(1) : '',
-          score:        asInt(m['score'])      ?? 0,
-          reason:       (m['reason'] as String?)   ?? '',
-          category:     (m['category'] as String?) ?? 'first_only',
-          score1st:     asInt(m['score_1st']),
-          score2nd:     asInt(m['score_2nd']),
+          num: asInt(m['num']) ?? 0,
+          name: (m['name'] as String?) ?? '',
+          popularity: asInt(m['popularity'])?.toString() ?? '',
+          odds: odds6 is num ? odds6.toStringAsFixed(1) : '',
+          score: asInt(m['score']) ?? 0,
+          reason: (m['reason'] as String?) ?? '',
+          category: (m['category'] as String?) ?? 'first_only',
+          score1st: asInt(m['score_1st']),
+          score2nd: asInt(m['score_2nd']),
           reasonSecond: m['reason_2nd'] as String?,
         );
       })

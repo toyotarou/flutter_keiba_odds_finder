@@ -1,5 +1,11 @@
 import 'package:flutter/material.dart';
 
+import 'odds_finder_overlay.dart';
+
+// 20261005: hideRaceOverlay: true で開いているダイアログの数。1以上の間、レース選択オーバーレイを隠す。
+// ダイアログが重なって開いても、全部閉じるまでは戻さないように数えている。
+int _raceOverlayHideCount = 0;
+
 // ignore: non_constant_identifier_names
 Future<void> OddsFinderDialog({
   required BuildContext context,
@@ -9,7 +15,14 @@ Future<void> OddsFinderDialog({
   double paddingBottom = 0,
   double paddingLeft = 0,
   bool clearBarrierColor = false,
+  bool hideRaceOverlay = false,
 }) {
+  // 20261005: 表示中はレース選択オーバーレイ（home_screen）を隠す
+  if (hideRaceOverlay) {
+    _raceOverlayHideCount++;
+    raceOverlayHiddenNotifier.value = true;
+  }
+
   // ignore: inference_failure_on_function_invocation
   return showDialog(
     context: context,
@@ -26,5 +39,11 @@ Future<void> OddsFinderDialog({
       );
     },
     // ignore: always_specify_types
-  ).then((value) {});
+  ).then((value) {
+    // 20261005: 閉じたらレース選択オーバーレイを戻す（他にも隠す指定のダイアログが開いていれば戻さない）
+    if (hideRaceOverlay) {
+      _raceOverlayHideCount--;
+      raceOverlayHiddenNotifier.value = _raceOverlayHideCount > 0;
+    }
+  });
 }

@@ -8,6 +8,8 @@ import '../../models/common/ai_response_recommend_horse_model.dart';
 import '../../models/race_introspection_model.dart';
 import '../../models/race_result_payout_model.dart';
 import '../../utility/functions.dart';
+import '../parts/odds_finder_dialog.dart';
+import 'payout_data_display_alert.dart';
 
 // import '../parts/odds_finder_dialog.dart';
 // import 'ai_analysis_payout_result_alert.dart';
@@ -169,12 +171,11 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
         .where((int r) => r <= 3)
         .toSet();
 
-    final bool isTop3AllHit = hitRankSet.containsAll(<int>[1, 2, 3]);
-
-    // 未発走レースは払戻が無いので、金額が取れたものだけ表示する
-    final String trifectaAmount = extractFirstPayoutAmount(payout?.trifecta ?? '');
-
-    final String trioAmount = extractFirstPayoutAmount(payout?.trio ?? '');
+    // 20261005: 各馬カードで着順バッジ（rank <= 3）が付く馬の馬番。払戻金画面の「獲得」判定に渡す
+    final Set<int> hitHorseNums = displayHorses
+        .where((AiResponseRecommendHorseModel h) => (widget.numToRankMap[h.num] ?? 99) <= 3)
+        .map((AiResponseRecommendHorseModel h) => h.num)
+        .toSet();
 
     // DB の resultText は振り返りAIのピックアップ頭数ベースで生成されているため、
     // 実際に画面へ並んでいる本候補の「頭数」と「合致数」で上書きして表示する
@@ -287,7 +288,8 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
                   const SizedBox(height: 6),
                 ],
 
-                if (trifectaAmount.isNotEmpty || trioAmount.isNotEmpty) ...<Widget>[
+                // 未発走レースは払戻データが無いので、払戻データがあるときだけ表示する
+                if (payout != null) ...<Widget>[
                   const SizedBox(height: 10),
 
                   Align(
@@ -315,12 +317,33 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
 
                         const SizedBox(height: 6),
 
-                        Text(
-                          <String>[
-                            if (trifectaAmount.isNotEmpty) '3連単: ${trifectaAmount.toCurrency()}',
-                            if (trioAmount.isNotEmpty) '3連複: ${trioAmount.toCurrency()}',
-                          ].join('\u3000'),
-                          style: TextStyle(color: isTop3AllHit ? const Color(0xFFFBB6CE) : Colors.grey),
+                        GestureDetector(
+                          onTap: () {
+                            // 20261005: 払戻金画面を開く。着順バッジが付いた馬の馬番を渡し、合致した払戻にだけ「獲得」を出す
+                            OddsFinderDialog(
+                              context: context,
+                              hideRaceOverlay: true,
+                              widget: PayoutDataDisplayAlert(
+                                raceNumber: widget.raceNumber,
+                                overrideDate: widget.overrideDate,
+                                overrideKaisuuBashoDay: widget.overrideKaisuuBashoDay,
+                                hitHorseNums: hitHorseNums,
+                                numToRankMap: widget.numToRankMap,
+                              ),
+                              paddingLeft: context.screenSize.width * 0.2,
+                              paddingTop: context.screenSize.height * 0.1,
+                            );
+                          },
+                          child: Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.symmetric(vertical: 3),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFBB6CE).withValues(alpha: 0.4),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            alignment: Alignment.center,
+                            child: const Text('払戻金', style: TextStyle(fontSize: 10)),
+                          ),
                         ),
                       ],
                     ),
@@ -669,10 +692,7 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
     // 統合の結果、基準を満たす馬が1頭もいなかったレース（無理に候補を埋めない仕様）
     if (displayHorses.isEmpty && widget.mergedHorseList != null) {
       return const Center(
-        child: Text(
-          'このレースは基準を満たす候補馬がいませんでした',
-          style: TextStyle(fontSize: 12, color: Colors.white70),
-        ),
+        child: Text('このレースは基準を満たす候補馬がいませんでした', style: TextStyle(fontSize: 12, color: Colors.white70)),
       );
     }
     // どちらのAIが選んだかで列を分けず、おすすめ度順のまま1本で並べる
