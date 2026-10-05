@@ -360,7 +360,12 @@ class _NewsBlockState extends State<_NewsBlock> {
       },
       child: Container(
         decoration: BoxDecoration(
-          color: _isTapped ? Colors.green[800]!.withValues(alpha: 0.4) : Colors.black.withValues(alpha: 0.5),
+          color: _isTapped
+              ? Colors.green[800]!.withValues(alpha: 0.4)
+              : widget.items.any((DeveloperNewsModel item) => item.diffSeconds <= 5)
+              ? Colors.black.withValues(alpha: 0.5)
+              : Colors.blueAccent.withValues(alpha: 0.5),
+
           border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
           borderRadius: BorderRadius.circular(3),
         ),
