@@ -603,6 +603,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
       onPositionChanged: (Offset newPos) => _raceOverlayPosition = newPos,
       title: 'race',
       draggingColor: Colors.white.withValues(alpha: 0.2),
+      minY: 50,
+      headerColor: const Color(0xFF4CAF50).withValues(alpha: 0.2),
     );
   }
 

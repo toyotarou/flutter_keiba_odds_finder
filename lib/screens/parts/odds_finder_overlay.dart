@@ -33,11 +33,14 @@ OverlayEntry createDraggableOverlayEntry({
   bool? fixedFlag,
   String? title,
   Color? draggingColor,
+  double minY = 0,
+  Color headerColor = Colors.transparent,
 }) {
   final Size screenSize = MediaQuery.of(context).size;
 
   final DraggableOverlayItem item = DraggableOverlayItem(
-    position: initialOffset,
+    // 20261005: minY（上端の移動禁止エリア）より上に初期位置がある場合も minY に寄せる
+    position: Offset(initialOffset.dx, initialOffset.dy < minY ? minY : initialOffset.dy),
     width: width,
     height: height,
     color: color,
@@ -62,7 +65,7 @@ OverlayEntry createDraggableOverlayEntry({
             child: Column(
               children: <Widget>[
                 Container(
-                  color: Colors.transparent,
+                  color: headerColor,
                   height: 40,
                   width: double.infinity,
                   child: Listener(
@@ -94,7 +97,9 @@ OverlayEntry createDraggableOverlayEntry({
                               final double maxX = screenSize.width - item.width;
                               final double maxY = screenSize.height - item.height;
                               final num clampedX = item.position.dx.clamp(0, maxX);
-                              final num clampedY = item.position.dy.clamp(0, maxY);
+                              // 20261005: 上端に寄せるとスマホのシステム操作に邪魔されて、
+                              // 二度と動かせなくなるため、minY より上には移動させない
+                              final num clampedY = item.position.dy.clamp(minY, maxY < minY ? minY : maxY);
 
                               item.position = Offset(
                                 double.parse(clampedX.toString()),
@@ -129,6 +134,9 @@ OverlayEntry createDraggableOverlayEntry({
                     ),
                   ),
                 ),
+
+                const SizedBox(height: 10),
+
                 Expanded(
                   child: SingleChildScrollView(
                     padding: const EdgeInsets.symmetric(horizontal: 10),
@@ -141,6 +149,8 @@ OverlayEntry createDraggableOverlayEntry({
                     ),
                   ),
                 ),
+
+                const SizedBox(height: 10),
               ],
             ),
           ),
@@ -170,6 +180,8 @@ void addFirstOverlay({
   bool? fixedFlag,
   String? title,
   Color? draggingColor,
+  double minY = 0,
+  Color headerColor = Colors.transparent,
 }) {
   if (firstEntries.isNotEmpty) {
     for (final OverlayEntry e in firstEntries) {
@@ -194,6 +206,8 @@ void addFirstOverlay({
     fixedFlag: fixedFlag,
     title: title,
     draggingColor: draggingColor,
+    minY: minY,
+    headerColor: headerColor,
   );
 
   setStateCallback(() => firstEntries.add(entry));

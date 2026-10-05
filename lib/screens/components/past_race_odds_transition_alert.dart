@@ -922,7 +922,12 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
     required Map<int, HorseModel> horseModelMap,
     required bool isSecondAiLoading,
   }) {
-    final Color textColor = matchedCount >= 1 ? Colors.white : Colors.white60;
+    // 20261005: 3頭合致のときだけピンク、1〜2頭は白、0頭は従来どおり white60
+    final Color textColor = matchedCount >= 3
+        ? const Color(0xFFFBB6CE)
+        : matchedCount >= 1
+        ? Colors.white
+        : Colors.white60;
 
     final ({String name, int amount})? maxHit = (matchedCount >= 1 && payout != null)
         ? findMaxHitPayout(payout, hitHorseNums, numToWaku: buildNumToWakuMap(horseModelMap.values))
