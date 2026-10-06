@@ -329,9 +329,10 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
                                 overrideKaisuuBashoDay: widget.overrideKaisuuBashoDay,
                                 hitHorseNums: hitHorseNums,
                                 numToRankMap: widget.numToRankMap,
+                                aiHorseNums: displayHorses.map((AiResponseRecommendHorseModel h) => h.num).toList(),
                               ),
                               paddingLeft: context.screenSize.width * 0.2,
-                              paddingTop: context.screenSize.height * 0.1,
+                              paddingTop: context.screenSize.height * 0.05,
                             );
                           },
                           child: Container(

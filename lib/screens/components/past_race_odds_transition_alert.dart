@@ -877,6 +877,7 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
                     overrideKaisuuBashoDay: '${models.first.kaisuu}_${models.first.basho}_${models.first.day}',
                     raceNumber: r.key,
                     numToRankMap: numToRankMap,
+                    aiHorseNums: displayHorses.map((AiResponseRecommendHorseModel h) => h.num).toList(),
                     horseModelMap: horseModelMap,
                     isSecondAiLoading: _fetchedSecondAiDates.contains(date) && !_secondAiTextMap.containsKey(lookupKey),
                   ),
@@ -921,6 +922,7 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
     required Map<int, int> numToRankMap,
     required Map<int, HorseModel> horseModelMap,
     required bool isSecondAiLoading,
+    required List<int> aiHorseNums,
   }) {
     // 20261005: 3頭合致のときだけピンク、1〜2頭は白、0頭は従来どおり white60
     final Color textColor = matchedCount >= 3
@@ -974,9 +976,10 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
                     overrideKaisuuBashoDay: overrideKaisuuBashoDay,
                     hitHorseNums: hitHorseNums,
                     numToRankMap: numToRankMap,
+                    aiHorseNums: aiHorseNums,
                   ),
                   paddingLeft: context.screenSize.width * 0.2,
-                  paddingTop: context.screenSize.height * 0.1,
+                  paddingTop: context.screenSize.height * 0.05,
                 );
               },
               child: Container(

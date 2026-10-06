@@ -881,7 +881,8 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                     hideRaceOverlay: true,
                     widget: PayoutDataDisplayAlert(raceNumber: widget.raceNumber),
                     paddingLeft: context.screenSize.width * 0.2,
-                    paddingTop: context.screenSize.height * 0.1,
+                    paddingTop: context.screenSize.height * 0.05,
+                    paddingBottom: context.screenSize.height * 0.1,
                   );
                 },
                 child: Container(

@@ -20,6 +20,7 @@ class PayoutDataDisplayAlert extends ConsumerStatefulWidget {
     this.overrideKaisuuBashoDay,
     this.hitHorseNums = const <int>{},
     this.numToRankMap = const <int, int>{},
+    this.aiHorseNums = const <int>[],
   });
 
   final int raceNumber;
@@ -36,6 +37,10 @@ class PayoutDataDisplayAlert extends ConsumerStatefulWidget {
   /// 20261005: 馬番 → 着順。空（既定）のときは「1着」「2着」「3着」のラベルを出さない。
   /// AI予想画面・過去レースのオッズ遷移表から開いたときだけ渡す。
   final Map<int, int> numToRankMap;
+
+  /// 20261006: AIが予想した馬の馬番。空（既定）のときは一覧を出さない。
+  /// AI予想画面・過去レースのオッズ遷移表から開いたときだけ渡す。
+  final List<int> aiHorseNums;
 
   @override
   ConsumerState<PayoutDataDisplayAlert> createState() => _PayoutDataDisplayAlertState();
@@ -104,6 +109,13 @@ class _PayoutDataDisplayAlertState extends ConsumerState<PayoutDataDisplayAlert>
   Map<int, int> get _numToWaku {
     final List<HorseModel> horses = appParamState.keepHorseMap['${_effectiveDate}_$_effectiveKbd'] ?? <HorseModel>[];
     return buildNumToWakuMap(horses.where((HorseModel h) => h.race == widget.raceNumber));
+  }
+
+  /// 20261006: 出走頭数（「X頭立て」）。馬データ（keepHorseMap）のそのレースの頭数。
+  /// 馬データが無い（古いレースなど）ときは 0。
+  int get _fieldSize {
+    final List<HorseModel> horses = appParamState.keepHorseMap['${_effectiveDate}_$_effectiveKbd'] ?? <HorseModel>[];
+    return horses.where((HorseModel h) => h.race == widget.raceNumber).length;
   }
 
   /// 払戻文字列を（組み合わせ, 金額）のリストに分解する。
@@ -177,6 +189,12 @@ class _PayoutDataDisplayAlertState extends ConsumerState<PayoutDataDisplayAlert>
 
                 Divider(color: Colors.white.withValues(alpha: 0.4), thickness: 5),
 
+                if (widget.aiHorseNums.isNotEmpty) ...<Widget>[
+                  _buildAiHorseNums(),
+                  const SizedBox(height: 10),
+                  Divider(color: Colors.white.withValues(alpha: 0.4), thickness: 2),
+                ],
+
                 if (widget.numToRankMap.isNotEmpty) ...<Widget>[_buildRankLabels(), const SizedBox(height: 10)],
 
                 Expanded(child: _buildBody(payout)),
@@ -242,9 +260,7 @@ class _PayoutDataDisplayAlertState extends ConsumerState<PayoutDataDisplayAlert>
 
           ...entries.map((({String combo, String amount}) e) {
             // 20261005: 着順バッジが付いた馬の馬番だけで組み合わせが成り立つか（成り立つ行だけ「獲得」と赤文字）
-            final bool isHit = isWaku
-                ? isWakuComboHit(e.combo, widget.hitHorseNums, _numToWaku)
-                : _isHit(e.combo);
+            final bool isHit = isWaku ? isWakuComboHit(e.combo, widget.hitHorseNums, _numToWaku) : _isHit(e.combo);
 
             // 獲得した行の金額・馬番の文字色（色を変えるときはここ）。獲得していない行は null（既定の白）
             final TextStyle valueStyle = TextStyle(fontSize: 13, color: isHit ? const Color(0xFFFBB6CE) : null);
@@ -272,6 +288,54 @@ class _PayoutDataDisplayAlertState extends ConsumerState<PayoutDataDisplayAlert>
     );
   }
 
+  /// 20261006: 「AIが予想した馬番：X頭」の下に、馬番を白枠で囲んで並べる。
+  Widget _buildAiHorseNums() {
+    // 3着以内に入った（合致した）馬の頭数。3頭合致のときだけピンクの文字にする（AI予想画面の結果文と同じ色）
+    final int matchedCount = widget.aiHorseNums.where(widget.hitHorseNums.contains).length;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Text(
+          // 出走頭数が分かるときだけ「 / X頭立て」を付ける
+          'AIが予想した馬番：${widget.aiHorseNums.length}頭${_fieldSize > 0 ? ' / $_fieldSize頭立て' : ''}',
+          style: const TextStyle(fontSize: 12),
+        ),
+        const SizedBox(height: 4),
+        Wrap(
+          spacing: 4,
+          runSpacing: 4,
+          // 馬番の昇順に並べる（元のリストは変更しない）
+          children: (List<int>.of(widget.aiHorseNums)..sort())
+              .map(
+                (int n) => Container(
+                  // 1桁・2桁で幅が変わらないよう固定幅にする
+                  width: 32,
+                  padding: const EdgeInsets.symmetric(vertical: 2),
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    // 的中（3着以内に入った馬）は背景をピンクにする（「獲得」ラベルと同じ色）
+                    color: widget.hitHorseNums.contains(n) ? const Color(0xFFFBB6CE).withValues(alpha: 0.4) : null,
+                    border: Border.all(color: Colors.white),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text('$n', style: const TextStyle(fontSize: 12)),
+                ),
+              )
+              .toList(),
+        ),
+        // 0頭合致のときは出さない
+        if (matchedCount > 0) ...<Widget>[
+          const SizedBox(height: 4),
+          Text(
+            '$matchedCount頭合致',
+            style: TextStyle(fontSize: 12, color: matchedCount >= 3 ? const Color(0xFFFBB6CE) : Colors.white),
+          ),
+        ],
+      ],
+    );
+  }
+
   /// 20261005: 「1着 5」「2着 13」「3着 1」のように、着順ごとの馬番を並べる。
   /// 同着で同じ着順の馬が複数いるときは、馬番を昇順に並べて続けて表示する。
   Widget _buildRankLabels() {
@@ -280,7 +344,10 @@ class _PayoutDataDisplayAlertState extends ConsumerState<PayoutDataDisplayAlert>
       runSpacing: 4,
       children: <int>[1, 2, 3].map((int rank) {
         final List<int> nums =
-            widget.numToRankMap.entries.where((MapEntry<int, int> e) => e.value == rank).map((MapEntry<int, int> e) => e.key).toList()
+            widget.numToRankMap.entries
+                .where((MapEntry<int, int> e) => e.value == rank)
+                .map((MapEntry<int, int> e) => e.key)
+                .toList()
               ..sort();
         if (nums.isEmpty) {
           return const SizedBox.shrink();
