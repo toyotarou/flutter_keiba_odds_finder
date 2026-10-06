@@ -4,6 +4,10 @@ import 'package:flutter/material.dart';
 /// 払戻金ダイアログの表示中だけ true にし、閉じたら false に戻す。home_screen 側がこの値を見て外す／戻す。
 final ValueNotifier<bool> raceOverlayHiddenNotifier = ValueNotifier<bool>(false);
 
+/// 20261006: ドロアが開いているか（home_screen の onDrawerChanged で更新）。
+/// ドロア表示中にダイアログを閉じても、ドロアが開いている間はレース選択オーバーレイを戻さないために使う。
+bool raceOverlayDrawerOpen = false;
+
 //=======================================================//
 
 class DraggableOverlayItem {

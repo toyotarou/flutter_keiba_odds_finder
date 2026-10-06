@@ -43,7 +43,8 @@ Future<void> OddsFinderDialog({
     // 20261005: 閉じたらレース選択オーバーレイを戻す（他にも隠す指定のダイアログが開いていれば戻さない）
     if (hideRaceOverlay) {
       _raceOverlayHideCount--;
-      raceOverlayHiddenNotifier.value = _raceOverlayHideCount > 0;
+      // 20261006: ドロアが開いている間は戻さない
+      raceOverlayHiddenNotifier.value = _raceOverlayHideCount > 0 || raceOverlayDrawerOpen;
     }
   });
 }

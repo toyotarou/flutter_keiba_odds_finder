@@ -760,6 +760,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
       ),
 
       drawer: _dispDrawer(),
+      // 20261006: ドロア表示時はレース選択オーバーレイを隠し、非表示時に戻す（ダイアログと同じ仕組み）
+      onDrawerChanged: (bool isOpened) {
+        raceOverlayDrawerOpen = isOpened;
+        raceOverlayHiddenNotifier.value = isOpened;
+      },
 
       bottomNavigationBar: SafeArea(
         child: Padding(
