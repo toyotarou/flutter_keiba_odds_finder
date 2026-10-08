@@ -21,6 +21,7 @@ class PayoutDataDisplayAlert extends ConsumerStatefulWidget {
     this.hitHorseNums = const <int>{},
     this.numToRankMap = const <int, int>{},
     this.aiHorseNums = const <int>[],
+    this.payout,
   });
 
   final int raceNumber;
@@ -42,6 +43,10 @@ class PayoutDataDisplayAlert extends ConsumerStatefulWidget {
   /// AI予想画面・過去レースのオッズ遷移表から開いたときだけ渡す。
   final List<int> aiHorseNums;
 
+  /// 20261008: 呼び出し元で取得済みの払戻データ。渡されたときはAPIを呼ばずにこれを表示する。
+  /// null（既定）のときは、これまで通り自分でAPIから取得する。
+  final RaceResultPayoutModel? payout;
+
   @override
   ConsumerState<PayoutDataDisplayAlert> createState() => _PayoutDataDisplayAlertState();
 }
@@ -51,6 +56,9 @@ class _PayoutDataDisplayAlertState extends ConsumerState<PayoutDataDisplayAlert>
   RaceResultPayoutModel? _payout;
   bool _isLoading = true;
 
+  /// 20261008: 通信に失敗したか（「払戻データがありません」と区別して表示するため）
+  bool _hasError = false;
+
   String get _effectiveDate => widget.overrideDate ?? appParamState.selectedScheduleDate;
 
   String get _effectiveKbd => widget.overrideKaisuuBashoDay ?? appParamState.selectedScheduleKaisuuBashoDay;
@@ -59,6 +67,15 @@ class _PayoutDataDisplayAlertState extends ConsumerState<PayoutDataDisplayAlert>
   @override
   void initState() {
     super.initState();
+
+    // 20261008: 取得済みの払戻データが渡されたときはAPIを呼ばない（通信失敗・遅延を避ける）
+    final RaceResultPayoutModel? given = widget.payout;
+    if (given != null) {
+      _payout = given;
+      _isLoading = false;
+      return;
+    }
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       // 20261005: 表示中のレース選択オーバーレイ非表示は OddsFinderDialog(hideRaceOverlay: true) に移したため不要
       // raceOverlayHiddenNotifier.value = true;
@@ -85,20 +102,36 @@ class _PayoutDataDisplayAlertState extends ConsumerState<PayoutDataDisplayAlert>
       return;
     }
 
-    try {
-      final List<RaceResultPayoutModel> list = await fetchPayoutList(
-        ref,
-        racesParam: '$date|$kaisuu|$basho|${widget.raceNumber}',
-      );
-      if (mounted) {
-        setState(() {
-          _payout = list.isNotEmpty ? list.first : null;
-          _isLoading = false;
-        });
-      }
-    } catch (_) {
-      if (mounted) {
-        setState(() => _isLoading = false);
+    // 20261008: 一時的な通信失敗に備えて、最大3回まで自動で再試行する（間隔1秒）
+    const int maxAttempts = 3;
+    for (int attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        final List<RaceResultPayoutModel> list = await fetchPayoutList(
+          ref,
+          racesParam: '$date|$kaisuu|$basho|${widget.raceNumber}',
+        );
+        if (mounted) {
+          setState(() {
+            _payout = list.isNotEmpty ? list.first : null;
+            _isLoading = false;
+          });
+        }
+        return;
+      } catch (e) {
+        debugPrint('payout fetch failed ($attempt/$maxAttempts): $e');
+        if (attempt < maxAttempts) {
+          await Future<void>.delayed(const Duration(seconds: 1));
+          if (!mounted) {
+            return;
+          }
+          continue;
+        }
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+            _hasError = true;
+          });
+        }
       }
     }
   }
@@ -157,48 +190,51 @@ class _PayoutDataDisplayAlertState extends ConsumerState<PayoutDataDisplayAlert>
               border: Border.all(color: Colors.white.withValues(alpha: 0.5)),
               borderRadius: BorderRadius.circular(30),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: <Widget>[
-                    const Text('払戻金', style: TextStyle(fontSize: 12)),
+            child: DefaultTextStyle(
+              style: const TextStyle(fontSize: 12, color: Colors.white),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: <Widget>[
+                      const Text('払戻金', style: TextStyle(fontSize: 12)),
 
-                    if (payout != null)
-                      Flexible(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: <Widget>[
-                            Text(
-                              '${payout.date} ${payout.basho} ${payout.race}R',
-                              style: const TextStyle(fontSize: 11, color: Colors.yellowAccent),
-                              overflow: TextOverflow.ellipsis,
-                            ),
+                      if (payout != null)
+                        Flexible(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: <Widget>[
+                              Text(
+                                '${payout.date} ${payout.basho} ${payout.race}R',
+                                style: const TextStyle(fontSize: 12, color: Colors.yellowAccent),
+                                overflow: TextOverflow.ellipsis,
+                              ),
 
-                            Text(
-                              payout.raceName,
-                              style: const TextStyle(fontSize: 11, color: Colors.yellowAccent),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ],
+                              Text(
+                                payout.raceName,
+                                style: const TextStyle(fontSize: 12, color: Colors.yellowAccent),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
+                    ],
+                  ),
+
+                  Divider(color: Colors.white.withValues(alpha: 0.4), thickness: 5),
+
+                  if (widget.aiHorseNums.isNotEmpty) ...<Widget>[
+                    _buildAiHorseNums(),
+                    const SizedBox(height: 10),
+                    Divider(color: Colors.white.withValues(alpha: 0.4), thickness: 2),
                   ],
-                ),
 
-                Divider(color: Colors.white.withValues(alpha: 0.4), thickness: 5),
+                  if (widget.numToRankMap.isNotEmpty) ...<Widget>[_buildRankLabels(), const SizedBox(height: 10)],
 
-                if (widget.aiHorseNums.isNotEmpty) ...<Widget>[
-                  _buildAiHorseNums(),
-                  const SizedBox(height: 10),
-                  Divider(color: Colors.white.withValues(alpha: 0.4), thickness: 2),
+                  Expanded(child: _buildBody(payout)),
                 ],
-
-                if (widget.numToRankMap.isNotEmpty) ...<Widget>[_buildRankLabels(), const SizedBox(height: 10)],
-
-                Expanded(child: _buildBody(payout)),
-              ],
+              ),
             ),
           ),
         ),
@@ -210,6 +246,29 @@ class _PayoutDataDisplayAlertState extends ConsumerState<PayoutDataDisplayAlert>
   Widget _buildBody(RaceResultPayoutModel? payout) {
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
+    }
+
+    // 20261008: 通信失敗は「データなし」と区別し、再読み込みできるようにする
+    if (_hasError) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            const Text('通信に失敗しました', style: TextStyle(fontSize: 12)),
+            const SizedBox(height: 8),
+            OutlinedButton(
+              onPressed: () {
+                setState(() {
+                  _isLoading = true;
+                  _hasError = false;
+                });
+                _fetchPayout();
+              },
+              child: const Text('再読み込み', style: TextStyle(fontSize: 12, color: Colors.white)),
+            ),
+          ],
+        ),
+      );
     }
 
     if (payout == null) {
@@ -233,7 +292,7 @@ class _PayoutDataDisplayAlertState extends ConsumerState<PayoutDataDisplayAlert>
   /// 20261005: 金額・組み合わせの Text 共通の行の高さ。
   /// 金額は「円」を含み、日本語フォント（フォールバック）の行高になって数字の縦位置が組み合わせとずれるため、
   /// 行の高さを固定して揃える。
-  static const StrutStyle _valueStrut = StrutStyle(fontSize: 13, height: 1.3, forceStrutHeight: true);
+  static const StrutStyle _valueStrut = StrutStyle(fontSize: 12, height: 1.3, forceStrutHeight: true);
 
   /// 券種ごとのブロック
   ///
@@ -263,7 +322,7 @@ class _PayoutDataDisplayAlertState extends ConsumerState<PayoutDataDisplayAlert>
             final bool isHit = isWaku ? isWakuComboHit(e.combo, widget.hitHorseNums, _numToWaku) : _isHit(e.combo);
 
             // 獲得した行の金額・馬番の文字色（色を変えるときはここ）。獲得していない行は null（既定の白）
-            final TextStyle valueStyle = TextStyle(fontSize: 13, color: isHit ? const Color(0xFFFBB6CE) : null);
+            final TextStyle valueStyle = TextStyle(fontSize: 12, color: isHit ? const Color(0xFFFBB6CE) : null);
 
             return Padding(
               padding: const EdgeInsets.only(left: 8, top: 2),
@@ -367,7 +426,7 @@ class _PayoutDataDisplayAlertState extends ConsumerState<PayoutDataDisplayAlert>
               child: Text('$rank着', style: const TextStyle(fontSize: 12, color: Colors.white)),
             ),
             const SizedBox(width: 6),
-            Text(nums.join(' '), style: const TextStyle(fontSize: 13)),
+            Text(nums.join(' '), style: const TextStyle(fontSize: 12)),
           ],
         );
       }).toList(),
@@ -388,7 +447,7 @@ class _PayoutDataDisplayAlertState extends ConsumerState<PayoutDataDisplayAlert>
       ),
       child: const Text(
         '獲得',
-        style: TextStyle(fontSize: 10, color: Colors.white, fontWeight: FontWeight.bold),
+        style: TextStyle(fontSize: 12, color: Colors.white, fontWeight: FontWeight.bold),
       ),
     );
   }

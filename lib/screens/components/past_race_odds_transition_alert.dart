@@ -977,8 +977,10 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
                     hitHorseNums: hitHorseNums,
                     numToRankMap: numToRankMap,
                     aiHorseNums: aiHorseNums,
+                    // 20261008: 一覧用に取得済みの払戻データを渡す（開くたびのAPI再取得をやめる）
+                    payout: payout,
                   ),
-                  paddingLeft: context.screenSize.width * 0.2,
+                  paddingLeft: context.screenSize.width * 0.1,
                   paddingTop: context.screenSize.height * 0.05,
                 );
               },
