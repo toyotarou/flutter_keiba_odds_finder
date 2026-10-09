@@ -127,7 +127,7 @@ OverlayEntry createDraggableOverlayEntry({
                           child: Text(
                             title ?? '',
                             textAlign: TextAlign.center,
-                            style: const TextStyle(fontSize: 12, color: Colors.white, fontWeight: FontWeight.bold),
+                            style: const TextStyle(fontSize: 10, color: Colors.white, fontWeight: FontWeight.bold),
                           ),
                         ),
                         IconButton(
