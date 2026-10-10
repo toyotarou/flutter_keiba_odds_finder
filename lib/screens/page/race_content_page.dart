@@ -892,7 +892,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                     borderRadius: BorderRadius.circular(12),
                   ),
 
-                  child: const Text('払戻金', style: TextStyle(fontSize: 10)),
+                  child: const Text('払戻金', style: TextStyle(fontSize: 10, color: Colors.white)),
                 ),
               ),
             ],

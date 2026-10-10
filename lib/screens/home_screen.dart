@@ -713,8 +713,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                               const SizedBox(width: 20),
 
                               GestureDetector(
-                                onTap: () =>
-                                    OddsFinderDialog(context: context, widget: const WeekendRaceCalendarAlert()),
+                                // 20261011: 表示中はレース選択オーバーレイを隠す
+                                onTap: () => OddsFinderDialog(
+                                  context: context,
+                                  widget: const WeekendRaceCalendarAlert(),
+                                  hideRaceOverlay: true,
+                                ),
                                 child: const Icon(Icons.event_note, color: Colors.white),
                               ),
 

@@ -343,7 +343,7 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
                               borderRadius: BorderRadius.circular(4),
                             ),
                             alignment: Alignment.center,
-                            child: const Text('払戻金', style: TextStyle(fontSize: 10)),
+                            child: const Text('払戻金', style: TextStyle(fontSize: 10, color: Colors.white)),
                           ),
                         ),
                       ],

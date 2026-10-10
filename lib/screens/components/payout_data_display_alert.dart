@@ -198,7 +198,7 @@ class _PayoutDataDisplayAlertState extends ConsumerState<PayoutDataDisplayAlert>
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: <Widget>[
-                      const Text('払戻金', style: TextStyle(fontSize: 12)),
+                      const Text('払戻金', style: TextStyle(fontSize: 12, color: Colors.white)),
 
                       if (payout != null)
                         Flexible(

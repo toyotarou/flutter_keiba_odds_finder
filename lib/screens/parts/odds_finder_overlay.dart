@@ -115,24 +115,34 @@ OverlayEntry createDraggableOverlayEntry({
                               item.entry.markNeedsBuild();
                             }
                           },
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: <Widget>[
-                        // ignore: use_if_null_to_convert_nulls_to_bools
-                        if (fixedFlag == true)
-                          const Icon(Icons.check_box_outline_blank, color: Colors.transparent)
-                        else
-                          const Icon(Icons.drag_indicator, color: Colors.white),
-                        Expanded(
-                          child: Text(
-                            title ?? '',
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(fontSize: 10, color: Colors.white, fontWeight: FontWeight.bold),
+                    child: Stack(
+                      children: [
+                        Container(
+                          width: double.infinity,
+                          height: double.infinity,
+                          child: Center(
+                            child: Text(
+                              title ?? '',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(fontSize: 14, color: Colors.white, fontWeight: FontWeight.bold),
+                            ),
                           ),
                         ),
-                        IconButton(
-                          onPressed: onRemove,
-                          icon: const Icon(Icons.close, color: Colors.white),
+
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: <Widget>[
+                            // ignore: use_if_null_to_convert_nulls_to_bools
+                            if (fixedFlag == true)
+                              const Icon(Icons.check_box_outline_blank, color: Colors.transparent)
+                            else
+                              const Icon(Icons.drag_indicator, color: Colors.white),
+                            IconButton(
+                              onPressed: onRemove,
+                              icon: const Icon(Icons.close, color: Colors.white),
+                            ),
+                          ],
                         ),
                       ],
                     ),
