@@ -524,6 +524,38 @@ bool isWakuComboHit(String combo, Set<int> hitNums, Map<int, int> numToWaku) {
   return best;
 }
 
+/// そのレースの全券種の払戻のうち、最高金額とその券種名を返す（的中・合致は問わない）。
+///
+/// 通常は三連単になる。払戻データが空などで金額が読めなければ null。
+({String name, int amount})? findMaxPayout(RaceResultPayoutModel payout) {
+  final List<(String, String)> tickets = <(String, String)>[
+    ('単勝', payout.tan),
+    ('複勝', payout.fuku),
+    ('枠連', payout.waku),
+    ('馬連', payout.umaren),
+    ('ワイド', payout.wide),
+    ('馬単', payout.umatan),
+    ('三連複', payout.trio),
+    ('三連単', payout.trifecta),
+  ];
+
+  ({String name, int amount})? best;
+  for (final (String name, String raw) in tickets) {
+    for (final String entry in raw.split('/')) {
+      final List<String> parts = entry.split('|');
+      if (parts.length < 2) {
+        continue;
+      }
+
+      final int amount = int.tryParse(parts[1].trim().replaceAll(',', '')) ?? 0;
+      if (amount > 0 && (best == null || amount > best.amount)) {
+        best = (name: name, amount: amount);
+      }
+    }
+  }
+  return best;
+}
+
 /// 振り返りテキストの "## ピックアップ" セクションから、ピックアップした馬の馬番を返す。
 ///
 /// 行の形式: "○14番 タガノゲイル" / "○4 マーノマエストロ" / "5番 ブライトスクリプト"

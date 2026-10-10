@@ -961,6 +961,11 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
 
           if (maxHit != null) ...<Widget>[Text('最高獲得払戻金額：${maxHit.amount.toString().toCurrency()}円（${maxHit.name}）')],
 
+          // 20261011: そのレースの最高払戻金額（通常は三連単）
+          if (payout != null && findMaxPayout(payout) != null) ...<Widget>[
+            Text('最高払戻金額：${findMaxPayout(payout)!.amount.toString().toCurrency()}円（${findMaxPayout(payout)!.name}）'),
+          ],
+
           if (payout != null) ...<Widget>[
             const SizedBox(height: 5),
 
