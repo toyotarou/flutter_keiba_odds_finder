@@ -116,8 +116,9 @@ OverlayEntry createDraggableOverlayEntry({
                             }
                           },
                     child: Stack(
-                      children: [
-                        Container(
+                      children: <Widget>[
+                        // ignore: sized_box_shrink_expand
+                        SizedBox(
                           width: double.infinity,
                           height: double.infinity,
                           child: Center(

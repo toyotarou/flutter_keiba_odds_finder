@@ -332,8 +332,9 @@ class _PayoutDataDisplayAlertState extends ConsumerState<PayoutDataDisplayAlert>
                     width: 70,
                     child: Text('${e.amount.toCurrency()} 円', style: valueStyle, strutStyle: _valueStrut),
                   ),
-                  SizedBox(
+                  Container(
                     width: 80,
+                    padding: const EdgeInsets.only(left: 10),
                     child: Text(e.combo, style: valueStyle, strutStyle: _valueStrut),
                   ),
 
