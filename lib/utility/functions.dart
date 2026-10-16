@@ -817,6 +817,11 @@ List<AiResponseRecommendHorseModel> parseMergedHorses(List<dynamic> list) {
           score1st: asInt(m['score_1st']),
           score2nd: asInt(m['score_2nd']),
           reasonSecond: m['reason_2nd'] as String?,
+          // 補充枠と購入推奨（サーバーが merged_horses に載せる）。
+          //   古いサーバー応答にはキーが無いので、無ければ
+          //   「補充枠ではない・購入推奨の対象」として扱う（従来どおりの表示）。
+          fillSlot: m['fill_slot_unqualified'] == true,
+          purchaseRecommended: m['purchase_recommended'] != false,
         );
       })
       .where((AiResponseRecommendHorseModel h) => h.num > 0)

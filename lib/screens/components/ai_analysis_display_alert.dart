@@ -456,6 +456,66 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
     );
   }
 
+  /// 補充枠で入った馬に付ける印。
+  ///
+  /// 目標頭数に届かないとき、人気薄の資格を満たしていない7番人気以下を
+  /// おすすめ度の順で補うことがある。その馬は通常の選出とは性質が違うので、
+  /// 候補としては出しつつ「買う対象には入れていない」ことがわかるようにする。
+  /// 補充枠でなければ何も出さない（表示は従来どおり）。
+  Widget _buildFillSlotBadge(AiResponseRecommendHorseModel h) {
+    if (!h.fillSlot) {
+      return const SizedBox.shrink();
+    }
+    return _buildBadge(
+      '補充枠 / 買い目には入れていません',
+      Colors.cyanAccent,
+    );
+  }
+
+  /// 公開候補ではあるが、買い目には入れていない馬に付ける印。
+  ///
+  /// 20261014（7回目ご指摘⑦）「公開候補と購入推奨の区別が画面上でも
+  /// 明確になっているか確認してください」への対応。
+  ///
+  /// 補充枠（上の印）以外にも、買い目から外れる場合がある。
+  ///   ・最低基準点に届かない
+  ///   ・人気薄で回収率が低い帯に入る
+  ///   ・低配当で妙味が小さい
+  ///   ・過去回収率が低い
+  /// これらはいずれも「候補としては出すが、買う対象にはしない」扱いで、
+  /// サーバ側は purchase_recommended = false で返してくる。
+  /// 補充枠の印が出ない馬でも買い目に入っていないことがあるため、
+  /// その場合もはっきり分かるようにする。
+  /// 買い目に入っている馬には何も出さない（表示は従来どおり）。
+  Widget _buildNotRecommendedBadge(AiResponseRecommendHorseModel h) {
+    // 補充枠の印を出している馬は、そちらに「買い目には入れていません」と
+    // 書いてあるので二重に出さない。
+    if (h.fillSlot || h.purchaseRecommended) {
+      return const SizedBox.shrink();
+    }
+    return _buildBadge(
+      '公開候補のみ / 買い目には入れていません',
+      Colors.orangeAccent,
+    );
+  }
+
+  /// 印の見た目をそろえるための共通部品。
+  Widget _buildBadge(String label, Color color) {
+    return Container(
+      margin: const EdgeInsets.only(left: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        border: Border.all(color: color.withValues(alpha: 0.7)),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(color: color, fontSize: 9, fontWeight: FontWeight.bold),
+      ),
+    );
+  }
+
   ///
   Widget _buildHorseCard(AiResponseRecommendHorseModel h) {
     // 2nd AI だけが選んだ馬は reason 自体が 2nd AI の文章なので、枠線ボックス側へ回す。
@@ -594,23 +654,32 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: <Widget>[
-                        Container(
-                          decoration: BoxDecoration(
-                            border: Border(bottom: BorderSide(color: Colors.greenAccent.withValues(alpha: 0.5))),
-                          ),
-                          child: DefaultTextStyle(
-                            style: const TextStyle(color: Colors.greenAccent, fontSize: 10),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.baseline,
-                              textBaseline: TextBaseline.alphabetic,
-                              children: <Widget>[
-                                const SizedBox(width: 10),
-                                Container(width: 20, alignment: Alignment.topLeft, child: Text(h.popularity)),
-                                const Text('番人気'),
-                                const SizedBox(width: 10),
-                              ],
+                        Row(
+                          children: <Widget>[
+                            Container(
+                              decoration: BoxDecoration(
+                                border: Border(bottom: BorderSide(color: Colors.greenAccent.withValues(alpha: 0.5))),
+                              ),
+                              child: DefaultTextStyle(
+                                style: const TextStyle(color: Colors.greenAccent, fontSize: 10),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.baseline,
+                                  textBaseline: TextBaseline.alphabetic,
+                                  children: <Widget>[
+                                    const SizedBox(width: 10),
+                                    Container(width: 20, alignment: Alignment.topLeft, child: Text(h.popularity)),
+                                    const Text('番人気'),
+                                    const SizedBox(width: 10),
+                                  ],
+                                ),
+                              ),
                             ),
-                          ),
+                            // 補充枠で入った馬だけ、通常の選出と区別する印を出す
+                            _buildFillSlotBadge(h),
+                            // 補充枠ではないが買い目に入れていない馬にも印を出す
+                            // （20261014 7回目ご指摘⑦）
+                            _buildNotRecommendedBadge(h),
+                          ],
                         ),
                         const SizedBox.shrink(),
                       ],
