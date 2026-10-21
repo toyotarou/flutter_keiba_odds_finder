@@ -6,7 +6,7 @@ part of 'odds.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$oddsHash() => r'ea6bd03361445ece6cb69f2a4fd43ad88683e1b3';
+String _$oddsHash() => r'6a0854080d15282ef2efeaa1c1a1fc9f32c42db0';
 
 /// See also [Odds].
 @ProviderFor(Odds)

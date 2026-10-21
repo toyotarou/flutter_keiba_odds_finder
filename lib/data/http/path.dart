@@ -39,6 +39,9 @@ enum APIPath {
   getHorseOddsFinderPushSendLogsDeveloperNews,
   getHorseOddsFinderAiAnalysisRecord,
   getHorseOddsFinderAiAnalysisRecord2,
+
+  // @ANCHOR-20261020-R122-FLUTTER  r12.2 の読取API（パス末尾に race_id が付きます）
+  getBaganrikiR122Race,
 }
 
 extension APIPathExtension on APIPath {
@@ -154,6 +157,10 @@ extension APIPathExtension on APIPath {
         return 'getHorseOddsFinderAiAnalysisRecord';
       case APIPath.getHorseOddsFinderAiAnalysisRecord2:
         return 'getHorseOddsFinderAiAnalysisRecord2';
+
+      // @ANCHOR-20261020-R122-FLUTTER  /api/baganriki/r12-2/races/{race_id}
+      case APIPath.getBaganrikiR122Race:
+        return 'baganriki/r12-2/races';
     }
   }
 }

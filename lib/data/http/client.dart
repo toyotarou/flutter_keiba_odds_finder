@@ -21,8 +21,21 @@ class HttpClient {
   late Client _client;
 
   /// GETリクエストを送信し、レスポンスをJSONとして返す
-  Future<dynamic> get({required APIPath path, Map<String, dynamic>? queryParameters}) async {
-    final Uri uri = Uri.https(Environment.apiEndPoint, '/${Environment.apiBasePath}/${path.value}', queryParameters);
+  ///
+  /// @ANCHOR-20261020-R122-FLUTTER  pathSuffix
+  ///   r12.2 の読取APIは `/api/baganriki/r12-2/races/{race_id}` のように
+  ///   パスの末尾に値が付きます。渡さなければ今までと同じURLです。
+  Future<dynamic> get({
+    required APIPath path,
+    Map<String, dynamic>? queryParameters,
+    String? pathSuffix,
+  }) async {
+    final String basePath = '/${Environment.apiBasePath}/${path.value}';
+    final Uri uri = Uri.https(
+      Environment.apiEndPoint,
+      (pathSuffix == null || pathSuffix.isEmpty) ? basePath : '$basePath/$pathSuffix',
+      queryParameters,
+    );
 
     // ネットワークエラー
     final Response response;

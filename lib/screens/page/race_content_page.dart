@@ -21,6 +21,7 @@ import '../../models/race_result_payout_model.dart';
 import '../../utility/functions.dart';
 import '../../utility/utility.dart';
 import '../components/ai_analysis_display_alert.dart';
+import '../components/baganriki_r122_display_alert.dart';
 import '../components/horse_detail_display_alert.dart';
 import '../components/horse_odds_ranking_display_alert.dart';
 import '../components/payout_data_display_alert.dart';
@@ -110,6 +111,9 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
 
   /// 1st AI の取得に成功したか（失敗・未完了なら 2nd AI は呼ばない）
   bool _firstAiOk = false;
+
+  /// 20261017: 「AI予想」ボタンの連打防止（取得待ち中は再度押しても何もしない）
+  bool _isOpeningAiForecast = false;
 
   // AI取得中ローディング管理
   int _aiPendingCount = 0;
@@ -383,6 +387,35 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     } finally {
       _endAiFetch();
     }
+  }
+
+  /// 20261017: 「AI予想」を開く前に、1st AI・2nd AI（統合結果）の取得完了を待つ。
+  ///
+  /// 【なぜ必要か】
+  ///   AiAnalysisDisplayAlert は開いた時点のリストをコンストラクタで受け取るだけで、
+  ///   開いたあとに届いたデータは反映されない。取得中・取得失敗のまま開くと空の予想が出ていた。
+  ///   1st AI が失敗すると 2nd AI は呼ばれず、画面を開き直しても取り直しが走らなかった。
+  /// 【動き】
+  ///   1. 取得中なら終わるまで待つ（最大150秒）
+  ///   2. 1st AI が未取得なら取り直す
+  ///   3. 統合結果が未受領なら 2nd AI を取り直す
+  /// 戻り値: 1st AI が取得できていれば true（false のときは画面を開かない）
+  Future<bool> _ensureAiForecastLoaded() async {
+    int waitedMs = 0;
+    while (_aiPendingCount > 0 && mounted && waitedMs < 150000) {
+      await Future<void>.delayed(const Duration(milliseconds: 200));
+      waitedMs += 200;
+    }
+    if (!mounted) {
+      return false;
+    }
+    if (!_firstAiOk) {
+      await _fetchAiPickup();
+    }
+    if (mounted && _firstAiOk && !_mergedReceived) {
+      await _fetchSecondAiOpinion();
+    }
+    return mounted && _firstAiOk;
   }
 
   /// AI fetch 開始: カウント 0→1 の時だけタイマーを起動
@@ -869,6 +902,31 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                 OddsFinderDialog(context: context, widget: const HorseOddsRankingDisplayAlert(), hideRaceOverlay: true);
               },
               child: Icon(Icons.list, color: Colors.white.withValues(alpha: 0.5)),
+            ),
+
+            const SizedBox(width: 15),
+
+            // @ANCHOR-20261020-R122-FLUTTER  r12.2 の記録（読み取りだけ）
+            GestureDetector(
+              onTap: () {
+                OddsFinderDialog(
+                  context: context,
+                  hideRaceOverlay: true,
+                  widget: BaganrikiR122DisplayAlert(raceNumber: widget.raceNumber),
+                  paddingLeft: context.screenSize.width * 0.05,
+                  paddingTop: context.screenSize.height * 0.05,
+                  paddingBottom: context.screenSize.height * 0.05,
+                );
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 3, horizontal: 10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF90CDF4).withValues(alpha: 0.4),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+
+                child: const Text('r12.2', style: TextStyle(fontSize: 10, color: Colors.white)),
+              ),
             ),
 
             if (_hasPayout) ...<Widget>[
@@ -2015,8 +2073,26 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                     color: Colors.transparent,
                     borderRadius: BorderRadius.circular(10),
                     child: InkWell(
-                      onTap: () {
+                      onTap: () async {
+                        // 20261017: 取得が終わってから画面を開く（取得前に開くと、空の予想のまま固定される）
+                        if (_isOpeningAiForecast) {
+                          return;
+                        }
+                        _isOpeningAiForecast = true;
+                        final bool aiReady = await _ensureAiForecastLoaded();
+                        _isOpeningAiForecast = false;
+                        if (!mounted) {
+                          return;
+                        }
+                        if (!aiReady) {
+                          ScaffoldMessenger.maybeOf(
+                            // ignore: use_build_context_synchronously
+                            context,
+                          )?.showSnackBar(const SnackBar(content: Text('AI予想を取得できませんでした。少し待ってからもう一度押してください')));
+                          return;
+                        }
                         OddsFinderDialog(
+                          // ignore: use_build_context_synchronously
                           context: context,
                           hideRaceOverlay: true,
                           widget: AiAnalysisDisplayAlert(

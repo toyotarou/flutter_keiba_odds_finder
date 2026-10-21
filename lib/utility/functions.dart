@@ -839,3 +839,23 @@ List<AiResponseRecommendHorseModel> mergeAiHorseLists(
     ...second.where((AiResponseRecommendHorseModel h) => !firstNums.contains(h.num)),
   ];
 }
+
+/// @ANCHOR-20261020-R122-FLUTTER  r12.2 の race_id を組み立てます
+///   形は `YYYYMMDD-回-場-日-R`（例 20261018-4-08-7-9）。
+///   date は `2026-10-18`、kbd は `回_場_日` です。
+///   足りない値があるときは空文字を返します（当てずっぽうで作りません）。
+String buildR122RaceId({required String date, required String kbd, required int raceNumber}) {
+  final String ymd = date.replaceAll('-', '');
+
+  if (ymd.length != 8 || raceNumber <= 0) {
+    return '';
+  }
+
+  final ({String kaisuu, String basho, String day}) parts = parseKbdParts(kbd);
+
+  if (parts.kaisuu.isEmpty || parts.basho.isEmpty || parts.day.isEmpty) {
+    return '';
+  }
+
+  return '$ymd-${parts.kaisuu}-${parts.basho}-${parts.day}-$raceNumber';
+}
