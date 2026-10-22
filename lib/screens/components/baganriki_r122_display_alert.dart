@@ -212,6 +212,8 @@ class _BaganrikiR122DisplayAlertState extends ConsumerState<BaganrikiR122Display
         _row('公開時刻', pub.publishedAt),
         _row('公開した枠', pub.publicationQuota?.label ?? '—'),
         _row('目標数', pub.publicationTargetCount.toString()),
+        // @ANCHOR-20261023-R122-COUNTS  正式公開時の頭数（いまの頭数は下のライブ状態）
+        _row('公開時の頭数', pub.activeCount?.toString() ?? '—'),
         const SizedBox(height: 6),
         const Text('候補馬', style: TextStyle(color: Colors.white54, fontSize: 10)),
         const SizedBox(height: 4),
@@ -341,6 +343,18 @@ class _BaganrikiR122DisplayAlertState extends ConsumerState<BaganrikiR122Display
         _row('応答期限', live?.effectiveReplyDeadline ?? '—'),
         _row('公開期限', live?.effectivePublishDeadline ?? '—'),
         _row('入力の凍結', audit?.inputFreezeAt ?? '—'),
+        // @ANCHOR-20261023-R122-COUNTS  凍結したときの頭数（N）
+        _row('凍結時の頭数', audit?.frozenCount?.toString() ?? '—'),
+        // @ANCHOR-20261023-R122-ACQTIME  取得完了時刻（変更計画書4章「実際の取得完了時刻も表示する」）
+        _row('取得完了（6分前）', (audit?.receivedAtOf(6) ?? '').isEmpty ? '—' : audit!.receivedAtOf(6)),
+        _row(
+          '各時点の取得',
+          audit == null
+              ? '—'
+              : <int>[21, 18, 15, 12, 9, 6]
+                    .map((int t) => '$t分前:${audit.statusOf(t) == 'ADOPTED' ? '○' : (audit.statusOf(t).isEmpty ? '—' : '×')}')
+                    .join('  '),
+        ),
         _row('基準', audit?.anchorKind ?? '—'),
         if ((src['rule'] as String?) != null)
           Padding(
@@ -370,7 +384,9 @@ class _BaganrikiR122DisplayAlertState extends ConsumerState<BaganrikiR122Display
         rows.add(
           Text(
             '  ${s['band'] ?? ''}帯 要求${s['requested'] ?? '-'}・適格${s['eligible'] ?? '-'}'
-            '・不足${s['shortfall'] ?? '-'}',
+            '・不足${s['shortfall'] ?? '-'}'
+            // @ANCHOR-20261023-R122-SHORTREASON  不足の理由（変更計画書8章「不足数と理由」）
+            '${_shortfallReason(s)}',
             style: const TextStyle(color: Colors.white70, fontSize: 10),
           ),
         );
@@ -399,5 +415,20 @@ class _BaganrikiR122DisplayAlertState extends ConsumerState<BaganrikiR122Display
     );
 
     return _box(title: '申し送り', children: rows);
+  }
+
+  /// @ANCHOR-20261023-R122-SHORTREASON  不足の理由を言葉にします
+  ///   要求した枠に対して、根拠を確認できた馬（適格）が足りないことが理由です。
+  ///   枠を別の帯へまわした（moved_to へ moved 頭）ときは添えます。数合わせはしていません。
+  String _shortfallReason(Map<String, dynamic> s) {
+    final int moved = r122IntOrNull(s['moved']) ?? 0;
+    final Object? movedTo = s['moved_to'];
+    final String to = movedTo is List<dynamic> ? movedTo.join('・') : '';
+    final int shortfall = r122IntOrNull(s['shortfall']) ?? 0;
+
+    final String fill = (moved > 0 && to.isNotEmpty) ? '（$moved頭ぶんの枠を他の帯（$to）へまわした）' : '';
+    final String why = shortfall > 0 ? '：根拠を確認できた馬が要求数に届かないため' : '';
+
+    return '$fill$why';
   }
 }

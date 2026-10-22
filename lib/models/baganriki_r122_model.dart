@@ -88,6 +88,7 @@ class BaganrikiR122PublicationModel {
     required this.publicationTargetCount,
     required this.publicationQuota,
     required this.candidates,
+    this.activeCount,
   });
 
   factory BaganrikiR122PublicationModel.fromJson(Map<String, dynamic> json) {
@@ -112,6 +113,8 @@ class BaganrikiR122PublicationModel {
           ? BaganrikiR122QuotaModel.fromJson(json['publication_quota'] as Map<String, dynamic>)
           : null,
       candidates: cands,
+      // @ANCHOR-20261023-R122-COUNTS  正式公開したときの頭数（無い版のAPIでは null）
+      activeCount: r122IntOrNull(json['active_count']),
     );
   }
 
@@ -122,6 +125,9 @@ class BaganrikiR122PublicationModel {
   final int publicationTargetCount;
   final BaganrikiR122QuotaModel? publicationQuota;
   final List<BaganrikiR122CandidateModel> candidates;
+
+  /// 正式公開したときの頭数（いまの頭数は liveState.activeCount）
+  final int? activeCount;
 }
 
 /// いまのライブ状態（取消を映します）
@@ -239,6 +245,7 @@ class BaganrikiR122InputAuditModel {
     required this.salesCloseSource,
     required this.collectionAudit,
     required this.coverage,
+    this.frozenCount,
   });
 
   factory BaganrikiR122InputAuditModel.fromJson(Map<String, dynamic> json) {
@@ -257,6 +264,8 @@ class BaganrikiR122InputAuditModel {
       coverage: json['coverage'] is Map<String, dynamic>
           ? json['coverage'] as Map<String, dynamic>
           : <String, dynamic>{},
+      // @ANCHOR-20261023-R122-COUNTS  凍結したときの頭数（N）
+      frozenCount: r122IntOrNull(json['frozen_count']),
     );
   }
 
@@ -268,6 +277,36 @@ class BaganrikiR122InputAuditModel {
   final Map<String, dynamic> salesCloseSource;
   final Map<String, dynamic> collectionAudit;
   final Map<String, dynamic> coverage;
+
+  /// 凍結したときの頭数（N）
+  final int? frozenCount;
+
+  /// @ANCHOR-20261023-R122-ACQTIME  そのスロットの取得完了時刻（受信を終えた実時刻）
+  ///   採用できなかったスロットは空文字です。推定で埋めません。
+  String receivedAtOf(int slot) {
+    final Object? row = collectionAudit[slot.toString()];
+    if (row is Map<String, dynamic> && row['status'] == 'ADOPTED') {
+      return (row['response_received_at'] as String?) ?? '';
+    }
+    return '';
+  }
+
+  /// そのスロットの状態（ADOPTED／UNAVAILABLE／空）
+  String statusOf(int slot) {
+    final Object? row = collectionAudit[slot.toString()];
+    return row is Map<String, dynamic> ? ((row['status'] as String?) ?? '') : '';
+  }
+}
+
+/// @ANCHOR-20261023-R122-COUNTS  整数を読みます（数値でも数字の文字列でも）。読めなければ null
+int? r122IntOrNull(Object? v) {
+  if (v is int) {
+    return v;
+  }
+  if (v is String) {
+    return int.tryParse(v);
+  }
+  return null;
 }
 
 /// 読取APIの1レースぶん
