@@ -39,6 +39,7 @@ enum APIPath {
   getHorseOddsFinderPushSendLogsDeveloperNews,
   getHorseOddsFinderAiAnalysisRecord,
   getHorseOddsFinderAiAnalysisRecord2,
+  getHorseOddsFinderAiAnalysisByDate, // 20261026: 1日分のAI結果をまとめて取得
 
   // ── 20261025: r12.2 確認ボタンを外したので使いません ──
   // // @ANCHOR-20261020-R122-FLUTTER  r12.2 の読取API（パス末尾に race_id が付きます）
@@ -158,6 +159,8 @@ extension APIPathExtension on APIPath {
         return 'getHorseOddsFinderAiAnalysisRecord';
       case APIPath.getHorseOddsFinderAiAnalysisRecord2:
         return 'getHorseOddsFinderAiAnalysisRecord2';
+      case APIPath.getHorseOddsFinderAiAnalysisByDate:
+        return 'getHorseOddsFinderAiAnalysisByDate';
 
       // ── 20261025: r12.2 確認ボタンを外したので使いません ──
       // // @ANCHOR-20261020-R122-FLUTTER  /api/baganriki/r12-2/races/{race_id}

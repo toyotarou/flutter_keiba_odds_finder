@@ -85,171 +85,298 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
 
   final Set<String> _payoutFetchDone = <String>{};
 
+  /// 20261026: 払戻の先読みを開始したか。build のたびに通信を投げないよう、一度立てたら戻さない。
+  bool _payoutPrefetchStarted = false;
+
+  /// 20261026: 先読みで1回の通信にまとめる日付の数（URL が長くなりすぎないよう分割する）
+  static const int _payoutPrefetchDatesPerRequest = 5;
+
   static const double _moveAmount = 18;
 
   static const int _tickMs = 16;
 
   Timer? _repeatTimer;
 
+  // 20261026: 以下の _fetchSecondAiForDate / _fetchFirstAiForDate は、レースごとに API を1回ずつ呼んでいた
+  //   （1日36レースなら72回。保存済みの回答が無いレースではサーバーが AI（有料）を呼びに行っていた）。
+  //   1日分を1回でまとめて取る _fetchAiForDate に置き換えたので、コメントアウトして残す。
+//   ///
+//   Future<void> _fetchSecondAiForDate(String date) async {
+//     if (_fetchedSecondAiDates.contains(date)) {
+//       return;
+//     }
+//     _fetchedSecondAiDates.add(date);
+
+//     final Map<String, List<SummaryModel>> summaryMap = summaryState.summaryMap;
+
+//     final List<Future<void>> futures = <Future<void>>[];
+//     int successCount = 0;
+
+//     for (final MapEntry<String, List<SummaryModel>> entry in summaryMap.entries) {
+//       if (!entry.key.startsWith(date)) {
+//         continue;
+//       }
+
+//       final List<SummaryModel> models = entry.value;
+
+//       if (models.isEmpty) {
+//         continue;
+//       }
+
+//       final int kaisuu = int.tryParse(models.first.kaisuu) ?? 0;
+
+//       final Set<int> seenRaces = <int>{};
+
+//       for (final SummaryModel m in models) {
+//         if (!seenRaces.add(m.race)) {
+//           continue;
+//         }
+
+//         final String key = '${m.date}_${kaisuu}_${m.basho}_${m.day}_${m.race}';
+
+//         // 結果が届いた時点で即 setState → キャッシュ済みレースはすぐ表示される
+//         futures.add(
+//           fetchSecondAiOpinionData(
+//                 ref,
+//                 date: m.date,
+//                 kaisuu: kaisuu.toString(),
+//                 basho: m.basho,
+//                 day: m.day.toString(),
+//                 race: m.race,
+//               )
+//               .then((Map<String, dynamic> data) {
+//                 final String? text = data['analysis_text'] as String?;
+//                 final List<dynamic>? mergedRaw = data['merged_horses'] as List<dynamic>?;
+//                 if (text != null) {
+//                   successCount++;
+//                 }
+//                 if (mounted) {
+//                   setState(() {
+//                     _secondAiTextMap[key] = text;
+//                     // 統合結果は捨てずに保持する（以前は analysis_text だけ拾っており、
+//                     // 過去レースでは統合結果が一度も使われていなかった）
+//                     // 0頭の統合結果も「受け取った」として保持する（サーバーが除外した馬を出さないため）
+//                     if (mergedRaw != null) {
+//                       _mergedHorsesMap[key] = parseMergedHorses(mergedRaw);
+//                     }
+//                     _mergeStatusMap[key] = data['status'] as String?;
+//                     final int? upsetRace = (data['upset_race'] as num?)?.toInt();
+//                     if (upsetRace != null) {
+//                       _mergedUpsetRaceMap[key] = upsetRace;
+//                     }
+//                     final Map<String, int>? metrics = parseRaceMetricsJson(data['race_metrics']);
+//                     if (metrics != null) {
+//                       _mergedRaceMetricsMap[key] = metrics;
+//                     }
+//                   });
+//                 }
+//               })
+//               .catchError((_) {
+//                 if (mounted) {
+//                   setState(() => _secondAiTextMap[key] = null);
+//                 }
+//               }),
+//         );
+//       }
+//     }
+
+//     if (futures.isEmpty) {
+//       // summaryMap がまだ空だった場合もリトライできるよう解除する
+//       _fetchedSecondAiDates.remove(date);
+//       return;
+//     }
+
+//     try {
+//       await Future.wait(futures);
+
+//       // 全レースのデータ取得に失敗した場合はリトライを許可
+//       if (successCount == 0) {
+//         _fetchedSecondAiDates.remove(date);
+//       }
+//     } catch (_) {
+//       _fetchedSecondAiDates.remove(date);
+//     }
+//   }
+
+//   ///
+//   Future<void> _fetchFirstAiForDate(String date) async {
+//     if (_fetchedFirstAiDates.contains(date)) {
+//       return;
+//     }
+//     _fetchedFirstAiDates.add(date);
+
+//     final Map<String, List<SummaryModel>> summaryMap = summaryState.summaryMap;
+//     final List<Future<void>> futures = <Future<void>>[];
+
+//     for (final MapEntry<String, List<SummaryModel>> entry in summaryMap.entries) {
+//       if (!entry.key.startsWith(date)) {
+//         continue;
+//       }
+//       final List<SummaryModel> models = entry.value;
+//       if (models.isEmpty) {
+//         continue;
+//       }
+//       final int kaisuu = int.tryParse(models.first.kaisuu) ?? 0;
+//       final Set<int> seenRaces = <int>{};
+
+//       for (final SummaryModel m in models) {
+//         if (!seenRaces.add(m.race)) {
+//           continue;
+//         }
+//         final String key = '${m.date}_${kaisuu}_${m.basho}_${m.day}_${m.race}';
+
+//         futures.add(
+//           fetchAiAnalysisData(
+//                 ref,
+//                 date: m.date,
+//                 kaisuu: kaisuu.toString(),
+//                 basho: m.basho,
+//                 day: m.day.toString(),
+//                 race: m.race,
+//                 gapHorseNums: <int>[],
+//                 upsetPickupHorseNums: <int>[],
+//               )
+//               .then((Map<String, dynamic> data) {
+//                 final String? text = data['analysis_text'] as String?;
+//                 if (mounted) {
+//                   setState(() => _firstAiTextMap[key] = text);
+//                 }
+//               })
+//               .catchError((_) {
+//                 if (mounted) {
+//                   setState(() => _firstAiTextMap[key] = null);
+//                 }
+//               }),
+//         );
+//       }
+//     }
+
+//     if (futures.isEmpty) {
+//       _fetchedFirstAiDates.remove(date);
+//       return;
+//     }
+//     try {
+//       await Future.wait(futures);
+//     } catch (_) {
+//       _fetchedFirstAiDates.remove(date);
+//     }
+//   }
+
+  /// 20261026: 1日分の 1st / 2nd AI を、保存済みの結果だけから1回の通信でまとめて取得する。
   ///
-  Future<void> _fetchSecondAiForDate(String date) async {
+  /// 以前はレースごとに 1st / 2nd を1回ずつ呼んでいた（1日36レースなら72回）。
+  /// 新しい API はサーバー側で AI を呼ばない（保存済みの回答を読むだけ）。
+  /// 取得中の表示（isSecondAiLoading）に使うため、_fetchedSecondAiDates / _fetchedFirstAiDates は以前と同じく使う。
+  Future<void> _fetchAiForDate(String date) async {
     if (_fetchedSecondAiDates.contains(date)) {
       return;
     }
     _fetchedSecondAiDates.add(date);
-
-    final Map<String, List<SummaryModel>> summaryMap = summaryState.summaryMap;
-
-    final List<Future<void>> futures = <Future<void>>[];
-    int successCount = 0;
-
-    for (final MapEntry<String, List<SummaryModel>> entry in summaryMap.entries) {
-      if (!entry.key.startsWith(date)) {
-        continue;
-      }
-
-      final List<SummaryModel> models = entry.value;
-
-      if (models.isEmpty) {
-        continue;
-      }
-
-      final int kaisuu = int.tryParse(models.first.kaisuu) ?? 0;
-
-      final Set<int> seenRaces = <int>{};
-
-      for (final SummaryModel m in models) {
-        if (!seenRaces.add(m.race)) {
-          continue;
-        }
-
-        final String key = '${m.date}_${kaisuu}_${m.basho}_${m.day}_${m.race}';
-
-        // 結果が届いた時点で即 setState → キャッシュ済みレースはすぐ表示される
-        futures.add(
-          fetchSecondAiOpinionData(
-                ref,
-                date: m.date,
-                kaisuu: kaisuu.toString(),
-                basho: m.basho,
-                day: m.day.toString(),
-                race: m.race,
-              )
-              .then((Map<String, dynamic> data) {
-                final String? text = data['analysis_text'] as String?;
-                final List<dynamic>? mergedRaw = data['merged_horses'] as List<dynamic>?;
-                if (text != null) {
-                  successCount++;
-                }
-                if (mounted) {
-                  setState(() {
-                    _secondAiTextMap[key] = text;
-                    // 統合結果は捨てずに保持する（以前は analysis_text だけ拾っており、
-                    // 過去レースでは統合結果が一度も使われていなかった）
-                    // 0頭の統合結果も「受け取った」として保持する（サーバーが除外した馬を出さないため）
-                    if (mergedRaw != null) {
-                      _mergedHorsesMap[key] = parseMergedHorses(mergedRaw);
-                    }
-                    _mergeStatusMap[key] = data['status'] as String?;
-                    final int? upsetRace = (data['upset_race'] as num?)?.toInt();
-                    if (upsetRace != null) {
-                      _mergedUpsetRaceMap[key] = upsetRace;
-                    }
-                    final Map<String, int>? metrics = parseRaceMetricsJson(data['race_metrics']);
-                    if (metrics != null) {
-                      _mergedRaceMetricsMap[key] = metrics;
-                    }
-                  });
-                }
-              })
-              .catchError((_) {
-                if (mounted) {
-                  setState(() => _secondAiTextMap[key] = null);
-                }
-              }),
-        );
-      }
-    }
-
-    if (futures.isEmpty) {
-      // summaryMap がまだ空だった場合もリトライできるよう解除する
-      _fetchedSecondAiDates.remove(date);
-      return;
-    }
-
-    try {
-      await Future.wait(futures);
-
-      // 全レースのデータ取得に失敗した場合はリトライを許可
-      if (successCount == 0) {
-        _fetchedSecondAiDates.remove(date);
-      }
-    } catch (_) {
-      _fetchedSecondAiDates.remove(date);
-    }
-  }
-
-  ///
-  Future<void> _fetchFirstAiForDate(String date) async {
-    if (_fetchedFirstAiDates.contains(date)) {
-      return;
-    }
     _fetchedFirstAiDates.add(date);
 
     final Map<String, List<SummaryModel>> summaryMap = summaryState.summaryMap;
-    final List<Future<void>> futures = <Future<void>>[];
+
+    // 画面側のキー（_firstAiTextMap などのキー）と、API 応答を引くキーの組
+    final List<({String key, String lookupKey})> races = <({String key, String lookupKey})>[];
 
     for (final MapEntry<String, List<SummaryModel>> entry in summaryMap.entries) {
       if (!entry.key.startsWith(date)) {
         continue;
       }
+
       final List<SummaryModel> models = entry.value;
+
       if (models.isEmpty) {
         continue;
       }
+
       final int kaisuu = int.tryParse(models.first.kaisuu) ?? 0;
+
       final Set<int> seenRaces = <int>{};
 
       for (final SummaryModel m in models) {
         if (!seenRaces.add(m.race)) {
           continue;
         }
-        final String key = '${m.date}_${kaisuu}_${m.basho}_${m.day}_${m.race}';
 
-        futures.add(
-          fetchAiAnalysisData(
-                ref,
-                date: m.date,
-                kaisuu: kaisuu.toString(),
-                basho: m.basho,
-                day: m.day.toString(),
-                race: m.race,
-                gapHorseNums: <int>[],
-                upsetPickupHorseNums: <int>[],
-              )
-              .then((Map<String, dynamic> data) {
-                final String? text = data['analysis_text'] as String?;
-                if (mounted) {
-                  setState(() => _firstAiTextMap[key] = text);
-                }
-              })
-              .catchError((_) {
-                if (mounted) {
-                  setState(() => _firstAiTextMap[key] = null);
-                }
-              }),
-        );
+        races.add((
+          key: '${m.date}_${kaisuu}_${m.basho}_${m.day}_${m.race}',
+          lookupKey: aiByDateKey(
+            date: m.date,
+            kaisuu: kaisuu.toString(),
+            basho: m.basho,
+            day: m.day.toString(),
+            race: m.race.toString(),
+          ),
+        ));
       }
     }
 
-    if (futures.isEmpty) {
+    if (races.isEmpty) {
+      // summaryMap がまだ空だった場合もリトライできるよう解除する
+      _fetchedSecondAiDates.remove(date);
       _fetchedFirstAiDates.remove(date);
       return;
     }
+
     try {
-      await Future.wait(futures);
+      final Map<String, Map<String, dynamic>> byKey = await fetchAiAnalysisByDate(ref, date: date);
+
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        for (final ({String key, String lookupKey}) r in races) {
+          final Map<String, dynamic>? item = byKey[r.lookupKey];
+
+          _firstAiTextMap[r.key] = item?['first_analysis_text'] as String?;
+
+          final Map<String, dynamic>? second = item?['second'] as Map<String, dynamic>?;
+          if (second == null) {
+            _secondAiTextMap[r.key] = null;
+            continue;
+          }
+
+          _secondAiTextMap[r.key] = second['analysis_text'] as String?;
+          // 0頭の統合結果も「受け取った」として保持する（サーバーが除外した馬を出さないため）
+          final List<dynamic>? mergedRaw = second['merged_horses'] as List<dynamic>?;
+          if (mergedRaw != null) {
+            _mergedHorsesMap[r.key] = parseMergedHorses(mergedRaw);
+          }
+          _mergeStatusMap[r.key] = second['status'] as String?;
+          final int? upsetRace = (second['upset_race'] as num?)?.toInt();
+          if (upsetRace != null) {
+            _mergedUpsetRaceMap[r.key] = upsetRace;
+          }
+          final Map<String, int>? metrics = parseRaceMetricsJson(second['race_metrics']);
+          if (metrics != null) {
+            _mergedRaceMetricsMap[r.key] = metrics;
+          }
+        }
+      });
     } catch (_) {
+      // 失敗したら、もう一度開いたときに取り直せるよう解除する
+      _fetchedSecondAiDates.remove(date);
       _fetchedFirstAiDates.remove(date);
+      if (mounted) {
+        setState(() {
+          for (final ({String key, String lookupKey}) r in races) {
+            _firstAiTextMap[r.key] = null;
+            _secondAiTextMap[r.key] = null;
+          }
+        });
+      }
+    }
+  }
+
+  /// 20261026: 複数日付の AI を、一斉にではなく1日ずつ順番に取得する
+  Future<void> _fetchAiForDatesInOrder(List<String> dates) async {
+    for (final String d in dates) {
+      if (!mounted) {
+        return;
+      }
+      await _fetchAiForDate(d);
     }
   }
 
@@ -261,6 +388,54 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
 
     _fetchedDates.add(date);
 
+    // 20261026: races パラメータの組み立ては _buildPayoutRaceParams に移した（先読みと共通化）
+    // final Map<String, List<SummaryModel>> summaryMap = summaryState.summaryMap;
+    //
+    // final Set<String> raceParamSet = <String>{};
+    //
+    // for (final MapEntry<String, List<SummaryModel>> entry in summaryMap.entries) {
+    //   if (!entry.key.startsWith(date)) {
+    //     continue;
+    //   }
+    //
+    //   final List<SummaryModel> models = entry.value;
+    //
+    //   if (models.isEmpty) {
+    //     continue;
+    //   }
+    //
+    //   final int kaisuu = int.tryParse(models.first.kaisuu) ?? 0;
+    //
+    //   final Set<int> seenRaces = <int>{};
+    //
+    //   for (final SummaryModel m in models) {
+    //     if (seenRaces.add(m.race)) {
+    //       raceParamSet.add('${m.date}|$kaisuu|${m.basho}|${m.race}');
+    //     }
+    //   }
+    // }
+    final Set<String> raceParamSet = _buildPayoutRaceParams(date);
+
+    if (raceParamSet.isEmpty) {
+      return;
+    }
+
+    try {
+      final Map<String, RaceResultPayoutModel> result = await fetchPayoutMap(ref, racesParam: raceParamSet.join('/'));
+
+      if (mounted) {
+        setState(() {
+          _payoutMap.addAll(result);
+          _payoutFetchDone.add(date);
+        });
+      }
+    } catch (_) {
+      _fetchedDates.remove(date);
+    }
+  }
+
+  /// 20261026: 指定日付の全レース分の races パラメータ（"date|kaisuu|basho|race"）を組み立てる。
+  Set<String> _buildPayoutRaceParams(String date) {
     final Map<String, List<SummaryModel>> summaryMap = summaryState.summaryMap;
 
     final Set<String> raceParamSet = <String>{};
@@ -287,21 +462,62 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
       }
     }
 
-    if (raceParamSet.isEmpty) {
-      return;
-    }
+    return raceParamSet;
+  }
 
-    try {
-      final Map<String, RaceResultPayoutModel> result = await fetchPayoutMap(ref, racesParam: raceParamSet.join('/'));
+  /// 20261026: 過去日付の払戻を、数日分ずつまとめて順番に取得する。
+  ///
+  /// 以前は build のたびに「1日1回 × 全日付」を一斉に投げており、
+  /// 429 で失敗すると次の build でまた投げ直すため、1回開くだけで100回以上の通信になっていた。
+  /// 失敗時はこの中で最大3回まで再試行し、それでもだめなら諦める（日付を開いたときに取り直す）。
+  Future<void> _prefetchPastPayouts(List<String> dates) async {
+    final List<String> targets = dates.where((String d) => !_fetchedDates.contains(d)).toList();
+    _fetchedDates.addAll(targets);
 
-      if (mounted) {
-        setState(() {
-          _payoutMap.addAll(result);
-          _payoutFetchDone.add(date);
-        });
+    for (int i = 0; i < targets.length; i += _payoutPrefetchDatesPerRequest) {
+      final int end = (i + _payoutPrefetchDatesPerRequest < targets.length)
+          ? i + _payoutPrefetchDatesPerRequest
+          : targets.length;
+      final List<String> chunk = targets.sublist(i, end);
+
+      final Set<String> raceParamSet = <String>{};
+      for (final String d in chunk) {
+        raceParamSet.addAll(_buildPayoutRaceParams(d));
       }
-    } catch (_) {
-      _fetchedDates.remove(date);
+
+      if (raceParamSet.isEmpty) {
+        continue;
+      }
+
+      const int maxAttempts = 3;
+      for (int attempt = 1; attempt <= maxAttempts; attempt++) {
+        try {
+          final Map<String, RaceResultPayoutModel> result = await fetchPayoutMap(
+            ref,
+            racesParam: raceParamSet.join('/'),
+          );
+
+          if (!mounted) {
+            return;
+          }
+
+          setState(() {
+            _payoutMap.addAll(result);
+            _payoutFetchDone.addAll(chunk);
+          });
+          break;
+        } catch (_) {
+          if (attempt == maxAttempts) {
+            // 日付を開いたときに _fetchPayoutsForDate で取り直せるよう解除しておく
+            _fetchedDates.removeAll(chunk);
+            break;
+          }
+          await Future<void>.delayed(const Duration(seconds: 2));
+          if (!mounted) {
+            return;
+          }
+        }
+      }
     }
   }
 
@@ -376,7 +592,15 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
     final String today = DateTime.now().toString().substring(0, 10);
 
     // 20261003: 配当が取得できた（＝レースが終了している）日付だけを表示する。判定のため、開く前に配当を先読みする
-    summaryState.summaryDateBashoMap.keys.where((String d) => d.compareTo(today) <= 0).forEach(_fetchPayoutsForDate);
+    // summaryState.summaryDateBashoMap.keys.where((String d) => d.compareTo(today) <= 0).forEach(_fetchPayoutsForDate);
+    // 20261026: build のたびに日付ごとの通信を投げていたため、先読みは summary 取得後に1回だけ・まとめて行う
+    if (!_payoutPrefetchStarted && summaryState.summaryMap.isNotEmpty) {
+      _payoutPrefetchStarted = true;
+      final List<String> pastDates = summaryState.summaryDateBashoMap.keys
+          .where((String d) => d.compareTo(today) <= 0)
+          .toList();
+      Future<void>.microtask(() => _prefetchPastPayouts(pastDates));
+    }
 
     final Map<String, List<String>> summaryDateBashoMap = <String, List<String>>{
       for (final MapEntry<String, List<String>> e in summaryState.summaryDateBashoMap.entries)
@@ -425,8 +649,10 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
                             }
                           },
                           onSecondAiFetch: () {
-                            summaryDateBashoMap.keys.forEach(_fetchSecondAiForDate);
-                            summaryDateBashoMap.keys.forEach(_fetchFirstAiForDate);
+                            // summaryDateBashoMap.keys.forEach(_fetchSecondAiForDate);
+                            // summaryDateBashoMap.keys.forEach(_fetchFirstAiForDate);
+                            // 20261026: 全日付を一斉に呼ばず、1日ずつ順番にまとめて取得する
+                            _fetchAiForDatesInOrder(summaryDateBashoMap.keys.toList());
                           },
                         ),
                       ],
@@ -499,8 +725,9 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
                                       }
                                     },
                                     onSecondAiFetch: () {
-                                      _fetchSecondAiForDate(e.key);
-                                      _fetchFirstAiForDate(e.key);
+                                      // _fetchSecondAiForDate(e.key);
+                                      // _fetchFirstAiForDate(e.key);
+                                      _fetchAiForDate(e.key);   // 20261026: 1日分をまとめて1回で取得
                                     },
                                   ),
                                 ],
@@ -529,8 +756,9 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
                                     setState(() => _expandedByDate['${e.key}_$e2'] = expanded);
                                     if (expanded) {
                                       _fetchPayoutsForDate(e.key);
-                                      _fetchSecondAiForDate(e.key);
-                                      _fetchFirstAiForDate(e.key);
+                                      // _fetchSecondAiForDate(e.key);
+                                      // _fetchFirstAiForDate(e.key);
+                                      _fetchAiForDate(e.key);   // 20261026: 1日分をまとめて1回で取得
                                     }
                                   },
                                   iconColor: Colors.greenAccent,

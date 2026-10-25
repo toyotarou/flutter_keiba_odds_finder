@@ -313,6 +313,44 @@ Future<Map<String, dynamic>> fetchSecondAiOpinionData(
   return <String, dynamic>{};
 }
 
+/// 20261026: [fetchAiAnalysisByDate] の応答を引くキーを作る。
+/// サーバーとFlutterで "05" / 5 のような表記ゆれがあっても一致するよう、数値にできる部分は数値に揃える。
+String aiByDateKey({
+  required String date,
+  required String kaisuu,
+  required String basho,
+  required String day,
+  required String race,
+}) {
+  String n(String v) => (int.tryParse(v) ?? v).toString();
+  return '${date}_${n(kaisuu)}_${n(basho)}_${n(day)}_${n(race)}';
+}
+
+/// 20261026: 1日分の AI 結果（1st / 2nd）を、保存済みの結果だけからまとめて取得する。
+/// サーバー側で AI は呼ばない（未保存のレースは first_analysis_text / second が null）。
+/// 戻り値のキーは [aiByDateKey] で作ったもの。値は API の1件分
+/// （'first_analysis_text': String?、'second': 2nd AI の応答と同じ形の Map または null）。
+/// 通信エラーは呼び出し元に伝播する。
+Future<Map<String, Map<String, dynamic>>> fetchAiAnalysisByDate(WidgetRef ref, {required String date}) async {
+  final dynamic response = await ref
+      .read(httpClientProvider)
+      .get(path: APIPath.getHorseOddsFinderAiAnalysisByDate, queryParameters: <String, dynamic>{'date': date});
+  final List<dynamic> dataList = (response as Map<String, dynamic>)['data'] as List<dynamic>? ?? <dynamic>[];
+  final Map<String, Map<String, dynamic>> map = <String, Map<String, dynamic>>{};
+  for (final dynamic item in dataList) {
+    final Map<String, dynamic> m = item as Map<String, dynamic>;
+    final String key = aiByDateKey(
+      date: date,
+      kaisuu: '${m['kaisuu']}',
+      basho: '${m['basho_code']}',
+      day: '${m['day']}',
+      race: '${m['race']}',
+    );
+    map[key] = m;
+  }
+  return map;
+}
+
 /// analysis_text から「厳選穴レース」の値を取得する。
 /// テキストの先頭行が "厳選穴レース|{数値}" の形式であれば {数値} を返す。
 /// 該当しない場合は null を返す。
