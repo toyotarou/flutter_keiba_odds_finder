@@ -28,6 +28,7 @@ class AiAnalysisDisplayAlert extends ConsumerStatefulWidget {
     this.mergedHorseList,
     this.upsetRaceValue,
     this.raceMetrics,
+    this.mergeStatus,
   });
 
   final int raceNumber;
@@ -39,6 +40,10 @@ class AiAnalysisDisplayAlert extends ConsumerStatefulWidget {
   final List<AiResponseRecommendHorseModel>? mergedHorseList;
   final int? upsetRaceValue;
   final Map<String, int>? raceMetrics;
+
+  /// 20261025: サーバーの統合結果の状態（'undetermined' ＝ 採用できるAI回答が無かった）。
+  /// 「基準を満たす候補がいない」と「AIの回答を受け取れなかった」を画面で区別するために使う。
+  final String? mergeStatus;
 
   @override
   ConsumerState<AiAnalysisDisplayAlert> createState() => _AiAnalysisDisplayAlertState();
@@ -760,6 +765,12 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
   ///
   Widget _buildHorseList(List<AiResponseRecommendHorseModel> displayHorses) {
     // 統合の結果、基準を満たす馬が1頭もいなかったレース（無理に候補を埋めない仕様）
+    // 20261025: 採用できるAI回答が無かったレース（未確定）は、「候補なし」とは別の文言にする
+    if (displayHorses.isEmpty && widget.mergedHorseList != null && widget.mergeStatus == 'undetermined') {
+      return const Center(
+        child: Text('AIの回答を受け取れなかったため、このレースの予想は出せませんでした', style: TextStyle(fontSize: 12, color: Colors.white70)),
+      );
+    }
     if (displayHorses.isEmpty && widget.mergedHorseList != null) {
       return const Center(
         child: Text('このレースは基準を満たす候補馬がいませんでした', style: TextStyle(fontSize: 12, color: Colors.white70)),

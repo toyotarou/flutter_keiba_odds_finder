@@ -21,7 +21,7 @@ import '../../models/race_result_payout_model.dart';
 import '../../utility/functions.dart';
 import '../../utility/utility.dart';
 import '../components/ai_analysis_display_alert.dart';
-import '../components/baganriki_r122_display_alert.dart';
+// import '../components/baganriki_published_prediction_display_alert.dart';   // 20261025: r12.2 ボタンを外したため
 import '../components/horse_detail_display_alert.dart';
 import '../components/horse_odds_ranking_display_alert.dart';
 import '../components/payout_data_display_alert.dart';
@@ -108,6 +108,9 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
   /// 受け取った場合は、0頭（全頭がフィルターで除外）でもその結果を正とし、
   /// 1st/2nd の生リストを足し合わせた表示（サーバーが除外した馬が混ざる）へは戻さない。
   bool _mergedReceived = false;
+
+  /// 20261025: 統合結果の状態（'undetermined' ＝ 採用できるAI回答が無かった）
+  String? _mergeStatus;
 
   /// 1st AI の取得に成功したか（失敗・未完了なら 2nd AI は呼ばない）
   bool _firstAiOk = false;
@@ -375,6 +378,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
             _mergedHorseList = parseMergedHorses(mergedRaw);
             _mergedReceived = true;
           }
+          _mergeStatus = data['status'] as String?;
           if (mergedUpsetRace != null) {
             _totalForecastUpsetRaceValue = mergedUpsetRace;
           }
@@ -904,30 +908,31 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
               child: Icon(Icons.list, color: Colors.white.withValues(alpha: 0.5)),
             ),
 
-            const SizedBox(width: 15),
+            // ── 20261025: r12.2 の確認ボタンはお客さんの画面から外す（新しい予想は非公開の段階のため）。中身は残す ──
+            // const SizedBox(width: 15),
 
-            // @ANCHOR-20261020-R122-FLUTTER  r12.2 の記録（読み取りだけ）
-            GestureDetector(
-              onTap: () {
-                OddsFinderDialog(
-                  context: context,
-                  hideRaceOverlay: true,
-                  widget: BaganrikiR122DisplayAlert(raceNumber: widget.raceNumber),
-                  paddingLeft: context.screenSize.width * 0.05,
-                  paddingTop: context.screenSize.height * 0.05,
-                  paddingBottom: context.screenSize.height * 0.05,
-                );
-              },
-              child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 3, horizontal: 10),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF90CDF4).withValues(alpha: 0.4),
-                  borderRadius: BorderRadius.circular(12),
-                ),
+            // // @ANCHOR-20261020-R122-FLUTTER  r12.2 の記録（読み取りだけ）
+            // GestureDetector(
+            //   onTap: () {
+            //     OddsFinderDialog(
+            //       context: context,
+            //       hideRaceOverlay: true,
+            //       widget: BaganrikiPublishedPredictionDisplayAlert(raceNumber: widget.raceNumber),
+            //       paddingLeft: context.screenSize.width * 0.05,
+            //       paddingTop: context.screenSize.height * 0.05,
+            //       paddingBottom: context.screenSize.height * 0.05,
+            //     );
+            //   },
+            //   child: Container(
+            //     padding: const EdgeInsets.symmetric(vertical: 3, horizontal: 10),
+            //     decoration: BoxDecoration(
+            //       color: const Color(0xFF90CDF4).withValues(alpha: 0.4),
+            //       borderRadius: BorderRadius.circular(12),
+            //     ),
 
-                child: const Text('r12.2', style: TextStyle(fontSize: 10, color: Colors.white)),
-              ),
-            ),
+            //     child: const Text('r12.2', style: TextStyle(fontSize: 10, color: Colors.white)),
+            //   ),
+            // ),
 
             if (_hasPayout) ...<Widget>[
               const SizedBox(width: 15),
@@ -2103,6 +2108,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                             mergedHorseList: _mergedReceived ? _mergedHorseList : null,
                             upsetRaceValue: _totalForecastUpsetRaceValue,
                             raceMetrics: _totalForecastRaceMetrics,
+                            mergeStatus: _mergeStatus,
                           ),
                         );
                       },

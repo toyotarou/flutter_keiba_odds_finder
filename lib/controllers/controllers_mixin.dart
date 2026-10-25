@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'ai_analysis/ai_analysis.dart';
 import 'ai_analysis2/ai_analysis2.dart';
 import 'app_param/app_param.dart';
-import 'baganriki_r122/baganriki_r122.dart';
+// import 'baganriki_published_prediction/baganriki_published_prediction.dart';   // 20261025: r12.2 確認ボタンを外したため
 import 'developer_news/developer_news.dart';
 import 'horse/horse.dart';
 import 'horse_best_weight/horse_best_weight.dart';
@@ -182,10 +182,11 @@ mixin ControllersMixin<T extends ConsumerStatefulWidget> on ConsumerState<T> {
 
   //==========================================//
 
-  // @ANCHOR-20261020-R122-FLUTTER  r12.2 の読取API
-  BaganrikiR122State get baganrikiR122State => ref.watch(baganrikiR122Provider);
-
-  BaganrikiR122 get baganrikiR122Notifier => ref.read(baganrikiR122Provider.notifier);
+  // ── 20261025: r12.2 確認ボタンを外したので使いません ──
+  // // @ANCHOR-20261020-R122-FLUTTER  r12.2 の読取API
+  // BaganrikiPublishedPredictionState get baganrikiPublishedPredictionState => ref.watch(baganrikiPublishedPredictionProvider);
+  //
+  // BaganrikiPublishedPrediction get baganrikiPublishedPredictionNotifier => ref.read(baganrikiPublishedPredictionProvider.notifier);
 
   //==========================================//
 }
