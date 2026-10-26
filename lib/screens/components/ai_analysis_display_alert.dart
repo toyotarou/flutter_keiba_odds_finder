@@ -29,6 +29,7 @@ class AiAnalysisDisplayAlert extends ConsumerStatefulWidget {
     this.upsetRaceValue,
     this.raceMetrics,
     this.mergeStatus,
+    this.numToWaku = const <int, int>{},
   });
 
   final int raceNumber;
@@ -44,6 +45,9 @@ class AiAnalysisDisplayAlert extends ConsumerStatefulWidget {
   /// 20261025: サーバーの統合結果の状態（'undetermined' ＝ 採用できるAI回答が無かった）。
   /// 「基準を満たす候補がいない」と「AIの回答を受け取れなかった」を画面で区別するために使う。
   final String? mergeStatus;
+
+  /// 20261026: 馬番 → 枠番。過去レースの画面から渡す（馬データが無い古いレースの枠連判定用）。払戻金画面へそのまま渡す。
+  final Map<int, int> numToWaku;
 
   @override
   ConsumerState<AiAnalysisDisplayAlert> createState() => _AiAnalysisDisplayAlertState();
@@ -335,6 +339,7 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
                                 hitHorseNums: hitHorseNums,
                                 numToRankMap: widget.numToRankMap,
                                 aiHorseNums: displayHorses.map((AiResponseRecommendHorseModel h) => h.num).toList(),
+                                numToWaku: widget.numToWaku, // 20261026
                               ),
                               paddingLeft: context.screenSize.width * 0.1,
                               paddingTop: context.screenSize.height * 0.05,

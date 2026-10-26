@@ -832,6 +832,15 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
     // オッズ・馬・結果データを各 State から取得
     final List<OddsModel> oddsForRace = buildOddsForRace(appParamState.keepOddsMap, keepRaceMapKey, r.key);
     final Map<int, HorseModel> horseModelMap = buildHorseModelMap(appParamState.keepHorseMap, keepRaceMapKey, r.key);
+    // 20261026: 馬番 → 枠番。馬データ（keepHorseMap）は今週分しか無いため、古いレースでは空になり、
+    //   枠連が「獲得」にならなかった（07-11 小倉6R の枠連 8-8 など）。
+    //   馬データが無いときは、この画面の元データである summary の waku から作る。
+    final Map<int, int> numToWaku = horseModelMap.isNotEmpty
+        ? buildNumToWakuMap(horseModelMap.values)
+        : <int, int>{
+            for (final SummaryModel m in models.where((SummaryModel m) => m.race == r.key && m.waku > 0))
+              m.num: m.waku,
+          };
     // 20260926: t_horse_odds_finder_race_results は土曜の deleteKeibaTableRecords で毎週 TRUNCATE されるため、
     // 先週以前のレースは raceResultMap に着順が無く、合致数が全て0頭になっていた。
     // raceResultMap に無い場合は、この画面の元データである summary の result（着順）から作る。
@@ -1042,6 +1051,7 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
                                             _mergedUpsetRaceMap[lookupKey] ?? parseUpsetRaceValue(firstText),
                                         raceMetrics: _mergedRaceMetricsMap[lookupKey] ?? parseRaceMetrics(firstText),
                                         mergeStatus: _mergeStatusMap[lookupKey],
+                                        numToWaku: numToWaku, // 20261026: 古いレースの枠連判定用
                                       ),
                                     );
                                   },
@@ -1176,6 +1186,7 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
                     numToRankMap: numToRankMap,
                     aiHorseNums: displayHorses.map((AiResponseRecommendHorseModel h) => h.num).toList(),
                     horseModelMap: horseModelMap,
+                    numToWaku: numToWaku,
                     isSecondAiLoading: _fetchedSecondAiDates.contains(date) && !_secondAiTextMap.containsKey(lookupKey),
                   ),
                 ] else ...<Widget>[
@@ -1220,6 +1231,7 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
     required int raceNumber,
     required Map<int, int> numToRankMap,
     required Map<int, HorseModel> horseModelMap,
+    required Map<int, int> numToWaku,
     required bool isSecondAiLoading,
     required List<int> aiHorseNums,
   }) {
@@ -1237,7 +1249,8 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
         : Colors.white60;
 
     final ({String name, int amount})? maxHit = (matchedCount >= 1 && payout != null)
-        ? findMaxHitPayout(payout, hitHorseNums, numToWaku: buildNumToWakuMap(horseModelMap.values))
+        // ? findMaxHitPayout(payout, hitHorseNums, numToWaku: buildNumToWakuMap(horseModelMap.values))
+        ? findMaxHitPayout(payout, hitHorseNums, numToWaku: numToWaku) // 20261026: summary の枠番も使う
         : null;
 
     return DefaultTextStyle(
@@ -1291,6 +1304,8 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
                     aiHorseNums: aiHorseNums,
                     // 20261008: 一覧用に取得済みの払戻データを渡す（開くたびのAPI再取得をやめる）
                     payout: payout,
+                    // 20261026: 馬データが無い古いレースでも枠連を判定できるよう、枠番を渡す
+                    numToWaku: numToWaku,
                   ),
                   paddingLeft: context.screenSize.width * 0.1,
                   paddingTop: context.screenSize.height * 0.05,

@@ -22,6 +22,7 @@ class PayoutDataDisplayAlert extends ConsumerStatefulWidget {
     this.numToRankMap = const <int, int>{},
     this.aiHorseNums = const <int>[],
     this.payout,
+    this.numToWaku = const <int, int>{},
   });
 
   final int raceNumber;
@@ -46,6 +47,10 @@ class PayoutDataDisplayAlert extends ConsumerStatefulWidget {
   /// 20261008: 呼び出し元で取得済みの払戻データ。渡されたときはAPIを呼ばずにこれを表示する。
   /// null（既定）のときは、これまで通り自分でAPIから取得する。
   final RaceResultPayoutModel? payout;
+
+  /// 20261026: 馬番 → 枠番（呼び出し元が summary から作ったもの）。
+  /// 馬データ（keepHorseMap）が無い古いレースで、枠連の「獲得」判定に使う。
+  final Map<int, int> numToWaku;
 
   @override
   ConsumerState<PayoutDataDisplayAlert> createState() => _PayoutDataDisplayAlertState();
@@ -141,7 +146,10 @@ class _PayoutDataDisplayAlertState extends ConsumerState<PayoutDataDisplayAlert>
   /// 馬データが無い（古いレースなど）ときは空で、枠連は「獲得」にならない。
   Map<int, int> get _numToWaku {
     final List<HorseModel> horses = appParamState.keepHorseMap['${_effectiveDate}_$_effectiveKbd'] ?? <HorseModel>[];
-    return buildNumToWakuMap(horses.where((HorseModel h) => h.race == widget.raceNumber));
+    // return buildNumToWakuMap(horses.where((HorseModel h) => h.race == widget.raceNumber));
+    // 20261026: 馬データが無いときは、呼び出し元から渡された枠番を使う
+    final Map<int, int> fromHorses = buildNumToWakuMap(horses.where((HorseModel h) => h.race == widget.raceNumber));
+    return fromHorses.isNotEmpty ? fromHorses : widget.numToWaku;
   }
 
   /// 20261006: 出走頭数（「X頭立て」）。馬データ（keepHorseMap）のそのレースの頭数。
