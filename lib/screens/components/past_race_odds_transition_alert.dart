@@ -892,14 +892,47 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
     final int matchedCount = hitHorseNums.length;
 
     // 20261026: 同着対応。3着以内に入った馬（同着の馬も含む）の頭数。通常は3頭、同着があると4頭以上になることがある。
-    final int topFinisherCount = numToRankMap.values.where((int rank) => rank <= kRaceTopFinishers).length;
+    // 20261026: ピンクの条件変更で使わなくなったためコメントアウト
+    // final int topFinisherCount = numToRankMap.values.where((int rank) => rank <= kRaceTopFinishers).length;
 
     // 20261026: 同じ着順の馬が2頭以上いれば同着あり
     final List<int> topRanks = numToRankMap.values.where((int rank) => rank <= kRaceTopFinishers).toList();
     final bool isDeadHeat = topRanks.toSet().length < topRanks.length;
 
     // 20261026: 全合致＝同着の馬も含めて、3着以内の馬を全部AIが選んでいる（このときだけピンクにする）
-    final bool isAllMatched = matchedCount >= 3 && matchedCount >= topFinisherCount;
+    // final bool isAllMatched = matchedCount >= 3 && matchedCount >= topFinisherCount;
+    // 20261026: ピンクの条件を「三連複が取れる」に変更。
+    //   合致した馬の着順を小さい順に並べ、1頭目が1着・2頭目が2着以内・3頭目が3着以内なら三連複が成立する。
+    //   同着が無いレースでは「3頭合致」と同じ。同着で3着の片方だけ合致していてもピンクになる。
+    final List<int> hitRanks = hitHorseNums.map((int n) => numToRankMap[n] ?? 99).toList()..sort();
+    final bool isAllMatched =
+        hitRanks.length >= 3 && hitRanks[0] <= 1 && hitRanks[1] <= 2 && hitRanks[2] <= kRaceTopFinishers;
+
+    // 20261026: 同着があるレースで、どの着順の馬が合致したかを「1着、2着、3着の片方が合致」のように表す。
+    //   同着の着順は、全部合致なら「3着の2頭」、一部なら「3着の片方」（3頭以上の同着は「3着の1頭」など頭数で表す）。
+    String? deadHeatHitText;
+    if (isDeadHeat && matchedCount >= 1) {
+      final List<String> parts = <String>[];
+      for (int rank = 1; rank <= kRaceTopFinishers; rank++) {
+        final int totalAtRank = topRanks.where((int r) => r == rank).length;
+        final int hitAtRank = hitRanks.where((int r) => r == rank).length;
+        if (hitAtRank == 0) {
+          continue;
+        }
+        if (totalAtRank <= 1) {
+          parts.add('$rank着');
+        } else if (hitAtRank == totalAtRank) {
+          parts.add('$rank着の$hitAtRank頭');
+        } else if (totalAtRank == 2) {
+          parts.add('$rank着の片方');
+        } else {
+          parts.add('$rank着の$hitAtRank頭');
+        }
+      }
+      if (parts.isNotEmpty) {
+        deadHeatHitText = '${parts.join('、')}が合致';
+      }
+    }
 
     String? adjustedResultText = resultText;
     if (resultText != null && displayHorses.isNotEmpty) {
@@ -907,6 +940,19 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
       if (pattern.hasMatch(resultText)) {
         adjustedResultText = resultText.replaceFirst(pattern, '${displayHorses.length}頭中$matchedCount頭が合致');
       }
+    }
+
+    // 20261026: 振り返り（race_introspection）が無いレースは、結果文が null のまま「分析中...」が回り続けていた。
+    //   払戻があり、AI予想の取得が終わっている場合は待つのをやめる。
+    //   ・AI予想の候補があれば、そこから「X頭中Y頭が合致」を作る
+    //   ・AI予想も無ければ（AIデータは 2026-08-15 以降しか無い）「AI予想データなし」と出し、払戻金は見られるようにする
+    if (adjustedResultText == null &&
+        payout != null &&
+        _fetchedSecondAiDates.contains(date) &&
+        _secondAiTextMap.containsKey(lookupKey)) {
+      adjustedResultText = displayHorses.isNotEmpty
+          ? '${displayHorses.length}頭中$matchedCount頭が合致'
+          : 'AI予想データなし';
     }
 
     // 20261026: 同着があったレースは「X頭中Y頭が合致」の後に（同着あり）を付ける
@@ -1121,6 +1167,7 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
                     resultText: adjustedResultText,
                     matchedCount: matchedCount,
                     isAllMatched: isAllMatched,
+                    deadHeatHitText: deadHeatHitText,
                     hitHorseNums: hitHorseNums,
                     payout: payout,
                     date: date,
@@ -1165,6 +1212,7 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
     required String resultText,
     required int matchedCount,
     required bool isAllMatched,
+    required String? deadHeatHitText,
     required Set<int> hitHorseNums,
     required RaceResultPayoutModel? payout,
     required String date,
@@ -1181,8 +1229,7 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
     //     : matchedCount >= 1
     //     ? Colors.white
     //     : Colors.white60;
-    // 20261026: ピンクは全合致（同着の馬も含めて3着以内を全部AIが選んだ）ときだけ。
-    //   同着で片方しか選んでいない場合は3頭合致でも白にする。
+    // 20261026: ピンクは三連複が取れるとき（isAllMatched の計算部分を参照）。
     final Color textColor = isAllMatched
         ? const Color(0xFFFBB6CE)
         : matchedCount >= 1
@@ -1199,6 +1246,8 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
         crossAxisAlignment: CrossAxisAlignment.end,
         children: <Widget>[
           Text(resultText),
+          // 20261026: 同着があるレースだけ、どの着順の馬が合致したかを出す
+          if (deadHeatHitText != null) ...<Widget>[Text(deadHeatHitText)],
           if (isSecondAiLoading) ...<Widget>[
             const Padding(
               padding: EdgeInsets.only(top: 2),
