@@ -263,6 +263,8 @@ Future<Map<String, dynamic>> fetchAiAnalysisData(
   required int race,
   required List<int> gapHorseNums,
   required List<int> upsetPickupHorseNums,
+  // 20261026: true のときは保存済みの結果だけを返してもらう（AIは呼ばない。未保存なら not_ready）
+  bool cacheOnly = false,
 }) async {
   final dynamic response = await ref
       .read(httpClientProvider)
@@ -276,6 +278,7 @@ Future<Map<String, dynamic>> fetchAiAnalysisData(
           'race': race.toString(),
           'gapHorseNums': gapHorseNums.join('|'),
           'upsetPickupHorseNums': upsetPickupHorseNums.join('|'),
+          if (cacheOnly) 'cacheOnly': '1',
         },
       );
   return (response as Map<String, dynamic>)['data'] as Map<String, dynamic>? ?? <String, dynamic>{};
@@ -290,6 +293,8 @@ Future<Map<String, dynamic>> fetchSecondAiOpinionData(
   required String basho,
   required String day,
   required int race,
+  // 20261026: true のときは保存済みの結果だけを返してもらう（AIは呼ばない。未保存なら not_ready）
+  bool cacheOnly = false,
 }) async {
   final dynamic response = await ref
       .read(httpClientProvider)
@@ -301,6 +306,7 @@ Future<Map<String, dynamic>> fetchSecondAiOpinionData(
           'basho': basho,
           'day': day,
           'race': race.toString(),
+          if (cacheOnly) 'cacheOnly': '1',
         },
       );
   final dynamic data = (response as Map<String, dynamic>)['data'];

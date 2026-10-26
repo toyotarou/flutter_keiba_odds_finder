@@ -227,9 +227,17 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
         _fetchPayoutExists();
         // 1st AI → 2nd AI の順に呼ぶ（仕様: 2nd AI は 1st AI と同じ入力で独立評価し、その後に統合する）。
         // 同時に呼ぶと 1st AI 未保存のまま 2nd AI が走り、統合できない／失敗時も 2nd AI を呼んでしまう。
-        _fetchAiPickup().then((_) {
+        // _fetchAiPickup().then((_) {
+        //   if (mounted && _firstAiOk) {
+        //     _fetchSecondAiOpinion();
+        //   }
+        // });
+        // 20261026: レースを開いた時点ではAIを呼ばず、保存済みの結果だけを取りに行く。
+        //   AI予想は6分前オッズのあとにサーバの補完（先回り実行）が作っておく。
+        //   未保存なら何もしない（_firstAiOk は false のまま）。AIは「AI予想」ボタンを押したときに呼ぶ。
+        _fetchAiPickup(cacheOnly: true).then((_) {
           if (mounted && _firstAiOk) {
-            _fetchSecondAiOpinion();
+            _fetchSecondAiOpinion(cacheOnly: true);
           }
         });
       }
@@ -247,7 +255,9 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
   }
 
   ///
-  Future<void> _fetchAiPickup() async {
+  // Future<void> _fetchAiPickup() async {
+  // 20261026: cacheOnly=true のときは保存済みの結果だけを取る（AIは呼ばない）
+  Future<void> _fetchAiPickup({bool cacheOnly = false}) async {
     final List<OddsModel> allOdds = _oddsForRace;
     final bool hasFirstTiming = allOdds.any((OddsModel e) => e.minutesBeforeStart == kOddsTimingFirst);
     final bool hasSixMinTiming = allOdds.any((OddsModel e) => e.minutesBeforeStart == kOddsJudgeTiming);
@@ -273,7 +283,13 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
         race: race,
         gapHorseNums: gapHorseNums,
         upsetPickupHorseNums: upsetPickupHorseNums,
+        cacheOnly: cacheOnly,
       );
+      // 20261026: 未保存（not_ready）のときは取得できていない扱いにする。
+      //   ここで _firstAiOk を true にすると、「AI予想」ボタンで取り直しが走らず、空の予想が開く。
+      if (data['not_ready'] == true) {
+        return;
+      }
       final String pickupRaw = (data['pickup_horse'] as String?) ?? '';
       final String analysisText = (data['analysis_text'] as String?) ?? '';
       final List<AiResponseRecommendHorseModel> horses = parseAnalysisText(analysisText);
@@ -342,7 +358,9 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
   }
 
   ///
-  Future<void> _fetchSecondAiOpinion() async {
+  // Future<void> _fetchSecondAiOpinion() async {
+  // 20261026: cacheOnly=true のときは保存済みの結果だけを取る（AIは呼ばない）
+  Future<void> _fetchSecondAiOpinion({bool cacheOnly = false}) async {
     final List<OddsModel> allOdds = _oddsForRace;
     final bool hasFirstTiming = allOdds.any((OddsModel e) => e.minutesBeforeStart == kOddsTimingFirst);
     final bool hasSixMinTiming = allOdds.any((OddsModel e) => e.minutesBeforeStart == kOddsJudgeTiming);
@@ -363,7 +381,12 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
         basho: basho,
         day: day,
         race: race,
+        cacheOnly: cacheOnly,
       );
+      // 20261026: 未保存（not_ready）のときは何も反映しない（_mergedReceived は false のまま）
+      if (data['not_ready'] == true) {
+        return;
+      }
       final String analysisText = (data['analysis_text'] as String?) ?? '';
       final List<dynamic>? mergedRaw = data['merged_horses'] as List<dynamic>?;
       final List<AiResponseRecommendHorseModel> horses = parseAnalysisText(analysisText);
