@@ -100,167 +100,167 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
   // 20261026: 以下の _fetchSecondAiForDate / _fetchFirstAiForDate は、レースごとに API を1回ずつ呼んでいた
   //   （1日36レースなら72回。保存済みの回答が無いレースではサーバーが AI（有料）を呼びに行っていた）。
   //   1日分を1回でまとめて取る _fetchAiForDate に置き換えたので、コメントアウトして残す。
-//   ///
-//   Future<void> _fetchSecondAiForDate(String date) async {
-//     if (_fetchedSecondAiDates.contains(date)) {
-//       return;
-//     }
-//     _fetchedSecondAiDates.add(date);
+  //   ///
+  //   Future<void> _fetchSecondAiForDate(String date) async {
+  //     if (_fetchedSecondAiDates.contains(date)) {
+  //       return;
+  //     }
+  //     _fetchedSecondAiDates.add(date);
 
-//     final Map<String, List<SummaryModel>> summaryMap = summaryState.summaryMap;
+  //     final Map<String, List<SummaryModel>> summaryMap = summaryState.summaryMap;
 
-//     final List<Future<void>> futures = <Future<void>>[];
-//     int successCount = 0;
+  //     final List<Future<void>> futures = <Future<void>>[];
+  //     int successCount = 0;
 
-//     for (final MapEntry<String, List<SummaryModel>> entry in summaryMap.entries) {
-//       if (!entry.key.startsWith(date)) {
-//         continue;
-//       }
+  //     for (final MapEntry<String, List<SummaryModel>> entry in summaryMap.entries) {
+  //       if (!entry.key.startsWith(date)) {
+  //         continue;
+  //       }
 
-//       final List<SummaryModel> models = entry.value;
+  //       final List<SummaryModel> models = entry.value;
 
-//       if (models.isEmpty) {
-//         continue;
-//       }
+  //       if (models.isEmpty) {
+  //         continue;
+  //       }
 
-//       final int kaisuu = int.tryParse(models.first.kaisuu) ?? 0;
+  //       final int kaisuu = int.tryParse(models.first.kaisuu) ?? 0;
 
-//       final Set<int> seenRaces = <int>{};
+  //       final Set<int> seenRaces = <int>{};
 
-//       for (final SummaryModel m in models) {
-//         if (!seenRaces.add(m.race)) {
-//           continue;
-//         }
+  //       for (final SummaryModel m in models) {
+  //         if (!seenRaces.add(m.race)) {
+  //           continue;
+  //         }
 
-//         final String key = '${m.date}_${kaisuu}_${m.basho}_${m.day}_${m.race}';
+  //         final String key = '${m.date}_${kaisuu}_${m.basho}_${m.day}_${m.race}';
 
-//         // 結果が届いた時点で即 setState → キャッシュ済みレースはすぐ表示される
-//         futures.add(
-//           fetchSecondAiOpinionData(
-//                 ref,
-//                 date: m.date,
-//                 kaisuu: kaisuu.toString(),
-//                 basho: m.basho,
-//                 day: m.day.toString(),
-//                 race: m.race,
-//               )
-//               .then((Map<String, dynamic> data) {
-//                 final String? text = data['analysis_text'] as String?;
-//                 final List<dynamic>? mergedRaw = data['merged_horses'] as List<dynamic>?;
-//                 if (text != null) {
-//                   successCount++;
-//                 }
-//                 if (mounted) {
-//                   setState(() {
-//                     _secondAiTextMap[key] = text;
-//                     // 統合結果は捨てずに保持する（以前は analysis_text だけ拾っており、
-//                     // 過去レースでは統合結果が一度も使われていなかった）
-//                     // 0頭の統合結果も「受け取った」として保持する（サーバーが除外した馬を出さないため）
-//                     if (mergedRaw != null) {
-//                       _mergedHorsesMap[key] = parseMergedHorses(mergedRaw);
-//                     }
-//                     _mergeStatusMap[key] = data['status'] as String?;
-//                     final int? upsetRace = (data['upset_race'] as num?)?.toInt();
-//                     if (upsetRace != null) {
-//                       _mergedUpsetRaceMap[key] = upsetRace;
-//                     }
-//                     final Map<String, int>? metrics = parseRaceMetricsJson(data['race_metrics']);
-//                     if (metrics != null) {
-//                       _mergedRaceMetricsMap[key] = metrics;
-//                     }
-//                   });
-//                 }
-//               })
-//               .catchError((_) {
-//                 if (mounted) {
-//                   setState(() => _secondAiTextMap[key] = null);
-//                 }
-//               }),
-//         );
-//       }
-//     }
+  //         // 結果が届いた時点で即 setState → キャッシュ済みレースはすぐ表示される
+  //         futures.add(
+  //           fetchSecondAiOpinionData(
+  //                 ref,
+  //                 date: m.date,
+  //                 kaisuu: kaisuu.toString(),
+  //                 basho: m.basho,
+  //                 day: m.day.toString(),
+  //                 race: m.race,
+  //               )
+  //               .then((Map<String, dynamic> data) {
+  //                 final String? text = data['analysis_text'] as String?;
+  //                 final List<dynamic>? mergedRaw = data['merged_horses'] as List<dynamic>?;
+  //                 if (text != null) {
+  //                   successCount++;
+  //                 }
+  //                 if (mounted) {
+  //                   setState(() {
+  //                     _secondAiTextMap[key] = text;
+  //                     // 統合結果は捨てずに保持する（以前は analysis_text だけ拾っており、
+  //                     // 過去レースでは統合結果が一度も使われていなかった）
+  //                     // 0頭の統合結果も「受け取った」として保持する（サーバーが除外した馬を出さないため）
+  //                     if (mergedRaw != null) {
+  //                       _mergedHorsesMap[key] = parseMergedHorses(mergedRaw);
+  //                     }
+  //                     _mergeStatusMap[key] = data['status'] as String?;
+  //                     final int? upsetRace = (data['upset_race'] as num?)?.toInt();
+  //                     if (upsetRace != null) {
+  //                       _mergedUpsetRaceMap[key] = upsetRace;
+  //                     }
+  //                     final Map<String, int>? metrics = parseRaceMetricsJson(data['race_metrics']);
+  //                     if (metrics != null) {
+  //                       _mergedRaceMetricsMap[key] = metrics;
+  //                     }
+  //                   });
+  //                 }
+  //               })
+  //               .catchError((_) {
+  //                 if (mounted) {
+  //                   setState(() => _secondAiTextMap[key] = null);
+  //                 }
+  //               }),
+  //         );
+  //       }
+  //     }
 
-//     if (futures.isEmpty) {
-//       // summaryMap がまだ空だった場合もリトライできるよう解除する
-//       _fetchedSecondAiDates.remove(date);
-//       return;
-//     }
+  //     if (futures.isEmpty) {
+  //       // summaryMap がまだ空だった場合もリトライできるよう解除する
+  //       _fetchedSecondAiDates.remove(date);
+  //       return;
+  //     }
 
-//     try {
-//       await Future.wait(futures);
+  //     try {
+  //       await Future.wait(futures);
 
-//       // 全レースのデータ取得に失敗した場合はリトライを許可
-//       if (successCount == 0) {
-//         _fetchedSecondAiDates.remove(date);
-//       }
-//     } catch (_) {
-//       _fetchedSecondAiDates.remove(date);
-//     }
-//   }
+  //       // 全レースのデータ取得に失敗した場合はリトライを許可
+  //       if (successCount == 0) {
+  //         _fetchedSecondAiDates.remove(date);
+  //       }
+  //     } catch (_) {
+  //       _fetchedSecondAiDates.remove(date);
+  //     }
+  //   }
 
-//   ///
-//   Future<void> _fetchFirstAiForDate(String date) async {
-//     if (_fetchedFirstAiDates.contains(date)) {
-//       return;
-//     }
-//     _fetchedFirstAiDates.add(date);
+  //   ///
+  //   Future<void> _fetchFirstAiForDate(String date) async {
+  //     if (_fetchedFirstAiDates.contains(date)) {
+  //       return;
+  //     }
+  //     _fetchedFirstAiDates.add(date);
 
-//     final Map<String, List<SummaryModel>> summaryMap = summaryState.summaryMap;
-//     final List<Future<void>> futures = <Future<void>>[];
+  //     final Map<String, List<SummaryModel>> summaryMap = summaryState.summaryMap;
+  //     final List<Future<void>> futures = <Future<void>>[];
 
-//     for (final MapEntry<String, List<SummaryModel>> entry in summaryMap.entries) {
-//       if (!entry.key.startsWith(date)) {
-//         continue;
-//       }
-//       final List<SummaryModel> models = entry.value;
-//       if (models.isEmpty) {
-//         continue;
-//       }
-//       final int kaisuu = int.tryParse(models.first.kaisuu) ?? 0;
-//       final Set<int> seenRaces = <int>{};
+  //     for (final MapEntry<String, List<SummaryModel>> entry in summaryMap.entries) {
+  //       if (!entry.key.startsWith(date)) {
+  //         continue;
+  //       }
+  //       final List<SummaryModel> models = entry.value;
+  //       if (models.isEmpty) {
+  //         continue;
+  //       }
+  //       final int kaisuu = int.tryParse(models.first.kaisuu) ?? 0;
+  //       final Set<int> seenRaces = <int>{};
 
-//       for (final SummaryModel m in models) {
-//         if (!seenRaces.add(m.race)) {
-//           continue;
-//         }
-//         final String key = '${m.date}_${kaisuu}_${m.basho}_${m.day}_${m.race}';
+  //       for (final SummaryModel m in models) {
+  //         if (!seenRaces.add(m.race)) {
+  //           continue;
+  //         }
+  //         final String key = '${m.date}_${kaisuu}_${m.basho}_${m.day}_${m.race}';
 
-//         futures.add(
-//           fetchAiAnalysisData(
-//                 ref,
-//                 date: m.date,
-//                 kaisuu: kaisuu.toString(),
-//                 basho: m.basho,
-//                 day: m.day.toString(),
-//                 race: m.race,
-//                 gapHorseNums: <int>[],
-//                 upsetPickupHorseNums: <int>[],
-//               )
-//               .then((Map<String, dynamic> data) {
-//                 final String? text = data['analysis_text'] as String?;
-//                 if (mounted) {
-//                   setState(() => _firstAiTextMap[key] = text);
-//                 }
-//               })
-//               .catchError((_) {
-//                 if (mounted) {
-//                   setState(() => _firstAiTextMap[key] = null);
-//                 }
-//               }),
-//         );
-//       }
-//     }
+  //         futures.add(
+  //           fetchAiAnalysisData(
+  //                 ref,
+  //                 date: m.date,
+  //                 kaisuu: kaisuu.toString(),
+  //                 basho: m.basho,
+  //                 day: m.day.toString(),
+  //                 race: m.race,
+  //                 gapHorseNums: <int>[],
+  //                 upsetPickupHorseNums: <int>[],
+  //               )
+  //               .then((Map<String, dynamic> data) {
+  //                 final String? text = data['analysis_text'] as String?;
+  //                 if (mounted) {
+  //                   setState(() => _firstAiTextMap[key] = text);
+  //                 }
+  //               })
+  //               .catchError((_) {
+  //                 if (mounted) {
+  //                   setState(() => _firstAiTextMap[key] = null);
+  //                 }
+  //               }),
+  //         );
+  //       }
+  //     }
 
-//     if (futures.isEmpty) {
-//       _fetchedFirstAiDates.remove(date);
-//       return;
-//     }
-//     try {
-//       await Future.wait(futures);
-//     } catch (_) {
-//       _fetchedFirstAiDates.remove(date);
-//     }
-//   }
+  //     if (futures.isEmpty) {
+  //       _fetchedFirstAiDates.remove(date);
+  //       return;
+  //     }
+  //     try {
+  //       await Future.wait(futures);
+  //     } catch (_) {
+  //       _fetchedFirstAiDates.remove(date);
+  //     }
+  //   }
 
   /// 20261026: 1日分の 1st / 2nd AI を、保存済みの結果だけから1回の通信でまとめて取得する。
   ///
@@ -727,7 +727,7 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
                                     onSecondAiFetch: () {
                                       // _fetchSecondAiForDate(e.key);
                                       // _fetchFirstAiForDate(e.key);
-                                      _fetchAiForDate(e.key);   // 20261026: 1日分をまとめて1回で取得
+                                      _fetchAiForDate(e.key); // 20261026: 1日分をまとめて1回で取得
                                     },
                                   ),
                                 ],
@@ -758,7 +758,7 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
                                       _fetchPayoutsForDate(e.key);
                                       // _fetchSecondAiForDate(e.key);
                                       // _fetchFirstAiForDate(e.key);
-                                      _fetchAiForDate(e.key);   // 20261026: 1日分をまとめて1回で取得
+                                      _fetchAiForDate(e.key); // 20261026: 1日分をまとめて1回で取得
                                     }
                                   },
                                   iconColor: Colors.greenAccent,
@@ -891,12 +891,28 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
 
     final int matchedCount = hitHorseNums.length;
 
+    // 20261026: 同着対応。3着以内に入った馬（同着の馬も含む）の頭数。通常は3頭、同着があると4頭以上になることがある。
+    final int topFinisherCount = numToRankMap.values.where((int rank) => rank <= kRaceTopFinishers).length;
+
+    // 20261026: 同じ着順の馬が2頭以上いれば同着あり
+    final List<int> topRanks = numToRankMap.values.where((int rank) => rank <= kRaceTopFinishers).toList();
+    final bool isDeadHeat = topRanks.toSet().length < topRanks.length;
+
+    // 20261026: 全合致＝同着の馬も含めて、3着以内の馬を全部AIが選んでいる（このときだけピンクにする）
+    final bool isAllMatched = matchedCount >= 3 && matchedCount >= topFinisherCount;
+
     String? adjustedResultText = resultText;
     if (resultText != null && displayHorses.isNotEmpty) {
       final RegExp pattern = RegExp(r'\d+頭中\d+頭が合致');
       if (pattern.hasMatch(resultText)) {
         adjustedResultText = resultText.replaceFirst(pattern, '${displayHorses.length}頭中$matchedCount頭が合致');
       }
+    }
+
+    // 20261026: 同着があったレースは「X頭中Y頭が合致」の後に（同着あり）を付ける
+    if (adjustedResultText != null && isDeadHeat) {
+      final RegExp pattern = RegExp(r'\d+頭中\d+頭が合致');
+      adjustedResultText = adjustedResultText.replaceFirstMapped(pattern, (Match m) => '${m.group(0)}（同着あり）');
     }
 
     return DefaultTextStyle(
@@ -1104,6 +1120,7 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
                   _buildResultTextSection(
                     resultText: adjustedResultText,
                     matchedCount: matchedCount,
+                    isAllMatched: isAllMatched,
                     hitHorseNums: hitHorseNums,
                     payout: payout,
                     date: date,
@@ -1147,6 +1164,7 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
   Widget _buildResultTextSection({
     required String resultText,
     required int matchedCount,
+    required bool isAllMatched,
     required Set<int> hitHorseNums,
     required RaceResultPayoutModel? payout,
     required String date,
@@ -1158,7 +1176,14 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
     required List<int> aiHorseNums,
   }) {
     // 20261005: 3頭合致のときだけピンク、1〜2頭は白、0頭は従来どおり white60
-    final Color textColor = matchedCount >= 3
+    // final Color textColor = matchedCount >= 3
+    //     ? const Color(0xFFFBB6CE)
+    //     : matchedCount >= 1
+    //     ? Colors.white
+    //     : Colors.white60;
+    // 20261026: ピンクは全合致（同着の馬も含めて3着以内を全部AIが選んだ）ときだけ。
+    //   同着で片方しか選んでいない場合は3頭合致でも白にする。
+    final Color textColor = isAllMatched
         ? const Color(0xFFFBB6CE)
         : matchedCount >= 1
         ? Colors.white
