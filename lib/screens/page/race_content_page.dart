@@ -1985,9 +1985,12 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
 
             _buildControlButtons(raceIdx: raceIdx),
 
-            SizedBox(height: 40, child: _displayRaceMinutesRow()),
-
-            const SizedBox(height: 10),
+            // SizedBox(height: 40, child: _displayRaceMinutesRow()),
+            //
+            // const SizedBox(height: 10),
+            //
+            //
+            //
 
             // 20261028: 期待数値・レース結果エリア（SideTabPanel）不要のためコメントアウト
             // if (displayList.isNotEmpty && (median != null || raceResultByRank.isNotEmpty)) ...<Widget>[
@@ -2058,11 +2061,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
             // ],
             // ),
             // ],
-            const SizedBox(height: 5),
-
             if (hasBothTimings) ...<Widget>[
-              const SizedBox(height: 5),
-
               Row(
                 children: <Widget>[
                   Material(
@@ -2212,8 +2211,10 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                 ],
               ),
 
-              const SizedBox(height: 5),
+              const SizedBox(height: 10),
             ],
+
+            SizedBox(height: 40, child: _displayRaceMinutesRow()),
 
             const SizedBox(height: 5),
             Expanded(
