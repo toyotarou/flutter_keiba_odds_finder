@@ -357,12 +357,13 @@ class AppParam extends _$AppParam {
   }
 
   ///
-  void setSelectedUpsetBoxNum({required int num}) {
-    if (state.selectedUpsetBoxNum == num) {
-      return;
-    }
-    state = state.copyWith(selectedUpsetBoxNum: num);
-  }
+  // 20261028: 期待数値・レース結果エリア（race_content_page）不要のためコメントアウト
+  // void setSelectedUpsetBoxNum({required int num}) {
+    // if (state.selectedUpsetBoxNum == num) {
+      // return;
+    // }
+    // state = state.copyWith(selectedUpsetBoxNum: num);
+  // }
 
   ///
   void setSelectedPopularityRank({required int rank}) {
@@ -408,12 +409,13 @@ class AppParam extends _$AppParam {
   void setAllExpanded() => state = state.copyWith(allExpanded: !state.allExpanded);
 
   ///
-  void setIsShowSideTabPanel({required bool flag}) {
-    if (state.isShowSideTabPanel == flag) {
-      return;
-    }
-    state = state.copyWith(isShowSideTabPanel: flag);
-  }
+  // 20261028: 期待数値・レース結果エリア（race_content_page）不要のためコメントアウト
+  // void setIsShowSideTabPanel({required bool flag}) {
+    // if (state.isShowSideTabPanel == flag) {
+      // return;
+    // }
+    // state = state.copyWith(isShowSideTabPanel: flag);
+  // }
 
   ///
   void setSelectedHorseLineNum({required int? num}) {

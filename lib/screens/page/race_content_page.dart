@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:flutter/gestures.dart' show PointerDeviceKind;
+// import 'package:flutter/gestures.dart' show PointerDeviceKind;   // 20261028: 期待数値・レース結果エリア不要のため
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -21,19 +21,22 @@ import '../../models/race_result_payout_model.dart';
 import '../../utility/functions.dart';
 import '../../utility/utility.dart';
 import '../components/ai_analysis_display_alert.dart';
+
 // import '../components/baganriki_published_prediction_display_alert.dart';   // 20261025: r12.2 ボタンを外したため
 import '../components/horse_detail_display_alert.dart';
 import '../components/horse_odds_ranking_display_alert.dart';
 import '../components/payout_data_display_alert.dart';
-import '../components/similar_races_display_alert.dart';
+// import '../components/similar_races_display_alert.dart';   // 20261028: 期待数値・レース結果エリア不要のため
 
 import '../components/total_forecast_display_alert.dart';
 import '../parts/dashed_line_painter.dart';
 import '../parts/odds_finder_dialog.dart';
 import '../parts/odds_up_down_icon.dart';
-import '../parts/race_top_three_widget.dart';
+
+// import '../parts/race_top_three_widget.dart';   // 20261028: 期待数値・レース結果エリア不要のため
 import '../parts/rank_badge_painter.dart';
-import '../parts/side_tab_panel.dart';
+
+// import '../parts/side_tab_panel.dart';   // 20261028: 期待数値・レース結果エリア不要のため
 import '../parts/widget_display_overlay.dart';
 
 class RaceContentPage extends ConsumerStatefulWidget {
@@ -66,17 +69,18 @@ class RaceContentPage extends ConsumerStatefulWidget {
   ConsumerState<RaceContentPage> createState() => _RaceContentPageState();
 }
 
-class _TriangleClipper extends CustomClipper<Path> {
-  @override
-  Path getClip(Size size) => Path()
-    ..moveTo(0, 0)
-    ..lineTo(0, size.height)
-    ..lineTo(size.width, 0)
-    ..close();
+// 20261028: 期待数値・レース結果エリア（SideTabPanel）不要のためコメントアウト
+// class _TriangleClipper extends CustomClipper<Path> {
+// @override
+// Path getClip(Size size) => Path()
+// ..moveTo(0, 0)
+// ..lineTo(0, size.height)
+// ..lineTo(size.width, 0)
+// ..close();
 
-  @override
-  bool shouldReclip(CustomClipper<Path> oldClipper) => false;
-}
+// @override
+// bool shouldReclip(CustomClipper<Path> oldClipper) => false;
+// }
 
 class _RaceContentPageState extends ConsumerState<RaceContentPage> with ControllersMixin<RaceContentPage> {
   final AutoScrollController _horseListScrollController = AutoScrollController();
@@ -88,7 +92,8 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
   String _lastStartTime = '';
 
   final Utility _utility = Utility();
-  final GlobalKey _harandoKey = GlobalKey();
+
+  // final GlobalKey _harandoKey = GlobalKey();   // 20261028: 期待数値・レース結果エリア不要のため
   final GlobalKey _analysisButtonKey = GlobalKey();
   Map<int, String> _analysisMap = <int, String>{};
   Set<int> _aiPickupNums = <int>{};
@@ -123,8 +128,9 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
   bool _showAiLoading = false;
   Timer? _aiLoadingTimer;
 
-  // 初回訪問時にmedianなし&期待数値タブ選択状態でパネルを自動クローズしたかどうか
-  bool _autoClosedPanel = false;
+  // 20261028: 期待数値・レース結果エリア（SideTabPanel）不要のためコメントアウト
+  // // 初回訪問時にmedianなし&期待数値タブ選択状態でパネルを自動クローズしたかどうか
+  // bool _autoClosedPanel = false;
 
   // 20261003: 人気順カードの展開状態（馬番 → 展開中か）。フロートタイトルを「展開中のカードだけ」に出すために保持する。
   // 値がない馬は appParamState.allExpanded と同じ扱い。allExpanded が切り替わったらクリアする（ExpansionTile の Key も作り直されるため）。
@@ -840,34 +846,35 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     );
   }
 
-  ///
-  Widget _buildRaceResultBox({required Map<int, RaceResultModel> raceResultByRank}) {
-    if (raceResultByRank.isEmpty) {
-      return const SizedBox.shrink();
-    }
+  // 20261028: 期待数値・レース結果エリア（SideTabPanel）不要のためコメントアウト
+  // ///
+  // Widget _buildRaceResultBox({required Map<int, RaceResultModel> raceResultByRank}) {
+  // if (raceResultByRank.isEmpty) {
+  // return const SizedBox.shrink();
+  // }
 
-    final List<OddsModel> eRecordOdds =
-        _oddsForRace.where((OddsModel o) => o.minutesBeforeStart == kOddsTimingLast).toList()
-          ..sort((OddsModel a, OddsModel b) => (double.tryParse(a.odds) ?? 0).compareTo(double.tryParse(b.odds) ?? 0));
+  // final List<OddsModel> eRecordOdds =
+  // _oddsForRace.where((OddsModel o) => o.minutesBeforeStart == kOddsTimingLast).toList()
+  // ..sort((OddsModel a, OddsModel b) => (double.tryParse(a.odds) ?? 0).compareTo(double.tryParse(b.odds) ?? 0));
 
-    final Map<int, int> numToPopularityMap = <int, int>{
-      for (int i = 0; i < eRecordOdds.length; i++) eRecordOdds[i].num: i + 1,
-    };
+  // final Map<int, int> numToPopularityMap = <int, int>{
+  // for (int i = 0; i < eRecordOdds.length; i++) eRecordOdds[i].num: i + 1,
+  // };
 
-    final Map<int, String> numToOddsMap = <int, String>{for (final OddsModel o in eRecordOdds) o.num: o.odds};
+  // final Map<int, String> numToOddsMap = <int, String>{for (final OddsModel o in eRecordOdds) o.num: o.odds};
 
-    final Map<int, RaceTopThreeEntry> entries = <int, RaceTopThreeEntry>{
-      for (final MapEntry<int, RaceResultModel> e in raceResultByRank.entries)
-        e.key: RaceTopThreeEntry(
-          num: e.value.num,
-          name: e.value.horseName,
-          odds: numToOddsMap[e.value.num] ?? '',
-          popularity: numToPopularityMap[e.value.num],
-        ),
-    };
+  // final Map<int, RaceTopThreeEntry> entries = <int, RaceTopThreeEntry>{
+  // for (final MapEntry<int, RaceResultModel> e in raceResultByRank.entries)
+  // e.key: RaceTopThreeEntry(
+  // num: e.value.num,
+  // name: e.value.horseName,
+  // odds: numToOddsMap[e.value.num] ?? '',
+  // popularity: numToPopularityMap[e.value.num],
+  // ),
+  // };
 
-    return RaceTopThreeWidget(entries: entries, showTitle: true);
-  }
+  // return RaceTopThreeWidget(entries: entries, showTitle: true);
+  // }
 
   ///
   Widget _buildControlButtons({required int raceIdx}) {
@@ -956,7 +963,6 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
             //     child: const Text('r12.2', style: TextStyle(fontSize: 10, color: Colors.white)),
             //   ),
             // ),
-
             if (_hasPayout) ...<Widget>[
               const SizedBox(width: 15),
 
@@ -1505,236 +1511,237 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     );
   }
 
-  ///
-  Widget _buildPopularityHorseRow({
-    required List<OddsModel> displayList,
-    required PopularityRankOddsMedianModel median,
-    RaceModel? raceModel,
-  }) {
-    final Map<int, int> numToRankMap = _numToRankMap;
-    final String minTiming = _minTiming;
+  // 20261028: 期待数値・レース結果エリア（SideTabPanel）不要のためコメントアウト
+  // ///
+  // Widget _buildPopularityHorseRow({
+  // required List<OddsModel> displayList,
+  // required PopularityRankOddsMedianModel median,
+  // RaceModel? raceModel,
+  // }) {
+  // final Map<int, int> numToRankMap = _numToRankMap;
+  // final String minTiming = _minTiming;
 
-    final int pickupCount = displayList.length <= 8
-        ? 4
-        : displayList.length <= 13
-        ? 5
-        : 6;
+  // final int pickupCount = displayList.length <= 8
+  // ? 4
+  // : displayList.length <= 13
+  // ? 5
+  // : 6;
 
-    final Set<int> pickupIndexSet = calcPickupPopularitySet(displayList, median, pickupCount);
+  // final Set<int> pickupIndexSet = calcPickupPopularitySet(displayList, median, pickupCount);
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: <Widget>[
-        Row(
-          children: <Widget>[
-            const SizedBox(width: 5),
+  // return Column(
+  // crossAxisAlignment: CrossAxisAlignment.end,
+  // children: <Widget>[
+  // Row(
+  // children: <Widget>[
+  // const SizedBox(width: 5),
 
-            Expanded(
-              child: ScrollConfiguration(
-                behavior: ScrollConfiguration.of(
-                  context,
-                ).copyWith(dragDevices: <PointerDeviceKind>{PointerDeviceKind.touch, PointerDeviceKind.mouse}),
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Padding(
-                    padding: const EdgeInsets.all(8),
-                    child: Row(
-                      children: displayList.asMap().entries.map((MapEntry<int, OddsModel> entry) {
-                        final int index = entry.key + 1;
-                        final OddsModel o = entry.value;
+  // Expanded(
+  // child: ScrollConfiguration(
+  // behavior: ScrollConfiguration.of(
+  // context,
+  // ).copyWith(dragDevices: <PointerDeviceKind>{PointerDeviceKind.touch, PointerDeviceKind.mouse}),
+  // child: SingleChildScrollView(
+  // scrollDirection: Axis.horizontal,
+  // child: Padding(
+  // padding: const EdgeInsets.all(8),
+  // child: Row(
+  // children: displayList.asMap().entries.map((MapEntry<int, OddsModel> entry) {
+  // final int index = entry.key + 1;
+  // final OddsModel o = entry.value;
 
-                        // 期待数値スコアを計算する（選択タイミングのオッズに従う）。
-                        String upsetScore = '';
-                        final double medianDouble = double.tryParse(medianByRank(median, index)) ?? 0;
-                        if (medianDouble > 0) {
-                          final double oddsVal = o.odds.toDouble();
-                          if (oddsVal > 0) {
-                            upsetScore = (medianDouble / oddsVal).toStringAsFixed(2);
-                          }
-                        }
+  // // 期待数値スコアを計算する（選択タイミングのオッズに従う）。
+  // String upsetScore = '';
+  // final double medianDouble = double.tryParse(medianByRank(median, index)) ?? 0;
+  // if (medianDouble > 0) {
+  // final double oddsVal = o.odds.toDouble();
+  // if (oddsVal > 0) {
+  // upsetScore = (medianDouble / oddsVal).toStringAsFixed(2);
+  // }
+  // }
 
-                        return Stack(
-                          clipBehavior: Clip.none,
-                          children: <Widget>[
-                            Container(
-                              width: 70,
-                              margin: const EdgeInsets.symmetric(horizontal: 2),
-                              decoration: BoxDecoration(
-                                color: pickupIndexSet.contains(index)
-                                    ? Colors.yellowAccent.withValues(alpha: 0.2)
-                                    : Colors.white.withValues(alpha: 0.05),
+  // return Stack(
+  // clipBehavior: Clip.none,
+  // children: <Widget>[
+  // Container(
+  // width: 70,
+  // margin: const EdgeInsets.symmetric(horizontal: 2),
+  // decoration: BoxDecoration(
+  // color: pickupIndexSet.contains(index)
+  // ? Colors.yellowAccent.withValues(alpha: 0.2)
+  // : Colors.white.withValues(alpha: 0.05),
 
-                                border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+  // border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
 
-                                borderRadius: BorderRadius.circular(3),
-                              ),
-                              child: DefaultTextStyle(
-                                style: const TextStyle(fontSize: 12, color: Colors.white),
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: <Widget>[
-                                    Container(
-                                      decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.3)),
-                                      width: double.infinity,
-                                      alignment: Alignment.center,
-                                      child: Text('$index番人気'),
-                                    ),
-                                    Text('馬番: ${o.num}'),
-                                    const SizedBox(height: 3),
-                                    Text(
-                                      upsetScore,
-                                      style: TextStyle(
-                                        color: Colors.yellowAccent.withValues(alpha: 0.6),
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 3),
-                                  ],
-                                ),
-                              ),
-                            ),
+  // borderRadius: BorderRadius.circular(3),
+  // ),
+  // child: DefaultTextStyle(
+  // style: const TextStyle(fontSize: 12, color: Colors.white),
+  // child: Column(
+  // mainAxisSize: MainAxisSize.min,
+  // children: <Widget>[
+  // Container(
+  // decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.3)),
+  // width: double.infinity,
+  // alignment: Alignment.center,
+  // child: Text('$index番人気'),
+  // ),
+  // Text('馬番: ${o.num}'),
+  // const SizedBox(height: 3),
+  // Text(
+  // upsetScore,
+  // style: TextStyle(
+  // color: Colors.yellowAccent.withValues(alpha: 0.6),
+  // fontSize: 14,
+  // fontWeight: FontWeight.bold,
+  // ),
+  // ),
+  // const SizedBox(height: 3),
+  // ],
+  // ),
+  // ),
+  // ),
 
-                            if (numToRankMap.containsKey(o.num))
-                              Positioned(
-                                right: -3,
-                                bottom: -3,
-                                child: Container(
-                                  width: 22,
-                                  height: 22,
-                                  decoration: BoxDecoration(
-                                    color: raceRankColor(numToRankMap[o.num]),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: const Icon(Icons.flag, size: 14, color: Colors.white),
-                                ),
-                              ),
-                          ],
-                        );
-                      }).toList(),
-                    ),
-                  ),
-                ),
-              ),
-            ),
+  // if (numToRankMap.containsKey(o.num))
+  // Positioned(
+  // right: -3,
+  // bottom: -3,
+  // child: Container(
+  // width: 22,
+  // height: 22,
+  // decoration: BoxDecoration(
+  // color: raceRankColor(numToRankMap[o.num]),
+  // shape: BoxShape.circle,
+  // ),
+  // child: const Icon(Icons.flag, size: 14, color: Colors.white),
+  // ),
+  // ),
+  // ],
+  // );
+  // }).toList(),
+  // ),
+  // ),
+  // ),
+  // ),
+  // ),
 
-            const SizedBox(width: 5),
-          ],
-        ),
+  // const SizedBox(width: 5),
+  // ],
+  // ),
 
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: Stack(
-            children: <Widget>[
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: <Widget>[
-                  if (appParamState.selectedTiming.isNotEmpty ? appParamState.selectedTiming : minTiming
-                      case final String t when t.isNotEmpty) ...<Widget>[
-                    Text('$t分前のデータを表示中', style: const TextStyle(fontSize: 10, color: Colors.white)),
-                  ],
+  // Padding(
+  // padding: const EdgeInsets.symmetric(horizontal: 20),
+  // child: Stack(
+  // children: <Widget>[
+  // Row(
+  // mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  // children: <Widget>[
+  // if (appParamState.selectedTiming.isNotEmpty ? appParamState.selectedTiming : minTiming
+  // case final String t when t.isNotEmpty) ...<Widget>[
+  // Text('$t分前のデータを表示中', style: const TextStyle(fontSize: 10, color: Colors.white)),
+  // ],
 
-                  const SizedBox.shrink(),
-                ],
-              ),
+  // const SizedBox.shrink(),
+  // ],
+  // ),
 
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: <Widget>[
-                  const SizedBox.shrink(),
+  // Row(
+  // mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  // children: <Widget>[
+  // const SizedBox.shrink(),
 
-                  GestureDetector(
-                    key: _harandoKey,
-                    onTap: () {
-                      widgetDisplayOverlay(
-                        context: context,
-                        buttonKey: _harandoKey,
-                        displayDuration: const Duration(seconds: 5),
-                        child: Container(
-                          width: 300,
-                          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-                          decoration: BoxDecoration(
-                            color: Colors.black87.withValues(alpha: 0.7),
-                            borderRadius: BorderRadius.circular(6),
-                            border: Border.all(color: Colors.white30),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: <Widget>[
-                              const DefaultTextStyle(
-                                style: TextStyle(color: Colors.white, fontSize: 11),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: <Widget>[
-                                    Text('過去の似たレースと比べて、今のオッズが「お得かどうか」を数値化しています。高いほど割安感あり。'),
-                                    Text(''),
-                                    Text('出走頭数に応じて上位をピックアップ。'),
-                                    Text('8頭以下：4頭 ／ 9〜13頭：5頭 ／ 14頭以上：6頭'),
-                                  ],
-                                ),
-                              ),
+  // GestureDetector(
+  // key: _harandoKey,
+  // onTap: () {
+  // widgetDisplayOverlay(
+  // context: context,
+  // buttonKey: _harandoKey,
+  // displayDuration: const Duration(seconds: 5),
+  // child: Container(
+  // width: 300,
+  // padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+  // decoration: BoxDecoration(
+  // color: Colors.black87.withValues(alpha: 0.7),
+  // borderRadius: BorderRadius.circular(6),
+  // border: Border.all(color: Colors.white30),
+  // ),
+  // child: Column(
+  // crossAxisAlignment: CrossAxisAlignment.start,
+  // children: <Widget>[
+  // const DefaultTextStyle(
+  // style: TextStyle(color: Colors.white, fontSize: 11),
+  // child: Column(
+  // crossAxisAlignment: CrossAxisAlignment.start,
+  // children: <Widget>[
+  // Text('過去の似たレースと比べて、今のオッズが「お得かどうか」を数値化しています。高いほど割安感あり。'),
+  // Text(''),
+  // Text('出走頭数に応じて上位をピックアップ。'),
+  // Text('8頭以下：4頭 ／ 9〜13頭：5頭 ／ 14頭以上：6頭'),
+  // ],
+  // ),
+  // ),
 
-                              if (raceModel != null) ...<Widget>[
-                                const SizedBox(height: 10),
+  // if (raceModel != null) ...<Widget>[
+  // const SizedBox(height: 10),
 
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: <Widget>[
-                                    const SizedBox.shrink(),
-                                    Padding(
-                                      padding: const EdgeInsets.only(right: 20),
-                                      child: Material(
-                                        color: Colors.transparent,
-                                        borderRadius: BorderRadius.circular(10),
-                                        child: InkWell(
-                                          onTap: () => OddsFinderDialog(
-                                            context: context,
-                                            hideRaceOverlay: true,
-                                            widget: SimilarRacesDisplayAlert(raceModel: raceModel),
-                                          ),
-                                          borderRadius: BorderRadius.circular(10),
-                                          splashColor: const Color(0xFFFBB6CE).withValues(alpha: 0.35),
-                                          highlightColor: const Color(0xFFFBB6CE).withValues(alpha: 0.1),
-                                          child: Container(
-                                            padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 10),
-                                            decoration: BoxDecoration(
-                                              border: Border.all(color: const Color(0xFFFBB6CE)),
-                                              borderRadius: BorderRadius.circular(10),
-                                            ),
-                                            child: const Text(
-                                              '過去の類似レース',
-                                              style: TextStyle(
-                                                fontSize: 10,
-                                                color: Color(0xFFFBB6CE),
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
+  // Row(
+  // mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  // children: <Widget>[
+  // const SizedBox.shrink(),
+  // Padding(
+  // padding: const EdgeInsets.only(right: 20),
+  // child: Material(
+  // color: Colors.transparent,
+  // borderRadius: BorderRadius.circular(10),
+  // child: InkWell(
+  // onTap: () => OddsFinderDialog(
+  // context: context,
+  // hideRaceOverlay: true,
+  // widget: SimilarRacesDisplayAlert(raceModel: raceModel),
+  // ),
+  // borderRadius: BorderRadius.circular(10),
+  // splashColor: const Color(0xFFFBB6CE).withValues(alpha: 0.35),
+  // highlightColor: const Color(0xFFFBB6CE).withValues(alpha: 0.1),
+  // child: Container(
+  // padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 10),
+  // decoration: BoxDecoration(
+  // border: Border.all(color: const Color(0xFFFBB6CE)),
+  // borderRadius: BorderRadius.circular(10),
+  // ),
+  // child: const Text(
+  // '過去の類似レース',
+  // style: TextStyle(
+  // fontSize: 10,
+  // color: Color(0xFFFBB6CE),
+  // fontWeight: FontWeight.bold,
+  // ),
+  // ),
+  // ),
+  // ),
+  // ),
+  // ),
+  // ],
+  // ),
+  // ],
 
-                              const SizedBox(height: 20),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                    child: const Text('期待数値とは？', style: TextStyle(fontSize: 10, color: Colors.white)),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
+  // const SizedBox(height: 20),
+  // ],
+  // ),
+  // ),
+  // );
+  // },
+  // child: const Text('期待数値とは？', style: TextStyle(fontSize: 10, color: Colors.white)),
+  // ),
+  // ],
+  // ),
+  // ],
+  // ),
+  // ),
 
-        const SizedBox(height: 3),
-      ],
-    );
-  }
+  // const SizedBox(height: 3),
+  // ],
+  // );
+  // }
 
   ///
   List<int> _calcOddsGapHorseNums() => calcOddsGapHorseNums(_oddsForRace);
@@ -1896,20 +1903,21 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     final List<RaceModel> races = widget.raceMap[widget.mapKey] ?? <RaceModel>[];
     final int raceIdx = races.indexWhere((RaceModel e) => e.race == widget.raceNumber);
 
-    final PopularityRankOddsMedianModel? median = _makeMedianList();
+    // final PopularityRankOddsMedianModel? median = _makeMedianList();   // 20261028: 期待数値・レース結果エリア不要のため
 
-    // 他レースで「期待数値」タブを開いたまま本レース（medianなし）に切り替えた場合、パネルを自動クローズ
-    if (!_autoClosedPanel &&
-        median == null &&
-        appParamState.isShowSideTabPanel &&
-        appParamState.selectedUpsetBoxNum == 0) {
-      _autoClosedPanel = true;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          appParamNotifier.setIsShowSideTabPanel(flag: false);
-        }
-      });
-    }
+    // 20261028: 期待数値・レース結果エリア（SideTabPanel）不要のためコメントアウト
+    // // 他レースで「期待数値」タブを開いたまま本レース（medianなし）に切り替えた場合、パネルを自動クローズ
+    // if (!_autoClosedPanel &&
+    // median == null &&
+    // appParamState.isShowSideTabPanel &&
+    // appParamState.selectedUpsetBoxNum == 0) {
+    // _autoClosedPanel = true;
+    // WidgetsBinding.instance.addPostFrameCallback((_) {
+    // if (mounted) {
+    // appParamNotifier.setIsShowSideTabPanel(flag: false);
+    // }
+    // });
+    // }
 
     String raceName = '';
     String startTime = '--:--';
@@ -1961,11 +1969,12 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
         allOddsForRace.any((OddsModel e) => e.minutesBeforeStart == kOddsTimingFirst) &&
         allOddsForRace.any((OddsModel e) => e.minutesBeforeStart == kOddsJudgeTiming);
 
-    final Map<int, RaceResultModel> raceResultByRank = Map<int, RaceResultModel>.fromEntries(
-      (widget.raceResultMap[widget.mapKey] ?? <RaceResultModel>[])
-          .where((RaceResultModel e) => e.race == widget.raceNumber)
-          .map((RaceResultModel e) => MapEntry<int, RaceResultModel>(e.result, e)),
-    );
+    // 20261028: 期待数値・レース結果エリア（SideTabPanel）不要のためコメントアウト
+    // final Map<int, RaceResultModel> raceResultByRank = Map<int, RaceResultModel>.fromEntries(
+    // (widget.raceResultMap[widget.mapKey] ?? <RaceResultModel>[])
+    // .where((RaceResultModel e) => e.race == widget.raceNumber)
+    // .map((RaceResultModel e) => MapEntry<int, RaceResultModel>(e.result, e)),
+    // );
 
     return Stack(
       children: <Widget>[
@@ -1980,75 +1989,75 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
 
             const SizedBox(height: 10),
 
-            if (displayList.isNotEmpty && (median != null || raceResultByRank.isNotEmpty)) ...<Widget>[
-              Stack(
-                children: <Widget>[
-                  if (appParamState.isShowSideTabPanel && (median != null || raceResultByRank.isNotEmpty)) ...<Widget>[
-                    SideTabPanel(
-                      tabLabels: <String>[if (median != null) '期待数値', if (raceResultByRank.isNotEmpty) 'レース結果'],
+            // 20261028: 期待数値・レース結果エリア（SideTabPanel）不要のためコメントアウト
+            // if (displayList.isNotEmpty && (median != null || raceResultByRank.isNotEmpty)) ...<Widget>[
+            // Stack(
+            // children: <Widget>[
+            // if (appParamState.isShowSideTabPanel && (median != null || raceResultByRank.isNotEmpty)) ...<Widget>[
+            // SideTabPanel(
+            // tabLabels: <String>[if (median != null) '期待数値', if (raceResultByRank.isNotEmpty) 'レース結果'],
 
-                      tabWidth: 90,
-                      tabGap: 0,
-                      height: 100,
-                      borderColor: Colors.white.withValues(alpha: 0.4),
-                      selectedIndex: (median != null && raceResultByRank.isNotEmpty)
-                          ? appParamState.selectedUpsetBoxNum
-                          : 0,
-                      onSelected: (int i) => appParamNotifier.setSelectedUpsetBoxNum(num: i),
+            // tabWidth: 90,
+            // tabGap: 0,
+            // height: 100,
+            // borderColor: Colors.white.withValues(alpha: 0.4),
+            // selectedIndex: (median != null && raceResultByRank.isNotEmpty)
+            // ? appParamState.selectedUpsetBoxNum
+            // : 0,
+            // onSelected: (int i) => appParamNotifier.setSelectedUpsetBoxNum(num: i),
 
-                      panelChild: median == null
-                          ? _buildRaceResultBox(raceResultByRank: raceResultByRank)
-                          : (raceResultByRank.isEmpty || appParamState.selectedUpsetBoxNum == 0)
-                          ? _buildPopularityHorseRow(
-                              displayList: displayList,
-                              median: median,
-                              raceModel: currentRaceModel,
-                            )
-                          : _buildRaceResultBox(raceResultByRank: raceResultByRank),
-                    ),
-                  ],
+            // panelChild: median == null
+            // ? _buildRaceResultBox(raceResultByRank: raceResultByRank)
+            // : (raceResultByRank.isEmpty || appParamState.selectedUpsetBoxNum == 0)
+            // ? _buildPopularityHorseRow(
+            // displayList: displayList,
+            // median: median,
+            // raceModel: currentRaceModel,
+            // )
+            // : _buildRaceResultBox(raceResultByRank: raceResultByRank),
+            // ),
+            // ],
 
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      GestureDetector(
-                        onTap: () => appParamNotifier.setIsShowSideTabPanel(flag: !appParamState.isShowSideTabPanel),
-                        child: ClipPath(
-                          clipper: _TriangleClipper(),
-                          child: Container(
-                            width: 30,
-                            height: 30,
-                            decoration: BoxDecoration(
-                              color: (appParamState.isShowSideTabPanel)
-                                  ? Colors.green[500]!.withValues(alpha: 0.4)
-                                  : Colors.grey.withValues(alpha: 0.4),
-                            ),
-                          ),
-                        ),
-                      ),
+            // Row(
+            // crossAxisAlignment: CrossAxisAlignment.start,
+            // children: <Widget>[
+            // GestureDetector(
+            // onTap: () => appParamNotifier.setIsShowSideTabPanel(flag: !appParamState.isShowSideTabPanel),
+            // child: ClipPath(
+            // clipper: _TriangleClipper(),
+            // child: Container(
+            // width: 30,
+            // height: 30,
+            // decoration: BoxDecoration(
+            // color: (appParamState.isShowSideTabPanel)
+            // ? Colors.green[500]!.withValues(alpha: 0.4)
+            // : Colors.grey.withValues(alpha: 0.4),
+            // ),
+            // ),
+            // ),
+            // ),
 
-                      if (!appParamState.isShowSideTabPanel) ...<Widget>[
-                        GestureDetector(
-                          onTap: () => appParamNotifier.setIsShowSideTabPanel(flag: true),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 12),
-                            child: Text(
-                              median != null && raceResultByRank.isNotEmpty
-                                  ? '期待数値、レース結果の表示'
-                                  : median != null
-                                  ? '期待数値の表示'
-                                  : 'レース結果の表示',
-                              style: TextStyle(fontSize: 10, color: Colors.white.withValues(alpha: 0.6)),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ],
-              ),
-            ],
-
+            // if (!appParamState.isShowSideTabPanel) ...<Widget>[
+            // GestureDetector(
+            // onTap: () => appParamNotifier.setIsShowSideTabPanel(flag: true),
+            // child: Padding(
+            // padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 12),
+            // child: Text(
+            // median != null && raceResultByRank.isNotEmpty
+            // ? '期待数値、レース結果の表示'
+            // : median != null
+            // ? '期待数値の表示'
+            // : 'レース結果の表示',
+            // style: TextStyle(fontSize: 10, color: Colors.white.withValues(alpha: 0.6)),
+            // ),
+            // ),
+            // ),
+            // ],
+            // ],
+            // ),
+            // ],
+            // ),
+            // ],
             const SizedBox(height: 5),
 
             if (hasBothTimings) ...<Widget>[
