@@ -6,7 +6,8 @@ import '../../models/developer_news_model.dart';
 import '../parts/widget_display_overlay.dart';
 
 const int _kStartMinutes = 330; // 5:30
-const int _kEndMinutes = 1440; // 24:00
+// const int _kEndMinutes = 1440; // 24:00
+const int _kEndMinutes = 1480; // 24:40（翌0:00・0:10 の送信も表示するため。0:10 のブロックの高さぶん余白を取る）
 const double _kPxPerMinute = 2.0;
 const double _kGutterWidth = 38.0;
 
@@ -38,7 +39,8 @@ class _DeveloperNewsMinutesDisplayAlertState extends ConsumerState<DeveloperNews
     }
     for (int h = _kStartMinutes ~/ 60; h <= _kEndMinutes ~/ 60; h++) {
       for (int m = 0; m <= 59; m++) {
-        final String time = '$h:${m.toString().padLeft(2, '0')}';
+        // final String time = '$h:${m.toString().padLeft(2, '0')}';
+        final String time = '${h % 24}:${m.toString().padLeft(2, '0')}';
         if (appParamState.keepDeveloperNewsTimeMap[time] != null &&
             appParamState.keepDeveloperNewsTimeMap[time]!.isNotEmpty) {
           final int minutes = h * 60 + m;
@@ -233,10 +235,16 @@ class _DeveloperNewsMinutesDisplayAlertState extends ConsumerState<DeveloperNews
 
     for (int h = _kStartMinutes ~/ 60; h <= _kEndMinutes ~/ 60; h++) {
       for (int m = 0; m <= 59; m++) {
-        final String time = '$h:${m.toString().padLeft(2, '0')}';
+        // final String time = '$h:${m.toString().padLeft(2, '0')}';
+        final String time = '${h % 24}:${m.toString().padLeft(2, '0')}';
         if (appParamState.keepDeveloperNewsTimeMap[time] != null) {
           for (final DeveloperNewsModel item in appParamState.keepDeveloperNewsTimeMap[time]!) {
-            final DateTime itemDate = DateTime.parse(item.sentDate.split(' ')[0]);
+            // final DateTime itemDate = DateTime.parse(item.sentDate.split(' ')[0]);
+            // 0時台（5:30より前）の送信は前日の夜の処理なので、前日の列に表示する
+            DateTime itemDate = DateTime.parse(item.sentDate.split(' ')[0]);
+            if (h >= 24) {
+              itemDate = itemDate.subtract(const Duration(days: 1));
+            }
             final String dateKey =
                 '${itemDate.year}-${itemDate.month.toString().padLeft(2, '0')}-${itemDate.day.toString().padLeft(2, '0')}';
             dateMap.putIfAbsent(dateKey, () => <String, List<DeveloperNewsModel>>{});
@@ -265,7 +273,12 @@ class _DeveloperNewsMinutesDisplayAlertState extends ConsumerState<DeveloperNews
           continue;
         }
 
-        final int minutes = int.parse(parts[0]) * 60 + int.parse(parts[1]);
+        // final int minutes = int.parse(parts[0]) * 60 + int.parse(parts[1]);
+        int minutes = int.parse(parts[0]) * 60 + int.parse(parts[1]);
+        // 0時台（5:30より前）は 24:xx として扱い、23:50 の下に表示する
+        if (minutes < _kStartMinutes) {
+          minutes += 1440;
+        }
         if (minutes < _kStartMinutes || minutes > _kEndMinutes) {
           continue;
         }
@@ -447,7 +460,8 @@ class _TimeGutter extends StatelessWidget {
             child: Column(
               children: <Widget>[
                 Text(
-                  '${h.toString().padLeft(2, '0')}:00',
+                  // '${h.toString().padLeft(2, '0')}:00',
+                  '${(h % 24).toString().padLeft(2, '0')}:00',
                   style: const TextStyle(fontSize: 9, color: Colors.yellowAccent, fontWeight: FontWeight.bold),
                 ),
               ],
