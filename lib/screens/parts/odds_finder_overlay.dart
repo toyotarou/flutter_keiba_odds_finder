@@ -39,6 +39,8 @@ OverlayEntry createDraggableOverlayEntry({
   Color? draggingColor,
   double minY = 0,
   Color headerColor = Colors.transparent,
+  // 20261029: 中身のスクロール位置を呼び出し側で保持したいときに渡す（作り直してもスクロール位置を戻せるように）
+  ScrollController? scrollController,
 }) {
   final Size screenSize = MediaQuery.of(context).size;
 
@@ -154,6 +156,7 @@ OverlayEntry createDraggableOverlayEntry({
 
                 Expanded(
                   child: SingleChildScrollView(
+                    controller: scrollController,
                     padding: const EdgeInsets.symmetric(horizontal: 10),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -197,6 +200,7 @@ void addFirstOverlay({
   Color? draggingColor,
   double minY = 0,
   Color headerColor = Colors.transparent,
+  ScrollController? scrollController,
 }) {
   if (firstEntries.isNotEmpty) {
     for (final OverlayEntry e in firstEntries) {
@@ -223,6 +227,7 @@ void addFirstOverlay({
     draggingColor: draggingColor,
     minY: minY,
     headerColor: headerColor,
+    scrollController: scrollController,
   );
 
   setStateCallback(() => firstEntries.add(entry));

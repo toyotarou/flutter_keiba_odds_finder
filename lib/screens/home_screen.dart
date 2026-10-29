@@ -124,6 +124,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
   // 20261005: 払戻金ダイアログ表示中に隠した場合、閉じたあとに戻すかどうか（隠す前に表示されていたときだけ true）
   bool _restoreRaceOverlay = false;
 
+  // 20261029: レース一覧オーバーレイのスクロール位置。
+  // アラート表示中はオーバーレイを外して作り直すため、作り直したときにこの位置から表示する。
+  ScrollController? _raceOverlayScrollController;
+  double _raceOverlayScrollOffset = 0;
+
   // WebSocket
   final OddsWebSocketService _wsService = OddsWebSocketService();
   Timer? _wsDebounceTimer;
@@ -251,6 +256,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
       } on Object catch (_) {}
     }
     _firstEntries.clear();
+    _raceOverlayScrollController?.dispose();
     try {
       _raceTabController?.removeListener(_onRaceTabChanged);
       _raceTabController?.dispose();
@@ -405,6 +411,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
             return;
           }
           if (hasRaces) {
+            // 20261029: 会場が変わったときは従来どおり先頭から表示する
+            _raceOverlayScrollOffset = 0;
             _showRaceListOverlay();
           } else {
             for (final OverlayEntry e in _firstEntries) {
@@ -585,6 +593,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
       return;
     }
 
+    // 20261029: 前回のスクロール位置から表示するため、毎回その位置で ScrollController を作る。
+    // 古いコントローラーは外したオーバーレイから切り離された後（次フレーム後）に破棄する。
+    final ScrollController? oldScrollController = _raceOverlayScrollController;
+    final ScrollController scrollController = ScrollController(initialScrollOffset: _raceOverlayScrollOffset);
+    scrollController.addListener(() {
+      if (scrollController.hasClients) {
+        _raceOverlayScrollOffset = scrollController.offset;
+      }
+    });
+    _raceOverlayScrollController = scrollController;
+    if (oldScrollController != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => oldScrollController.dispose());
+    }
+
     addFirstOverlay(
       context: context,
       firstEntries: _firstEntries,
@@ -605,6 +627,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
       draggingColor: Colors.white.withValues(alpha: 0.2),
       minY: 50,
       headerColor: const Color(0xFF4CAF50).withValues(alpha: 0.2),
+      scrollController: scrollController,
     );
   }
 
