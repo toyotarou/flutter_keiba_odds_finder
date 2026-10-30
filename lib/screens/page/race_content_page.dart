@@ -1215,6 +1215,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                         ? Colors.yellowAccent.withValues(alpha: 0.5)
                         : Colors.white.withValues(alpha: 0.3),
                   ),
+                  borderRadius: const BorderRadius.all(Radius.circular(4)),
                 ),
 
                 child: Stack(
@@ -1240,6 +1241,8 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                         ],
 
                         ExpansionTile(
+                          showTrailingIcon: false,
+
                           key: ValueKey<String>('horse_${element.num}_${appParamState.allExpanded}'),
                           // 20261003: 画面外で破棄→再生成されても展開状態が戻らないよう、保持している状態から初期化する
                           // initiallyExpanded: appParamState.allExpanded,
@@ -1247,7 +1250,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                           onExpansionChanged: (bool expanded) {
                             setState(() => _horseExpandedMap[element.num] = expanded);
                           },
-                          tilePadding: const EdgeInsets.symmetric(horizontal: 8),
+                          tilePadding: EdgeInsets.zero,
                           childrenPadding: const EdgeInsets.symmetric(horizontal: 8),
                           expandedAlignment: Alignment.centerLeft,
                           expandedCrossAxisAlignment: CrossAxisAlignment.start,
@@ -1504,7 +1507,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
               child: FaIcon(FontAwesomeIcons.horse, size: 20, color: Colors.green[500]!.withValues(alpha: 0.6)),
             ),
 
-            const SizedBox(width: 10),
+            const SizedBox(width: 15),
           ],
         ),
       ],
@@ -1799,7 +1802,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                   padding: const EdgeInsets.only(bottom: 10),
                   child: Row(
                     children: <Widget>[
-                      const SizedBox(width: 20),
+                      const SizedBox(width: 15),
                       Container(
                         padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
                         decoration: BoxDecoration(
@@ -1840,7 +1843,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                 ),
                 if (_baganrikiIndexMap[element.num] != null) ...<Widget>[
                   Positioned(
-                    right: 0,
+                    right: 15,
                     top: 0,
                     child: Stack(
                       children: <Widget>[
@@ -2283,7 +2286,7 @@ class _OddsTimelineRow extends StatelessWidget {
     return Stack(
       children: <Widget>[
         Positioned(
-          top: 145,
+          top: 125,
           left: 0,
           child: Stack(
             children: <Widget>[
@@ -2442,7 +2445,7 @@ class _OddsTimelineRow extends StatelessWidget {
                       ],
                     ),
                     if (nextTimeline != null) ...<Widget>[
-                      const SizedBox(height: 50),
+                      const SizedBox(height: 30),
                       Container(
                         width: double.infinity,
                         height: 30,
@@ -2471,6 +2474,7 @@ class _OddsTimelineRow extends StatelessWidget {
                           ],
                         ),
                       ),
+                      const SizedBox(height: 10),
                     ],
                   ],
                 ),
