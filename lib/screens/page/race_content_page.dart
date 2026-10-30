@@ -34,7 +34,7 @@ import '../parts/odds_finder_dialog.dart';
 import '../parts/odds_up_down_icon.dart';
 
 // import '../parts/race_top_three_widget.dart';   // 20261028: 期待数値・レース結果エリア不要のため
-import '../parts/rank_badge_painter.dart';
+// import '../parts/rank_badge_painter.dart';
 
 // import '../parts/side_tab_panel.dart';   // 20261028: 期待数値・レース結果エリア不要のため
 import '../parts/widget_display_overlay.dart';
@@ -96,8 +96,10 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
   // final GlobalKey _harandoKey = GlobalKey();   // 20261028: 期待数値・レース結果エリア不要のため
   final GlobalKey _analysisButtonKey = GlobalKey();
   Map<int, String> _analysisMap = <int, String>{};
-  Set<int> _aiPickupNums = <int>{};
-  Map<int, String> _aiPickupScores = <int, String>{};
+
+  // 20261030: サーバが pickup_horse を返さなくなったため使わない（バッジは _aiForecastScoreMap で出す）
+  // Set<int> _aiPickupNums = <int>{};
+  // Map<int, String> _aiPickupScores = <int, String>{};
   String _aiPickupHorse = '';
   Map<int, double?> _baganrikiIndexMap = <int, double?>{};
 
@@ -302,8 +304,8 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
       if (mounted) {
         setState(() {
           _aiPickupHorse = pickupRaw;
-          _aiPickupNums = _parsePickupHorse(pickupRaw);
-          _aiPickupScores = _parsePickupScores(pickupRaw);
+          // _aiPickupNums = _parsePickupHorse(pickupRaw);
+          // _aiPickupScores = _parsePickupScores(pickupRaw);
           _totalForecastAiHorseList = horses;
           _totalForecastUpsetRaceValue = parseUpsetRaceValue(analysisText);
           _totalForecastRaceMetrics = parseRaceMetrics(analysisText);
@@ -422,6 +424,18 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     }
   }
 
+  /// 20261030: 「AI予想」アラートに並ぶ候補馬の 馬番 → おすすめ度。
+  ///
+  /// アラート（AiAnalysisDisplayAlert._displayHorses）と同じ基準で作る。
+  ///   統合結果を受け取っていればそれを正とする（0頭でもそれを使う）。
+  ///   受け取っていなければ、1st AI の選出馬に 2nd AI だけが選んだ馬を足したもの。
+  Map<int, int> get _aiForecastScoreMap {
+    final List<AiResponseRecommendHorseModel> list = _mergedReceived
+        ? _mergedHorseList
+        : mergeAiHorseLists(_totalForecastAiHorseList, _secondAiHorseList);
+    return <int, int>{for (final AiResponseRecommendHorseModel h in list) h.num: h.score};
+  }
+
   /// 20261017: 「AI予想」を開く前に、1st AI・2nd AI（統合結果）の取得完了を待つ。
   ///
   /// 【なぜ必要か】
@@ -477,37 +491,38 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     }
   }
 
-  ///
-  static Set<int> _parsePickupHorse(String pickupRaw) {
-    final Set<int> nums = <int>{};
-    for (final String part in pickupRaw.split('/')) {
-      final String trimmed = part.trim();
-      if (trimmed.isEmpty) {
-        continue;
-      }
-      final int? num = int.tryParse(trimmed.split('|').first.trim());
-      if (num != null) {
-        nums.add(num);
-      }
-    }
-    return nums;
-  }
-
-  ///
-  static Map<int, String> _parsePickupScores(String pickupRaw) {
-    final Map<int, String> scores = <int, String>{};
-    for (final String part in pickupRaw.split('/')) {
-      final List<String> fields = part.trim().split('|');
-      if (fields.length < 3) {
-        continue;
-      }
-      final int? num = int.tryParse(fields[0].trim());
-      if (num != null) {
-        scores[num] = fields[2].trim();
-      }
-    }
-    return scores;
-  }
+  // 20261030: サーバが pickup_horse を返さなくなったため使わない
+  // ///
+  // static Set<int> _parsePickupHorse(String pickupRaw) {
+  //   final Set<int> nums = <int>{};
+  //   for (final String part in pickupRaw.split('/')) {
+  //     final String trimmed = part.trim();
+  //     if (trimmed.isEmpty) {
+  //       continue;
+  //     }
+  //     final int? num = int.tryParse(trimmed.split('|').first.trim());
+  //     if (num != null) {
+  //       nums.add(num);
+  //     }
+  //   }
+  //   return nums;
+  // }
+  //
+  // ///
+  // static Map<int, String> _parsePickupScores(String pickupRaw) {
+  //   final Map<int, String> scores = <int, String>{};
+  //   for (final String part in pickupRaw.split('/')) {
+  //     final List<String> fields = part.trim().split('|');
+  //     if (fields.length < 3) {
+  //       continue;
+  //     }
+  //     final int? num = int.tryParse(fields[0].trim());
+  //     if (num != null) {
+  //       scores[num] = fields[2].trim();
+  //     }
+  //   }
+  //   return scores;
+  // }
 
   ///
   Future<bool> _fetchAnalysis() async {
@@ -1295,27 +1310,48 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                     ),
 
                     if (raceRank != null && raceRank <= 3) ...<Widget>[
+                      // Positioned(
+                      //   top: 2,
+                      //   right: 2,
+                      //   child: CustomPaint(
+                      //     painter: RankBadgePainter(color: raceRankColor(raceRank, alpha: 0.3)),
+                      //     child: SizedBox(
+                      //       width: context.screenSize.width * 0.15,
+                      //       height: context.screenSize.height * 0.05,
+                      //       child: Align(
+                      //         alignment: Alignment.bottomLeft,
+                      //         child: Padding(
+                      //           padding: const EdgeInsets.only(bottom: 20, left: 25),
+                      //           child: Text(
+                      //             '$raceRank着',
+                      //             style: TextStyle(
+                      //               fontSize: 12,
+                      //               color: Colors.white.withValues(alpha: 0.8),
+                      //               fontWeight: FontWeight.bold,
+                      //             ),
+                      //           ),
+                      //         ),
+                      //       ),
+                      //     ),
+                      //   ),
+                      // ),
+                      // 20261030: 着順ラベルを ai_analysis_display_alert.dart の着順ラベル（角丸の四角）と同じ形にする
                       Positioned(
                         top: 2,
                         right: 2,
-                        child: CustomPaint(
-                          painter: RankBadgePainter(color: raceRankColor(raceRank, alpha: 0.3)),
-                          child: SizedBox(
-                            width: context.screenSize.width * 0.15,
-                            height: context.screenSize.height * 0.05,
-                            child: Align(
-                              alignment: Alignment.bottomLeft,
-                              child: Padding(
-                                padding: const EdgeInsets.only(bottom: 20, left: 25),
-                                child: Text(
-                                  '$raceRank着',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.white.withValues(alpha: 0.8),
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
+                        child: Container(
+                          width: 32,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: raceRankColor(raceRank, alpha: 0.3),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            '$raceRank着',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.white.withValues(alpha: 0.8),
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
                         ),
@@ -1454,41 +1490,6 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                 ],
               ),
             ],
-          ],
-        ),
-
-        Row(
-          children: <Widget>[
-            if (horse != null && _aiPickupNums.contains(horse.num)) ...<Widget>[
-              Stack(
-                children: <Widget>[
-                  Container(
-                    margin: const EdgeInsets.only(top: 5, right: 15, left: 5, bottom: 5),
-                    padding: const EdgeInsets.symmetric(vertical: 3, horizontal: 10),
-                    decoration: BoxDecoration(
-                      border: Border.all(color: const Color(0xFFFFD700)),
-                      borderRadius: BorderRadius.circular(3),
-                    ),
-
-                    child: const Text(
-                      'AI',
-                      style: TextStyle(fontSize: 9, color: Color(0xFFFFD700), fontWeight: FontWeight.bold),
-                    ),
-                  ),
-
-                  if (_aiPickupScores[horse.num] != null) ...<Widget>[
-                    Positioned(
-                      right: 0,
-                      bottom: 0,
-                      child: Text(
-                        '${_aiPickupScores[horse.num]} %',
-                        style: const TextStyle(fontSize: 12, color: Colors.white, fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ],
 
             const SizedBox(width: 20),
 
@@ -1507,9 +1508,47 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
               child: FaIcon(FontAwesomeIcons.horse, size: 20, color: Colors.green[500]!.withValues(alpha: 0.6)),
             ),
 
-            const SizedBox(width: 15),
+            const SizedBox(width: 20),
+
+            // 20261030: サーバが pickup_horse を返さなくなった（PICKUP行の抽出をやめた）ため、
+            //   「AI予想」アラートと同じ候補馬（_aiForecastScoreMap）でバッジを出す
+            // if (horse != null && _aiPickupNums.contains(horse.num)) ...<Widget>[
+            if (horse != null && _aiForecastScoreMap.containsKey(horse.num)) ...<Widget>[
+              Stack(
+                children: <Widget>[
+                  Container(
+                    margin: const EdgeInsets.only(top: 5, right: 15, left: 5, bottom: 5),
+                    padding: const EdgeInsets.symmetric(vertical: 3, horizontal: 10),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: const Color(0xFFFFD700)),
+                      borderRadius: BorderRadius.circular(3),
+                    ),
+
+                    child: const Text(
+                      'AI',
+                      style: TextStyle(fontSize: 9, color: Color(0xFFFFD700), fontWeight: FontWeight.bold),
+                    ),
+                  ),
+
+                  // if (_aiPickupScores[horse.num] != null) ...<Widget>[
+                  if (_aiForecastScoreMap[horse.num] != null) ...<Widget>[
+                    Positioned(
+                      right: 0,
+                      bottom: 0,
+                      child: Text(
+                        // '${_aiPickupScores[horse.num]} %',
+                        '${_aiForecastScoreMap[horse.num]} %',
+                        style: const TextStyle(fontSize: 12, color: Colors.white, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ],
           ],
         ),
+
+        const SizedBox.shrink(),
       ],
     );
   }
