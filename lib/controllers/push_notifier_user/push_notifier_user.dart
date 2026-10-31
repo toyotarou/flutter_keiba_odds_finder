@@ -81,4 +81,44 @@ class PushNotifierUser extends _$PushNotifierUser {
       utility.showError('予期せぬエラーが発生しました');
     }
   }
+
+  //============================================== api
+
+  /// 20261101: ホーム画面の「通知」スイッチ用。ログインユーザーの push 受信設定を取得する
+  /// 戻り値: isReceive（true=受信 / false=非受信）, count（登録端末数。0 なら通知が許可されていない）
+  /// 取得に失敗したときは null
+  Future<({bool isReceive, int count})?> fetchMyPushReceive({required String userId}) async {
+    final HttpClient client = ref.read(httpClientProvider);
+
+    try {
+      // ignore: always_specify_types
+      final value = await client.get(path: APIPath.getMyPushReceive, queryParameters: <String, dynamic>{'user_id': userId});
+
+      // ignore: avoid_dynamic_calls
+      final int isReceive = (value['is_receive'] ?? 1).toString().toInt();
+      // ignore: avoid_dynamic_calls
+      final int count = (value['count'] ?? 0).toString().toInt();
+
+      return (isReceive: isReceive == 1, count: count);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  ///
+  /// 20261101: ホーム画面の「通知」スイッチ用。ログインユーザーの全端末の受信/非受信を切り替える
+  Future<bool> changeMyPushReceive({required String userId, required bool isReceive}) async {
+    final HttpClient client = ref.read(httpClientProvider);
+
+    try {
+      await client.post(
+        path: APIPath.changeMyPushReceive,
+        body: <String, dynamic>{'user_id': userId, 'is_receive': isReceive ? 1 : 0},
+      );
+      return true;
+    } catch (e) {
+      utility.showError('予期せぬエラーが発生しました');
+      return false;
+    }
+  }
 }

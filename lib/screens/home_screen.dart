@@ -138,6 +138,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
 
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
+  // 20261101: ホーム画面左上の「通知」スイッチ（push 受信/非受信）
+  // null = 取得前／取得失敗、count = このユーザーの登録端末数（0 なら通知が許可されていない）
+  bool? _pushIsReceive;
+  int _pushSubscriptionCount = 0;
+  bool _pushChanging = false;
+
   String get _mapKey => '${appParamState.selectedScheduleDate}_${appParamState.selectedScheduleKaisuuBashoDay}';
 
   ///
@@ -171,6 +177,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
     // raceIntrospectionNotifier.getAllRaceIntrospectionData();
 
     developerNewsNotifier.getAllDeveloperNewsData();
+
+    // 20261101: 「通知」スイッチの初期値を取得する
+    unawaited(_loadPushReceive(retry: 1));
 
     // 20260924: AI分析の全件（1st / 2nd）は管理者用「AI取得ステータス」でしか使わないため起動時に取得しない。
     // 同ダイアログを開いたときに取得する。
@@ -484,6 +493,102 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
   }
 
   ///
+  /// 20261101: 「通知」スイッチの状態をサーバーから取得する
+  /// 起動直後は push の登録（main.dart の FcmService.registerToken）が終わっていないことがあるため、
+  /// 登録端末数が 0 のときは少し待ってもう一度だけ取り直す。
+  Future<void> _loadPushReceive({int retry = 0}) async {
+    if (widget.loggedInUserId.isEmpty) {
+      return;
+    }
+
+    final ({bool isReceive, int count})? result = await pushNotifierUserNotifier.fetchMyPushReceive(
+      userId: widget.loggedInUserId,
+    );
+
+    if (!mounted || result == null) {
+      return;
+    }
+
+    setState(() {
+      _pushIsReceive = result.isReceive;
+      _pushSubscriptionCount = result.count;
+    });
+
+    if (result.count == 0 && retry > 0) {
+      await Future<void>.delayed(const Duration(seconds: 5));
+      if (mounted) {
+        await _loadPushReceive(retry: retry - 1);
+      }
+    }
+  }
+
+  ///
+  /// 20261101: 「通知」スイッチを切り替えたとき
+  Future<void> _onChangePushReceive(bool value) async {
+    if (_pushChanging) {
+      return;
+    }
+
+    final bool? before = _pushIsReceive;
+
+    setState(() {
+      _pushChanging = true;
+      _pushIsReceive = value;
+    });
+
+    final bool ok = await pushNotifierUserNotifier.changeMyPushReceive(userId: widget.loggedInUserId, isReceive: value);
+
+    if (!mounted) {
+      return;
+    }
+
+    if (!ok) {
+      setState(() => _pushIsReceive = before);
+    }
+
+    setState(() => _pushChanging = false);
+
+    // 実際の値で表示を合わせる
+    await _loadPushReceive();
+  }
+
+  ///
+  /// 20261101: ホーム画面左上の「通知」スイッチ
+  Widget _buildPushReceiveSwitch() {
+    if (widget.loggedInUserId.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    // 登録端末が無い（通知が許可されていない）ときは押せないようにする
+    final bool enabled = _pushIsReceive != null && _pushSubscriptionCount > 0 && !_pushChanging;
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        // 20261101: スイッチを左、文言を右に入れ替え
+        SizedBox(
+          height: 24,
+          child: FittedBox(
+            fit: BoxFit.contain,
+            child: Switch(
+              value: _pushIsReceive ?? false,
+              onChanged: enabled ? _onChangePushReceive : null,
+              activeTrackColor: Colors.greenAccent.withValues(alpha: 0.6),
+              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+          ),
+        ),
+        const SizedBox(width: 5),
+        Text(
+          // (_pushIsReceive != null && _pushSubscriptionCount == 0) ? '通知（未許可）' : '通知',
+          (_pushIsReceive != null && _pushSubscriptionCount == 0) ? 'push通知を受信する（未許可）' : 'push通知を受信する',
+          style: const TextStyle(fontSize: 12, color: Colors.white),
+        ),
+      ],
+    );
+  }
+
+  ///
   Widget _buildDateRow() {
     return Row(
       children: widget.scheduleDateBashoMap.entries.map((MapEntry<String, List<ScheduleModel>> e) {
@@ -729,7 +834,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: <Widget>[
-                          const SizedBox.shrink(),
+                          // const SizedBox.shrink(),
+                          // 20261101: push 通知の受信/非受信スイッチ
+                          _buildPushReceiveSwitch(),
 
                           Row(
                             children: <Widget>[
