@@ -169,7 +169,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
     popularityRankOddsMedianNotifier.getAllPopularityRankOddsMedianData();
     horseBestWeightNotifier.getAllHorseBestWeightData();
 
-    horseScoreNotifier.getAllHorseScoreData();
+    // 20261102: 馬スコアはどの画面でも使っていない（keepHorseScoreMap に入れるだけで読む所が無い）ため、起動時に取得しない。
+    // horseScoreNotifier.getAllHorseScoreData();
     jockeyScoreNotifier.getAllJockeyScoreData();
 
     // 20260924: 振り返り（全期間の長文）は起動時に取得しない。
