@@ -1185,6 +1185,10 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
                     raceNumber: r.key,
                     numToRankMap: numToRankMap,
                     aiHorseNums: displayHorses.map((AiResponseRecommendHorseModel h) => h.num).toList(),
+                    // 20261102: 払戻金画面で馬番の下に人気順を出す
+                    aiHorseNumToPopularity: <int, String>{
+                      for (final AiResponseRecommendHorseModel h in displayHorses) h.num: h.popularity,
+                    },
                     horseModelMap: horseModelMap,
                     numToWaku: numToWaku,
                     isSecondAiLoading: _fetchedSecondAiDates.contains(date) && !_secondAiTextMap.containsKey(lookupKey),
@@ -1234,6 +1238,7 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
     required Map<int, int> numToWaku,
     required bool isSecondAiLoading,
     required List<int> aiHorseNums,
+    required Map<int, String> aiHorseNumToPopularity, // 20261102
   }) {
     // 20261005: 3頭合致のときだけピンク、1〜2頭は白、0頭は従来どおり white60
     // final Color textColor = matchedCount >= 3
@@ -1302,6 +1307,7 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
                     hitHorseNums: hitHorseNums,
                     numToRankMap: numToRankMap,
                     aiHorseNums: aiHorseNums,
+                    aiHorseNumToPopularity: aiHorseNumToPopularity, // 20261102
                     // 20261008: 一覧用に取得済みの払戻データを渡す（開くたびのAPI再取得をやめる）
                     payout: payout,
                     // 20261026: 馬データが無い古いレースでも枠連を判定できるよう、枠番を渡す

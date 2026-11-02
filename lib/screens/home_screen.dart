@@ -570,7 +570,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
         SizedBox(
           height: 24,
           child: FittedBox(
-            fit: BoxFit.contain,
             child: Switch(
               value: _pushIsReceive ?? false,
               onChanged: enabled ? _onChangePushReceive : null,

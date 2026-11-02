@@ -340,6 +340,10 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
                                 numToRankMap: widget.numToRankMap,
                                 aiHorseNums: displayHorses.map((AiResponseRecommendHorseModel h) => h.num).toList(),
                                 numToWaku: widget.numToWaku, // 20261026
+                                // 20261102: 馬番の下に人気順を出す
+                                aiHorseNumToPopularity: <int, String>{
+                                  for (final AiResponseRecommendHorseModel h in displayHorses) h.num: h.popularity,
+                                },
                               ),
                               paddingLeft: context.screenSize.width * 0.1,
                               paddingTop: context.screenSize.height * 0.05,

@@ -23,6 +23,7 @@ class PayoutDataDisplayAlert extends ConsumerStatefulWidget {
     this.aiHorseNums = const <int>[],
     this.payout,
     this.numToWaku = const <int, int>{},
+    this.aiHorseNumToPopularity = const <int, String>{},
   });
 
   final int raceNumber;
@@ -51,6 +52,10 @@ class PayoutDataDisplayAlert extends ConsumerStatefulWidget {
   /// 20261026: 馬番 → 枠番（呼び出し元が summary から作ったもの）。
   /// 馬データ（keepHorseMap）が無い古いレースで、枠連の「獲得」判定に使う。
   final Map<int, int> numToWaku;
+
+  /// 20261102: AIが予想した馬の 馬番 → 人気順（AI予想の popularity）。
+  /// 馬番の四角の下に「人気順:X」を出すのに使う。無い馬番は出さない。
+  final Map<int, String> aiHorseNumToPopularity;
 
   @override
   ConsumerState<PayoutDataDisplayAlert> createState() => _PayoutDataDisplayAlertState();
@@ -374,23 +379,41 @@ class _PayoutDataDisplayAlertState extends ConsumerState<PayoutDataDisplayAlert>
           spacing: 4,
           runSpacing: 4,
           // 馬番の昇順に並べる（元のリストは変更しない）
-          children: (List<int>.of(widget.aiHorseNums)..sort())
-              .map(
-                (int n) => Container(
-                  // 1桁・2桁で幅が変わらないよう固定幅にする
-                  width: 32,
-                  padding: const EdgeInsets.symmetric(vertical: 2),
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    // 的中（3着以内に入った馬）は背景をピンクにする（「獲得」ラベルと同じ色）
-                    color: widget.hitHorseNums.contains(n) ? const Color(0xFFFBB6CE).withValues(alpha: 0.4) : null,
-                    border: Border.all(color: Colors.white),
-                    borderRadius: BorderRadius.circular(4),
+          children: (List<int>.of(widget.aiHorseNums)..sort()).map((int n) {
+            // 20261102: 四角の下に「人気順:X」を出す
+            final String popularity = widget.aiHorseNumToPopularity[n] ?? '';
+
+            return SizedBox(
+              // 「人気順:XX」が収まる幅（四角は今まで通り幅32で中央に置く）
+              width: 32,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  Container(
+                    // 1桁・2桁で幅が変わらないよう固定幅にする
+                    width: 32,
+                    padding: const EdgeInsets.symmetric(vertical: 2),
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      // 的中（3着以内に入った馬）は背景をピンクにする（「獲得」ラベルと同じ色）
+                      color: widget.hitHorseNums.contains(n) ? const Color(0xFFFBB6CE).withValues(alpha: 0.4) : null,
+                      border: Border.all(color: Colors.white),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text('$n', style: const TextStyle(fontSize: 12)),
                   ),
-                  child: Text('$n', style: const TextStyle(fontSize: 12)),
-                ),
-              )
-              .toList(),
+
+                  if (popularity.isNotEmpty) ...<Widget>[
+                    const SizedBox(height: 2),
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text('人気: $popularity', style: const TextStyle(fontSize: 8)),
+                    ),
+                  ],
+                ],
+              ),
+            );
+          }).toList(),
         ),
         // 0頭合致のときは出さない
         if (matchedCount > 0) ...<Widget>[
