@@ -719,6 +719,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     required String raceName,
     required String course,
     required int dist,
+    required String grade,
   }) {
     return Stack(
       children: <Widget>[
@@ -743,7 +744,19 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
             children: <Widget>[
               Row(
                 children: <Widget>[
-                  SizedBox(width: context.screenSize.width * 0.6),
+                  SizedBox(
+                    width: context.screenSize.width * 0.6,
+                    child: Container(
+                      margin: const EdgeInsets.only(right: 10),
+                      alignment: Alignment.topRight,
+                      child: grade.isNotEmpty
+                          ? Opacity(
+                              opacity: 0.5,
+                              child: Image.asset('assets/race_grade_icon/race_grade_icon_$grade.png', width: 30),
+                            )
+                          : const SizedBox.shrink(),
+                    ),
+                  ),
 
                   Expanded(
                     child: Column(
@@ -2023,7 +2036,13 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            _buildRaceInfoBar(startTime: startTime, raceName: raceName, course: course, dist: dist),
+            _buildRaceInfoBar(
+              startTime: startTime,
+              raceName: raceName,
+              course: course,
+              dist: dist,
+              grade: currentRaceModel?.grade ?? '',
+            ),
 
             _buildControlButtons(raceIdx: raceIdx),
 
