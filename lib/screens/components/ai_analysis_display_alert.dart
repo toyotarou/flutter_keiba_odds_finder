@@ -40,7 +40,7 @@ class AiAnalysisDisplayAlert extends ConsumerStatefulWidget {
   final List<AiResponseRecommendHorseModel> secondAiHorseList;
   final List<AiResponseRecommendHorseModel>? mergedHorseList;
   final int? upsetRaceValue;
-  final Map<String, int>? raceMetrics;
+  final Map<String, int?>? raceMetrics;
 
   /// 20261025: サーバーの統合結果の状態（'undetermined' ＝ 採用できるAI回答が無かった）。
   /// 「基準を満たす候補がいない」と「AIの回答を受け取れなかった」を画面で区別するために使う。
@@ -438,8 +438,9 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
   // }
 
   ///
-  Widget _buildRaceMetrics(Map<String, int> metrics) {
-    String stars(int v) => '★' * v + '☆' * (5 - v);
+  // 20261110 項目ごとに null＝「未算出」を表示する（よっしー11/9 2A）
+  Widget _buildRaceMetrics(Map<String, int?> metrics) {
+    String stars(int? v) => v == null ? '' : '★' * v + '☆' * (5 - v);
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
       decoration: BoxDecoration(
@@ -450,22 +451,23 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: <Widget>[
-          _buildMetricItem('波乱度', metrics['波乱度']!, stars(metrics['波乱度']!)),
-          _buildMetricItem('下位進入度', metrics['下位進入度']!, stars(metrics['下位進入度']!)),
-          _buildMetricItem('大穴進入度', metrics['大穴進入度']!, stars(metrics['大穴進入度']!)),
+          _buildMetricItem('波乱度', metrics['波乱度'], stars(metrics['波乱度'])),
+          _buildMetricItem('下位進入度', metrics['下位進入度'], stars(metrics['下位進入度'])),
+          _buildMetricItem('大穴進入度', metrics['大穴進入度'], stars(metrics['大穴進入度'])),
         ],
       ),
     );
   }
 
   ///
-  Widget _buildMetricItem(String label, int value, String stars) {
+  Widget _buildMetricItem(String label, int? value, String stars) {
     return Column(
       children: <Widget>[
         Text(label, style: const TextStyle(fontSize: 9, color: Colors.white70)),
         const SizedBox(height: 2),
         Text(stars, style: const TextStyle(fontSize: 10, color: Colors.yellowAccent, letterSpacing: 1)),
-        Text(value.toString(), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+        // 20261110 数字が無い項目は「未算出」
+        Text(value == null ? '未算出' : value.toString(), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
       ],
     );
   }

@@ -107,7 +107,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
   bool _hasPayout = false;
   List<AiResponseRecommendHorseModel> _totalForecastAiHorseList = <AiResponseRecommendHorseModel>[];
   int? _totalForecastUpsetRaceValue;
-  Map<String, int>? _totalForecastRaceMetrics;
+  Map<String, int?>? _totalForecastRaceMetrics;
   List<AiResponseRecommendHorseModel> _secondAiHorseList = <AiResponseRecommendHorseModel>[];
   List<AiResponseRecommendHorseModel> _mergedHorseList = <AiResponseRecommendHorseModel>[];
 
@@ -401,7 +401,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
       // 厳選穴レースは統合後にサーバーが再判定した値が正。
       // 1st AI テキストの行をパースした値とは食い違うことがある。
       final int? mergedUpsetRace = (data['upset_race'] as num?)?.toInt();
-      final Map<String, int>? mergedMetrics = parseRaceMetricsJson(data['race_metrics']);
+      final Map<String, int?>? mergedMetrics = parseRaceMetricsJson(data['race_metrics']);
       if (mounted) {
         setState(() {
           _secondAiHorseList = horses;

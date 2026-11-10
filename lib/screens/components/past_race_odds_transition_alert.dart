@@ -72,7 +72,7 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
   final Map<String, int> _mergedUpsetRaceMap = <String, int>{};
 
   /// サーバーが確定させたレース指標（波乱度・下位進入度・大穴進入度）。
-  final Map<String, Map<String, int>> _mergedRaceMetricsMap = <String, Map<String, int>>{};
+  final Map<String, Map<String, int?>> _mergedRaceMetricsMap = <String, Map<String, int?>>{};
 
   /// 20261025: 統合結果の状態（'undetermined' ＝ 採用できるAI回答が無かった）
   final Map<String, String?> _mergeStatusMap = <String, String?>{};
@@ -349,7 +349,7 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
           if (upsetRace != null) {
             _mergedUpsetRaceMap[r.key] = upsetRace;
           }
-          final Map<String, int>? metrics = parseRaceMetricsJson(second['race_metrics']);
+          final Map<String, int?>? metrics = parseRaceMetricsJson(second['race_metrics']);
           if (metrics != null) {
             _mergedRaceMetricsMap[r.key] = metrics;
           }

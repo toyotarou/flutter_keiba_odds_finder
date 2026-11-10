@@ -374,7 +374,11 @@ int? parseUpsetRaceValue(String text) {
 /// analysis_text から波乱度・下位進入度・大穴進入度を取得する。
 /// 「レース指標|波乱度: X|下位進入度: X|大穴進入度: X」の行をパースして返す。
 /// 該当行がない・パース不能な場合は null を返す。
-Map<String, int>? parseRaceMetrics(String text) {
+// 20261110 よっしー11/9 2A「算出できない項目は数字を埋めず『未算出』」に合わせて、項目ごとに null を許すよう変更。
+//   【旧】3つのうち1つでも数字でなければ、3つとも出さなかった（下に旧版をコメントで残す）。
+//   【いま】レース指標の行（または race_metrics）があれば Map を返し、数字でない項目は null（画面で「未算出」）。
+//          行・race_metrics そのものが無いときだけ null（何も出さない）。
+Map<String, int?>? parseRaceMetrics(String text) {
   for (final String line in text.split('\n')) {
     final String trimmed = line.trim();
     if (trimmed.startsWith('レース指標|')) {
@@ -382,52 +386,102 @@ Map<String, int>? parseRaceMetrics(String text) {
       int? extract(String key) {
         for (final String p in parts) {
           if (p.startsWith(key)) {
-            return int.tryParse(p.substring(key.length).trim());
+            final int? v = int.tryParse(p.substring(key.length).trim());
+            return (v != null && v >= 1 && v <= 5) ? v : null;
           }
         }
         return null;
       }
 
-      final int? upset = extract('波乱度: ');
-      final int? lower = extract('下位進入度: ');
-      final int? longShot = extract('大穴進入度: ');
-      if (upset != null && lower != null && longShot != null) {
-        return <String, int>{'波乱度': upset, '下位進入度': lower, '大穴進入度': longShot};
-      }
+      return <String, int?>{
+        '波乱度': extract('波乱度: '),
+        '下位進入度': extract('下位進入度: '),
+        '大穴進入度': extract('大穴進入度: '),
+      };
     }
   }
   return null;
 }
 
-/// API 応答の race_metrics（{"波乱度":x,"下位進入度":y,"大穴進入度":z}）を Map<String,int> に変換する。
+/// API 応答の race_metrics（{"波乱度":x,"下位進入度":y,"大穴進入度":z}）を Map<String,int?> に変換する。
 ///
 /// 1st AI テキストを再パースする parseRaceMetrics と違い、
 /// サーバーが確定させた値をそのまま受け取るために使う。
-/// 3項目すべてが数値で揃っていない場合は null を返す。
-Map<String, int>? parseRaceMetricsJson(dynamic raw) {
+/// 20261110：数字でない項目は null（画面で「未算出」）。race_metrics が Map でないときだけ null を返す。
+Map<String, int?>? parseRaceMetricsJson(dynamic raw) {
   if (raw is! Map) {
     return null;
   }
 
   int? pick(String key) {
     final dynamic v = raw[key];
+    int? n;
     if (v is num) {
-      return v.toInt();
+      n = v.toInt();
+    } else if (v is String) {
+      n = int.tryParse(v);
     }
-    if (v is String) {
-      return int.tryParse(v);
-    }
-    return null;
+    return (n != null && n >= 1 && n <= 5) ? n : null;
   }
 
-  final int? upset = pick('波乱度');
-  final int? lower = pick('下位進入度');
-  final int? longShot = pick('大穴進入度');
-  if (upset == null || lower == null || longShot == null) {
-    return null;
-  }
-  return <String, int>{'波乱度': upset, '下位進入度': lower, '大穴進入度': longShot};
+  return <String, int?>{'波乱度': pick('波乱度'), '下位進入度': pick('下位進入度'), '大穴進入度': pick('大穴進入度')};
 }
+
+// 【旧】20261110 までの版
+// Map<String, int>? parseRaceMetrics(String text) {
+//   for (final String line in text.split('\n')) {
+//     final String trimmed = line.trim();
+//     if (trimmed.startsWith('レース指標|')) {
+//       final List<String> parts = trimmed.split('|');
+//       int? extract(String key) {
+//         for (final String p in parts) {
+//           if (p.startsWith(key)) {
+//             return int.tryParse(p.substring(key.length).trim());
+//           }
+//         }
+//         return null;
+//       }
+//
+//       final int? upset = extract('波乱度: ');
+//       final int? lower = extract('下位進入度: ');
+//       final int? longShot = extract('大穴進入度: ');
+//       if (upset != null && lower != null && longShot != null) {
+//         return <String, int>{'波乱度': upset, '下位進入度': lower, '大穴進入度': longShot};
+//       }
+//     }
+//   }
+//   return null;
+// }
+//
+// /// API 応答の race_metrics（{"波乱度":x,"下位進入度":y,"大穴進入度":z}）を Map<String,int> に変換する。
+// ///
+// /// 1st AI テキストを再パースする parseRaceMetrics と違い、
+// /// サーバーが確定させた値をそのまま受け取るために使う。
+// /// 3項目すべてが数値で揃っていない場合は null を返す。
+// Map<String, int>? parseRaceMetricsJson(dynamic raw) {
+//   if (raw is! Map) {
+//     return null;
+//   }
+//
+//   int? pick(String key) {
+//     final dynamic v = raw[key];
+//     if (v is num) {
+//       return v.toInt();
+//     }
+//     if (v is String) {
+//       return int.tryParse(v);
+//     }
+//     return null;
+//   }
+//
+//   final int? upset = pick('波乱度');
+//   final int? lower = pick('下位進入度');
+//   final int? longShot = pick('大穴進入度');
+//   if (upset == null || lower == null || longShot == null) {
+//     return null;
+//   }
+//   return <String, int>{'波乱度': upset, '下位進入度': lower, '大穴進入度': longShot};
+// }
 
 /// \n\n 区切りでも \n 区切りでも動作するよう、馬番：の出現位置でブロックを分割する。
 List<AiResponseRecommendHorseModel> parseAnalysisText(String text) {
