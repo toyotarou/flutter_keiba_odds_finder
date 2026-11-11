@@ -29,6 +29,7 @@ class AiAnalysisDisplayAlert extends ConsumerStatefulWidget {
     this.upsetRaceValue,
     this.raceMetrics,
     this.mergeStatus,
+    this.mergeStatusReason,
     this.numToWaku = const <int, int>{},
   });
 
@@ -45,6 +46,10 @@ class AiAnalysisDisplayAlert extends ConsumerStatefulWidget {
   /// 20261025: サーバーの統合結果の状態（'undetermined' ＝ 採用できるAI回答が無かった）。
   /// 「基準を満たす候補がいない」と「AIの回答を受け取れなかった」を画面で区別するために使う。
   final String? mergeStatus;
+
+  /// 20261111: 予想を出さなかった理由の文言（サーバーの status_reason）。
+  /// 文言はサーバーが決める（アプリでは決めない）。空のときだけ、従来の固定文言を出す。
+  final String? mergeStatusReason;
 
   /// 20261026: 馬番 → 枠番。過去レースの画面から渡す（馬データが無い古いレースの枠連判定用）。払戻金画面へそのまま渡す。
   final Map<int, int> numToWaku;
@@ -195,6 +200,11 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
       if (pattern.hasMatch(resultText)) {
         adjustedResultText = resultText.replaceFirst(pattern, '${displayHorses.length}頭中$matchedCount頭が合致');
       }
+    }
+    // 20261111: 予想を出さなかったレース（undetermined・0頭）は、振り返りの「X頭中Y頭が合致」を出さない
+    //   本文の「予想は出せませんでした」と食い違うため（11/8 東京6Rで「6頭中2頭が合致」と並んで出ていた）
+    if (displayHorses.isEmpty && widget.mergedHorseList != null && widget.mergeStatus == 'undetermined') {
+      adjustedResultText = null;
     }
 
     // // 結果ボタンの主数字: 画面に並んでいる馬の合致数（numToRankMap ベース）
@@ -785,8 +795,17 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
     // 統合の結果、基準を満たす馬が1頭もいなかったレース（無理に候補を埋めない仕様）
     // 20261025: 採用できるAI回答が無かったレース（未確定）は、「候補なし」とは別の文言にする
     if (displayHorses.isEmpty && widget.mergedHorseList != null && widget.mergeStatus == 'undetermined') {
-      return const Center(
-        child: Text('AIの回答を受け取れなかったため、このレースの予想は出せませんでした', style: TextStyle(fontSize: 12, color: Colors.white70)),
+      // return const Center(
+      //   child: Text('AIの回答を受け取れなかったため、このレースの予想は出せませんでした', style: TextStyle(fontSize: 12, color: Colors.white70)),
+      // );   // 旧（サーバーの理由に関係なく固定の文言だった）
+      // 20261111: サーバーが送る理由の文言（status_reason）をそのまま出す。空のときだけ従来の文言
+      final String reason = (widget.mergeStatusReason ?? '').trim();
+      return Center(
+        child: Text(
+          reason.isNotEmpty ? reason : 'AIの回答を受け取れなかったため、このレースの予想は出せませんでした',
+          textAlign: TextAlign.center,
+          style: const TextStyle(fontSize: 12, color: Colors.white70),
+        ),
       );
     }
     if (displayHorses.isEmpty && widget.mergedHorseList != null) {

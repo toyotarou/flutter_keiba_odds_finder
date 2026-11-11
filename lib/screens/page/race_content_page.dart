@@ -119,6 +119,12 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
   /// 20261025: 統合結果の状態（'undetermined' ＝ 採用できるAI回答が無かった）
   String? _mergeStatus;
 
+  /// 20261111: 予想を出さなかった理由の文言（サーバーの status_reason）。AI予想の画面へそのまま渡す
+  String? _mergeStatusReason;
+
+  /// 20261111: サーバーが「予想の準備中」（not_ready）と返したか。「AI予想」ボタンの案内の文言を分けるために使う
+  bool _aiNotReady = false;
+
   /// 1st AI の取得に成功したか（失敗・未完了なら 2nd AI は呼ばない）
   bool _firstAiOk = false;
 
@@ -296,8 +302,10 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
       // 20261026: 未保存（not_ready）のときは取得できていない扱いにする。
       //   ここで _firstAiOk を true にすると、「AI予想」ボタンで取り直しが走らず、空の予想が開く。
       if (data['not_ready'] == true) {
+        _aiNotReady = true;   // 20261111: 「予想の準備中」の案内を出すため
         return;
       }
+      _aiNotReady = false;   // 20261111
       final String pickupRaw = (data['pickup_horse'] as String?) ?? '';
       final String analysisText = (data['analysis_text'] as String?) ?? '';
       final List<AiResponseRecommendHorseModel> horses = parseAnalysisText(analysisText);
@@ -410,6 +418,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
             _mergedReceived = true;
           }
           _mergeStatus = data['status'] as String?;
+          _mergeStatusReason = data['status_reason'] as String?;   // 20261111
           if (mergedUpsetRace != null) {
             _totalForecastUpsetRaceValue = mergedUpsetRace;
           }
@@ -2185,7 +2194,11 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                           ScaffoldMessenger.maybeOf(
                             // ignore: use_build_context_synchronously
                             context,
-                          )?.showSnackBar(const SnackBar(content: Text('AI予想を取得できませんでした。少し待ってからもう一度押してください')));
+                          // )?.showSnackBar(const SnackBar(content: Text('AI予想を取得できませんでした。少し待ってからもう一度押してください')));   // 旧
+                          // 20261111: サーバーが「予想の準備中」と返したときは、その旨を出す
+                          )?.showSnackBar(SnackBar(content: Text(_aiNotReady
+                              ? '予想の準備中です。少し待ってからもう一度押してください'
+                              : 'AI予想を取得できませんでした。少し待ってからもう一度押してください')));
                           return;
                         }
                         OddsFinderDialog(
@@ -2201,6 +2214,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                             upsetRaceValue: _totalForecastUpsetRaceValue,
                             raceMetrics: _totalForecastRaceMetrics,
                             mergeStatus: _mergeStatus,
+                            mergeStatusReason: _mergeStatusReason,   // 20261111
                           ),
                         );
                       },

@@ -77,6 +77,12 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
   /// 20261025: 統合結果の状態（'undetermined' ＝ 採用できるAI回答が無かった）
   final Map<String, String?> _mergeStatusMap = <String, String?>{};
 
+  /// 20261111: 予想を出さなかった理由の文言（サーバーの status_reason）
+  final Map<String, String?> _mergeStatusReasonMap = <String, String?>{};
+
+  /// 20261111: 新しい予想（prediction_method == 'new'）のレースか
+  final Map<String, bool> _predictionNewMap = <String, bool>{};
+
   final Set<String> _fetchedSecondAiDates = <String>{};
 
   final Map<String, String?> _firstAiTextMap = <String, String?>{};
@@ -345,6 +351,8 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
             _mergedHorsesMap[r.key] = parseMergedHorses(mergedRaw);
           }
           _mergeStatusMap[r.key] = second['status'] as String?;
+          _mergeStatusReasonMap[r.key] = second['status_reason'] as String?;   // 20261111
+          _predictionNewMap[r.key] = second['prediction_method'] == 'new';   // 20261111
           final int? upsetRace = (second['upset_race'] as num?)?.toInt();
           if (upsetRace != null) {
             _mergedUpsetRaceMap[r.key] = upsetRace;
@@ -887,12 +895,15 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
     // AI予想の候補リストが空のとき（1st AI の回答が空で「未確定」になったレースなど）は、
     // 「X頭中Y頭が合致」が振り返り（DB保存）の文章のまま出る。合致馬が分からず 0頭扱いになるのを防ぐため、
     // その文章と同じ根拠である振り返りのピックアップ馬のうち、3着以内に入った馬を使う。
+    // 20261111: 新しい予想で「予想を出さなかった」レース。振り返りのピックアップ馬で合致を作らない
+    final bool isNoPrediction =
+        displayHorses.isEmpty && _mergeStatusMap[lookupKey] == 'undetermined' && (_predictionNewMap[lookupKey] ?? false);
     final Set<int> hitHorseNums = displayHorses.isNotEmpty
         ? displayHorses
               .where((AiResponseRecommendHorseModel h) => (numToRankMap[h.num] ?? 99) <= 3)
               .map((AiResponseRecommendHorseModel h) => h.num)
               .toSet()
-        : (introspectionModel == null
+        : ((introspectionModel == null || isNoPrediction)   // 20261111: isNoPrediction を追加
               ? <int>{}
               : extractPickupNums(
                   introspectionModel.introspection,
@@ -962,6 +973,11 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
       adjustedResultText = displayHorses.isNotEmpty
           ? '${displayHorses.length}頭中$matchedCount頭が合致'
           : 'AI予想データなし';
+    }
+
+    // 20261111: 新しい予想で「予想を出さなかった」レースは「予想なし」と出す（振り返りの「X頭中Y頭が合致」は出さない）
+    if (isNoPrediction) {
+      adjustedResultText = '予想なし';
     }
 
     // 20261026: 同着があったレースは「X頭中Y頭が合致」の後に（同着あり）を付ける
@@ -1051,6 +1067,7 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
                                             _mergedUpsetRaceMap[lookupKey] ?? parseUpsetRaceValue(firstText),
                                         raceMetrics: _mergedRaceMetricsMap[lookupKey] ?? parseRaceMetrics(firstText),
                                         mergeStatus: _mergeStatusMap[lookupKey],
+                                        mergeStatusReason: _mergeStatusReasonMap[lookupKey],   // 20261111
                                         numToWaku: numToWaku, // 20261026: 古いレースの枠連判定用
                                       ),
                                     );
