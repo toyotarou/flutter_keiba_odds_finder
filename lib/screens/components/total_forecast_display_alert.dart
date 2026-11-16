@@ -128,8 +128,13 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
   ///
   Set<int> get _aiPickupNums => widget.aiHorseList.map((AiResponseRecommendHorseModel h) => h.num).toSet();
 
+  // Map<int, String> get _aiPickupScores => <int, String>{
+  //   for (final AiResponseRecommendHorseModel h in widget.aiHorseList) h.num: h.score.toString(),
+  // };   // 20261115 旧
+  // 20261115 「補充」の馬はAI選出の印は付けるが、おすすめ度（サーバーでは0）は出さない（0点の評価に見えるため。なる11/15）
   Map<int, String> get _aiPickupScores => <int, String>{
-    for (final AiResponseRecommendHorseModel h in widget.aiHorseList) h.num: h.score.toString(),
+    for (final AiResponseRecommendHorseModel h in widget.aiHorseList)
+      if (!h.fillSlot) h.num: h.score.toString(),
   };
 
   ///
@@ -390,7 +395,8 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
   ///
   // 20261110 項目ごとに null＝「未算出」を表示する（よっしー11/9 2A）
   Widget _buildRaceMetrics(Map<String, int?> metrics) {
-    String stars(int? v) => v == null ? '' : '★' * v + '☆' * (5 - v);
+    // String stars(int? v) => v == null ? '' : '★' * v + '☆' * (5 - v);   // 旧
+    String stars(int? v) => (v == null || v == 0) ? '' : '★' * v + '☆' * (5 - v);   // 20261115 0＝「対象外」は星を出さない
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
       padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
@@ -418,7 +424,9 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
         const SizedBox(height: 2),
         Text(stars, style: const TextStyle(fontSize: 10, color: Colors.yellowAccent, letterSpacing: 1)),
         // 20261110 数字が無い項目は「未算出」
-        Text(value == null ? '未算出' : value.toString(), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+        // Text(value == null ? '未算出' : value.toString(), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),   // 旧
+        // 20261115 0 は「対象外」（その人気帯の馬がいない）
+        Text(value == null ? '未算出' : (value == 0 ? '対象外' : value.toString()), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
       ],
     );
   }

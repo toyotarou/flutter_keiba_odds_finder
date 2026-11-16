@@ -781,16 +781,48 @@ class _HorseSelectorContentState extends ConsumerState<_HorseSelectorContent>
         (results[1]['analysis_text'] as String?) ?? '',
       );
 
+      // 20261115 統合結果（merged_horses）を受け取っていれば、それを正とする（AI予想画面・総合予想と同じ基準）。
+      //   頭数に足りない分の「補充」の馬も、サーバーが選んだAI選出なので、AIの印を付ける。
+      //   各AIの文章だけを見ると、補充の馬とサーバーが外した馬の扱いがAI予想画面と食い違う。
+      final Map<String, dynamic> second = results[1];
+      final List<dynamic>? mergedRaw = second['not_ready'] == true ? null : second['merged_horses'] as List<dynamic>?;
+      final List<AiResponseRecommendHorseModel>? merged = mergedRaw == null ? null : parseMergedHorses(mergedRaw);
+
       if (mounted) {
         setState(() {
-          _aiPickupNums = aiHorses.map((AiResponseRecommendHorseModel h) => h.num).toSet();
-          _aiPickupScores = <int, String>{
-            for (final AiResponseRecommendHorseModel h in aiHorses) h.num: h.score.toString(),
-          };
-          _secondAiNums = secondHorses.map((AiResponseRecommendHorseModel h) => h.num).toSet();
-          _secondAiScores = <int, String>{
-            for (final AiResponseRecommendHorseModel h in secondHorses) h.num: h.score.toString(),
-          };
+          // _aiPickupNums = aiHorses.map((AiResponseRecommendHorseModel h) => h.num).toSet();   // 20261115 旧
+          // _aiPickupScores = <int, String>{
+          //   for (final AiResponseRecommendHorseModel h in aiHorses) h.num: h.score.toString(),
+          // };
+          // _secondAiNums = secondHorses.map((AiResponseRecommendHorseModel h) => h.num).toSet();
+          // _secondAiScores = <int, String>{
+          //   for (final AiResponseRecommendHorseModel h in secondHorses) h.num: h.score.toString(),
+          // };
+          if (merged != null) {
+            final List<AiResponseRecommendHorseModel> firstSide =
+                merged.where((AiResponseRecommendHorseModel h) => h.category != 'second_only').toList();
+            final List<AiResponseRecommendHorseModel> secondSide =
+                merged.where((AiResponseRecommendHorseModel h) => h.category == 'second_only').toList();
+            _aiPickupNums = firstSide.map((AiResponseRecommendHorseModel h) => h.num).toSet();
+            // 「補充」の馬は印だけ付け、おすすめ度（サーバーでは0）は出さない（0点の評価に見えるため。なる11/15）
+            _aiPickupScores = <int, String>{
+              for (final AiResponseRecommendHorseModel h in firstSide)
+                if (!h.fillSlot) h.num: h.score.toString(),
+            };
+            _secondAiNums = secondSide.map((AiResponseRecommendHorseModel h) => h.num).toSet();
+            _secondAiScores = <int, String>{
+              for (final AiResponseRecommendHorseModel h in secondSide) h.num: h.score.toString(),
+            };
+          } else {
+            _aiPickupNums = aiHorses.map((AiResponseRecommendHorseModel h) => h.num).toSet();
+            _aiPickupScores = <int, String>{
+              for (final AiResponseRecommendHorseModel h in aiHorses) h.num: h.score.toString(),
+            };
+            _secondAiNums = secondHorses.map((AiResponseRecommendHorseModel h) => h.num).toSet();
+            _secondAiScores = <int, String>{
+              for (final AiResponseRecommendHorseModel h in secondHorses) h.num: h.score.toString(),
+            };
+          }
           _isAiLoading = false;
           _isSecondAiLoading = false;
         });

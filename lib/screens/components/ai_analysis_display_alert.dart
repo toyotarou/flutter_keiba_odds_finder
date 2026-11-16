@@ -175,9 +175,10 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
     final List<AiResponseRecommendHorseModel> displayHorses = _displayHorses;
 
     // 画面に並んでいる馬のうち 3着以内に入った頭数を numToRankMap から直接計算
-    final int matchedCount = displayHorses
-        .where((AiResponseRecommendHorseModel h) => (widget.numToRankMap[h.num] ?? 99) <= 3)
-        .length;
+    // 20261116 合致数の文は buildMatchResultText（functions.dart）で作るので使わなくなった
+    // final int matchedCount = displayHorses
+    //     .where((AiResponseRecommendHorseModel h) => (widget.numToRankMap[h.num] ?? 99) <= 3)
+    //     .length;
 
     // 画面に並んでいる馬で 1着・2着・3着 がすべて揃っているか
     final Set<int> hitRankSet = displayHorses
@@ -198,7 +199,8 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
     if (resultText != null && displayHorses.isNotEmpty) {
       final RegExp pattern = RegExp(r'\d+頭中\d+頭が合致');
       if (pattern.hasMatch(resultText)) {
-        adjustedResultText = resultText.replaceFirst(pattern, '${displayHorses.length}頭中$matchedCount頭が合致');
+        // adjustedResultText = resultText.replaceFirst(pattern, '${displayHorses.length}頭中$matchedCount頭が合致');   // 旧（20261116 なる11/16 仕上げ①：補充の内訳を出す）
+        adjustedResultText = resultText.replaceFirst(pattern, buildMatchResultText(displayHorses, hitHorseNums));
       }
     }
     // 20261111: 予想を出さなかったレース（undetermined・0頭）は、振り返りの「X頭中Y頭が合致」を出さない
@@ -450,7 +452,8 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
   ///
   // 20261110 項目ごとに null＝「未算出」を表示する（よっしー11/9 2A）
   Widget _buildRaceMetrics(Map<String, int?> metrics) {
-    String stars(int? v) => v == null ? '' : '★' * v + '☆' * (5 - v);
+    // String stars(int? v) => v == null ? '' : '★' * v + '☆' * (5 - v);   // 旧
+    String stars(int? v) => (v == null || v == 0) ? '' : '★' * v + '☆' * (5 - v);   // 20261115 0＝「対象外」は星を出さない
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
       decoration: BoxDecoration(
@@ -477,7 +480,9 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
         const SizedBox(height: 2),
         Text(stars, style: const TextStyle(fontSize: 10, color: Colors.yellowAccent, letterSpacing: 1)),
         // 20261110 数字が無い項目は「未算出」
-        Text(value == null ? '未算出' : value.toString(), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+        // Text(value == null ? '未算出' : value.toString(), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),   // 旧
+        // 20261115 0 は「対象外」（その人気帯の馬がいない）
+        Text(value == null ? '未算出' : (value == 0 ? '対象外' : value.toString()), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
       ],
     );
   }
@@ -547,6 +552,48 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
   //     ),
   //   );
   // }
+
+  /// 20261115 よっしー11/14 B案：頭数に足りない分を補った馬に付ける印。
+  /// 根拠を確かめられた馬（印なし）と区別する。補充の馬でなければ何も出さない。
+  Widget _buildRefillBadge(AiResponseRecommendHorseModel h) {
+    if (!h.fillSlot) {
+      return const SizedBox.shrink();
+    }
+    return Container(
+      margin: const EdgeInsets.only(left: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+      decoration: BoxDecoration(
+        color: Colors.cyanAccent.withValues(alpha: 0.12),
+        border: Border.all(color: Colors.cyanAccent.withValues(alpha: 0.7)),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: const Text(
+        '補充',
+        style: TextStyle(color: Colors.cyanAccent, fontSize: 9, fontWeight: FontWeight.bold),
+      ),
+    );
+  }
+
+  /// 20261116 3指標（波乱度・下位進入度・大穴進入度）で、サーバーが最終の枠を1頭動かしたときに入った馬に付ける印。
+  /// 「補充」とは別の印にする（なる11/15 仕様9節）。該当しなければ何も出さない。
+  Widget _buildMetricsBadge(AiResponseRecommendHorseModel h) {
+    if (!h.metricsSlot) {
+      return const SizedBox.shrink();
+    }
+    return Container(
+      margin: const EdgeInsets.only(left: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+      decoration: BoxDecoration(
+        color: Colors.orangeAccent.withValues(alpha: 0.12),
+        border: Border.all(color: Colors.orangeAccent.withValues(alpha: 0.7)),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: const Text(
+        '指標反映',
+        style: TextStyle(color: Colors.orangeAccent, fontSize: 9, fontWeight: FontWeight.bold),
+      ),
+    );
+  }
 
   ///
   Widget _buildHorseCard(AiResponseRecommendHorseModel h) {
@@ -709,6 +756,10 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
                             // 20261026 なる回答（C案）により印は表示しない
                             // // 補充枠で入った馬だけ、通常の選出と区別する印を出す
                             // _buildFillSlotBadge(h),
+                            // 20261115 よっしー11/14 B案：頭数に足りない分を補った馬に「補充」の印を出す
+                            _buildRefillBadge(h),
+                            // 20261116 3指標で枠を1頭動かしたときに入った馬に「指標反映」の印を出す（なる11/15 仕様9節。補充とは別の印）
+                            _buildMetricsBadge(h),
                             // // 補充枠ではないが買い目に入れていない馬にも印を出す
                             // // （20261014 7回目ご指摘⑦）
                             // _buildNotRecommendedBadge(h),

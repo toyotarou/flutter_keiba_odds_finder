@@ -386,6 +386,10 @@ Map<String, int?>? parseRaceMetrics(String text) {
       int? extract(String key) {
         for (final String p in parts) {
           if (p.startsWith(key)) {
+            // 20261115 人気帯の馬がいないときは「対象外」（0 で受け取り、画面で「対象外」と出す。点数の0ではない）
+            if (p.substring(key.length).trim() == '対象外') {
+              return 0;
+            }
             final int? v = int.tryParse(p.substring(key.length).trim());
             return (v != null && v >= 1 && v <= 5) ? v : null;
           }
@@ -415,6 +419,10 @@ Map<String, int?>? parseRaceMetricsJson(dynamic raw) {
 
   int? pick(String key) {
     final dynamic v = raw[key];
+    // 20261115 人気帯の馬がいないときは「対象外」（0 で受け取り、画面で「対象外」と出す。点数の0ではない）
+    if (v == '対象外') {
+      return 0;
+    }
     int? n;
     if (v is num) {
       n = v.toInt();
@@ -921,10 +929,35 @@ List<AiResponseRecommendHorseModel> parseMergedHorses(List<dynamic> list) {
           // //   「補充枠ではない・購入推奨の対象」として扱う（従来どおりの表示）。
           // fillSlot: m['fill_slot_unqualified'] == true,
           // purchaseRecommended: m['purchase_recommended'] != false,
+          // 20261115 よっしー11/14 B案：補充を戻したので、補充の馬かどうかだけ受け取る
+          fillSlot: m['fill_slot'] == true,
+          // 20261116 3指標で枠を1頭動かしたときに入った馬
+          metricsSlot: m['metrics_slot'] == true,
         );
       })
       .where((AiResponseRecommendHorseModel h) => h.num > 0)
       .toList();
+}
+
+/// 20261116 なる11/16 仕上げ①：合致数の表示文を、AI予想画面と過去レース画面で共通にする。
+///   ・通常の候補だけ：「7頭中2頭が合致」
+///   ・通常と補充が混ざる：「全体（補充含む）7頭中2頭が合致（通常5頭中1頭・補充2頭中1頭）」
+///   ・全頭が補充：「参考表示 7頭中2頭が合致（全頭が補充）」
+///   「指標反映」の馬（metricsSlot）は通常の候補として数える（補充ではない）。
+///   hitNums は3着以内に入った馬番（同着を含む）。
+String buildMatchResultText(List<AiResponseRecommendHorseModel> horses, Set<int> hitNums) {
+  final int total = horses.length;
+  final int hit = horses.where((AiResponseRecommendHorseModel h) => hitNums.contains(h.num)).length;
+  final List<AiResponseRecommendHorseModel> fill = horses.where((AiResponseRecommendHorseModel h) => h.fillSlot).toList();
+  if (fill.isEmpty) {
+    return '$total頭中$hit頭が合致';
+  }
+  final int fillHit = fill.where((AiResponseRecommendHorseModel h) => hitNums.contains(h.num)).length;
+  final int regular = total - fill.length;
+  if (regular == 0) {
+    return '参考表示 $total頭中$hit頭が合致（全頭が補充）';
+  }
+  return '全体（補充含む）$total頭中$hit頭が合致（通常$regular頭中${hit - fillHit}頭・補充${fill.length}頭中$fillHit頭）';
 }
 
 /// 1st AI / 2nd AI のリストを1本に統合する。重複（同じ馬番）は 1st AI を優先。

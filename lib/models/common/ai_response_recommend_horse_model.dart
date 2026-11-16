@@ -13,6 +13,8 @@ class AiResponseRecommendHorseModel {
     // 20261026 なる回答（C案）で画面の印をやめたため、受け取らない
     // this.fillSlot = false,
     // this.purchaseRecommended = true,
+    this.fillSlot = false,   // 20261115 よっしー11/14 B案：頭数に足りない分の「補充」を戻した
+    this.metricsSlot = false,   // 20261116 3指標の選出連動（なる11/15 RACE_METRICS_SELECTION_V1）
   });
 
   final int num;
@@ -33,6 +35,15 @@ class AiResponseRecommendHorseModel {
 
   /// 一致馬の 2nd AI 選出理由（matched のみ非 null）
   final String? reasonSecond;
+
+  /// 20261115 頭数に足りない分を補った馬か（サーバーの fill_slot）。
+  /// 根拠を確かめられた馬だけでは頭数に届かないとき、同じ人気帯から補った馬。
+  /// おすすめ度は付かず、購入推奨にも入らない。
+  final bool fillSlot;
+
+  /// 20261116 3指標（波乱度・下位進入度・大穴進入度）で、サーバーが最終の枠を1頭動かしたときに入った馬か（サーバーの metrics_slot）。
+  /// AIの評価で選んだ馬であることは変わらない。おすすめ度のかさ上げや購入推奨は付かない。
+  final bool metricsSlot;
 
   // 20261026 なる回答（C案）で画面の印をやめたため、受け取らない
   // /// 補充枠で入った馬か（サーバーの fill_slot_unqualified）。

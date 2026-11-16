@@ -438,11 +438,14 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
   /// アラート（AiAnalysisDisplayAlert._displayHorses）と同じ基準で作る。
   ///   統合結果を受け取っていればそれを正とする（0頭でもそれを使う）。
   ///   受け取っていなければ、1st AI の選出馬に 2nd AI だけが選んだ馬を足したもの。
-  Map<int, int> get _aiForecastScoreMap {
+  // Map<int, int> get _aiForecastScoreMap {   // 20261115 旧
+  // 20261115 「補充」の馬は、AI選出のバッジは出すが、おすすめ度（サーバーでは0）は null にして「%」を出さない（なる11/15）
+  Map<int, int?> get _aiForecastScoreMap {
     final List<AiResponseRecommendHorseModel> list = _mergedReceived
         ? _mergedHorseList
         : mergeAiHorseLists(_totalForecastAiHorseList, _secondAiHorseList);
-    return <int, int>{for (final AiResponseRecommendHorseModel h in list) h.num: h.score};
+    // return <int, int>{for (final AiResponseRecommendHorseModel h in list) h.num: h.score};   // 旧
+    return <int, int?>{for (final AiResponseRecommendHorseModel h in list) h.num: h.fillSlot ? null : h.score};
   }
 
   /// 20261017: 「AI予想」を開く前に、1st AI・2nd AI（統合結果）の取得完了を待つ。

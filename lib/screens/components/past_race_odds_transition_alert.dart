@@ -911,6 +911,18 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
 
     final int matchedCount = hitHorseNums.length;
 
+    // 20261116 なる11/15（02 その他）・11/16 仕上げ①：補充の内訳の文は、AI予想画面と同じ共通の関数で作る（functions.dart の buildMatchResultText）
+    // //   全頭が補充（AIの評価を確認できなかった参考の表示）のときは「参考表示」と付け、通常のAI予想の成績と一緒にしない。
+    // final List<AiResponseRecommendHorseModel> fillHorses = displayHorses.where((AiResponseRecommendHorseModel h) => h.fillSlot).toList();
+    // final int fillHitCount = fillHorses.where((AiResponseRecommendHorseModel h) => hitHorseNums.contains(h.num)).length;
+    // final int regularCount = displayHorses.length - fillHorses.length;
+    // final String matchText = fillHorses.isEmpty
+    //     ? '${displayHorses.length}頭中$matchedCount頭が合致'
+    //     : regularCount == 0
+    //     ? '参考表示 ${displayHorses.length}頭中$matchedCount頭が合致（全頭が補充）'
+    //     : '全体（補充含む）${displayHorses.length}頭中$matchedCount頭が合致（通常$regularCount頭中${matchedCount - fillHitCount}頭・補充${fillHorses.length}頭中$fillHitCount頭）';
+    final String matchText = buildMatchResultText(displayHorses, hitHorseNums);
+
     // 20261026: 同着対応。3着以内に入った馬（同着の馬も含む）の頭数。通常は3頭、同着があると4頭以上になることがある。
     // 20261026: ピンクの条件変更で使わなくなったためコメントアウト
     // final int topFinisherCount = numToRankMap.values.where((int rank) => rank <= kRaceTopFinishers).length;
@@ -958,7 +970,8 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
     if (resultText != null && displayHorses.isNotEmpty) {
       final RegExp pattern = RegExp(r'\d+頭中\d+頭が合致');
       if (pattern.hasMatch(resultText)) {
-        adjustedResultText = resultText.replaceFirst(pattern, '${displayHorses.length}頭中$matchedCount頭が合致');
+        // adjustedResultText = resultText.replaceFirst(pattern, '${displayHorses.length}頭中$matchedCount頭が合致');   // 旧（20261116 補充の内訳を出す）
+        adjustedResultText = resultText.replaceFirst(pattern, matchText);
       }
     }
 
@@ -971,7 +984,8 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
         _fetchedSecondAiDates.contains(date) &&
         _secondAiTextMap.containsKey(lookupKey)) {
       adjustedResultText = displayHorses.isNotEmpty
-          ? '${displayHorses.length}頭中$matchedCount頭が合致'
+          // ? '${displayHorses.length}頭中$matchedCount頭が合致'   // 旧（20261116 補充の内訳を出す）
+          ? matchText
           : 'AI予想データなし';
     }
 
