@@ -913,4 +913,3 @@ List<AiResponseRecommendHorseModel> mergeAiHorseLists(
     ...second.where((AiResponseRecommendHorseModel h) => !firstNums.contains(h.num)),
   ];
 }
-
