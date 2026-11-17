@@ -1,3 +1,11 @@
+// =============================================================================
+// ファイル名   : schedule.dart
+// 概要         : 開催スケジュールを API から取得して保持する Riverpod の Notifier と、その状態クラス。
+// 作成者       : Hideyuki Toyoda
+// 作成日       : 2026-05-30
+// 最終更新日   : 2026-11-17
+// =============================================================================
+
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -11,6 +19,7 @@ part 'schedule.freezed.dart';
 
 part 'schedule.g.dart';
 
+/// 開催スケジュールの状態。
 @freezed
 class ScheduleState with _$ScheduleState {
   const factory ScheduleState({
@@ -20,17 +29,19 @@ class ScheduleState with _$ScheduleState {
   }) = _ScheduleState;
 }
 
+/// 開催スケジュールを API から取得して保持する Notifier。
 @riverpod
 class Schedule extends _$Schedule {
   final Utility utility = Utility();
 
-  ///
+  /// 状態の初期値を返す。
   @override
   ScheduleState build() => const ScheduleState();
 
   //============================================== api
 
-  ///
+  /// API から開催スケジュールを全件取得し、新しい状態を作って返す。
+  /// 取得に失敗したときはエラーを表示し、例外を呼び出し元へ投げ直す。
   Future<ScheduleState> fetchAllScheduleData() async {
     final HttpClient client = ref.read(httpClientProvider);
 
@@ -61,7 +72,7 @@ class Schedule extends _$Schedule {
     }
   }
 
-  ///
+  /// 開催スケジュールを全件取得して状態に反映する。失敗したときは状態を変えない。
   Future<void> getAllScheduleData() async {
     try {
       final ScheduleState newState = await fetchAllScheduleData();

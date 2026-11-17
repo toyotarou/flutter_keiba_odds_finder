@@ -1,3 +1,11 @@
+// =============================================================================
+// ファイル名   : total_forecast_display_alert.dart
+// 概要         : 予想総括の画面。レース指標と、馬ごとの各指標（期待数値・AI 選出・過去データなど）をまとめて表示する。
+// 作成者       : Hideyuki Toyoda
+// 作成日       : 2026-07-14
+// 最終更新日   : 2026-11-17
+// =============================================================================
+
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -12,6 +20,7 @@ import '../../models/race_model.dart';
 import '../../utility/functions.dart';
 import '../parts/dashed_line_painter.dart';
 
+/// 予想総括の画面。
 class TotalForecastDisplayAlert extends ConsumerStatefulWidget {
   const TotalForecastDisplayAlert({
     this.overrideDate,
@@ -49,6 +58,7 @@ class TotalForecastDisplayAlert extends ConsumerStatefulWidget {
   ConsumerState<TotalForecastDisplayAlert> createState() => _TotalForecastDisplayAlertState();
 }
 
+/// 予想総括の画面の状態。
 class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplayAlert>
     with ControllersMixin<TotalForecastDisplayAlert> {
   bool _isLoading = false;
@@ -86,14 +96,14 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
     return parseKbdParts(_effectiveKbd);
   }
 
-  ///
+  /// 画面表示後に、予想総括に必要なデータを取得する。
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) => _fetchAll());
   }
 
-  ///
+  /// タイマーとスクロールの制御を破棄する。
   @override
   void dispose() {
     _repeatTimer?.cancel();
@@ -102,20 +112,20 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
     super.dispose();
   }
 
-  ///
+  /// ボタンを押している間、指定した処理を繰り返す。
   void _startRepeating(VoidCallback action) {
     _repeatTimer?.cancel();
     action();
     _repeatTimer = Timer.periodic(const Duration(milliseconds: _tickMs), (_) => action());
   }
 
-  ///
+  /// 繰り返しを止める。
   void _stopRepeating() {
     _repeatTimer?.cancel();
     _repeatTimer = null;
   }
 
-  ///
+  /// 一覧を指定した量だけスクロールする。
   void _scrollBy(double delta) {
     if (!_scrollController.hasClients) {
       return;
@@ -125,19 +135,16 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
     _scrollController.jumpTo(newOffset);
   }
 
-  ///
+  /// AI が選んだ馬の馬番。
   Set<int> get _aiPickupNums => widget.aiHorseList.map((AiResponseRecommendHorseModel h) => h.num).toSet();
 
-  // Map<int, String> get _aiPickupScores => <int, String>{
-  //   for (final AiResponseRecommendHorseModel h in widget.aiHorseList) h.num: h.score.toString(),
-  // };   // 20261115 旧
-  // 20261115 「補充」の馬はAI選出の印は付けるが、おすすめ度（サーバーでは0）は出さない（0点の評価に見えるため。なる11/15）
+  // 「補充」の馬はAI選出の印は付けるが、おすすめ度（サーバーでは0）は出さない
   Map<int, String> get _aiPickupScores => <int, String>{
     for (final AiResponseRecommendHorseModel h in widget.aiHorseList)
       if (!h.fillSlot) h.num: h.score.toString(),
   };
 
-  ///
+  /// 予想総括に必要なデータ（高確率馬・馬眼力指数）をまとめて取得する。時間がかかるときだけ読み込み表示を出す。
   Future<void> _fetchAll() async {
     _loadingTimer?.cancel();
     _loadingTimer = Timer(const Duration(milliseconds: 800), () {
@@ -153,7 +160,7 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
     }
   }
 
-  ///
+  /// 過去データから見た、3着以内に入る確率が高い馬を取得する。
   Future<void> _fetchHighProbabilityHorses() async {
     final String date = _effectiveDate;
     final int race = widget.currentRaceModel.race;
@@ -174,7 +181,7 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
     }
   }
 
-  ///
+  /// 表示中のレースの馬眼力指数を取得する。
   Future<void> _fetchBaganrikiIndex() async {
     final String date = _effectiveDate;
     final int race = widget.currentRaceModel.race;
@@ -198,7 +205,7 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
     }
   }
 
-  ///
+  /// 予想総括の画面（レース指標・馬ごとの各指標）を組み立てる。
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
@@ -378,7 +385,7 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
     );
   }
 
-  ///
+  /// 画面上部の見出し（レース名など）を表示する。
   Widget _buildHeader() {
     return Padding(
       padding: const EdgeInsets.only(top: 20, right: 15, left: 15),
@@ -392,11 +399,10 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
     );
   }
 
-  ///
-  // 20261110 項目ごとに null＝「未算出」を表示する（よっしー11/9 2A）
+  /// レース指標（波乱度・下位進入度・大穴進入度）を星の数で表示する。
+  /// 値が null の項目は「未算出」と表示する。
   Widget _buildRaceMetrics(Map<String, int?> metrics) {
-    // String stars(int? v) => v == null ? '' : '★' * v + '☆' * (5 - v);   // 旧
-    String stars(int? v) => (v == null || v == 0) ? '' : '★' * v + '☆' * (5 - v);   // 20261115 0＝「対象外」は星を出さない
+    String stars(int? v) => (v == null || v == 0) ? '' : '★' * v + '☆' * (5 - v);   // 0＝「対象外」は星を出さない
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
       padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
@@ -416,22 +422,21 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
     );
   }
 
-  ///
+  /// レース指標1項目ぶん（見出し・数値・星）を表示する。
   Widget _buildMetricItem(String label, int? value, String stars) {
     return Column(
       children: <Widget>[
         Text(label, style: const TextStyle(fontSize: 9, color: Colors.white70)),
         const SizedBox(height: 2),
         Text(stars, style: const TextStyle(fontSize: 10, color: Colors.yellowAccent, letterSpacing: 1)),
-        // 20261110 数字が無い項目は「未算出」
-        // Text(value == null ? '未算出' : value.toString(), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),   // 旧
-        // 20261115 0 は「対象外」（その人気帯の馬がいない）
+        // 数字が無い項目は「未算出」
+        // 0 は「対象外」（その人気帯の馬がいない）
         Text(value == null ? '未算出' : (value == 0 ? '対象外' : value.toString()), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
       ],
     );
   }
 
-  ///
+  /// 馬ごとの一覧の列見出しを表示する。
   Widget _buildColumnHeader() {
     return const Padding(
       padding: EdgeInsets.symmetric(vertical: 5, horizontal: 12),
@@ -475,7 +480,7 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
     );
   }
 
-  ///
+  /// 馬1頭ぶんの行（人気・オッズ・各指標のバッジ）を表示する。
   Widget _buildHorseItem({
     required int index,
     required PopularityRankOddsMedianModel? medianModel,
@@ -685,7 +690,7 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
     );
   }
 
-  ///
+  /// AI が選んだ馬に、おすすめ度のバッジを表示する。
   Widget _buildAiBadge(int horseNum) {
     return Center(
       child: Stack(
@@ -716,7 +721,7 @@ class _TotalForecastDisplayAlertState extends ConsumerState<TotalForecastDisplay
     );
   }
 
-  ///
+  /// 過去データで好走している馬に付けるバッジを表示する。
   Widget _buildPastBadge() {
     return Center(
       child: Container(

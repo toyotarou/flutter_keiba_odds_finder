@@ -1,9 +1,16 @@
+// =============================================================================
+// ファイル名   : controllers_mixin.dart
+// 概要         : 画面（ConsumerState）から、各 Notifier の状態と操作を短く呼び出すための mixin。
+// 作成者       : Hideyuki Toyoda
+// 作成日       : 2026-05-30
+// 最終更新日   : 2026-11-17
+// =============================================================================
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'ai_analysis/ai_analysis.dart';
 import 'ai_analysis2/ai_analysis2.dart';
 import 'app_param/app_param.dart';
-// import 'baganriki_published_prediction/baganriki_published_prediction.dart';   // 20261025: r12.2 確認ボタンを外したため
 import 'developer_news/developer_news.dart';
 import 'horse/horse.dart';
 import 'horse_best_weight/horse_best_weight.dart';
@@ -12,15 +19,8 @@ import 'jockey_score/jockey_score.dart';
 import 'laravel_config/laravel_config.dart';
 import 'login_user/login_user.dart';
 
-// import 'netkeiba_odds/netkeiba_odds.dart';
-// import 'netkeiba_race/netkeiba_race.dart';
 import 'odds/odds.dart';
 import 'odds_get_timing/odds_get_timing.dart';
-
-// import 'odds_wide/odds_wide.dart';
-//
-//
-//
 
 import 'popularity_rank_odds_median/popularity_rank_odds_median.dart';
 import 'push_notifier_user/push_notifier_user.dart';
@@ -30,6 +30,7 @@ import 'race_result/race_result.dart';
 import 'schedule/schedule.dart';
 import 'summary/summary.dart';
 
+/// 各 Notifier の状態（〜State）と操作（〜Notifier）をまとめて提供する mixin。
 mixin ControllersMixin<T extends ConsumerStatefulWidget> on ConsumerState<T> {
   //==========================================//
 
@@ -44,13 +45,9 @@ mixin ControllersMixin<T extends ConsumerStatefulWidget> on ConsumerState<T> {
   Schedule get scheduleNotifier => ref.read(scheduleProvider.notifier);
 
   //==========================================//
-
-  //==========================================//
   RaceState get raceState => ref.watch(raceProvider);
 
   Race get raceNotifier => ref.read(raceProvider.notifier);
-
-  //==========================================//
 
   //==========================================//
   HorseState get horseState => ref.watch(horseProvider);
@@ -58,13 +55,9 @@ mixin ControllersMixin<T extends ConsumerStatefulWidget> on ConsumerState<T> {
   Horse get horseNotifier => ref.read(horseProvider.notifier);
 
   //==========================================//
-
-  //==========================================//
   OddsState get oddsState => ref.watch(oddsProvider);
 
   Odds get oddsNotifier => ref.read(oddsProvider.notifier);
-
-  //==========================================//
 
   //==========================================//
 
@@ -74,20 +67,9 @@ mixin ControllersMixin<T extends ConsumerStatefulWidget> on ConsumerState<T> {
 
   //==========================================//
 
-  //==========================================//
-
   OddsGetTimingState get oddsGetTimingState => ref.watch(oddsGetTimingProvider);
 
   OddsGetTiming get oddsGetTimingNotifier => ref.read(oddsGetTimingProvider.notifier);
-
-  //==========================================//
-
-  //==========================================//
-  // OddsWideState get oddsWideState => ref.watch(oddsWideProvider);
-  //
-  // OddsWide get oddsWideNotifier => ref.read(oddsWideProvider.notifier);
-
-  //==========================================//
 
   //==========================================//
 
@@ -97,13 +79,9 @@ mixin ControllersMixin<T extends ConsumerStatefulWidget> on ConsumerState<T> {
 
   //==========================================//
 
-  //==========================================//
-
   RaceResultState get raceResultState => ref.watch(raceResultProvider);
 
   RaceResult get raceResultNotifier => ref.read(raceResultProvider.notifier);
-
-  //==========================================//
 
   //==========================================//
 
@@ -112,13 +90,9 @@ mixin ControllersMixin<T extends ConsumerStatefulWidget> on ConsumerState<T> {
   LoginUser get loginUserNotifier => ref.read(loginUserProvider.notifier);
 
   //==========================================//
-
-  //==========================================//
   PushNotifierUserState get pushNotifierUserState => ref.watch(pushNotifierUserProvider);
 
   PushNotifierUser get pushNotifierUserNotifier => ref.read(pushNotifierUserProvider.notifier);
-
-  //==========================================//
 
   //==========================================//
 
@@ -128,20 +102,14 @@ mixin ControllersMixin<T extends ConsumerStatefulWidget> on ConsumerState<T> {
 
   //==========================================//
 
-  //==========================================//
-
   HorseBestWeightState get horseBestWeightState => ref.watch(horseBestWeightProvider);
 
   HorseBestWeight get horseBestWeightNotifier => ref.read(horseBestWeightProvider.notifier);
 
   //==========================================//
-
-  //==========================================//
   HorseScoreState get horseScoreState => ref.watch(horseScoreProvider);
 
   HorseScore get horseScoreNotifier => ref.read(horseScoreProvider.notifier);
-
-  //==========================================//
 
   //==========================================//
 
@@ -151,13 +119,9 @@ mixin ControllersMixin<T extends ConsumerStatefulWidget> on ConsumerState<T> {
 
   //==========================================//
 
-  //==========================================//
-
   RaceIntrospectionState get raceIntrospectionState => ref.watch(raceIntrospectionProvider);
 
   RaceIntrospection get raceIntrospectionNotifier => ref.read(raceIntrospectionProvider.notifier);
-
-  //==========================================//
 
   //==========================================//
   DeveloperNewsState get developerNewsState => ref.watch(developerNewsProvider);
@@ -165,28 +129,14 @@ mixin ControllersMixin<T extends ConsumerStatefulWidget> on ConsumerState<T> {
   DeveloperNews get developerNewsNotifier => ref.read(developerNewsProvider.notifier);
 
   //==========================================//
-
-  //==========================================//
   AiAnalysisState get aiAnalysisState => ref.watch(aiAnalysisProvider);
 
   AiAnalysis get aiAnalysisNotifier => ref.read(aiAnalysisProvider.notifier);
 
   //==========================================//
-
-  //==========================================//
   AiAnalysisState2 get aiAnalysisState2 => ref.watch(aiAnalysis2Provider);
 
   AiAnalysis2 get aiAnalysisNotifier2 => ref.read(aiAnalysis2Provider.notifier);
-
-  //==========================================//
-
-  //==========================================//
-
-  // ── 20261025: r12.2 確認ボタンを外したので使いません ──
-  // // @ANCHOR-20261020-R122-FLUTTER  r12.2 の読取API
-  // BaganrikiPublishedPredictionState get baganrikiPublishedPredictionState => ref.watch(baganrikiPublishedPredictionProvider);
-  //
-  // BaganrikiPublishedPrediction get baganrikiPublishedPredictionNotifier => ref.read(baganrikiPublishedPredictionProvider.notifier);
 
   //==========================================//
 }

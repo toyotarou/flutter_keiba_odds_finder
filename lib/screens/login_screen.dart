@@ -1,3 +1,11 @@
+// =============================================================================
+// ファイル名   : login_screen.dart
+// 概要         : ログイン画面。ユーザーIDとパスワードでログインし、新規登録画面へも進める。
+// 作成者       : Hideyuki Toyoda
+// 作成日       : 2026-06-18
+// 最終更新日   : 2026-11-17
+// =============================================================================
+
 import 'dart:async';
 import 'dart:ui';
 
@@ -12,6 +20,7 @@ import '../services/fcm_service.dart';
 import 'parts/error_confirm_dialog.dart';
 import 'signup_screen.dart';
 
+/// ログイン画面。
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key, required this.onLoginSuccess});
 
@@ -21,6 +30,7 @@ class LoginScreen extends ConsumerStatefulWidget {
   ConsumerState<LoginScreen> createState() => _LoginScreenState();
 }
 
+/// ログイン画面の状態。
 class _LoginScreenState extends ConsumerState<LoginScreen> {
   final TextEditingController _userIdController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
@@ -28,7 +38,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   bool _passwordObscure = true;
   bool _isLoading = false;
 
-  ///
+  /// 入力欄の制御とフォーカスを破棄する。
   @override
   void dispose() {
     _userIdController.dispose();
@@ -39,7 +49,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     super.dispose();
   }
 
-  ///
+  /// ログイン画面を組み立てる。
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -88,7 +98,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     );
   }
 
-  ///
+  /// ユーザーID・パスワードの入力欄と、ログイン・新規登録のボタンを表示する。
   Widget _buildInputCard() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 30),
@@ -165,7 +175,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     );
   }
 
-  ///
+  /// 新規登録画面を開く。登録できたら、そのユーザーIDとパスワードを入力欄に入れる。
   Future<void> _goToSignup() async {
     final Map<String, String>? result = await Navigator.push<Map<String, String>>(
       context,
@@ -178,7 +188,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     }
   }
 
-  ///
+  /// 入力したユーザーIDとパスワードでログインする。成功したらユーザーIDを端末に保存し、ホーム画面へ進む。
   Future<void> _login() async {
     final String userId = _userIdController.text.trim();
     final String password = _passwordController.text.trim();

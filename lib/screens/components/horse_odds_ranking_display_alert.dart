@@ -1,3 +1,12 @@
+// =============================================================================
+// ファイル名   : horse_odds_ranking_display_alert.dart
+// 概要         : 人気順位の推移の画面。オッズ取得タイミングごとの人気順を表で表示し、
+//                選んだ馬の推移を線で重ねる。AI が選んだ馬にはバッジを付ける。
+// 作成者       : Hideyuki Toyoda
+// 作成日       : 2026-05-31
+// 最終更新日   : 2026-11-17
+// =============================================================================
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -12,9 +21,6 @@ import '../../models/common/ai_response_recommend_horse_model.dart';
 import '../../models/horse_model.dart';
 import '../../models/odds_model.dart';
 
-// //
-//
-
 import '../../models/race_model.dart';
 import '../../models/race_result_model.dart';
 import '../../models/summary_model.dart';
@@ -24,11 +30,15 @@ import '../parts/odds_finder_overlay.dart';
 import 'horse_race_result_display_alert.dart';
 import 'race_introspection_display_alert.dart';
 
+/// 表示する元データの種類（live: 当日のオッズ、summary: 過去レースのサマリー）。
 enum RankingMode { live, summary }
 
+/// 人気順 → タイミングごとの馬番 の表。
 typedef RankingGrid = Map<int, List<int?>>;
+/// 表の元データ一式（表・タイミング・頭数・最初の人気順）。
 typedef _GridData = ({RankingGrid grid, List<String> timingParts, int horseNum, Map<int, int> horseToStartRank});
 
+// 表の色（見出し・順位の変化の大きさ・急落）
 const Color _headerBgColor = Color(0xFF1B3A2A);
 const Color _changedBgColor1 = Color(0xFF1B3A5A);
 const Color _changedBgColor2 = Color(0xFF4A3D10);
@@ -36,6 +46,7 @@ const Color _changedBgColor3 = Color(0xFF5A1A1A);
 const Color _droppedBgColor = Color(0xFF4A1A6A);
 const Color _defaultBgColor = Colors.transparent;
 
+/// 発走何分前 → サマリーからその時点の単勝オッズを取り出す関数 の対応表。
 final Map<int, String Function(SummaryModel)> _kOddsGetters = <int, String Function(SummaryModel)>{
   30: (SummaryModel m) => m.oddsTanBefore30,
   21: (SummaryModel m) => m.oddsTanBefore21,
@@ -50,6 +61,7 @@ final Map<int, String Function(SummaryModel)> _kOddsGetters = <int, String Funct
 
 ////////////////////////////////////////////////////////////////
 
+/// 人気順位の推移の画面。
 class HorseOddsRankingDisplayAlert extends ConsumerStatefulWidget {
   const HorseOddsRankingDisplayAlert({super.key, this.mode = RankingMode.live});
 
@@ -59,6 +71,7 @@ class HorseOddsRankingDisplayAlert extends ConsumerStatefulWidget {
   ConsumerState<HorseOddsRankingDisplayAlert> createState() => _HorseOddsRankingDisplayAlertState();
 }
 
+/// 人気順位の推移の画面の状態。
 class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingDisplayAlert>
     with ControllersMixin<HorseOddsRankingDisplayAlert> {
   final TransformationController _controller = TransformationController();
@@ -70,14 +83,14 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
   final List<OverlayEntry> _secondEntries = <OverlayEntry>[];
   int _currentHorseNum = 0;
 
-  ///
+  /// 拡大・縮小の変化を監視し始める。
   @override
   void initState() {
     super.initState();
     _controller.addListener(_onTransformChanged);
   }
 
-  ///
+  /// 表示中のオーバーレイを外し、監視と制御を破棄する。
   @override
   void dispose() {
     for (final OverlayEntry e in _firstEntries) {
@@ -91,7 +104,7 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
     super.dispose();
   }
 
-  ///
+  /// 強調表示する馬を選ぶパネルをオーバーレイで表示する。
   void _showHorseSelector() {
     if (_currentHorseNum == 0) {
       return;
@@ -149,7 +162,7 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
     );
   }
 
-  ///
+  /// 拡大・縮小の倍率から、拡大表示中かどうかを判定して状態に反映する。
   void _onTransformChanged() {
     final double currentScale = _controller.value.getMaxScaleOnAxis();
     final bool zoomed = _fitScale != null && currentScale > _fitScale! + 0.01;
@@ -158,7 +171,7 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
     }
   }
 
-  ///
+  /// 表示中のレースの結果を取得済みかどうか。
   bool get _hasRaceResult {
     final String mapKey = '${appParamState.selectedScheduleDate}_${appParamState.selectedScheduleKaisuuBashoDay}';
     return (raceResultState.raceResultMap[mapKey] ?? <RaceResultModel>[]).any(
@@ -166,7 +179,7 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
     );
   }
 
-  ///
+  /// 人気順位の推移（オッズ取得タイミングごとの人気順）を表で表示する画面を組み立てる。
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -241,7 +254,7 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
     );
   }
 
-  ///
+  /// 画面上部の見出しと操作ボタンを表示する。
   Widget _buildHeader() {
     return Stack(
       children: <Widget>[
@@ -254,7 +267,7 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
     );
   }
 
-  ///
+  /// 表示中のレース（開催日・競馬場・レース番号・レース名）を表示する。
   Widget _buildHeaderText() {
     final bool isSummary = widget.mode == RankingMode.summary;
 
@@ -311,7 +324,7 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
     );
   }
 
-  ///
+  /// 見出しの右側の操作ボタンを表示する。
   Widget _buildHeaderActions() {
     if (widget.mode == RankingMode.summary) {
       return GestureDetector(
@@ -370,10 +383,10 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
     );
   }
 
-  ///
+  /// サマリーから、指定した発走何分前の単勝オッズを取り出す。
   static String _oddsAt(SummaryModel m, int minutes) => (_kOddsGetters[minutes] ?? (SummaryModel _) => '')(m);
 
-  ///
+  /// 指定した発走何分前の単勝オッズが低い順（人気順）に並べる。オッズが無い馬は除く。
   static List<SummaryModel> _sortSummaryByOdds(List<SummaryModel> horses, int minutes) {
     return horses.where((SummaryModel e) {
       final String odds = _oddsAt(e, minutes);
@@ -385,7 +398,7 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
     );
   }
 
-  ///
+  /// 設定のタイミング文字列を、表の列の順番（最初・発走何分前・最後）に変換する。
   static List<int> _computeTimingOrder(List<String> timingParts) {
     return List<int>.generate(timingParts.length, (int i) {
       if (i == 0) {
@@ -400,7 +413,7 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
     });
   }
 
-  ///
+  /// タイミングごとに、オッズを人気順に並べた一覧を作る。
   static Map<int, List<OddsModel>> _computeOddsTimingMap(List<OddsModel> list, List<int> timingOrder) {
     return Map<int, List<OddsModel>>.fromEntries(
       timingOrder.map((int timing) {
@@ -412,7 +425,7 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
     );
   }
 
-  ///
+  /// 最初の列での人気順（馬番 → 順位）の対応表を作る。
   static Map<int, int> _buildHorseToStartRank(RankingGrid grid, int horseNum) {
     return <int, int>{
       for (int r = 1; r <= horseNum; r++)
@@ -420,7 +433,7 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
     };
   }
 
-  ///
+  /// 当日のオッズから、表の元データ（順位 × タイミングの馬番）を作る。
   _GridData _buildFromOddsModel() {
     final String mapKey = '${appParamState.selectedScheduleDate}_${appParamState.selectedScheduleKaisuuBashoDay}';
 
@@ -459,7 +472,7 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
     );
   }
 
-  ///
+  /// 過去レースのサマリーから、表の元データ（順位 × タイミングの馬番）を作る。
   _GridData _buildFromSummaryModel() {
     final List<SummaryModel> horses = summaryState.oneRaceSummaryList;
 
@@ -490,7 +503,7 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
     );
   }
 
-  ///
+  /// タイミング（発走何分前か）の見出しセルを表示する。
   static Widget _buildTimingLabelCell(String label) {
     return Container(
       width: 50,
@@ -504,7 +517,7 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
     );
   }
 
-  ///
+  /// 人気順のセルを表示する。
   static Widget _buildRankCell(int rank) {
     return Container(
       width: 40,
@@ -518,7 +531,7 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
     );
   }
 
-  ///
+  /// 馬番のセルを表示する。順位の変化の大きさに応じて背景色を変える。
   Widget _buildDataCell(int? num, int changeLevel) {
     final Color bgColor = switch (changeLevel) {
       -1 => _droppedBgColor,
@@ -542,7 +555,7 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
     );
   }
 
-  ///
+  /// 表の上下に付ける、タイミングの見出し行を表示する。
   static Widget _buildHeaderFooterRow(List<String> labels, {required bool isTop, required String cornerLabel}) {
     Widget corner({required bool isRight}) {
       return SizedBox(
@@ -572,7 +585,7 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
     return Row(children: <Widget>[corner(isRight: false), ...labels.map(_buildTimingLabelCell), corner(isRight: true)]);
   }
 
-  ///
+  /// 人気順1行ぶん（各タイミングの馬番）を表示する。
   Widget _buildRankingRow(int rank, List<int?> rowData, Map<int, int> horseToStartRank) {
     return Row(
       children: <Widget>[
@@ -601,7 +614,7 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
     );
   }
 
-  ///
+  /// 人気順位の推移の表全体を表示する。選択した馬の推移を線で重ねる。
   Widget _displayRankingList() {
     final _GridData data = switch (widget.mode) {
       RankingMode.live => _buildFromOddsModel(),
@@ -670,6 +683,7 @@ class _HorseOddsRankingDisplayAlertState extends ConsumerState<HorseOddsRankingD
 
 ////////////////////////////////////////////////////////////////
 
+/// 強調表示する馬を選ぶパネル。
 class _HorseSelectorContent extends ConsumerStatefulWidget {
   const _HorseSelectorContent({
     required this.horseNum,
@@ -687,6 +701,7 @@ class _HorseSelectorContent extends ConsumerStatefulWidget {
   ConsumerState<_HorseSelectorContent> createState() => _HorseSelectorContentState();
 }
 
+/// 強調表示する馬を選ぶパネルの状態。
 class _HorseSelectorContentState extends ConsumerState<_HorseSelectorContent>
     with ControllersMixin<_HorseSelectorContent> {
   Set<int> _aiPickupNums = <int>{};
@@ -699,14 +714,14 @@ class _HorseSelectorContentState extends ConsumerState<_HorseSelectorContent>
   /// 1st AI が選ばず 2nd AI だけが選んだ馬番。バッジの見た目は AI 馬と同じにする。
   Set<int> get _secondOnlyNums => _secondAiNums.difference(_aiPickupNums);
 
-  ///
+  /// 画面表示後に、AI の選出馬を取得する。
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) => _fetchAiData());
   }
 
-  ///
+  /// 表示中のレースの AI 選出馬（1st AI・2nd AI）を取得する。
   Future<void> _fetchAiData() async {
     final String date;
     final String kaisuu;
@@ -781,7 +796,7 @@ class _HorseSelectorContentState extends ConsumerState<_HorseSelectorContent>
         (results[1]['analysis_text'] as String?) ?? '',
       );
 
-      // 20261115 統合結果（merged_horses）を受け取っていれば、それを正とする（AI予想画面・総合予想と同じ基準）。
+      // 統合結果（merged_horses）を受け取っていれば、それを正とする（AI予想画面・総合予想と同じ基準）。
       //   頭数に足りない分の「補充」の馬も、サーバーが選んだAI選出なので、AIの印を付ける。
       //   各AIの文章だけを見ると、補充の馬とサーバーが外した馬の扱いがAI予想画面と食い違う。
       final Map<String, dynamic> second = results[1];
@@ -790,21 +805,13 @@ class _HorseSelectorContentState extends ConsumerState<_HorseSelectorContent>
 
       if (mounted) {
         setState(() {
-          // _aiPickupNums = aiHorses.map((AiResponseRecommendHorseModel h) => h.num).toSet();   // 20261115 旧
-          // _aiPickupScores = <int, String>{
-          //   for (final AiResponseRecommendHorseModel h in aiHorses) h.num: h.score.toString(),
-          // };
-          // _secondAiNums = secondHorses.map((AiResponseRecommendHorseModel h) => h.num).toSet();
-          // _secondAiScores = <int, String>{
-          //   for (final AiResponseRecommendHorseModel h in secondHorses) h.num: h.score.toString(),
-          // };
           if (merged != null) {
             final List<AiResponseRecommendHorseModel> firstSide =
                 merged.where((AiResponseRecommendHorseModel h) => h.category != 'second_only').toList();
             final List<AiResponseRecommendHorseModel> secondSide =
                 merged.where((AiResponseRecommendHorseModel h) => h.category == 'second_only').toList();
             _aiPickupNums = firstSide.map((AiResponseRecommendHorseModel h) => h.num).toSet();
-            // 「補充」の馬は印だけ付け、おすすめ度（サーバーでは0）は出さない（0点の評価に見えるため。なる11/15）
+            // 「補充」の馬は印だけ付け、おすすめ度（サーバーでは0）は出さない
             _aiPickupScores = <int, String>{
               for (final AiResponseRecommendHorseModel h in firstSide)
                 if (!h.fillSlot) h.num: h.score.toString(),
@@ -839,7 +846,7 @@ class _HorseSelectorContentState extends ConsumerState<_HorseSelectorContent>
     }
   }
 
-  ///
+  /// 1st AI が選んだ馬に、おすすめ度のバッジを表示する。
   Widget _buildAiBadge(int num) {
     if (_isAiLoading) {
       return const Row(
@@ -879,7 +886,6 @@ class _HorseSelectorContentState extends ConsumerState<_HorseSelectorContent>
     );
   }
 
-  ///
   /// 2nd AI だけが選んだ馬のバッジ。1st AI の馬と同じ見た目にし、スコアだけ差し替える。
   Widget _buildSecondOnlyBadge(int num) {
     if (_isSecondAiLoading) {
@@ -921,7 +927,7 @@ class _HorseSelectorContentState extends ConsumerState<_HorseSelectorContent>
     );
   }
 
-  ///
+  /// 取得中ならインジケーター、取得済みなら該当するバッジを表示する。
   Widget _buildBadgeOrLoading(int num) {
     final bool isAi = _aiPickupNums.contains(num);
 
@@ -946,7 +952,7 @@ class _HorseSelectorContentState extends ConsumerState<_HorseSelectorContent>
     return const SizedBox.shrink();
   }
 
-  ///
+  /// 強調表示する馬を選ぶための馬番一覧を表示する。
   @override
   Widget build(BuildContext context) {
     final int? selectedHorse = ref.watch(appParamProvider).selectedHorseLineNum;
@@ -1048,6 +1054,7 @@ class _HorseSelectorContentState extends ConsumerState<_HorseSelectorContent>
 
 ////////////////////////////////////////////////////////////////
 
+/// 選んだ馬の順位の推移を線で描く。
 class _HorseLinePainter extends CustomPainter {
   const _HorseLinePainter({required this.grid, required this.selectedHorse, required this.colCount});
 
@@ -1055,7 +1062,7 @@ class _HorseLinePainter extends CustomPainter {
   final int? selectedHorse;
   final int colCount;
 
-  ///
+  /// 表の中で、指定した順位・列のセルの中心座標を返す。
   Offset _center(int rank, int colIdx) {
     const double rankCellW = 40;
     const double dataCellW = 50;
@@ -1063,7 +1070,7 @@ class _HorseLinePainter extends CustomPainter {
     return Offset(rankCellW + colIdx * dataCellW + dataCellW / 2, cellH + (rank - 1) * cellH + cellH / 2);
   }
 
-  ///
+  /// 選択した馬の順位の推移を、セルの中心を結ぶ線で描く。
   @override
   void paint(Canvas canvas, Size size) {
     final int? horse = selectedHorse;
@@ -1114,7 +1121,7 @@ class _HorseLinePainter extends CustomPainter {
     }
   }
 
-  ///
+  /// 選択した馬か表のデータが変わったときだけ描き直す。
   @override
   bool shouldRepaint(_HorseLinePainter old) => old.selectedHorse != selectedHorse || old.grid != grid;
 }

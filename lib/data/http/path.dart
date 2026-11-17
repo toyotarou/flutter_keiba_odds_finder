@@ -1,3 +1,12 @@
+// =============================================================================
+// ファイル名   : path.dart
+// 概要         : サーバー API のパス一覧（enum）と、パス文字列への変換。
+// 作成者       : Hideyuki Toyoda
+// 作成日       : 2026-05-30
+// 最終更新日   : 2026-11-17
+// =============================================================================
+
+/// サーバー API のパス一覧。
 enum APIPath {
   getHorseOddsFinderSchedules,
   getHorseOddsFinderRaces,
@@ -39,15 +48,13 @@ enum APIPath {
   getHorseOddsFinderPushSendLogsDeveloperNews,
   getHorseOddsFinderAiAnalysisRecord,
   getHorseOddsFinderAiAnalysisRecord2,
-  getHorseOddsFinderAiAnalysisByDate, // 20261026: 1日分のAI結果をまとめて取得
-  getMyPushReceive, // 20261101: ホーム画面の「通知」スイッチ — 受信設定の取得
-  changeMyPushReceive, // 20261101: ホーム画面の「通知」スイッチ — 受信/非受信の切替
+  getHorseOddsFinderAiAnalysisByDate,   // 1日分のAI結果をまとめて取得
+  getMyPushReceive,   // ホーム画面の「通知」スイッチ — 受信設定の取得
+  changeMyPushReceive,   // ホーム画面の「通知」スイッチ — 受信/非受信の切替
 
-  // ── 20261025: r12.2 確認ボタンを外したので使いません ──
-  // // @ANCHOR-20261020-R122-FLUTTER  r12.2 の読取API（パス末尾に race_id が付きます）
-  // getBaganrikiPublishedPredictionRace,
 }
 
+/// APIPath を実際の URL パス文字列に変換するための拡張。
 extension APIPathExtension on APIPath {
   String? get value {
     switch (this) {
@@ -164,16 +171,12 @@ extension APIPathExtension on APIPath {
       case APIPath.getHorseOddsFinderAiAnalysisByDate:
         return 'getHorseOddsFinderAiAnalysisByDate';
 
-      // 20261101: ホーム画面の「通知」スイッチ
+      // ホーム画面の「通知」スイッチ
       case APIPath.getMyPushReceive:
         return 'getMyPushReceive';
       case APIPath.changeMyPushReceive:
         return 'changeMyPushReceive';
 
-      // ── 20261025: r12.2 確認ボタンを外したので使いません ──
-      // // @ANCHOR-20261020-R122-FLUTTER  /api/baganriki/r12-2/races/{race_id}
-      // case APIPath.getBaganrikiPublishedPredictionRace:
-      //   return 'baganriki/r12-2/races';
     }
   }
 }

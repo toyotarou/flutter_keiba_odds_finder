@@ -1,3 +1,11 @@
+// =============================================================================
+// ファイル名   : laravel_config.dart
+// 概要         : サーバー側の設定値を API から取得して保持する Riverpod の Notifier と、その状態クラス。
+// 作成者       : Hideyuki Toyoda
+// 作成日       : 2026-05-30
+// 最終更新日   : 2026-11-17
+// =============================================================================
+
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -9,6 +17,7 @@ part 'laravel_config.freezed.dart';
 
 part 'laravel_config.g.dart';
 
+/// サーバー側の設定値の状態。
 @freezed
 class LaravelConfigState with _$LaravelConfigState {
   // ignore: non_constant_identifier_names
@@ -23,17 +32,19 @@ class LaravelConfigState with _$LaravelConfigState {
   }) = _LaravelConfigState;
 }
 
+/// サーバー側の設定値を API から取得して保持する Notifier。
 @riverpod
 class LaravelConfig extends _$LaravelConfig {
   final Utility utility = Utility();
 
-  ///
+  /// 状態の初期値を返す。
   @override
   LaravelConfigState build() => const LaravelConfigState();
 
   //============================================== api
 
-  ///
+  /// API からサーバー側の設定値を全件取得し、新しい状態を作って返す。
+  /// 取得に失敗したときはエラーを表示し、例外を呼び出し元へ投げ直す。
   Future<LaravelConfigState> fetchAllLaravelConfigData() async {
     final HttpClient client = ref.read(httpClientProvider);
 
@@ -77,7 +88,7 @@ class LaravelConfig extends _$LaravelConfig {
     }
   }
 
-  ///
+  /// サーバー側の設定値を全件取得して状態に反映する。失敗したときは状態を変えない。
   Future<void> getAllLaravelConfigData() async {
     try {
       final LaravelConfigState newState = await fetchAllLaravelConfigData();

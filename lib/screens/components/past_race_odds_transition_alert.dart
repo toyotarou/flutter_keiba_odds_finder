@@ -1,3 +1,12 @@
+// =============================================================================
+// ファイル名   : past_race_odds_transition_alert.dart
+// 概要         : 過去レースの一覧画面。日付・競馬場・レースごとに、AI 予想の合致結果と払戻金を表示し、
+//                各レースの AI 予想・人気順位の推移・払戻金などの画面を開ける。
+// 作成者       : Hideyuki Toyoda
+// 作成日       : 2026-07-21
+// 最終更新日   : 2026-11-17
+// =============================================================================
+
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -25,6 +34,7 @@ import 'horse_odds_ranking_display_alert.dart';
 import 'payout_data_display_alert.dart';
 import 'total_forecast_display_alert.dart';
 
+/// 過去レースの一覧画面。
 class PastRaceOddsTransitionAlert extends ConsumerStatefulWidget {
   const PastRaceOddsTransitionAlert({super.key});
 
@@ -32,6 +42,7 @@ class PastRaceOddsTransitionAlert extends ConsumerStatefulWidget {
   ConsumerState<PastRaceOddsTransitionAlert> createState() => _PastRaceOddsTransitionAlertState();
 }
 
+/// 過去レースの一覧画面の状態。
 class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransitionAlert>
     with ControllersMixin<PastRaceOddsTransitionAlert> {
   final Utility _utility = Utility();
@@ -51,7 +62,7 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
         ref.read(summaryProvider.notifier).getAllSummaryData();
       }
 
-      // 20260924: 振り返りは起動時に取得しなくなったため、未取得ならここで取得する
+      // 振り返りは起動時に取得しなくなったため、未取得ならここで取得する
       if (ref.read(raceIntrospectionProvider).raceIntrospectionMap.isEmpty) {
         ref.read(raceIntrospectionProvider.notifier).getAllRaceIntrospectionData();
       }
@@ -74,13 +85,13 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
   /// サーバーが確定させたレース指標（波乱度・下位進入度・大穴進入度）。
   final Map<String, Map<String, int?>> _mergedRaceMetricsMap = <String, Map<String, int?>>{};
 
-  /// 20261025: 統合結果の状態（'undetermined' ＝ 採用できるAI回答が無かった）
+  /// 統合結果の状態（'undetermined' ＝ 採用できるAI回答が無かった）
   final Map<String, String?> _mergeStatusMap = <String, String?>{};
 
-  /// 20261111: 予想を出さなかった理由の文言（サーバーの status_reason）
+  /// 予想を出さなかった理由の文言（サーバーの status_reason）
   final Map<String, String?> _mergeStatusReasonMap = <String, String?>{};
 
-  /// 20261111: 新しい予想（prediction_method == 'new'）のレースか
+  /// 新しい予想（prediction_method == 'new'）のレースか
   final Map<String, bool> _predictionNewMap = <String, bool>{};
 
   final Set<String> _fetchedSecondAiDates = <String>{};
@@ -91,10 +102,10 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
 
   final Set<String> _payoutFetchDone = <String>{};
 
-  /// 20261026: 払戻の先読みを開始したか。build のたびに通信を投げないよう、一度立てたら戻さない。
+  /// 払戻の先読みを開始したか。build のたびに通信を投げないよう、一度立てたら戻さない。
   bool _payoutPrefetchStarted = false;
 
-  /// 20261026: 先読みで1回の通信にまとめる日付の数（URL が長くなりすぎないよう分割する）
+  /// 先読みで1回の通信にまとめる日付の数（URL が長くなりすぎないよう分割する）
   static const int _payoutPrefetchDatesPerRequest = 5;
 
   static const double _moveAmount = 18;
@@ -103,172 +114,10 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
 
   Timer? _repeatTimer;
 
-  // 20261026: 以下の _fetchSecondAiForDate / _fetchFirstAiForDate は、レースごとに API を1回ずつ呼んでいた
+  // 以下の _fetchSecondAiForDate / _fetchFirstAiForDate は、レースごとに API を1回ずつ呼んでいた
   //   （1日36レースなら72回。保存済みの回答が無いレースではサーバーが AI（有料）を呼びに行っていた）。
-  //   1日分を1回でまとめて取る _fetchAiForDate に置き換えたので、コメントアウトして残す。
-  //   ///
-  //   Future<void> _fetchSecondAiForDate(String date) async {
-  //     if (_fetchedSecondAiDates.contains(date)) {
-  //       return;
-  //     }
-  //     _fetchedSecondAiDates.add(date);
 
-  //     final Map<String, List<SummaryModel>> summaryMap = summaryState.summaryMap;
-
-  //     final List<Future<void>> futures = <Future<void>>[];
-  //     int successCount = 0;
-
-  //     for (final MapEntry<String, List<SummaryModel>> entry in summaryMap.entries) {
-  //       if (!entry.key.startsWith(date)) {
-  //         continue;
-  //       }
-
-  //       final List<SummaryModel> models = entry.value;
-
-  //       if (models.isEmpty) {
-  //         continue;
-  //       }
-
-  //       final int kaisuu = int.tryParse(models.first.kaisuu) ?? 0;
-
-  //       final Set<int> seenRaces = <int>{};
-
-  //       for (final SummaryModel m in models) {
-  //         if (!seenRaces.add(m.race)) {
-  //           continue;
-  //         }
-
-  //         final String key = '${m.date}_${kaisuu}_${m.basho}_${m.day}_${m.race}';
-
-  //         // 結果が届いた時点で即 setState → キャッシュ済みレースはすぐ表示される
-  //         futures.add(
-  //           fetchSecondAiOpinionData(
-  //                 ref,
-  //                 date: m.date,
-  //                 kaisuu: kaisuu.toString(),
-  //                 basho: m.basho,
-  //                 day: m.day.toString(),
-  //                 race: m.race,
-  //               )
-  //               .then((Map<String, dynamic> data) {
-  //                 final String? text = data['analysis_text'] as String?;
-  //                 final List<dynamic>? mergedRaw = data['merged_horses'] as List<dynamic>?;
-  //                 if (text != null) {
-  //                   successCount++;
-  //                 }
-  //                 if (mounted) {
-  //                   setState(() {
-  //                     _secondAiTextMap[key] = text;
-  //                     // 統合結果は捨てずに保持する（以前は analysis_text だけ拾っており、
-  //                     // 過去レースでは統合結果が一度も使われていなかった）
-  //                     // 0頭の統合結果も「受け取った」として保持する（サーバーが除外した馬を出さないため）
-  //                     if (mergedRaw != null) {
-  //                       _mergedHorsesMap[key] = parseMergedHorses(mergedRaw);
-  //                     }
-  //                     _mergeStatusMap[key] = data['status'] as String?;
-  //                     final int? upsetRace = (data['upset_race'] as num?)?.toInt();
-  //                     if (upsetRace != null) {
-  //                       _mergedUpsetRaceMap[key] = upsetRace;
-  //                     }
-  //                     final Map<String, int>? metrics = parseRaceMetricsJson(data['race_metrics']);
-  //                     if (metrics != null) {
-  //                       _mergedRaceMetricsMap[key] = metrics;
-  //                     }
-  //                   });
-  //                 }
-  //               })
-  //               .catchError((_) {
-  //                 if (mounted) {
-  //                   setState(() => _secondAiTextMap[key] = null);
-  //                 }
-  //               }),
-  //         );
-  //       }
-  //     }
-
-  //     if (futures.isEmpty) {
-  //       // summaryMap がまだ空だった場合もリトライできるよう解除する
-  //       _fetchedSecondAiDates.remove(date);
-  //       return;
-  //     }
-
-  //     try {
-  //       await Future.wait(futures);
-
-  //       // 全レースのデータ取得に失敗した場合はリトライを許可
-  //       if (successCount == 0) {
-  //         _fetchedSecondAiDates.remove(date);
-  //       }
-  //     } catch (_) {
-  //       _fetchedSecondAiDates.remove(date);
-  //     }
-  //   }
-
-  //   ///
-  //   Future<void> _fetchFirstAiForDate(String date) async {
-  //     if (_fetchedFirstAiDates.contains(date)) {
-  //       return;
-  //     }
-  //     _fetchedFirstAiDates.add(date);
-
-  //     final Map<String, List<SummaryModel>> summaryMap = summaryState.summaryMap;
-  //     final List<Future<void>> futures = <Future<void>>[];
-
-  //     for (final MapEntry<String, List<SummaryModel>> entry in summaryMap.entries) {
-  //       if (!entry.key.startsWith(date)) {
-  //         continue;
-  //       }
-  //       final List<SummaryModel> models = entry.value;
-  //       if (models.isEmpty) {
-  //         continue;
-  //       }
-  //       final int kaisuu = int.tryParse(models.first.kaisuu) ?? 0;
-  //       final Set<int> seenRaces = <int>{};
-
-  //       for (final SummaryModel m in models) {
-  //         if (!seenRaces.add(m.race)) {
-  //           continue;
-  //         }
-  //         final String key = '${m.date}_${kaisuu}_${m.basho}_${m.day}_${m.race}';
-
-  //         futures.add(
-  //           fetchAiAnalysisData(
-  //                 ref,
-  //                 date: m.date,
-  //                 kaisuu: kaisuu.toString(),
-  //                 basho: m.basho,
-  //                 day: m.day.toString(),
-  //                 race: m.race,
-  //                 gapHorseNums: <int>[],
-  //                 upsetPickupHorseNums: <int>[],
-  //               )
-  //               .then((Map<String, dynamic> data) {
-  //                 final String? text = data['analysis_text'] as String?;
-  //                 if (mounted) {
-  //                   setState(() => _firstAiTextMap[key] = text);
-  //                 }
-  //               })
-  //               .catchError((_) {
-  //                 if (mounted) {
-  //                   setState(() => _firstAiTextMap[key] = null);
-  //                 }
-  //               }),
-  //         );
-  //       }
-  //     }
-
-  //     if (futures.isEmpty) {
-  //       _fetchedFirstAiDates.remove(date);
-  //       return;
-  //     }
-  //     try {
-  //       await Future.wait(futures);
-  //     } catch (_) {
-  //       _fetchedFirstAiDates.remove(date);
-  //     }
-  //   }
-
-  /// 20261026: 1日分の 1st / 2nd AI を、保存済みの結果だけから1回の通信でまとめて取得する。
+  /// 1日分の 1st / 2nd AI を、保存済みの結果だけから1回の通信でまとめて取得する。
   ///
   /// 以前はレースごとに 1st / 2nd を1回ずつ呼んでいた（1日36レースなら72回）。
   /// 新しい API はサーバー側で AI を呼ばない（保存済みの回答を読むだけ）。
@@ -351,8 +200,8 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
             _mergedHorsesMap[r.key] = parseMergedHorses(mergedRaw);
           }
           _mergeStatusMap[r.key] = second['status'] as String?;
-          _mergeStatusReasonMap[r.key] = second['status_reason'] as String?;   // 20261111
-          _predictionNewMap[r.key] = second['prediction_method'] == 'new';   // 20261111
+          _mergeStatusReasonMap[r.key] = second['status_reason'] as String?;
+          _predictionNewMap[r.key] = second['prediction_method'] == 'new';
           final int? upsetRace = (second['upset_race'] as num?)?.toInt();
           if (upsetRace != null) {
             _mergedUpsetRaceMap[r.key] = upsetRace;
@@ -378,7 +227,7 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
     }
   }
 
-  /// 20261026: 複数日付の AI を、一斉にではなく1日ずつ順番に取得する
+  /// 複数日付の AI を、一斉にではなく1日ずつ順番に取得する
   Future<void> _fetchAiForDatesInOrder(List<String> dates) async {
     for (final String d in dates) {
       if (!mounted) {
@@ -388,7 +237,7 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
     }
   }
 
-  ///
+  /// 指定した日付の全レースの払戻金をまとめて取得する（取得済みの日付は取り直さない）。
   Future<void> _fetchPayoutsForDate(String date) async {
     if (_fetchedDates.contains(date)) {
       return;
@@ -396,32 +245,6 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
 
     _fetchedDates.add(date);
 
-    // 20261026: races パラメータの組み立ては _buildPayoutRaceParams に移した（先読みと共通化）
-    // final Map<String, List<SummaryModel>> summaryMap = summaryState.summaryMap;
-    //
-    // final Set<String> raceParamSet = <String>{};
-    //
-    // for (final MapEntry<String, List<SummaryModel>> entry in summaryMap.entries) {
-    //   if (!entry.key.startsWith(date)) {
-    //     continue;
-    //   }
-    //
-    //   final List<SummaryModel> models = entry.value;
-    //
-    //   if (models.isEmpty) {
-    //     continue;
-    //   }
-    //
-    //   final int kaisuu = int.tryParse(models.first.kaisuu) ?? 0;
-    //
-    //   final Set<int> seenRaces = <int>{};
-    //
-    //   for (final SummaryModel m in models) {
-    //     if (seenRaces.add(m.race)) {
-    //       raceParamSet.add('${m.date}|$kaisuu|${m.basho}|${m.race}');
-    //     }
-    //   }
-    // }
     final Set<String> raceParamSet = _buildPayoutRaceParams(date);
 
     if (raceParamSet.isEmpty) {
@@ -442,7 +265,7 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
     }
   }
 
-  /// 20261026: 指定日付の全レース分の races パラメータ（"date|kaisuu|basho|race"）を組み立てる。
+  /// 指定日付の全レース分の races パラメータ（"date|kaisuu|basho|race"）を組み立てる。
   Set<String> _buildPayoutRaceParams(String date) {
     final Map<String, List<SummaryModel>> summaryMap = summaryState.summaryMap;
 
@@ -473,7 +296,7 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
     return raceParamSet;
   }
 
-  /// 20261026: 過去日付の払戻を、数日分ずつまとめて順番に取得する。
+  /// 過去日付の払戻を、数日分ずつまとめて順番に取得する。
   ///
   /// 以前は build のたびに「1日1回 × 全日付」を一斉に投げており、
   /// 429 で失敗すると次の build でまた投げ直すため、1回開くだけで100回以上の通信になっていた。
@@ -529,7 +352,7 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
     }
   }
 
-  ///
+  /// 長押しスクロール用のタイマーと、スクロールの制御を破棄する。
   @override
   void dispose() {
     _repeatTimer?.cancel();
@@ -541,7 +364,7 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
     super.dispose();
   }
 
-  ///
+  /// ボタンを押している間、指定した処理を繰り返す。
   void _startRepeating(VoidCallback action) {
     _repeatTimer?.cancel();
 
@@ -550,14 +373,14 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
     _repeatTimer = Timer.periodic(const Duration(milliseconds: _tickMs), (_) => action());
   }
 
-  ///
+  /// 繰り返しを止める。
   void _stopRepeating() {
     _repeatTimer?.cancel();
 
     _repeatTimer = null;
   }
 
-  ///
+  /// 一覧を指定した量だけスクロールする。
   void _scrollBy(double delta) {
     if (!_scrollController.hasClients) {
       return;
@@ -570,7 +393,7 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
     _scrollController.jumpTo(newOffset);
   }
 
-  ///
+  /// 日付の行を開く・閉じるボタンを表示する。
   Widget _buildToggleButton({required bool isOpen, required VoidCallback onTap, VoidCallback? onSecondAiFetch}) {
     return GestureDetector(
       onTap: () {
@@ -592,16 +415,14 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
     );
   }
 
-  ///
+  /// 過去レースの一覧（日付 → 競馬場 → レース）の画面を組み立てる。
   @override
   Widget build(BuildContext context) {
-    // 20260926: JRAの特性で翌日のレースが1レースだけ取得されてしまう場合があるため、本日以前の日付だけを表示する
-    // DateTime.now().toString() は 'yyyy-MM-dd HH:mm:ss.SSS' 形式なので先頭10文字で 'yyyy-MM-dd' を得る
+    // JRAの特性で翌日のレースが1レースだけ取得されてしまう場合があるため、本日以前の日付だけを表示する
     final String today = DateTime.now().toString().substring(0, 10);
 
-    // 20261003: 配当が取得できた（＝レースが終了している）日付だけを表示する。判定のため、開く前に配当を先読みする
-    // summaryState.summaryDateBashoMap.keys.where((String d) => d.compareTo(today) <= 0).forEach(_fetchPayoutsForDate);
-    // 20261026: build のたびに日付ごとの通信を投げていたため、先読みは summary 取得後に1回だけ・まとめて行う
+    // 配当が取得できた（＝レースが終了している）日付だけを表示する。判定のため、開く前に配当を先読みする
+    // build のたびに日付ごとの通信を投げていたため、先読みは summary 取得後に1回だけ・まとめて行う
     if (!_payoutPrefetchStarted && summaryState.summaryMap.isNotEmpty) {
       _payoutPrefetchStarted = true;
       final List<String> pastDates = summaryState.summaryDateBashoMap.keys
@@ -657,9 +478,7 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
                             }
                           },
                           onSecondAiFetch: () {
-                            // summaryDateBashoMap.keys.forEach(_fetchSecondAiForDate);
-                            // summaryDateBashoMap.keys.forEach(_fetchFirstAiForDate);
-                            // 20261026: 全日付を一斉に呼ばず、1日ずつ順番にまとめて取得する
+                            // 全日付を一斉に呼ばず、1日ずつ順番にまとめて取得する
                             _fetchAiForDatesInOrder(summaryDateBashoMap.keys.toList());
                           },
                         ),
@@ -733,9 +552,7 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
                                       }
                                     },
                                     onSecondAiFetch: () {
-                                      // _fetchSecondAiForDate(e.key);
-                                      // _fetchFirstAiForDate(e.key);
-                                      _fetchAiForDate(e.key); // 20261026: 1日分をまとめて1回で取得
+                                      _fetchAiForDate(e.key);   // 1日分をまとめて1回で取得
                                     },
                                   ),
                                 ],
@@ -764,9 +581,7 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
                                     setState(() => _expandedByDate['${e.key}_$e2'] = expanded);
                                     if (expanded) {
                                       _fetchPayoutsForDate(e.key);
-                                      // _fetchSecondAiForDate(e.key);
-                                      // _fetchFirstAiForDate(e.key);
-                                      _fetchAiForDate(e.key); // 20261026: 1日分をまとめて1回で取得
+                                      _fetchAiForDate(e.key);   // 1日分をまとめて1回で取得
                                     }
                                   },
                                   iconColor: Colors.greenAccent,
@@ -807,7 +622,7 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
     );
   }
 
-  ///
+  /// 過去レース1件ぶんの行（AI 予想の合致数・払戻金・各画面へのボタン）を表示する。
   Widget _buildRaceRow({required String date, required List<SummaryModel> models, required MapEntry<int, String> r}) {
     final int kaisuu = int.tryParse(models.first.kaisuu) ?? 0;
 
@@ -840,7 +655,7 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
     // オッズ・馬・結果データを各 State から取得
     final List<OddsModel> oddsForRace = buildOddsForRace(appParamState.keepOddsMap, keepRaceMapKey, r.key);
     final Map<int, HorseModel> horseModelMap = buildHorseModelMap(appParamState.keepHorseMap, keepRaceMapKey, r.key);
-    // 20261026: 馬番 → 枠番。馬データ（keepHorseMap）は今週分しか無いため、古いレースでは空になり、
+    // 馬番 → 枠番。馬データ（keepHorseMap）は今週分しか無いため、古いレースでは空になり、
     //   枠連が「獲得」にならなかった（07-11 小倉6R の枠連 8-8 など）。
     //   馬データが無いときは、この画面の元データである summary の waku から作る。
     final Map<int, int> numToWaku = horseModelMap.isNotEmpty
@@ -849,7 +664,7 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
             for (final SummaryModel m in models.where((SummaryModel m) => m.race == r.key && m.waku > 0))
               m.num: m.waku,
           };
-    // 20260926: t_horse_odds_finder_race_results は土曜の deleteKeibaTableRecords で毎週 TRUNCATE されるため、
+    // t_horse_odds_finder_race_results は土曜の deleteKeibaTableRecords で毎週 TRUNCATE されるため、
     // 先週以前のレースは raceResultMap に着順が無く、合致数が全て0頭になっていた。
     // raceResultMap に無い場合は、この画面の元データである summary の result（着順）から作る。
     final Map<int, int> raceResultNumToRankMap = _utility.buildNumToRankMap(
@@ -891,11 +706,11 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
             parseAnalysisText(_firstAiTextMap[lookupKey] ?? ''),
             parseAnalysisText(_secondAiTextMap[lookupKey] ?? ''),
           );
-    // 20261005: 3着以内に入った（合致した）馬の馬番。合致数と最高獲得払戻金額の計算に使う。
+    // 3着以内に入った（合致した）馬の馬番。合致数と最高獲得払戻金額の計算に使う。
     // AI予想の候補リストが空のとき（1st AI の回答が空で「未確定」になったレースなど）は、
     // 「X頭中Y頭が合致」が振り返り（DB保存）の文章のまま出る。合致馬が分からず 0頭扱いになるのを防ぐため、
     // その文章と同じ根拠である振り返りのピックアップ馬のうち、3着以内に入った馬を使う。
-    // 20261111: 新しい予想で「予想を出さなかった」レース。振り返りのピックアップ馬で合致を作らない
+    // 新しい予想で「予想を出さなかった」レース。振り返りのピックアップ馬で合致を作らない
     final bool isNoPrediction =
         displayHorses.isEmpty && _mergeStatusMap[lookupKey] == 'undetermined' && (_predictionNewMap[lookupKey] ?? false);
     final Set<int> hitHorseNums = displayHorses.isNotEmpty
@@ -903,7 +718,7 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
               .where((AiResponseRecommendHorseModel h) => (numToRankMap[h.num] ?? 99) <= 3)
               .map((AiResponseRecommendHorseModel h) => h.num)
               .toSet()
-        : ((introspectionModel == null || isNoPrediction)   // 20261111: isNoPrediction を追加
+        : ((introspectionModel == null || isNoPrediction)   // isNoPrediction を追加
               ? <int>{}
               : extractPickupNums(
                   introspectionModel.introspection,
@@ -911,36 +726,24 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
 
     final int matchedCount = hitHorseNums.length;
 
-    // 20261116 なる11/15（02 その他）・11/16 仕上げ①：補充の内訳の文は、AI予想画面と同じ共通の関数で作る（functions.dart の buildMatchResultText）
-    // //   全頭が補充（AIの評価を確認できなかった参考の表示）のときは「参考表示」と付け、通常のAI予想の成績と一緒にしない。
-    // final List<AiResponseRecommendHorseModel> fillHorses = displayHorses.where((AiResponseRecommendHorseModel h) => h.fillSlot).toList();
-    // final int fillHitCount = fillHorses.where((AiResponseRecommendHorseModel h) => hitHorseNums.contains(h.num)).length;
-    // final int regularCount = displayHorses.length - fillHorses.length;
-    // final String matchText = fillHorses.isEmpty
-    //     ? '${displayHorses.length}頭中$matchedCount頭が合致'
-    //     : regularCount == 0
-    //     ? '参考表示 ${displayHorses.length}頭中$matchedCount頭が合致（全頭が補充）'
-    //     : '全体（補充含む）${displayHorses.length}頭中$matchedCount頭が合致（通常$regularCount頭中${matchedCount - fillHitCount}頭・補充${fillHorses.length}頭中$fillHitCount頭）';
+    // 補充の内訳の文は、AI予想画面と同じ共通の関数で作る（functions.dart の buildMatchResultText）
     final String matchText = buildMatchResultText(displayHorses, hitHorseNums);
 
-    // 20261026: 同着対応。3着以内に入った馬（同着の馬も含む）の頭数。通常は3頭、同着があると4頭以上になることがある。
-    // 20261026: ピンクの条件変更で使わなくなったためコメントアウト
-    // final int topFinisherCount = numToRankMap.values.where((int rank) => rank <= kRaceTopFinishers).length;
+    // 同着対応。3着以内に入った馬（同着の馬も含む）の頭数。通常は3頭、同着があると4頭以上になることがある。
 
-    // 20261026: 同じ着順の馬が2頭以上いれば同着あり
+    // 同じ着順の馬が2頭以上いれば同着あり
     final List<int> topRanks = numToRankMap.values.where((int rank) => rank <= kRaceTopFinishers).toList();
     final bool isDeadHeat = topRanks.toSet().length < topRanks.length;
 
-    // 20261026: 全合致＝同着の馬も含めて、3着以内の馬を全部AIが選んでいる（このときだけピンクにする）
-    // final bool isAllMatched = matchedCount >= 3 && matchedCount >= topFinisherCount;
-    // 20261026: ピンクの条件を「三連複が取れる」に変更。
+    // 全合致＝同着の馬も含めて、3着以内の馬を全部AIが選んでいる（このときだけピンクにする）
+    // ピンクの条件を「三連複が取れる」に変更。
     //   合致した馬の着順を小さい順に並べ、1頭目が1着・2頭目が2着以内・3頭目が3着以内なら三連複が成立する。
     //   同着が無いレースでは「3頭合致」と同じ。同着で3着の片方だけ合致していてもピンクになる。
     final List<int> hitRanks = hitHorseNums.map((int n) => numToRankMap[n] ?? 99).toList()..sort();
     final bool isAllMatched =
         hitRanks.length >= 3 && hitRanks[0] <= 1 && hitRanks[1] <= 2 && hitRanks[2] <= kRaceTopFinishers;
 
-    // 20261026: 同着があるレースで、どの着順の馬が合致したかを「1着、2着、3着の片方が合致」のように表す。
+    // 同着があるレースで、どの着順の馬が合致したかを「1着、2着、3着の片方が合致」のように表す。
     //   同着の着順は、全部合致なら「3着の2頭」、一部なら「3着の片方」（3頭以上の同着は「3着の1頭」など頭数で表す）。
     String? deadHeatHitText;
     if (isDeadHeat && matchedCount >= 1) {
@@ -970,12 +773,11 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
     if (resultText != null && displayHorses.isNotEmpty) {
       final RegExp pattern = RegExp(r'\d+頭中\d+頭が合致');
       if (pattern.hasMatch(resultText)) {
-        // adjustedResultText = resultText.replaceFirst(pattern, '${displayHorses.length}頭中$matchedCount頭が合致');   // 旧（20261116 補充の内訳を出す）
         adjustedResultText = resultText.replaceFirst(pattern, matchText);
       }
     }
 
-    // 20261026: 振り返り（race_introspection）が無いレースは、結果文が null のまま「分析中...」が回り続けていた。
+    // 振り返り（race_introspection）が無いレースは、結果文が null のまま「分析中...」が回り続けていた。
     //   払戻があり、AI予想の取得が終わっている場合は待つのをやめる。
     //   ・AI予想の候補があれば、そこから「X頭中Y頭が合致」を作る
     //   ・AI予想も無ければ（AIデータは 2026-08-15 以降しか無い）「AI予想データなし」と出し、払戻金は見られるようにする
@@ -984,17 +786,16 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
         _fetchedSecondAiDates.contains(date) &&
         _secondAiTextMap.containsKey(lookupKey)) {
       adjustedResultText = displayHorses.isNotEmpty
-          // ? '${displayHorses.length}頭中$matchedCount頭が合致'   // 旧（20261116 補充の内訳を出す）
           ? matchText
           : 'AI予想データなし';
     }
 
-    // 20261111: 新しい予想で「予想を出さなかった」レースは「予想なし」と出す（振り返りの「X頭中Y頭が合致」は出さない）
+    // 新しい予想で「予想を出さなかった」レースは「予想なし」と出す（振り返りの「X頭中Y頭が合致」は出さない）
     if (isNoPrediction) {
       adjustedResultText = '予想なし';
     }
 
-    // 20261026: 同着があったレースは「X頭中Y頭が合致」の後に（同着あり）を付ける
+    // 同着があったレースは「X頭中Y頭が合致」の後に（同着あり）を付ける
     if (adjustedResultText != null && isDeadHeat) {
       final RegExp pattern = RegExp(r'\d+頭中\d+頭が合致');
       adjustedResultText = adjustedResultText.replaceFirstMapped(pattern, (Match m) => '${m.group(0)}（同着あり）');
@@ -1081,8 +882,8 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
                                             _mergedUpsetRaceMap[lookupKey] ?? parseUpsetRaceValue(firstText),
                                         raceMetrics: _mergedRaceMetricsMap[lookupKey] ?? parseRaceMetrics(firstText),
                                         mergeStatus: _mergeStatusMap[lookupKey],
-                                        mergeStatusReason: _mergeStatusReasonMap[lookupKey],   // 20261111
-                                        numToWaku: numToWaku, // 20261026: 古いレースの枠連判定用
+                                        mergeStatusReason: _mergeStatusReasonMap[lookupKey],
+                                        numToWaku: numToWaku,   // 古いレースの枠連判定用
                                       ),
                                     );
                                   },
@@ -1216,7 +1017,7 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
                     raceNumber: r.key,
                     numToRankMap: numToRankMap,
                     aiHorseNums: displayHorses.map((AiResponseRecommendHorseModel h) => h.num).toList(),
-                    // 20261102: 払戻金画面で馬番の下に人気順を出す
+                    // 払戻金画面で馬番の下に人気順を出す
                     aiHorseNumToPopularity: <int, String>{
                       for (final AiResponseRecommendHorseModel h in displayHorses) h.num: h.popularity,
                     },
@@ -1253,7 +1054,7 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
     );
   }
 
-  ///
+  /// AI 予想の合致結果の文（例：「6頭中2頭が合致」）を表示する。三連複が取れるときは色を変える。
   Widget _buildResultTextSection({
     required String resultText,
     required int matchedCount,
@@ -1269,15 +1070,10 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
     required Map<int, int> numToWaku,
     required bool isSecondAiLoading,
     required List<int> aiHorseNums,
-    required Map<int, String> aiHorseNumToPopularity, // 20261102
+    required Map<int, String> aiHorseNumToPopularity,
   }) {
-    // 20261005: 3頭合致のときだけピンク、1〜2頭は白、0頭は従来どおり white60
-    // final Color textColor = matchedCount >= 3
-    //     ? const Color(0xFFFBB6CE)
-    //     : matchedCount >= 1
-    //     ? Colors.white
-    //     : Colors.white60;
-    // 20261026: ピンクは三連複が取れるとき（isAllMatched の計算部分を参照）。
+    // 3頭合致のときだけピンク、1〜2頭は白、0頭は従来どおり white60
+    // ピンクは三連複が取れるとき（isAllMatched の計算部分を参照）。
     final Color textColor = isAllMatched
         ? const Color(0xFFFBB6CE)
         : matchedCount >= 1
@@ -1285,8 +1081,7 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
         : Colors.white60;
 
     final ({String name, int amount})? maxHit = (matchedCount >= 1 && payout != null)
-        // ? findMaxHitPayout(payout, hitHorseNums, numToWaku: buildNumToWakuMap(horseModelMap.values))
-        ? findMaxHitPayout(payout, hitHorseNums, numToWaku: numToWaku) // 20261026: summary の枠番も使う
+        ? findMaxHitPayout(payout, hitHorseNums, numToWaku: numToWaku)   // summary の枠番も使う
         : null;
 
     return DefaultTextStyle(
@@ -1295,7 +1090,7 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
         crossAxisAlignment: CrossAxisAlignment.end,
         children: <Widget>[
           Text(resultText),
-          // 20261026: 同着があるレースだけ、どの着順の馬が合致したかを出す
+          // 同着があるレースだけ、どの着順の馬が合致したかを出す
           if (deadHeatHitText != null) ...<Widget>[Text(deadHeatHitText)],
           if (isSecondAiLoading) ...<Widget>[
             const Padding(
@@ -1317,7 +1112,7 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
 
           if (maxHit != null) ...<Widget>[Text('最高獲得払戻金額：${maxHit.amount.toString().toCurrency()}円（${maxHit.name}）')],
 
-          // 20261011: そのレースの最高払戻金額（通常は三連単）
+          // そのレースの最高払戻金額（通常は三連単）
           if (payout != null && findMaxPayout(payout) != null) ...<Widget>[
             Text('最高払戻金額：${findMaxPayout(payout)!.amount.toString().toCurrency()}円（${findMaxPayout(payout)!.name}）'),
           ],
@@ -1327,7 +1122,7 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
 
             GestureDetector(
               onTap: () {
-                // 20261005: 払戻金画面を開く。AI予想で3着以内に入った馬の馬番を渡し、合致した払戻にだけ「獲得」を出す
+                // 払戻金画面を開く。AI予想で3着以内に入った馬の馬番を渡し、合致した払戻にだけ「獲得」を出す
                 OddsFinderDialog(
                   context: context,
                   hideRaceOverlay: true,
@@ -1338,10 +1133,10 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
                     hitHorseNums: hitHorseNums,
                     numToRankMap: numToRankMap,
                     aiHorseNums: aiHorseNums,
-                    aiHorseNumToPopularity: aiHorseNumToPopularity, // 20261102
-                    // 20261008: 一覧用に取得済みの払戻データを渡す（開くたびのAPI再取得をやめる）
+                    aiHorseNumToPopularity: aiHorseNumToPopularity,
+                    // 一覧用に取得済みの払戻データを渡す（開くたびのAPI再取得をやめる）
                     payout: payout,
-                    // 20261026: 馬データが無い古いレースでも枠連を判定できるよう、枠番を渡す
+                    // 馬データが無い古いレースでも枠連を判定できるよう、枠番を渡す
                     numToWaku: numToWaku,
                   ),
                   paddingLeft: context.screenSize.width * 0.1,

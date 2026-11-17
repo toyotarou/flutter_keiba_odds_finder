@@ -1,7 +1,16 @@
+// =============================================================================
+// ファイル名   : upset_score_explain_alert.dart
+// 概要         : 「期待数値について」の説明画面（Markdown）。
+// 作成者       : Hideyuki Toyoda
+// 作成日       : 2026-07-23
+// 最終更新日   : 2026-11-17
+// =============================================================================
+
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+/// 「期待数値について」の説明画面。
 class UpsetScoreExplainAlert extends ConsumerStatefulWidget {
   const UpsetScoreExplainAlert({super.key});
 
@@ -9,6 +18,7 @@ class UpsetScoreExplainAlert extends ConsumerStatefulWidget {
   ConsumerState<UpsetScoreExplainAlert> createState() => _UpsetScoreExplainAlertState();
 }
 
+/// 「期待数値について」の説明画面の状態。
 class _UpsetScoreExplainAlertState extends ConsumerState<UpsetScoreExplainAlert> {
   static const List<String> _markdownContent = <String>[
       '## 期待数値とは',
@@ -56,9 +66,6 @@ class _UpsetScoreExplainAlertState extends ConsumerState<UpsetScoreExplainAlert>
       '',
       '## 期待数値の読み方',
       '',
-      // 20261028 計算式（中央値 ÷ 現在オッズ）と説明が逆だったため差し替え（改良期待数値v0.1 資料1章の指摘）
-      // '- 値が **1.0より大きい** ほど、過去と比べてオッズが高い（＝市場からやや軽視されているが、過去の同人気順馬は好走している）ことを意味します。',
-      // '- 値が **1.0より小さい** ほど、過去と比べてオッズが低い（＝市場から高く評価されている）ことを意味します。',
       '- 値が **1.0より大きい** ほど、過去の同じ人気順の馬と比べて **今回のオッズが低い**（＝いつもの同じ人気より多く買われている）ことを意味します。',
       '- 値が **1.0より小さい** ほど、過去の同じ人気順の馬と比べて **今回のオッズが高い**（＝いつもの同じ人気より買われていない）ことを意味します。',
       '',
@@ -86,7 +93,7 @@ class _UpsetScoreExplainAlertState extends ConsumerState<UpsetScoreExplainAlert>
       '- 馬券の購入はご自身の判断と責任のもとで行ってください。',
     ];
 
-  ///
+  /// 「期待数値について」の説明画面を組み立てる。
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -107,7 +114,7 @@ class _UpsetScoreExplainAlertState extends ConsumerState<UpsetScoreExplainAlert>
     );
   }
 
-  ///
+  /// 画面上部の見出しを表示する。
   Widget _buildHeader(BuildContext context) {
     return const Padding(
       padding: EdgeInsets.fromLTRB(20, 16, 12, 0),
@@ -121,7 +128,7 @@ class _UpsetScoreExplainAlertState extends ConsumerState<UpsetScoreExplainAlert>
     );
   }
 
-  ///
+  /// 説明文（Markdown）をスクロールできる枠に表示する。
   Widget _buildBody() {
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),

@@ -1,7 +1,16 @@
+// =============================================================================
+// ファイル名   : baganriki_index_explain_alert.dart
+// 概要         : 「馬眼力指数について」の説明画面（Markdown）。
+// 作成者       : Hideyuki Toyoda
+// 作成日       : 2026-08-24
+// 最終更新日   : 2026-11-17
+// =============================================================================
+
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+/// 「馬眼力指数について」の説明画面。
 class BaganrikiIndexExplainAlert extends ConsumerWidget {
   const BaganrikiIndexExplainAlert({super.key});
 
@@ -84,7 +93,7 @@ class BaganrikiIndexExplainAlert extends ConsumerWidget {
     '- 指数はあくまで参考情報です。馬券の購入は、ご自身の判断と責任でお楽しみください。',
   ];
 
-  ///
+  /// 「馬眼力指数について」の説明画面を組み立てる。
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(

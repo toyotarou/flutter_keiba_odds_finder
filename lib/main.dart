@@ -1,3 +1,12 @@
+// =============================================================================
+// ファイル名   : main.dart
+// 概要         : アプリの起点。URL のパラメータ（プッシュ通知のディープリンク）と保存済みのログイン情報を読み、
+//                アプリ全体（AppRoot → MyApp）を起動する。
+// 作成者       : Hideyuki Toyoda
+// 作成日       : 2026-05-30
+// 最終更新日   : 2026-11-17
+// =============================================================================
+
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
@@ -13,6 +22,7 @@ import 'screens/login_screen.dart';
 import 'services/fcm_service.dart';
 import 'utility/utility.dart';
 
+/// アプリの起点。URL のパラメータと保存済みのログイン情報を読んで、アプリを起動する。
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -70,6 +80,7 @@ Future<void> main() async {
   );
 }
 
+/// アプリ全体の起点。キーを差し替えて MyApp を作り直すことで、アプリを再起動できる。
 class AppRoot extends StatefulWidget {
   const AppRoot({
     super.key,
@@ -98,6 +109,7 @@ class AppRoot extends StatefulWidget {
   State<AppRoot> createState() => AppRootState();
 }
 
+/// AppRoot の状態。再起動のときに引き継ぐ選択状態を保持する。
 class AppRootState extends State<AppRoot> {
   Key _appKey = UniqueKey();
   String _reloadDate = '';
@@ -151,7 +163,7 @@ class AppRootState extends State<AppRoot> {
     }
   }
 
-  ///
+  /// アプリ本体（MyApp）を表示する。キーを差し替えるとアプリ全体を作り直せる。
   @override
   Widget build(BuildContext context) {
     return MyApp(
@@ -170,6 +182,7 @@ class AppRootState extends State<AppRoot> {
   }
 }
 
+/// MaterialApp を持つアプリ本体。ログイン状態に応じてホーム画面かログイン画面を表示する。
 class MyApp extends ConsumerStatefulWidget {
   const MyApp({
     super.key,
@@ -201,10 +214,12 @@ class MyApp extends ConsumerStatefulWidget {
   ConsumerState<MyApp> createState() => _MyAppState();
 }
 
+/// MyApp の状態。
 class _MyAppState extends ConsumerState<MyApp> with ControllersMixin<MyApp> {
   late String _loggedInUserId;
 
-  ///
+  /// ログイン中のユーザーIDを引き継ぎ、再起動前（またはプッシュ通知から開いたとき）の
+  /// 選択状態（開催日・開催・レース番号・拡大表示など）を復元する。
   @override
   void initState() {
     super.initState();
@@ -234,11 +249,11 @@ class _MyAppState extends ConsumerState<MyApp> with ControllersMixin<MyApp> {
     });
   }
 
-  ///
+  /// MaterialApp を組み立てる。ログイン済みならホーム画面、そうでなければログイン画面を表示する。
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      // 20260925: Utility.showError が SnackBar を出すために使う（未設定だとエラー表示が一度も出ていなかった）
+      // Utility.showError が SnackBar を出すために使う（未設定だとエラー表示が一度も出ていなかった）
       // navigatorKey だと restartApp（MyApp の作り直し）時に Navigator の状態ごと引き継がれるため、SnackBar 専用のキーを使う
       scaffoldMessengerKey: NavigationService.scaffoldMessengerKey,
 

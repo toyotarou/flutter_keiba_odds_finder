@@ -1,5 +1,15 @@
+// =============================================================================
+// ファイル名   : widget_display_overlay.dart
+// 概要         : タップした位置（またはボタンの上）に、指定したウィジェットを短時間だけ表示する関数。
+// 作成者       : Hideyuki Toyoda
+// 作成日       : 2026-06-29
+// 最終更新日   : 2026-11-17
+// =============================================================================
+
 import 'package:flutter/material.dart';
 
+/// [tapPosition]（タップした位置）の横、または [buttonKey] のボタンの上に、[child] を表示する。
+/// [displayDuration] のあいだ表示し、フェードで消す。
 void widgetDisplayOverlay({
   required BuildContext context,
   GlobalKey? buttonKey,

@@ -1,5 +1,14 @@
+// =============================================================================
+// ファイル名   : dashed_line_painter.dart
+// 概要         : 横向きの破線を描く CustomPainter。
+// 作成者       : Hideyuki Toyoda
+// 作成日       : 2026-07-16
+// 最終更新日   : 2026-11-17
+// =============================================================================
+
 import 'package:flutter/material.dart';
 
+/// 横向きの破線を描く。
 class DashedLinePainter extends CustomPainter {
   const DashedLinePainter({
     this.color = Colors.red,

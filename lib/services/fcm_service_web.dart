@@ -1,3 +1,11 @@
+// =============================================================================
+// ファイル名   : fcm_service_web.dart
+// 概要         : Web Push の購読と、購読情報のサーバー登録を行う FcmService（Web 用）。
+// 作成者       : Hideyuki Toyoda
+// 作成日       : 2026-06-22
+// 最終更新日   : 2026-11-17
+// =============================================================================
+
 import 'dart:convert';
 import 'dart:js_interop';
 
@@ -7,7 +15,10 @@ import 'package:http/http.dart' as http;
 @JS('subscribeWebPush')
 external JSPromise<JSAny?> _subscribeWebPushJs(JSString vapidKey);
 
+/// Web Push の購読を行い、購読情報をサーバーに登録するサービス（Web 用）。
 class FcmService {
+  /// サーバーから VAPID 公開鍵を取得して Web Push を購読し、購読情報をユーザーIDと一緒にサーバーへ登録する。
+  /// 失敗してもアプリは止めず、ログだけ出す。
   static Future<void> registerToken({required String userId}) async {
     if (!kIsWeb) {
       return;

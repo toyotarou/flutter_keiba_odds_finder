@@ -1,3 +1,11 @@
+// =============================================================================
+// ファイル名   : signup_screen.dart
+// 概要         : 新規登録画面。ユーザーID・メールアドレス・パスワードを登録し、確認メールを送る。
+// 作成者       : Hideyuki Toyoda
+// 作成日       : 2026-06-18
+// 最終更新日   : 2026-11-17
+// =============================================================================
+
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
@@ -8,6 +16,7 @@ import '../data/http/path.dart';
 import '../extensions/extensions.dart';
 import 'parts/error_confirm_dialog.dart';
 
+/// 新規登録画面。
 class SignupScreen extends ConsumerStatefulWidget {
   const SignupScreen({super.key});
 
@@ -15,6 +24,7 @@ class SignupScreen extends ConsumerStatefulWidget {
   ConsumerState<SignupScreen> createState() => _SignupScreenState();
 }
 
+/// 新規登録画面の状態。
 class _SignupScreenState extends ConsumerState<SignupScreen> {
   final TextEditingController _userIdController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
@@ -23,7 +33,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
   bool _passwordObscure = true;
   bool _isLoading = false;
 
-  ///
+  /// 入力欄の制御とフォーカスを破棄する。
   @override
   void dispose() {
     _userIdController.dispose();
@@ -35,7 +45,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
     super.dispose();
   }
 
-  ///
+  /// 新規登録画面を組み立てる。
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -73,7 +83,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
     );
   }
 
-  ///
+  /// ユーザーID・メールアドレス・パスワードの入力欄と、登録ボタンを表示する。
   Widget _buildInputCard() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 30),
@@ -167,7 +177,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
     );
   }
 
-  ///
+  /// 入力内容を確認して新規登録する。成功したら確認メールの案内を出し、ログイン画面へ戻る。
   Future<void> _signup() async {
     final String userId = _userIdController.text.trim();
     final String email = _emailController.text.trim();

@@ -1,21 +1,9 @@
-// 20261030: race_content_page.dart の着順ラベルを角丸の四角に変えたため、どこからも使われなくなった
-// import 'package:flutter/material.dart';
-//
-// class RankBadgePainter extends CustomPainter {
-//   const RankBadgePainter({required this.color});
-//   final Color color;
-//
-//   @override
-//   void paint(Canvas canvas, Size size) {
-//     final Paint paint = Paint()..color = color;
-//     final Path path = Path()
-//       ..moveTo(0, 0)
-//       ..lineTo(size.width, 0)
-//       ..lineTo(size.width, size.height)
-//       ..cubicTo(0, size.height, 0, size.height * 0.3, 0, 0);
-//     canvas.drawPath(path, paint);
-//   }
-//
-//   @override
-//   bool shouldRepaint(RankBadgePainter old) => old.color != color;
-// }
+// =============================================================================
+// ファイル名   : rank_badge_painter.dart
+// 概要         : （未使用）中身は削除済み。このファイルは削除してよい。
+// 作成者       : Hideyuki Toyoda
+// 作成日       : 2026-07-08
+// 最終更新日   : 2026-11-17
+// =============================================================================
+
+// race_content_page.dart の着順ラベルを角丸の四角に変えたため、どこからも使われなくなった

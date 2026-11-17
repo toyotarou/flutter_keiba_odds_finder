@@ -1,6 +1,14 @@
+// =============================================================================
+// ファイル名   : race_content_page.dart
+// 概要         : レース1件ぶんの画面。レース情報・発走までの残り時間・オッズ取得タイミングの選択・
+//                人気順の馬の一覧（オッズの推移・急落判定・AI 予想のバッジなど）を表示する。
+// 作成者       : Hideyuki Toyoda
+// 作成日       : 2026-07-08
+// 最終更新日   : 2026-11-17
+// =============================================================================
+
 import 'dart:async';
 
-// import 'package:flutter/gestures.dart' show PointerDeviceKind;   // 20261028: 期待数値・レース結果エリア不要のため
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -22,23 +30,18 @@ import '../../utility/functions.dart';
 import '../../utility/utility.dart';
 import '../components/ai_analysis_display_alert.dart';
 
-// import '../components/baganriki_published_prediction_display_alert.dart';   // 20261025: r12.2 ボタンを外したため
 import '../components/horse_detail_display_alert.dart';
 import '../components/horse_odds_ranking_display_alert.dart';
 import '../components/payout_data_display_alert.dart';
-// import '../components/similar_races_display_alert.dart';   // 20261028: 期待数値・レース結果エリア不要のため
 
 import '../components/total_forecast_display_alert.dart';
 import '../parts/dashed_line_painter.dart';
 import '../parts/odds_finder_dialog.dart';
 import '../parts/odds_up_down_icon.dart';
 
-// import '../parts/race_top_three_widget.dart';   // 20261028: 期待数値・レース結果エリア不要のため
-// import '../parts/rank_badge_painter.dart';
-
-// import '../parts/side_tab_panel.dart';   // 20261028: 期待数値・レース結果エリア不要のため
 import '../parts/widget_display_overlay.dart';
 
+/// レース1件ぶんの画面。
 class RaceContentPage extends ConsumerStatefulWidget {
   const RaceContentPage({
     super.key,
@@ -69,19 +72,7 @@ class RaceContentPage extends ConsumerStatefulWidget {
   ConsumerState<RaceContentPage> createState() => _RaceContentPageState();
 }
 
-// 20261028: 期待数値・レース結果エリア（SideTabPanel）不要のためコメントアウト
-// class _TriangleClipper extends CustomClipper<Path> {
-// @override
-// Path getClip(Size size) => Path()
-// ..moveTo(0, 0)
-// ..lineTo(0, size.height)
-// ..lineTo(size.width, 0)
-// ..close();
-
-// @override
-// bool shouldReclip(CustomClipper<Path> oldClipper) => false;
-// }
-
+/// レース1件ぶんの画面の状態。
 class _RaceContentPageState extends ConsumerState<RaceContentPage> with ControllersMixin<RaceContentPage> {
   final AutoScrollController _horseListScrollController = AutoScrollController();
   int _currentHorseIndex = 0;
@@ -93,17 +84,14 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
 
   final Utility _utility = Utility();
 
-  // final GlobalKey _harandoKey = GlobalKey();   // 20261028: 期待数値・レース結果エリア不要のため
   final GlobalKey _analysisButtonKey = GlobalKey();
   Map<int, String> _analysisMap = <int, String>{};
 
-  // 20261030: サーバが pickup_horse を返さなくなったため使わない（バッジは _aiForecastScoreMap で出す）
-  // Set<int> _aiPickupNums = <int>{};
-  // Map<int, String> _aiPickupScores = <int, String>{};
+  // サーバーの pickup_horse（現在は空で返ってくる）。バッジは _aiForecastScoreMap で出す。
   String _aiPickupHorse = '';
   Map<int, double?> _baganrikiIndexMap = <int, double?>{};
 
-  // 20261005: 払戻データ（t_horse_odds_finder_race_result_payout）が存在するか。払戻金ボタンの表示判定に使う。
+  // 払戻データ（t_horse_odds_finder_race_result_payout）が存在するか。払戻金ボタンの表示判定に使う。
   bool _hasPayout = false;
   List<AiResponseRecommendHorseModel> _totalForecastAiHorseList = <AiResponseRecommendHorseModel>[];
   int? _totalForecastUpsetRaceValue;
@@ -116,19 +104,19 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
   /// 1st/2nd の生リストを足し合わせた表示（サーバーが除外した馬が混ざる）へは戻さない。
   bool _mergedReceived = false;
 
-  /// 20261025: 統合結果の状態（'undetermined' ＝ 採用できるAI回答が無かった）
+  /// 統合結果の状態（'undetermined' ＝ 採用できるAI回答が無かった）
   String? _mergeStatus;
 
-  /// 20261111: 予想を出さなかった理由の文言（サーバーの status_reason）。AI予想の画面へそのまま渡す
+  /// 予想を出さなかった理由の文言（サーバーの status_reason）。AI予想の画面へそのまま渡す
   String? _mergeStatusReason;
 
-  /// 20261111: サーバーが「予想の準備中」（not_ready）と返したか。「AI予想」ボタンの案内の文言を分けるために使う
+  /// サーバーが「予想の準備中」（not_ready）と返したか。「AI予想」ボタンの案内の文言を分けるために使う
   bool _aiNotReady = false;
 
   /// 1st AI の取得に成功したか（失敗・未完了なら 2nd AI は呼ばない）
   bool _firstAiOk = false;
 
-  /// 20261017: 「AI予想」ボタンの連打防止（取得待ち中は再度押しても何もしない）
+  /// 「AI予想」ボタンの連打防止（取得待ち中は再度押しても何もしない）
   bool _isOpeningAiForecast = false;
 
   // AI取得中ローディング管理
@@ -136,19 +124,15 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
   bool _showAiLoading = false;
   Timer? _aiLoadingTimer;
 
-  // 20261028: 期待数値・レース結果エリア（SideTabPanel）不要のためコメントアウト
-  // // 初回訪問時にmedianなし&期待数値タブ選択状態でパネルを自動クローズしたかどうか
-  // bool _autoClosedPanel = false;
-
-  // 20261003: 人気順カードの展開状態（馬番 → 展開中か）。フロートタイトルを「展開中のカードだけ」に出すために保持する。
+  // 人気順カードの展開状態（馬番 → 展開中か）。フロートタイトルを「展開中のカードだけ」に出すために保持する。
   // 値がない馬は appParamState.allExpanded と同じ扱い。allExpanded が切り替わったらクリアする（ExpansionTile の Key も作り直されるため）。
   final Map<int, bool> _horseExpandedMap = <int, bool>{};
   bool? _horseExpandedMapAllExpanded;
 
-  ///
+  /// 指定した馬のカードが展開中かどうか。個別の指定が無ければ「すべて開く／閉じる」の状態に従う。
   bool _isHorseExpanded(int horseNum) => _horseExpandedMap[horseNum] ?? appParamState.allExpanded;
 
-  // 20260925: 以下のゲッターは1回の build で何度も呼ばれるため、
+  // 以下のゲッターは1回の build で何度も呼ばれるため、
   // 元データ（oddsMap / horseMap / raceResultMap の該当リスト）が同じインスタンスの間は計算結果を使い回す。
   // 元データは取得・更新のたびに新しいリストに差し替わる（その場で書き換えられない）ので、インスタンス比較で十分。
   // ※ 返したリスト・マップは共有されるので、呼び出し側でその場ソートなどの書き換えをしないこと。
@@ -186,7 +170,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     return _numToRankMapCache!;
   }
 
-  ///
+  /// 表示中のレースのオッズ一覧（元データが同じ間は前回の結果を使い回す）。
   List<OddsModel> get _oddsForRace {
     _checkCacheKey();
     final List<OddsModel>? source = widget.oddsMap[widget.mapKey];
@@ -197,7 +181,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     return _oddsForRaceCache!;
   }
 
-  ///
+  /// 表示中のレースの出走馬（馬番 → 馬）の対応表（元データが同じ間は前回の結果を使い回す）。
   Map<int, HorseModel> get _horseModelMap {
     _checkCacheKey();
     final List<HorseModel>? source = widget.horseMap[widget.mapKey];
@@ -211,27 +195,27 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     return _horseModelMapCache!;
   }
 
-  ///
+  /// サーバー設定のオッズ取得タイミングを '|' で分けた一覧。
   List<String> get _configTimingParts => appParamState.configOddsGetTiming.split('|');
 
-  ///
+  /// オッズ取得タイミングのうち最初のもの（無ければ空文字）。
   String get _configFirstKey {
     final List<String> p = _configTimingParts;
     return p.isNotEmpty ? p.first : '';
   }
 
-  ///
+  /// オッズ取得タイミングのうち最後のもの（無ければ空文字）。
   String get _configLastKey {
     final List<String> p = _configTimingParts;
     return p.isNotEmpty ? p.last : '';
   }
 
-  ///
+  /// 取得済みのオッズのうち、いちばん発走に近いタイミング。
   String get _minTiming {
     return _resolveMinTiming(_oddsForRace, _configFirstKey, _configLastKey);
   }
 
-  ///
+  /// 画面表示後に、馬眼力指数・払戻金の有無・保存済みの AI 予想（1st → 2nd の順）を取得する。
   @override
   void initState() {
     super.initState();
@@ -241,12 +225,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
         _fetchPayoutExists();
         // 1st AI → 2nd AI の順に呼ぶ（仕様: 2nd AI は 1st AI と同じ入力で独立評価し、その後に統合する）。
         // 同時に呼ぶと 1st AI 未保存のまま 2nd AI が走り、統合できない／失敗時も 2nd AI を呼んでしまう。
-        // _fetchAiPickup().then((_) {
-        //   if (mounted && _firstAiOk) {
-        //     _fetchSecondAiOpinion();
-        //   }
-        // });
-        // 20261026: レースを開いた時点ではAIを呼ばず、保存済みの結果だけを取りに行く。
+        // レースを開いた時点ではAIを呼ばず、保存済みの結果だけを取りに行く。
         //   AI予想は6分前オッズのあとにサーバの補完（先回り実行）が作っておく。
         //   未保存なら何もしない（_firstAiOk は false のまま）。AIは「AI予想」ボタンを押したときに呼ぶ。
         _fetchAiPickup(cacheOnly: true).then((_) {
@@ -258,7 +237,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     });
   }
 
-  ///
+  /// タイマー・通知用の値・スクロールの制御を破棄する。
   @override
   void dispose() {
     _countdownTimer?.cancel();
@@ -268,9 +247,8 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     super.dispose();
   }
 
-  ///
-  // Future<void> _fetchAiPickup() async {
-  // 20261026: cacheOnly=true のときは保存済みの結果だけを取る（AIは呼ばない）
+  /// 1st AI の予想を取得する（最初と発走6分前のオッズがそろってから）。
+  /// [cacheOnly] が true のときは保存済みの結果だけを取る（AI は呼ばない）。
   Future<void> _fetchAiPickup({bool cacheOnly = false}) async {
     final List<OddsModel> allOdds = _oddsForRace;
     final bool hasFirstTiming = allOdds.any((OddsModel e) => e.minutesBeforeStart == kOddsTimingFirst);
@@ -299,21 +277,19 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
         upsetPickupHorseNums: upsetPickupHorseNums,
         cacheOnly: cacheOnly,
       );
-      // 20261026: 未保存（not_ready）のときは取得できていない扱いにする。
+      // 未保存（not_ready）のときは取得できていない扱いにする。
       //   ここで _firstAiOk を true にすると、「AI予想」ボタンで取り直しが走らず、空の予想が開く。
       if (data['not_ready'] == true) {
-        _aiNotReady = true;   // 20261111: 「予想の準備中」の案内を出すため
+        _aiNotReady = true;   // 「予想の準備中」の案内を出すため
         return;
       }
-      _aiNotReady = false;   // 20261111
+      _aiNotReady = false;
       final String pickupRaw = (data['pickup_horse'] as String?) ?? '';
       final String analysisText = (data['analysis_text'] as String?) ?? '';
       final List<AiResponseRecommendHorseModel> horses = parseAnalysisText(analysisText);
       if (mounted) {
         setState(() {
           _aiPickupHorse = pickupRaw;
-          // _aiPickupNums = _parsePickupHorse(pickupRaw);
-          // _aiPickupScores = _parsePickupScores(pickupRaw);
           _totalForecastAiHorseList = horses;
           _totalForecastUpsetRaceValue = parseUpsetRaceValue(analysisText);
           _totalForecastRaceMetrics = parseRaceMetrics(analysisText);
@@ -326,7 +302,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     }
   }
 
-  ///
+  /// 表示中のレースの馬眼力指数を取得する（最初と発走6分前のオッズがそろってから）。
   Future<void> _fetchBaganrikiIndex() async {
     final List<OddsModel> allOdds = _oddsForRace;
     final bool hasFirstTiming = allOdds.any((OddsModel e) => e.minutesBeforeStart == kOddsTimingFirst);
@@ -354,7 +330,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     } catch (_) {}
   }
 
-  /// 20261005: このレースの払戻データがあるかを取得して [_hasPayout] に反映する。
+  /// このレースの払戻データがあるかを取得して [_hasPayout] に反映する。
   Future<void> _fetchPayoutExists() async {
     final String date = appParamState.selectedScheduleDate;
     final int race = widget.raceNumber;
@@ -373,9 +349,8 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     } catch (_) {}
   }
 
-  ///
-  // Future<void> _fetchSecondAiOpinion() async {
-  // 20261026: cacheOnly=true のときは保存済みの結果だけを取る（AIは呼ばない）
+  /// 2nd AI の予想と、1st・2nd の統合結果を取得する。
+  /// [cacheOnly] が true のときは保存済みの結果だけを取る（AI は呼ばない）。
   Future<void> _fetchSecondAiOpinion({bool cacheOnly = false}) async {
     final List<OddsModel> allOdds = _oddsForRace;
     final bool hasFirstTiming = allOdds.any((OddsModel e) => e.minutesBeforeStart == kOddsTimingFirst);
@@ -399,7 +374,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
         race: race,
         cacheOnly: cacheOnly,
       );
-      // 20261026: 未保存（not_ready）のときは何も反映しない（_mergedReceived は false のまま）
+      // 未保存（not_ready）のときは何も反映しない（_mergedReceived は false のまま）
       if (data['not_ready'] == true) {
         return;
       }
@@ -418,7 +393,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
             _mergedReceived = true;
           }
           _mergeStatus = data['status'] as String?;
-          _mergeStatusReason = data['status_reason'] as String?;   // 20261111
+          _mergeStatusReason = data['status_reason'] as String?;
           if (mergedUpsetRace != null) {
             _totalForecastUpsetRaceValue = mergedUpsetRace;
           }
@@ -433,22 +408,20 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     }
   }
 
-  /// 20261030: 「AI予想」アラートに並ぶ候補馬の 馬番 → おすすめ度。
+  /// 「AI予想」アラートに並ぶ候補馬の 馬番 → おすすめ度。
   ///
   /// アラート（AiAnalysisDisplayAlert._displayHorses）と同じ基準で作る。
   ///   統合結果を受け取っていればそれを正とする（0頭でもそれを使う）。
   ///   受け取っていなければ、1st AI の選出馬に 2nd AI だけが選んだ馬を足したもの。
-  // Map<int, int> get _aiForecastScoreMap {   // 20261115 旧
-  // 20261115 「補充」の馬は、AI選出のバッジは出すが、おすすめ度（サーバーでは0）は null にして「%」を出さない（なる11/15）
+  // 「補充」の馬は、AI選出のバッジは出すが、おすすめ度（サーバーでは0）は null にして「%」を出さない
   Map<int, int?> get _aiForecastScoreMap {
     final List<AiResponseRecommendHorseModel> list = _mergedReceived
         ? _mergedHorseList
         : mergeAiHorseLists(_totalForecastAiHorseList, _secondAiHorseList);
-    // return <int, int>{for (final AiResponseRecommendHorseModel h in list) h.num: h.score};   // 旧
     return <int, int?>{for (final AiResponseRecommendHorseModel h in list) h.num: h.fillSlot ? null : h.score};
   }
 
-  /// 20261017: 「AI予想」を開く前に、1st AI・2nd AI（統合結果）の取得完了を待つ。
+  /// 「AI予想」を開く前に、1st AI・2nd AI（統合結果）の取得完了を待つ。
   ///
   /// 【なぜ必要か】
   ///   AiAnalysisDisplayAlert は開いた時点のリストをコンストラクタで受け取るだけで、
@@ -503,40 +476,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     }
   }
 
-  // 20261030: サーバが pickup_horse を返さなくなったため使わない
-  // ///
-  // static Set<int> _parsePickupHorse(String pickupRaw) {
-  //   final Set<int> nums = <int>{};
-  //   for (final String part in pickupRaw.split('/')) {
-  //     final String trimmed = part.trim();
-  //     if (trimmed.isEmpty) {
-  //       continue;
-  //     }
-  //     final int? num = int.tryParse(trimmed.split('|').first.trim());
-  //     if (num != null) {
-  //       nums.add(num);
-  //     }
-  //   }
-  //   return nums;
-  // }
-  //
-  // ///
-  // static Map<int, String> _parsePickupScores(String pickupRaw) {
-  //   final Map<int, String> scores = <int, String>{};
-  //   for (final String part in pickupRaw.split('/')) {
-  //     final List<String> fields = part.trim().split('|');
-  //     if (fields.length < 3) {
-  //       continue;
-  //     }
-  //     final int? num = int.tryParse(fields[0].trim());
-  //     if (num != null) {
-  //       scores[num] = fields[2].trim();
-  //     }
-  //   }
-  //   return scores;
-  // }
-
-  ///
+  /// 過去データから見た、人気順ごとの分析文を取得する。1件以上あれば true を返す。
   Future<bool> _fetchAnalysis() async {
     final String date = appParamState.selectedScheduleDate;
     final int race = widget.raceNumber;
@@ -560,7 +500,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     }
   }
 
-  ///
+  /// 発走時刻までの残り時間を1秒ごとに数え始める。発走時刻が分からないときは 0 にする。
   void _startCountdown(String startTime, String raceDate) {
     _countdownTimer?.cancel();
 
@@ -617,7 +557,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     });
   }
 
-  ///
+  /// 残り秒数を「時:分:秒」の文字列にする。
   static String _formatCountdown(int totalSeconds) {
     final int h = totalSeconds ~/ 3600;
     final int m = (totalSeconds % 3600) ~/ 60;
@@ -625,7 +565,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     return '${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
   }
 
-  ///
+  /// 馬の一覧を、指定した数だけ前後の馬までスクロールする。
   void _scrollHorseList(int delta) {
     if (!_horseListScrollController.hasClients || _displayListLength == 0) {
       return;
@@ -635,14 +575,14 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     _horseListScrollController.scrollToIndex(next, preferPosition: AutoScrollPosition.begin);
   }
 
-  ///
+  /// 選択中のタイミングを「〜分前の」「レース開始時点の」という表示用の文字列にする。
   static String _beforeMinutesText(String selectedTiming) => switch (selectedTiming) {
     '0' => 'レース開始時点の',
     '' => '',
     _ => '$selectedTiming分前の',
   };
 
-  ///
+  /// 馬番ごとに、タイミング順に並べた値（オッズなど）の一覧を作る。
   static Map<int, List<String>> _buildTimelineMap<T>({
     required List<T> models,
     required int Function(T) getNum,
@@ -663,7 +603,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     return result;
   }
 
-  ///
+  /// 設定のタイミング文字列を、列の順番（最初・発走何分前・最後）に変換する。
   static List<int> _buildTimingOrder(List<String> timingParts) {
     return List<int>.generate(
       timingParts.length,
@@ -675,11 +615,11 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     );
   }
 
-  ///
+  /// 選択中のタイミングを、絞り込みに使う「発走何分前」の値に変換する。
   static int? _resolveFilterMinutes(String selectedTiming, List<OddsModel> oddsModelList, int firstTiming) =>
       resolveFilterMinutes(selectedTiming, oddsModelList, firstTiming);
 
-  ///
+  /// 「発走何分前」の値を、タイミングのキー文字列に戻す。
   static String _filterMinutesToTimingKey(int? filterMinutes, String firstTimingKey, String lastTimingKey) {
     return switch (filterMinutes) {
       null => '',
@@ -689,7 +629,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     };
   }
 
-  ///
+  /// 取得済みのオッズのうち、いちばん発走に近いタイミングのキーを返す。
   static String _resolveMinTiming(List<OddsModel> oddsModelList, String firstTimingKey, String lastTimingKey) {
     if (oddsModelList.any((OddsModel e) => e.minutesBeforeStart == kOddsTimingLast)) {
       return lastTimingKey;
@@ -703,12 +643,12 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     return validList.isNotEmpty ? validList.first.minutesBeforeStart.toString() : '';
   }
 
-  ///
+  /// 選択中のタイミングで表示する、人気順のオッズ一覧（条件が同じ間は前回の結果を使い回す）。
   List<OddsModel> _buildDisplayList() {
     final List<OddsModel> oddsForRace = _oddsForRace;
     final String selectedTiming = appParamState.selectedTiming;
     final String configFirstKey = _configFirstKey;
-    // 20260925: 元のオッズ・選択タイミング・設定が同じ間は前回の結果を使い回す
+    // 元のオッズ・選択タイミング・設定が同じ間は前回の結果を使い回す
     if (_displayListCache == null ||
         !identical(oddsForRace, _displayListSource) ||
         selectedTiming != _displayListTiming ||
@@ -725,7 +665,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     return _displayListCache!;
   }
 
-  ///
+  /// レース情報（発走時刻・残り時間・レース名・コース・距離・グレード）の帯を表示する。
   Widget _buildRaceInfoBar({
     required String startTime,
     required String raceName,
@@ -886,37 +826,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     );
   }
 
-  // 20261028: 期待数値・レース結果エリア（SideTabPanel）不要のためコメントアウト
-  // ///
-  // Widget _buildRaceResultBox({required Map<int, RaceResultModel> raceResultByRank}) {
-  // if (raceResultByRank.isEmpty) {
-  // return const SizedBox.shrink();
-  // }
-
-  // final List<OddsModel> eRecordOdds =
-  // _oddsForRace.where((OddsModel o) => o.minutesBeforeStart == kOddsTimingLast).toList()
-  // ..sort((OddsModel a, OddsModel b) => (double.tryParse(a.odds) ?? 0).compareTo(double.tryParse(b.odds) ?? 0));
-
-  // final Map<int, int> numToPopularityMap = <int, int>{
-  // for (int i = 0; i < eRecordOdds.length; i++) eRecordOdds[i].num: i + 1,
-  // };
-
-  // final Map<int, String> numToOddsMap = <int, String>{for (final OddsModel o in eRecordOdds) o.num: o.odds};
-
-  // final Map<int, RaceTopThreeEntry> entries = <int, RaceTopThreeEntry>{
-  // for (final MapEntry<int, RaceResultModel> e in raceResultByRank.entries)
-  // e.key: RaceTopThreeEntry(
-  // num: e.value.num,
-  // name: e.value.horseName,
-  // odds: numToOddsMap[e.value.num] ?? '',
-  // popularity: numToPopularityMap[e.value.num],
-  // ),
-  // };
-
-  // return RaceTopThreeWidget(entries: entries, showTitle: true);
-  // }
-
-  ///
+  /// 「すべて開く／閉じる」や前後のレースへの移動などの操作ボタンを表示する。
   Widget _buildControlButtons({required int raceIdx}) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -978,31 +888,8 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
               child: Icon(Icons.list, color: Colors.white.withValues(alpha: 0.5)),
             ),
 
-            // ── 20261025: r12.2 の確認ボタンはお客さんの画面から外す（新しい予想は非公開の段階のため）。中身は残す ──
-            // const SizedBox(width: 15),
+            // ── r12.2 の確認ボタンはお客さんの画面から外す（新しい予想は非公開の段階のため）。中身は残す ──
 
-            // // @ANCHOR-20261020-R122-FLUTTER  r12.2 の記録（読み取りだけ）
-            // GestureDetector(
-            //   onTap: () {
-            //     OddsFinderDialog(
-            //       context: context,
-            //       hideRaceOverlay: true,
-            //       widget: BaganrikiPublishedPredictionDisplayAlert(raceNumber: widget.raceNumber),
-            //       paddingLeft: context.screenSize.width * 0.05,
-            //       paddingTop: context.screenSize.height * 0.05,
-            //       paddingBottom: context.screenSize.height * 0.05,
-            //     );
-            //   },
-            //   child: Container(
-            //     padding: const EdgeInsets.symmetric(vertical: 3, horizontal: 10),
-            //     decoration: BoxDecoration(
-            //       color: const Color(0xFF90CDF4).withValues(alpha: 0.4),
-            //       borderRadius: BorderRadius.circular(12),
-            //     ),
-
-            //     child: const Text('r12.2', style: TextStyle(fontSize: 10, color: Colors.white)),
-            //   ),
-            // ),
             if (_hasPayout) ...<Widget>[
               const SizedBox(width: 15),
 
@@ -1046,12 +933,12 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     );
   }
 
-  ///
+  /// オッズ取得タイミングを選ぶボタンの行を表示する。
   Widget _displayRaceMinutesRow() {
     final List<String> timingParts = _configTimingParts;
     final String minTiming = _minTiming;
 
-    // 20260925: 値が変わるときだけセットする（毎 build セットすると再描画が止まらなくなっていた）
+    // 値が変わるときだけセットする（毎 build セットすると再描画が止まらなくなっていた）
     if (appParamState.selectedTiming.isEmpty && minTiming.isNotEmpty && appParamState.selectedTiming2 != minTiming) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
@@ -1086,7 +973,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     );
   }
 
-  ///
+  /// 人気順の馬の一覧（オッズの推移・各種バッジ付き）を表示する。
   Widget _displayRaceHorseList({required String course, required int dist}) {
     // _oddsForRace はキャッシュを共有しているため、コピーしてからソートする
     final List<OddsModel> oddsModelList = <OddsModel>[..._oddsForRace];
@@ -1160,7 +1047,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     final List<int> sortedAnalysisKeys = _analysisMap.keys.toList()..sort();
     final int analysisTotalCount = sortedAnalysisKeys.length;
 
-    // 20261003: OPEN/CLOSE ボタンで allExpanded が切り替わったら、個別の展開状態を捨てる
+    // OPEN/CLOSE ボタンで allExpanded が切り替わったら、個別の展開状態を捨てる
     if (_horseExpandedMapAllExpanded != appParamState.allExpanded) {
       _horseExpandedMapAllExpanded = appParamState.allExpanded;
       _horseExpandedMap.clear();
@@ -1202,7 +1089,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     );
   }
 
-  ///
+  /// 馬1頭ぶんのカード（馬名・オッズの推移・急落判定など）を表示する。
   Widget _buildHorseListItem({
     required int index,
     required OddsModel element,
@@ -1284,8 +1171,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                           showTrailingIcon: false,
 
                           key: ValueKey<String>('horse_${element.num}_${appParamState.allExpanded}'),
-                          // 20261003: 画面外で破棄→再生成されても展開状態が戻らないよう、保持している状態から初期化する
-                          // initiallyExpanded: appParamState.allExpanded,
+                          // 画面外で破棄→再生成されても展開状態が戻らないよう、保持している状態から初期化する
                           initiallyExpanded: _isHorseExpanded(element.num),
                           onExpansionChanged: (bool expanded) {
                             setState(() => _horseExpandedMap[element.num] = expanded);
@@ -1335,32 +1221,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                     ),
 
                     if (raceRank != null && raceRank <= 3) ...<Widget>[
-                      // Positioned(
-                      //   top: 2,
-                      //   right: 2,
-                      //   child: CustomPaint(
-                      //     painter: RankBadgePainter(color: raceRankColor(raceRank, alpha: 0.3)),
-                      //     child: SizedBox(
-                      //       width: context.screenSize.width * 0.15,
-                      //       height: context.screenSize.height * 0.05,
-                      //       child: Align(
-                      //         alignment: Alignment.bottomLeft,
-                      //         child: Padding(
-                      //           padding: const EdgeInsets.only(bottom: 20, left: 25),
-                      //           child: Text(
-                      //             '$raceRank着',
-                      //             style: TextStyle(
-                      //               fontSize: 12,
-                      //               color: Colors.white.withValues(alpha: 0.8),
-                      //               fontWeight: FontWeight.bold,
-                      //             ),
-                      //           ),
-                      //         ),
-                      //       ),
-                      //     ),
-                      //   ),
-                      // ),
-                      // 20261030: 着順ラベルを ai_analysis_display_alert.dart の着順ラベル（角丸の四角）と同じ形にする
+                      // 着順ラベルを ai_analysis_display_alert.dart の着順ラベル（角丸の四角）と同じ形にする
                       Positioned(
                         top: 2,
                         right: 2,
@@ -1383,7 +1244,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                       ),
                     ],
 
-                    // 20261003: 展開中カードのフロートタイトル（カード上部が画面外に出たら、表示エリア上端に追従する）
+                    // 展開中カードのフロートタイトル（カード上部が画面外に出たら、表示エリア上端に追従する）
                     if (_isHorseExpanded(element.num))
                       Positioned.fill(
                         child: _FloatingHorseTitle(
@@ -1414,7 +1275,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     );
   }
 
-  ///
+  /// 発走30分前と6分前のオッズから急落を判定し、該当すれば説明を表示する。
   Widget _buildJudgeOddsSection({required List<String> timeline}) {
     final List<String> timingParts = widget.oddsGetTiming.split('|');
     final String odds30 = timeline[0];
@@ -1454,7 +1315,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     );
   }
 
-  ///
+  /// 馬のカードの見出し（人気順・複勝の順位・AI のバッジなど）を表示する。
   Widget _buildHorseItemHeader({required int popularity, int? fukuRank, HorseModel? horse}) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1535,9 +1396,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
 
             const SizedBox(width: 20),
 
-            // 20261030: サーバが pickup_horse を返さなくなった（PICKUP行の抽出をやめた）ため、
-            //   「AI予想」アラートと同じ候補馬（_aiForecastScoreMap）でバッジを出す
-            // if (horse != null && _aiPickupNums.contains(horse.num)) ...<Widget>[
+            // 「AI予想」アラートと同じ候補馬（_aiForecastScoreMap）にバッジを出す
             if (horse != null && _aiForecastScoreMap.containsKey(horse.num)) ...<Widget>[
               Stack(
                 children: <Widget>[
@@ -1555,13 +1414,11 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                     ),
                   ),
 
-                  // if (_aiPickupScores[horse.num] != null) ...<Widget>[
                   if (_aiForecastScoreMap[horse.num] != null) ...<Widget>[
                     Positioned(
                       right: 0,
                       bottom: 0,
                       child: Text(
-                        // '${_aiPickupScores[horse.num]} %',
                         '${_aiForecastScoreMap[horse.num]} %',
                         style: const TextStyle(fontSize: 12, color: Colors.white, fontWeight: FontWeight.bold),
                       ),
@@ -1578,249 +1435,17 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     );
   }
 
-  // 20261028: 期待数値・レース結果エリア（SideTabPanel）不要のためコメントアウト
-  // ///
-  // Widget _buildPopularityHorseRow({
-  // required List<OddsModel> displayList,
-  // required PopularityRankOddsMedianModel median,
-  // RaceModel? raceModel,
-  // }) {
-  // final Map<int, int> numToRankMap = _numToRankMap;
-  // final String minTiming = _minTiming;
-
-  // final int pickupCount = displayList.length <= 8
-  // ? 4
-  // : displayList.length <= 13
-  // ? 5
-  // : 6;
-
-  // final Set<int> pickupIndexSet = calcPickupPopularitySet(displayList, median, pickupCount);
-
-  // return Column(
-  // crossAxisAlignment: CrossAxisAlignment.end,
-  // children: <Widget>[
-  // Row(
-  // children: <Widget>[
-  // const SizedBox(width: 5),
-
-  // Expanded(
-  // child: ScrollConfiguration(
-  // behavior: ScrollConfiguration.of(
-  // context,
-  // ).copyWith(dragDevices: <PointerDeviceKind>{PointerDeviceKind.touch, PointerDeviceKind.mouse}),
-  // child: SingleChildScrollView(
-  // scrollDirection: Axis.horizontal,
-  // child: Padding(
-  // padding: const EdgeInsets.all(8),
-  // child: Row(
-  // children: displayList.asMap().entries.map((MapEntry<int, OddsModel> entry) {
-  // final int index = entry.key + 1;
-  // final OddsModel o = entry.value;
-
-  // // 期待数値スコアを計算する（選択タイミングのオッズに従う）。
-  // String upsetScore = '';
-  // final double medianDouble = double.tryParse(medianByRank(median, index)) ?? 0;
-  // if (medianDouble > 0) {
-  // final double oddsVal = o.odds.toDouble();
-  // if (oddsVal > 0) {
-  // upsetScore = (medianDouble / oddsVal).toStringAsFixed(2);
-  // }
-  // }
-
-  // return Stack(
-  // clipBehavior: Clip.none,
-  // children: <Widget>[
-  // Container(
-  // width: 70,
-  // margin: const EdgeInsets.symmetric(horizontal: 2),
-  // decoration: BoxDecoration(
-  // color: pickupIndexSet.contains(index)
-  // ? Colors.yellowAccent.withValues(alpha: 0.2)
-  // : Colors.white.withValues(alpha: 0.05),
-
-  // border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
-
-  // borderRadius: BorderRadius.circular(3),
-  // ),
-  // child: DefaultTextStyle(
-  // style: const TextStyle(fontSize: 12, color: Colors.white),
-  // child: Column(
-  // mainAxisSize: MainAxisSize.min,
-  // children: <Widget>[
-  // Container(
-  // decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.3)),
-  // width: double.infinity,
-  // alignment: Alignment.center,
-  // child: Text('$index番人気'),
-  // ),
-  // Text('馬番: ${o.num}'),
-  // const SizedBox(height: 3),
-  // Text(
-  // upsetScore,
-  // style: TextStyle(
-  // color: Colors.yellowAccent.withValues(alpha: 0.6),
-  // fontSize: 14,
-  // fontWeight: FontWeight.bold,
-  // ),
-  // ),
-  // const SizedBox(height: 3),
-  // ],
-  // ),
-  // ),
-  // ),
-
-  // if (numToRankMap.containsKey(o.num))
-  // Positioned(
-  // right: -3,
-  // bottom: -3,
-  // child: Container(
-  // width: 22,
-  // height: 22,
-  // decoration: BoxDecoration(
-  // color: raceRankColor(numToRankMap[o.num]),
-  // shape: BoxShape.circle,
-  // ),
-  // child: const Icon(Icons.flag, size: 14, color: Colors.white),
-  // ),
-  // ),
-  // ],
-  // );
-  // }).toList(),
-  // ),
-  // ),
-  // ),
-  // ),
-  // ),
-
-  // const SizedBox(width: 5),
-  // ],
-  // ),
-
-  // Padding(
-  // padding: const EdgeInsets.symmetric(horizontal: 20),
-  // child: Stack(
-  // children: <Widget>[
-  // Row(
-  // mainAxisAlignment: MainAxisAlignment.spaceBetween,
-  // children: <Widget>[
-  // if (appParamState.selectedTiming.isNotEmpty ? appParamState.selectedTiming : minTiming
-  // case final String t when t.isNotEmpty) ...<Widget>[
-  // Text('$t分前のデータを表示中', style: const TextStyle(fontSize: 10, color: Colors.white)),
-  // ],
-
-  // const SizedBox.shrink(),
-  // ],
-  // ),
-
-  // Row(
-  // mainAxisAlignment: MainAxisAlignment.spaceBetween,
-  // children: <Widget>[
-  // const SizedBox.shrink(),
-
-  // GestureDetector(
-  // key: _harandoKey,
-  // onTap: () {
-  // widgetDisplayOverlay(
-  // context: context,
-  // buttonKey: _harandoKey,
-  // displayDuration: const Duration(seconds: 5),
-  // child: Container(
-  // width: 300,
-  // padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-  // decoration: BoxDecoration(
-  // color: Colors.black87.withValues(alpha: 0.7),
-  // borderRadius: BorderRadius.circular(6),
-  // border: Border.all(color: Colors.white30),
-  // ),
-  // child: Column(
-  // crossAxisAlignment: CrossAxisAlignment.start,
-  // children: <Widget>[
-  // const DefaultTextStyle(
-  // style: TextStyle(color: Colors.white, fontSize: 11),
-  // child: Column(
-  // crossAxisAlignment: CrossAxisAlignment.start,
-  // children: <Widget>[
-  // Text('過去の似たレースと比べて、今のオッズが「お得かどうか」を数値化しています。高いほど割安感あり。'),
-  // Text(''),
-  // Text('出走頭数に応じて上位をピックアップ。'),
-  // Text('8頭以下：4頭 ／ 9〜13頭：5頭 ／ 14頭以上：6頭'),
-  // ],
-  // ),
-  // ),
-
-  // if (raceModel != null) ...<Widget>[
-  // const SizedBox(height: 10),
-
-  // Row(
-  // mainAxisAlignment: MainAxisAlignment.spaceBetween,
-  // children: <Widget>[
-  // const SizedBox.shrink(),
-  // Padding(
-  // padding: const EdgeInsets.only(right: 20),
-  // child: Material(
-  // color: Colors.transparent,
-  // borderRadius: BorderRadius.circular(10),
-  // child: InkWell(
-  // onTap: () => OddsFinderDialog(
-  // context: context,
-  // hideRaceOverlay: true,
-  // widget: SimilarRacesDisplayAlert(raceModel: raceModel),
-  // ),
-  // borderRadius: BorderRadius.circular(10),
-  // splashColor: const Color(0xFFFBB6CE).withValues(alpha: 0.35),
-  // highlightColor: const Color(0xFFFBB6CE).withValues(alpha: 0.1),
-  // child: Container(
-  // padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 10),
-  // decoration: BoxDecoration(
-  // border: Border.all(color: const Color(0xFFFBB6CE)),
-  // borderRadius: BorderRadius.circular(10),
-  // ),
-  // child: const Text(
-  // '過去の類似レース',
-  // style: TextStyle(
-  // fontSize: 10,
-  // color: Color(0xFFFBB6CE),
-  // fontWeight: FontWeight.bold,
-  // ),
-  // ),
-  // ),
-  // ),
-  // ),
-  // ),
-  // ],
-  // ),
-  // ],
-
-  // const SizedBox(height: 20),
-  // ],
-  // ),
-  // ),
-  // );
-  // },
-  // child: const Text('期待数値とは？', style: TextStyle(fontSize: 10, color: Colors.white)),
-  // ),
-  // ],
-  // ),
-  // ],
-  // ),
-  // ),
-
-  // const SizedBox(height: 3),
-  // ],
-  // );
-  // }
-
-  ///
+  /// 人気順に並べたとき、オッズに大きな断絶がある馬の馬番一覧。
   List<int> _calcOddsGapHorseNums() => calcOddsGapHorseNums(_oddsForRace);
 
-  ///
+  /// 波乱馬としてピックアップした馬の馬番一覧。
   List<int> _calcUpsetPickupHorseNums() => calcUpsetPickupHorseNums(
     oddsForRace: _oddsForRace,
     medianModel: _makeMedianList(),
     displayList: _buildDisplayList(),
   );
 
-  ///
+  /// 発走30分前から最後のタイミングまでの単勝オッズの変化率。計算できなければ null。
   double? _calcOddsDropRatio(List<String>? timeline) {
     if (timeline == null || timeline.isEmpty) {
       return null;
@@ -1841,7 +1466,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     return ratio <= 0.8 ? ratio : null;
   }
 
-  ///
+  /// 馬名・枠番・騎手などの行を表示する。オッズの変化率も添える。
   Widget _buildHorseNameRow({
     required OddsModel element,
     required HorseModel? horse,
@@ -1964,27 +1589,11 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     );
   }
 
-  ///
+  /// レース1件ぶんの画面（レース情報・操作ボタン・タイミング選択・馬の一覧）を組み立てる。
   @override
   Widget build(BuildContext context) {
     final List<RaceModel> races = widget.raceMap[widget.mapKey] ?? <RaceModel>[];
     final int raceIdx = races.indexWhere((RaceModel e) => e.race == widget.raceNumber);
-
-    // final PopularityRankOddsMedianModel? median = _makeMedianList();   // 20261028: 期待数値・レース結果エリア不要のため
-
-    // 20261028: 期待数値・レース結果エリア（SideTabPanel）不要のためコメントアウト
-    // // 他レースで「期待数値」タブを開いたまま本レース（medianなし）に切り替えた場合、パネルを自動クローズ
-    // if (!_autoClosedPanel &&
-    // median == null &&
-    // appParamState.isShowSideTabPanel &&
-    // appParamState.selectedUpsetBoxNum == 0) {
-    // _autoClosedPanel = true;
-    // WidgetsBinding.instance.addPostFrameCallback((_) {
-    // if (mounted) {
-    // appParamNotifier.setIsShowSideTabPanel(flag: false);
-    // }
-    // });
-    // }
 
     String raceName = '';
     String startTime = '--:--';
@@ -2036,13 +1645,6 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
         allOddsForRace.any((OddsModel e) => e.minutesBeforeStart == kOddsTimingFirst) &&
         allOddsForRace.any((OddsModel e) => e.minutesBeforeStart == kOddsJudgeTiming);
 
-    // 20261028: 期待数値・レース結果エリア（SideTabPanel）不要のためコメントアウト
-    // final Map<int, RaceResultModel> raceResultByRank = Map<int, RaceResultModel>.fromEntries(
-    // (widget.raceResultMap[widget.mapKey] ?? <RaceResultModel>[])
-    // .where((RaceResultModel e) => e.race == widget.raceNumber)
-    // .map((RaceResultModel e) => MapEntry<int, RaceResultModel>(e.result, e)),
-    // );
-
     return Stack(
       children: <Widget>[
         Column(
@@ -2058,82 +1660,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
 
             _buildControlButtons(raceIdx: raceIdx),
 
-            // SizedBox(height: 40, child: _displayRaceMinutesRow()),
-            //
-            // const SizedBox(height: 10),
-            //
-            //
-            //
-
-            // 20261028: 期待数値・レース結果エリア（SideTabPanel）不要のためコメントアウト
-            // if (displayList.isNotEmpty && (median != null || raceResultByRank.isNotEmpty)) ...<Widget>[
-            // Stack(
-            // children: <Widget>[
-            // if (appParamState.isShowSideTabPanel && (median != null || raceResultByRank.isNotEmpty)) ...<Widget>[
-            // SideTabPanel(
-            // tabLabels: <String>[if (median != null) '期待数値', if (raceResultByRank.isNotEmpty) 'レース結果'],
-
-            // tabWidth: 90,
-            // tabGap: 0,
-            // height: 100,
-            // borderColor: Colors.white.withValues(alpha: 0.4),
-            // selectedIndex: (median != null && raceResultByRank.isNotEmpty)
-            // ? appParamState.selectedUpsetBoxNum
-            // : 0,
-            // onSelected: (int i) => appParamNotifier.setSelectedUpsetBoxNum(num: i),
-
-            // panelChild: median == null
-            // ? _buildRaceResultBox(raceResultByRank: raceResultByRank)
-            // : (raceResultByRank.isEmpty || appParamState.selectedUpsetBoxNum == 0)
-            // ? _buildPopularityHorseRow(
-            // displayList: displayList,
-            // median: median,
-            // raceModel: currentRaceModel,
-            // )
-            // : _buildRaceResultBox(raceResultByRank: raceResultByRank),
-            // ),
-            // ],
-
-            // Row(
-            // crossAxisAlignment: CrossAxisAlignment.start,
-            // children: <Widget>[
-            // GestureDetector(
-            // onTap: () => appParamNotifier.setIsShowSideTabPanel(flag: !appParamState.isShowSideTabPanel),
-            // child: ClipPath(
-            // clipper: _TriangleClipper(),
-            // child: Container(
-            // width: 30,
-            // height: 30,
-            // decoration: BoxDecoration(
-            // color: (appParamState.isShowSideTabPanel)
-            // ? Colors.green[500]!.withValues(alpha: 0.4)
-            // : Colors.grey.withValues(alpha: 0.4),
-            // ),
-            // ),
-            // ),
-            // ),
-
-            // if (!appParamState.isShowSideTabPanel) ...<Widget>[
-            // GestureDetector(
-            // onTap: () => appParamNotifier.setIsShowSideTabPanel(flag: true),
-            // child: Padding(
-            // padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 12),
-            // child: Text(
             // median != null && raceResultByRank.isNotEmpty
-            // ? '期待数値、レース結果の表示'
-            // : median != null
-            // ? '期待数値の表示'
-            // : 'レース結果の表示',
-            // style: TextStyle(fontSize: 10, color: Colors.white.withValues(alpha: 0.6)),
-            // ),
-            // ),
-            // ),
-            // ],
-            // ],
-            // ),
-            // ],
-            // ),
-            // ],
             if (hasBothTimings) ...<Widget>[
               Row(
                 children: <Widget>[
@@ -2183,7 +1710,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                     borderRadius: BorderRadius.circular(10),
                     child: InkWell(
                       onTap: () async {
-                        // 20261017: 取得が終わってから画面を開く（取得前に開くと、空の予想のまま固定される）
+                        // 取得が終わってから画面を開く（取得前に開くと、空の予想のまま固定される）
                         if (_isOpeningAiForecast) {
                           return;
                         }
@@ -2197,8 +1724,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                           ScaffoldMessenger.maybeOf(
                             // ignore: use_build_context_synchronously
                             context,
-                          // )?.showSnackBar(const SnackBar(content: Text('AI予想を取得できませんでした。少し待ってからもう一度押してください')));   // 旧
-                          // 20261111: サーバーが「予想の準備中」と返したときは、その旨を出す
+                          // サーバーが「予想の準備中」と返したときは、その旨を出す
                           )?.showSnackBar(SnackBar(content: Text(_aiNotReady
                               ? '予想の準備中です。少し待ってからもう一度押してください'
                               : 'AI予想を取得できませんでした。少し待ってからもう一度押してください')));
@@ -2217,7 +1743,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                             upsetRaceValue: _totalForecastUpsetRaceValue,
                             raceMetrics: _totalForecastRaceMetrics,
                             mergeStatus: _mergeStatus,
-                            mergeStatusReason: _mergeStatusReason,   // 20261111
+                            mergeStatusReason: _mergeStatusReason,
                           ),
                         );
                       },
@@ -2308,7 +1834,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
     );
   }
 
-  ///
+  /// 表示中のレースの、人気順別オッズ中央値。無ければ null。
   PopularityRankOddsMedianModel? _makeMedianList() {
     final List<PopularityRankOddsMedianModel> popularityRankOddsMedianModelList =
         appParamState.keepPopularityRankOddsMedianMap[widget.mapKey] ?? <PopularityRankOddsMedianModel>[];
@@ -2321,6 +1847,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
   }
 }
 
+/// 馬1頭ぶんのオッズの推移（タイミングごとの値と上下の矢印）を1行で表示する部品。
 class _OddsTimelineRow extends StatelessWidget {
   const _OddsTimelineRow({
     required this.timeline,
@@ -2340,7 +1867,7 @@ class _OddsTimelineRow extends StatelessWidget {
   final List<String>? fukuMaxList;
   final List<String>? nextTimeline;
 
-  ///
+  /// オッズの推移（タイミングごとの値と上下の矢印）を1行で表示する。
   @override
   Widget build(BuildContext context) {
     final List<String> timingKeys = oddsGetTiming.split('|');
@@ -2562,7 +2089,7 @@ class _OddsTimelineRow extends StatelessWidget {
   }
 }
 
-/// 20261003: 人気順カードの上に重ねる、追従タイトル（「◯番人気　馬番X」）。
+/// 人気順カードの上に重ねる、追従タイトル（「◯番人気　馬番X」）。
 /// カード本来のタイトルが画面外にスクロールされたら、表示エリア上端に貼りつく。
 /// カードの下端まで来たら、それ以上は下がらず、カードと一緒にスクロールして消える。
 class _FloatingHorseTitle extends StatefulWidget {
@@ -2580,20 +2107,21 @@ class _FloatingHorseTitle extends StatefulWidget {
   State<_FloatingHorseTitle> createState() => _FloatingHorseTitleState();
 }
 
+/// 追従タイトルの状態。
 class _FloatingHorseTitleState extends State<_FloatingHorseTitle> {
-  ///
+  /// このカード自身の描画領域。
   RenderBox? _cardBox() {
     final RenderObject? ro = context.findRenderObject();
     return ro is RenderBox ? ro : null;
   }
 
-  ///
+  /// スクロールしている表示領域。
   RenderBox? _viewportBox() {
     final RenderObject? ro = Scrollable.maybeOf(context)?.context.findRenderObject();
     return ro is RenderBox ? ro : null;
   }
 
-  ///
+  /// 追従タイトルを表示する（位置は描画時に計算する）。
   @override
   Widget build(BuildContext context) {
     return IgnorePointer(
@@ -2638,11 +2166,11 @@ class _FloatingTitleFlowDelegate extends FlowDelegate {
   final RenderBox? Function() getViewportBox;
   final double showAfter;
 
-  ///
+  /// 子の大きさは自由にする。
   @override
   BoxConstraints getConstraintsForChild(int i, BoxConstraints constraints) => constraints.loosen();
 
-  ///
+  /// カードの上端が表示領域の上に隠れた分だけ、タイトルを下にずらして描く。
   @override
   void paintChildren(FlowPaintingContext context) {
     final RenderBox? card = getCardBox();
@@ -2667,7 +2195,7 @@ class _FloatingTitleFlowDelegate extends FlowDelegate {
     context.paintChild(0, transform: Matrix4.translationValues(0, dy, 0));
   }
 
-  ///
+  /// スクロールの制御か表示し始める距離が変わったときだけ描き直す。
   @override
   bool shouldRepaint(_FloatingTitleFlowDelegate oldDelegate) =>
       oldDelegate.scrollController != scrollController || oldDelegate.showAfter != showAfter;

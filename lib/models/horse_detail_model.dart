@@ -1,3 +1,12 @@
+// =============================================================================
+// ファイル名   : horse_detail_model.dart
+// 概要         : 馬の詳細情報（プロフィール・賞金・出走履歴・条件別成績）を保持するモデル群。
+// 作成者       : Hideyuki Toyoda
+// 作成日       : 2026-06-01
+// 最終更新日   : 2026-11-17
+// =============================================================================
+
+/// 馬の詳細情報（全体）。
 class HorseDetailModel {
   HorseDetailModel({
     required this.cname,
@@ -50,6 +59,7 @@ class HorseDetailModel {
 
 ////////////////////////////////////////////////////////////////////////
 
+/// 馬のプロフィール（血統・馬主・生産者など）。
 class HorseDetailProfileModel {
   HorseDetailProfileModel({
     required this.father,
@@ -124,6 +134,7 @@ class HorseDetailProfileModel {
 
 ////////////////////////////////////////////////////////////////////////
 
+/// 馬の賞金情報。
 class HorseDetailPrizeModel {
   HorseDetailPrizeModel({
     required this.totalPrize,
@@ -166,6 +177,7 @@ class HorseDetailPrizeModel {
 
 ////////////////////////////////////////////////////////////////////////
 
+/// 馬の出走レース履歴1件分。
 class HorseDetailRaceHistoryModel {
   HorseDetailRaceHistoryModel({
     required this.date,
@@ -240,6 +252,7 @@ class HorseDetailRaceHistoryModel {
 
 ////////////////////////////////////////////////////////////////////////
 
+/// 馬のレース条件別成績。
 class HorseDetailStatsModel {
   HorseDetailStatsModel({
     required this.flatTotal,
@@ -313,6 +326,7 @@ class HorseDetailStatsModel {
 
 ////////////////////////////////////////////////////////////////////////
 
+/// 成績1区分ぶんの着別回数と率。
 class HorseDetailStatsValueModel {
   HorseDetailStatsValueModel({
     required this.first,

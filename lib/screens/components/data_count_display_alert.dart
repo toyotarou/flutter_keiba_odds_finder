@@ -1,3 +1,11 @@
+// =============================================================================
+// ファイル名   : data_count_display_alert.dart
+// 概要         : データ件数確認の画面（管理者用）。日付ごとの各テーブルの件数を表示する。
+// 作成者       : Hideyuki Toyoda
+// 作成日       : 2026-07-07
+// 最終更新日   : 2026-11-17
+// =============================================================================
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -7,6 +15,7 @@ import '../../data/http/path.dart';
 import '../../models/data_count_model.dart';
 import '../parts/widget_display_overlay.dart';
 
+/// データ件数確認の画面。
 class DataCountDisplayAlert extends ConsumerStatefulWidget {
   const DataCountDisplayAlert({super.key});
 
@@ -14,27 +23,28 @@ class DataCountDisplayAlert extends ConsumerStatefulWidget {
   ConsumerState<DataCountDisplayAlert> createState() => _DataCountDisplayAlertState();
 }
 
+/// データ件数確認の画面の状態。
 class _DataCountDisplayAlertState extends ConsumerState<DataCountDisplayAlert> {
   List<DataCountModel> _dataCountList = <DataCountModel>[];
   bool _isLoading = true;
   bool _hasError = false;
   final ScrollController _scrollController = ScrollController();
 
-  ///
+  /// スクロールの制御を破棄する。
   @override
   void dispose() {
     _scrollController.dispose();
     super.dispose();
   }
 
-  ///
+  /// 画面表示時に、データ件数を取得する。
   @override
   void initState() {
     super.initState();
     _fetchData();
   }
 
-  ///
+  /// 日付ごとの各テーブルのデータ件数を API から取得する。
   Future<void> _fetchData() async {
     if (mounted) {
       setState(() {
@@ -71,7 +81,7 @@ class _DataCountDisplayAlertState extends ConsumerState<DataCountDisplayAlert> {
     }
   }
 
-  ///
+  /// データ件数確認の画面を組み立てる。
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -131,7 +141,7 @@ class _DataCountDisplayAlertState extends ConsumerState<DataCountDisplayAlert> {
     );
   }
 
-  ///
+  /// タップした位置に、その件数を数えている SQL を一時的に表示する。
   void _showSql(Offset tapPosition, String key) {
     final String sql = dataCountSqlMap[key] ?? '';
     if (sql.isEmpty) {
@@ -155,7 +165,7 @@ class _DataCountDisplayAlertState extends ConsumerState<DataCountDisplayAlert> {
     );
   }
 
-  ///
+  /// 日付ごとのデータ件数の表を表示する。読み込み中はインジケーターを表示する。
   Widget _buildContent() {
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator(color: Colors.white));

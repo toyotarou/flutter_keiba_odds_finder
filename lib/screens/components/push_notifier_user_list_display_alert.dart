@@ -1,3 +1,11 @@
+// =============================================================================
+// ファイル名   : push_notifier_user_list_display_alert.dart
+// 概要         : プッシュ通知ユーザーリストの画面（管理者用）。削除フラグを切り替えられる。
+// 作成者       : Hideyuki Toyoda
+// 作成日       : 2026-06-22
+// 最終更新日   : 2026-11-17
+// =============================================================================
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -5,6 +13,7 @@ import '../../controllers/controllers_mixin.dart';
 import '../../models/push_notifier_user_model.dart';
 import '../parts/error_confirm_dialog.dart';
 
+/// プッシュ通知ユーザーリストの画面。
 class PushNotifierUserListDisplayAlert extends ConsumerStatefulWidget {
   const PushNotifierUserListDisplayAlert({super.key, required this.loggedInUserId});
 
@@ -14,9 +23,10 @@ class PushNotifierUserListDisplayAlert extends ConsumerStatefulWidget {
   ConsumerState<PushNotifierUserListDisplayAlert> createState() => _PushNotifierUserListDisplayAlertState();
 }
 
+/// プッシュ通知ユーザーリストの画面の状態。
 class _PushNotifierUserListDisplayAlertState extends ConsumerState<PushNotifierUserListDisplayAlert>
     with ControllersMixin<PushNotifierUserListDisplayAlert> {
-  ///
+  /// プッシュ通知ユーザーリストの画面を組み立てる。
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -40,7 +50,7 @@ class _PushNotifierUserListDisplayAlertState extends ConsumerState<PushNotifierU
     );
   }
 
-  ///
+  /// プッシュ通知の送信対象ユーザーの一覧を表示する。削除フラグをその場で切り替えられる。
   Widget displayPushNotifierUserList() {
     final List<Widget> list = <Widget>[];
 

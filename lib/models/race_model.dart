@@ -1,3 +1,12 @@
+// =============================================================================
+// ファイル名   : race_model.dart
+// 概要         : レース1件分の情報（発走時刻・頭数・コース・距離・グレード・人気比率など）を保持するモデル。
+// 作成者       : Hideyuki Toyoda
+// 作成日       : 2026-05-30
+// 最終更新日   : 2026-11-17
+// =============================================================================
+
+/// レース1件分の情報。
 class RaceModel {
   RaceModel({
     required this.id,
@@ -43,22 +52,38 @@ class RaceModel {
     );
   }
 
+  /// レコードID
   final int id;
+  /// 開催日
   final String date;
+  /// 開催回（第何回の開催か）
   final String kaisuu;
+  /// 競馬場
   final String basho;
+  /// 競馬場名
   final String bashoName;
+  /// 開催日目（何日目か）
   final int day;
+  /// レース番号
   final int race;
+  /// レース名
   final String raceName;
+  /// 発走時刻
   final String startTime;
+  /// 出走頭数
   final int numHorses;
+  /// 人気比率
   final String popularityRatio;
+  /// 人気比率の比較に使ったレースID
   final String popularityRatioTableIds;
+  /// 人気比率の一致率
   final String popularityRatioMatchPercent;
 
+  /// コース種別（芝・ダート・障害）
   final String course;
+  /// 距離（m）
   final int dist;
 
+  /// グレード（G1・G2 など）
   final String grade;
 }

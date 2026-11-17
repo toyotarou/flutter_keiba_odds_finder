@@ -1,3 +1,12 @@
+// =============================================================================
+// ファイル名   : summary_model.dart
+// 概要         : 馬ごとの発走前オッズの推移（30分前〜発走時）と着順をまとめたモデル。
+// 作成者       : Hideyuki Toyoda
+// 作成日       : 2026-06-09
+// 最終更新日   : 2026-11-17
+// =============================================================================
+
+/// 馬ごとの発走前オッズ推移と着順。
 class SummaryModel {
   SummaryModel({
     required this.id,
@@ -49,25 +58,46 @@ class SummaryModel {
     );
   }
 
+  /// レコードID
   final int id;
+  /// 馬名
   final String horseName;
+  /// 開催日
   final String date;
+  /// 開催回（第何回の開催か）
   final String kaisuu;
+  /// 競馬場
   final String basho;
+  /// 競馬場名
   final String bashoName;
+  /// 開催日目（何日目か）
   final int day;
+  /// レース番号
   final int race;
+  /// レース名
   final String raceName;
+  /// 枠番
   final int waku;
+  /// 馬番
   final int num;
+  /// 発走30分前の単勝オッズ
   final String oddsTanBefore30;
+  /// 発走21分前の単勝オッズ
   final String oddsTanBefore21;
+  /// 発走18分前の単勝オッズ
   final String oddsTanBefore18;
+  /// 発走15分前の単勝オッズ
   final String oddsTanBefore15;
+  /// 発走12分前の単勝オッズ
   final String oddsTanBefore12;
+  /// 発走9分前の単勝オッズ
   final String oddsTanBefore9;
+  /// 発走6分前の単勝オッズ
   final String oddsTanBefore6;
+  /// 発走3分前の単勝オッズ
   final String oddsTanBefore3;
+  /// 発走時の単勝オッズ
   final String oddsTanBefore0;
+  /// 着順
   final int result;
 }

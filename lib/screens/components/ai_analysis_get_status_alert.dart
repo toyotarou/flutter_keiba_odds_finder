@@ -1,3 +1,11 @@
+// =============================================================================
+// ファイル名   : ai_analysis_get_status_alert.dart
+// 概要         : AI 分析の取得状況の画面（管理者用）。開催日・競馬場・レースごとに取得済みかを表示する。
+// 作成者       : Hideyuki Toyoda
+// 作成日       : 2026-08-30
+// 最終更新日   : 2026-11-17
+// =============================================================================
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -6,16 +14,12 @@ import '../../extensions/extensions.dart';
 import '../../models/ai_analysis_model.dart';
 import '../../models/common/ai_response_recommend_horse_model.dart';
 
-// import '../../models/odds_model.dart';
-//
-//
-//
-
 import '../../models/schedule_model.dart';
 import '../../utility/functions.dart';
 import '../parts/odds_finder_dialog.dart';
 import 'ai_analysis_display_alert.dart';
 
+/// AI 分析の取得状況の画面。
 class AiAnalysisGetStatusAlert extends ConsumerStatefulWidget {
   const AiAnalysisGetStatusAlert({super.key});
 
@@ -23,14 +27,15 @@ class AiAnalysisGetStatusAlert extends ConsumerStatefulWidget {
   ConsumerState<AiAnalysisGetStatusAlert> createState() => _AiAnalysisGetStatusAlertState();
 }
 
+/// AI 分析の取得状況の画面の状態。
 class _AiAnalysisGetStatusAlertState extends ConsumerState<AiAnalysisGetStatusAlert>
     with ControllersMixin<AiAnalysisGetStatusAlert> {
-  ///
+  /// AI 分析の結果を、このダイアログを開いたときに取得する（起動時には取得しない）。
   @override
   void initState() {
     super.initState();
 
-    // 20260924: AI分析の全件は起動時に取得しなくなったため、このダイアログを開いたときに取得する
+    // AI分析の全件は起動時に取得しなくなったため、このダイアログを開いたときに取得する
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) {
         return;
@@ -40,7 +45,7 @@ class _AiAnalysisGetStatusAlertState extends ConsumerState<AiAnalysisGetStatusAl
     });
   }
 
-  ///
+  /// AI 分析の取得状況の画面を組み立てる。
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -64,7 +69,7 @@ class _AiAnalysisGetStatusAlertState extends ConsumerState<AiAnalysisGetStatusAl
     );
   }
 
-  ///
+  /// 開催日・競馬場・レースごとに、AI 分析の結果を取得済みかどうかを一覧で表示する。
   Widget displayAiGetStatusList() {
     final Map<String, List<ScheduleModel>> dateBashoMap = appParamState.keepScheduleDateBashoMap;
 
@@ -131,15 +136,6 @@ class _AiAnalysisGetStatusAlertState extends ConsumerState<AiAnalysisGetStatusAl
                             kbd: '${schedule.kaisuu}_${schedule.basho}_${schedule.day}',
                             name: '${schedule.kaisuu}回 ${schedule.bashoName} ${schedule.day}日',
                           );
-                          // final String oddsKey =
-                          //     '${schedule.date}_${schedule.kaisuu}_${schedule.basho}_${schedule.day}';
-                          //
-                          //
-                          //
-
-                          // final List<OddsModel> oddsForRace = (appParamState.keepOddsMap[oddsKey] ?? <OddsModel>[])
-                          //     .where((OddsModel e) => e.race == raceNum)
-                          //     .toList();
 
                           final AiAnalysisModel? aiModel = aiList
                               .where((AiAnalysisModel m) => m.race == raceNum)

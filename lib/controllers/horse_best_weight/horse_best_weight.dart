@@ -1,3 +1,11 @@
+// =============================================================================
+// ファイル名   : horse_best_weight.dart
+// 概要         : 馬ごとの最高着順時の馬体重を API から取得して保持する Riverpod の Notifier と、その状態クラス。
+// 作成者       : Hideyuki Toyoda
+// 作成日       : 2026-07-23
+// 最終更新日   : 2026-11-17
+// =============================================================================
+
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -11,6 +19,7 @@ part 'horse_best_weight.freezed.dart';
 
 part 'horse_best_weight.g.dart';
 
+/// 馬ごとの最高着順時の馬体重の状態。
 @freezed
 class HorseBestWeightState with _$HorseBestWeightState {
   const factory HorseBestWeightState({
@@ -20,17 +29,19 @@ class HorseBestWeightState with _$HorseBestWeightState {
   }) = _HorseBestWeightState;
 }
 
+/// 馬ごとの最高着順時の馬体重を API から取得して保持する Notifier。
 @riverpod
 class HorseBestWeight extends _$HorseBestWeight {
   final Utility utility = Utility();
 
-  ///
+  /// 状態の初期値を返す。
   @override
   HorseBestWeightState build() => const HorseBestWeightState();
 
   //============================================== api
 
-  ///
+  /// API から馬ごとの最高着順時の馬体重を全件取得し、新しい状態を作って返す。
+  /// 取得に失敗したときはエラーを表示し、例外を呼び出し元へ投げ直す。
   Future<HorseBestWeightState> fetchAllHorseBestWeightData() async {
     final HttpClient client = ref.read(httpClientProvider);
 
@@ -58,7 +69,7 @@ class HorseBestWeight extends _$HorseBestWeight {
     }
   }
 
-  ///
+  /// 馬ごとの最高着順時の馬体重を全件取得して状態に反映する。失敗したときは状態を変えない。
   Future<void> getAllHorseBestWeightData() async {
     try {
       final HorseBestWeightState newState = await fetchAllHorseBestWeightData();

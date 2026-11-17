@@ -1,7 +1,16 @@
+// =============================================================================
+// ファイル名   : precaution_analysis.dart
+// 概要         : 「過去データからの分析について」の説明画面（Markdown）。
+// 作成者       : Hideyuki Toyoda
+// 作成日       : 2026-07-13
+// 最終更新日   : 2026-11-17
+// =============================================================================
+
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+/// 「過去データからの分析について」の説明画面。
 class PrecautionAnalysis extends ConsumerStatefulWidget {
   const PrecautionAnalysis({super.key});
 
@@ -9,6 +18,7 @@ class PrecautionAnalysis extends ConsumerStatefulWidget {
   ConsumerState<PrecautionAnalysis> createState() => _PrecautionAnalysisState();
 }
 
+/// 「過去データからの分析について」の説明画面の状態。
 class _PrecautionAnalysisState extends ConsumerState<PrecautionAnalysis> {
   static const List<String> _markdownContent = <String>[
       '## 過去データからの分析について',
@@ -66,7 +76,7 @@ class _PrecautionAnalysisState extends ConsumerState<PrecautionAnalysis> {
       'マイナスは計測開始前より人気が上がったことを意味します。',
     ];
 
-  ///
+  /// 「過去データからの分析について」の説明画面を組み立てる。
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -89,7 +99,7 @@ class _PrecautionAnalysisState extends ConsumerState<PrecautionAnalysis> {
     );
   }
 
-  ///
+  /// 画面上部の見出しを表示する。
   Widget _buildHeader(BuildContext context) {
     return const Padding(
       padding: EdgeInsets.fromLTRB(20, 16, 12, 0),
@@ -103,7 +113,7 @@ class _PrecautionAnalysisState extends ConsumerState<PrecautionAnalysis> {
     );
   }
 
-  ///
+  /// 説明文（Markdown）をスクロールできる枠に表示する。
   Widget _buildBody() {
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),

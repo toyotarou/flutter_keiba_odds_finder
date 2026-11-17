@@ -1,3 +1,11 @@
+// =============================================================================
+// ファイル名   : odds_websocket_service.dart
+// 概要         : サーバーの WebSocket（Pusher プロトコル）に接続し、オッズ更新の通知を受け取るサービス。
+// 作成者       : Hideyuki Toyoda
+// 作成日       : 2026-08-18
+// 最終更新日   : 2026-11-17
+// =============================================================================
+
 import 'dart:async';
 import 'dart:convert';
 
@@ -11,8 +19,8 @@ class OddsWebSocketService {
   // ─── 接続設定 ────────────────────────────────────────────────────
   static const String _appKey = 'mySecretKey123'; // PUSHER_APP_KEY
   static const String _host = 'baganriki.com'; // ポート不要（nginx経由）
-  static const String _channelName = 'baganriki-odds-sent'; // BaganrikiOddsSent.broadcastOn()
-  static const String _eventName = 'BaganrikiOddsSent'; // BaganrikiOddsSent.broadcastAs()
+  static const String _channelName = 'baganriki-odds-sent';   // BaganrikiOddsSent.broadcastOn
+  static const String _eventName = 'BaganrikiOddsSent';   // BaganrikiOddsSent.broadcastAs
   // ─────────────────────────────────────────────────────────────────
 
   WebSocketChannel? _ws;
@@ -80,7 +88,7 @@ class OddsWebSocketService {
     }
   }
 
-  /// Pusher プロトコルでは data が JSON 文字列で届くため Map に変換する（20260924 追加）
+  /// Pusher プロトコルでは data が JSON 文字列で届くため Map に変換する（追加）
   Map<String, dynamic>? _parseEventData(dynamic data) {
     try {
       if (data is String) {

@@ -1,3 +1,11 @@
+// =============================================================================
+// ファイル名   : terms_alert.dart
+// 概要         : 利用規約の画面（Markdown）。注意事項の画面も開ける。
+// 作成者       : Hideyuki Toyoda
+// 作成日       : 2026-07-13
+// 最終更新日   : 2026-11-17
+// =============================================================================
+
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,6 +16,7 @@ import 'baganriki_index_explain_alert.dart';
 import 'precaution_analysis.dart';
 import 'upset_score_explain_alert.dart';
 
+/// 利用規約の画面。
 class TermsAlert extends ConsumerStatefulWidget {
   const TermsAlert({super.key});
 
@@ -15,6 +24,7 @@ class TermsAlert extends ConsumerStatefulWidget {
   ConsumerState<TermsAlert> createState() => _TermsAlertState();
 }
 
+/// 利用規約の画面の状態。
 class _TermsAlertState extends ConsumerState<TermsAlert> {
   static const List<String> _markdownContent = <String>[
     '## 第1条（本規約について）',
@@ -106,7 +116,7 @@ class _TermsAlertState extends ConsumerState<TermsAlert> {
     '本規約は日本法に準拠するものとし、本サービスに関して紛争が生じた場合は、当サービス運営者の所在地を管轄する裁判所を専属的合意管轄とします。',
   ];
 
-  ///
+  /// 利用規約の画面を組み立てる。
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -127,7 +137,7 @@ class _TermsAlertState extends ConsumerState<TermsAlert> {
     );
   }
 
-  ///
+  /// 画面上部の見出しを表示する。
   Widget _buildHeader(BuildContext context) {
     return const Padding(
       padding: EdgeInsets.fromLTRB(20, 16, 12, 0),
@@ -141,7 +151,7 @@ class _TermsAlertState extends ConsumerState<TermsAlert> {
     );
   }
 
-  ///
+  /// 利用規約の本文と、注意事項を開くボタンを表示する。
   Widget _buildBody(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

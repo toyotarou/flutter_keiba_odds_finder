@@ -1,3 +1,11 @@
+// =============================================================================
+// ファイル名   : login_user_list_display_alert.dart
+// 概要         : 利用者リストの画面（管理者用）。管理者フラグ・削除フラグを切り替えられる。
+// 作成者       : Hideyuki Toyoda
+// 作成日       : 2026-06-19
+// 最終更新日   : 2026-11-17
+// =============================================================================
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -5,6 +13,7 @@ import '../../controllers/controllers_mixin.dart';
 import '../../models/login_user_model.dart';
 import '../parts/error_confirm_dialog.dart';
 
+/// 利用者リストの画面。
 class LoginUserListDisplayAlert extends ConsumerStatefulWidget {
   const LoginUserListDisplayAlert({super.key, required this.loggedInUserId});
 
@@ -14,9 +23,10 @@ class LoginUserListDisplayAlert extends ConsumerStatefulWidget {
   ConsumerState<LoginUserListDisplayAlert> createState() => _LoginUserListDisplayAlertState();
 }
 
+/// 利用者リストの画面の状態。
 class _LoginUserListDisplayAlertState extends ConsumerState<LoginUserListDisplayAlert>
     with ControllersMixin<LoginUserListDisplayAlert> {
-  ///
+  /// 利用者リストの画面を組み立てる。
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -40,7 +50,7 @@ class _LoginUserListDisplayAlertState extends ConsumerState<LoginUserListDisplay
     );
   }
 
-  ///
+  /// 利用者の一覧を表示する。管理者フラグ・削除フラグをその場で切り替えられる。
   Widget displayLoginUserList() {
     final List<Widget> list = <Widget>[];
 

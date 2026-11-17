@@ -1,3 +1,11 @@
+// =============================================================================
+// ファイル名   : odds.dart
+// 概要         : オッズを API から取得して保持する Riverpod の Notifier と、その状態クラス。
+// 作成者       : Hideyuki Toyoda
+// 作成日       : 2026-05-30
+// 最終更新日   : 2026-11-17
+// =============================================================================
+
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -11,6 +19,7 @@ part 'odds.freezed.dart';
 
 part 'odds.g.dart';
 
+/// オッズの状態。
 @freezed
 class OddsState with _$OddsState {
   const factory OddsState({
@@ -20,17 +29,19 @@ class OddsState with _$OddsState {
   }) = _OddsState;
 }
 
+/// オッズを API から取得して保持する Notifier。
 @riverpod
 class Odds extends _$Odds {
   final Utility utility = Utility();
 
-  ///
+  /// 状態の初期値を返す。
   @override
   OddsState build() => const OddsState();
 
   //============================================== api
 
-  ///
+  /// API からオッズを全件取得し、新しい状態を作って返す。
+  /// 取得に失敗したときはエラーを表示し、例外を呼び出し元へ投げ直す。
   Future<OddsState> fetchAllOddsData() async {
     final HttpClient client = ref.read(httpClientProvider);
 
@@ -59,7 +70,7 @@ class Odds extends _$Odds {
     }
   }
 
-  ///
+  /// オッズを全件取得して状態に反映する。失敗したときは状態を変えない。
   Future<void> getAllOddsData() async {
     try {
       final OddsState newState = await fetchAllOddsData();
@@ -68,8 +79,7 @@ class Odds extends _$Odds {
     } catch (_) {}
   }
 
-  /// 指定した1レース分のオッズだけを再取得して oddsList / oddsMap に差し替える（20260924 追加）
-  ///
+  /// 指定した1レース分のオッズだけを再取得して oddsList / oddsMap に差し替える（追加）
   /// WebSocket のオッズ更新通知（1レース単位）を受けたときに使う。
   /// 従来は通知のたびに全レース・全時点のオッズ（数千件）を再取得していたため、
   /// 該当レース分（数十〜200件程度）だけ取得して差し替えることで通信量と処理を軽くする。

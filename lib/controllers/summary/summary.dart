@@ -1,3 +1,11 @@
+// =============================================================================
+// ファイル名   : summary.dart
+// 概要         : オッズ推移のサマリーを API から取得して保持する Riverpod の Notifier と、その状態クラス。
+// 作成者       : Hideyuki Toyoda
+// 作成日       : 2026-06-09
+// 最終更新日   : 2026-11-17
+// =============================================================================
+
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -11,6 +19,7 @@ part 'summary.freezed.dart';
 
 part 'summary.g.dart';
 
+/// オッズ推移のサマリーの状態。
 @freezed
 class SummaryState with _$SummaryState {
   const factory SummaryState({
@@ -21,17 +30,19 @@ class SummaryState with _$SummaryState {
   }) = _SummaryState;
 }
 
+/// オッズ推移のサマリーを API から取得して保持する Notifier。
 @Riverpod(keepAlive: true)
 class Summary extends _$Summary {
   final Utility utility = Utility();
 
-  ///
+  /// 状態の初期値を返す。
   @override
   SummaryState build() => const SummaryState();
 
   //============================================== api
 
-  ///
+  /// API からオッズ推移のサマリーを全件取得し、新しい状態を作って返す。
+  /// 取得に失敗したときはエラーを表示し、例外を呼び出し元へ投げ直す。
   Future<SummaryState> fetchAllSummaryData() async {
     final HttpClient client = ref.read(httpClientProvider);
 
@@ -70,7 +81,7 @@ class Summary extends _$Summary {
     }
   }
 
-  ///
+  /// オッズ推移のサマリーを全件取得して状態に反映する。失敗したときは状態を変えない。
   Future<void> getAllSummaryData() async {
     try {
       final SummaryState newState = await fetchAllSummaryData();
@@ -81,7 +92,8 @@ class Summary extends _$Summary {
 
   //============================================== api
 
-  ///
+  /// 指定した1レース分のオッズ推移サマリーを API から取得し、状態に反映する。
+  /// 取得に失敗したときはエラーを表示し、例外を呼び出し元へ投げ直す。
   Future<void> fetchRaceSummary({
     required String date,
     required String kaisuu,

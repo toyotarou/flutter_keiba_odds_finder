@@ -1,3 +1,12 @@
+// =============================================================================
+// ファイル名   : home_screen.dart
+// 概要         : ホーム画面。開催日・競馬場・レースを選び、選んだレースの内容（RaceContentPage）を表示する。
+//                左のメニューから各画面を開く。WebSocket でオッズ更新を受け取り、該当レースだけ取り直す。
+// 作成者       : Hideyuki Toyoda
+// 作成日       : 2026-05-30
+// 最終更新日   : 2026-11-17
+// =============================================================================
+
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -31,6 +40,7 @@ import 'parts/error_confirm_dialog.dart';
 import 'parts/odds_finder_dialog.dart';
 import 'parts/odds_finder_overlay.dart';
 
+/// レースタブ1つぶんの情報（レース番号など）。
 class RaceTabInfo {
   RaceTabInfo(this.raceNumber, this.widget);
 
@@ -38,6 +48,7 @@ class RaceTabInfo {
   Widget widget;
 }
 
+/// ホーム画面。
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({
     super.key,
@@ -110,6 +121,7 @@ class HomeScreen extends ConsumerStatefulWidget {
   ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
+/// ホーム画面の状態。
 class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<HomeScreen>, TickerProviderStateMixin {
   final List<RaceTabInfo> _raceTabs = <RaceTabInfo>[];
   TabController? _raceTabController;
@@ -121,10 +133,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
   final List<OverlayEntry> _secondEntries = <OverlayEntry>[];
   Offset? _raceOverlayPosition;
 
-  // 20261005: 払戻金ダイアログ表示中に隠した場合、閉じたあとに戻すかどうか（隠す前に表示されていたときだけ true）
+  // 払戻金ダイアログ表示中に隠した場合、閉じたあとに戻すかどうか（隠す前に表示されていたときだけ true）
   bool _restoreRaceOverlay = false;
 
-  // 20261029: レース一覧オーバーレイのスクロール位置。
+  // レース一覧オーバーレイのスクロール位置。
   // アラート表示中はオーバーレイを外して作り直すため、作り直したときにこの位置から表示する。
   ScrollController? _raceOverlayScrollController;
   double _raceOverlayScrollOffset = 0;
@@ -138,7 +150,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
 
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
-  // 20261101: ホーム画面左上の「通知」スイッチ（push 受信/非受信）
+  // ホーム画面左上の「通知」スイッチ（push 受信/非受信）
   // null = 取得前／取得失敗、count = このユーザーの登録端末数（0 なら通知が許可されていない）
   bool? _pushIsReceive;
   int _pushSubscriptionCount = 0;
@@ -146,7 +158,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
 
   String get _mapKey => '${appParamState.selectedScheduleDate}_${appParamState.selectedScheduleKaisuuBashoDay}';
 
-  ///
+  /// 各データの取得、「通知」スイッチの初期値の取得、WebSocket の接続を始める。
   @override
   void initState() {
     super.initState();
@@ -160,32 +172,26 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
     laravelConfigNotifier.getAllLaravelConfigData();
     oddsGetTimingNotifier.getAllOddsGetTimingData();
 
-    // 20260924: summary（全期間・1万件超）は起動時に取得しない。
+    // summary（全期間・1万件超）は起動時に取得しない。
     // 使用するのは PastRaceOddsTransitionAlert のみで、同画面を開いたときに未取得なら取得している。
-    // summaryNotifier.getAllSummaryData();
     raceResultNotifier.getAllRaceResultData();
     loginUserNotifier.getAllLoginUserData();
     pushNotifierUserNotifier.getAllPushNotifierUserData();
     popularityRankOddsMedianNotifier.getAllPopularityRankOddsMedianData();
     horseBestWeightNotifier.getAllHorseBestWeightData();
 
-    // 20261102: 馬スコアはどの画面でも使っていない（keepHorseScoreMap に入れるだけで読む所が無い）ため、起動時に取得しない。
-    // horseScoreNotifier.getAllHorseScoreData();
     jockeyScoreNotifier.getAllJockeyScoreData();
 
-    // 20260924: 振り返り（全期間の長文）は起動時に取得しない。
+    // 振り返り（全期間の長文）は起動時に取得しない。
     // 使用する各ダイアログ（AI分析表示・振り返り表示・過去レース）を開いたときに未取得なら取得する。
-    // raceIntrospectionNotifier.getAllRaceIntrospectionData();
 
     developerNewsNotifier.getAllDeveloperNewsData();
 
-    // 20261101: 「通知」スイッチの初期値を取得する
+    // 「通知」スイッチの初期値を取得する
     unawaited(_loadPushReceive(retry: 1));
 
-    // 20260924: AI分析の全件（1st / 2nd）は管理者用「AI取得ステータス」でしか使わないため起動時に取得しない。
+    // AI分析の全件（1st / 2nd）は管理者用「AI取得ステータス」でしか使わないため起動時に取得しない。
     // 同ダイアログを開いたときに取得する。
-    // aiAnalysisNotifier.getAllAiAnalysisData();
-    // aiAnalysisNotifier2.getAllAiAnalysisData2();
 
     // WebSocket接続を開始し、オッズ更新イベントを受信したら再フェッチする
     _wsService.onOddsUpdated = (Map<String, dynamic>? data) {
@@ -193,7 +199,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
         return;
       }
 
-      // 20260924: 通知に含まれるレース情報を使い、そのレースのオッズだけを再取得する
+      // 通知に含まれるレース情報を使い、そのレースのオッズだけを再取得する
       final String date = (data?['date'] ?? '').toString();
       final String kaisuu = (data?['kaisuu'] ?? '').toString();
       final String basho = (data?['basho'] ?? '').toString();
@@ -240,17 +246,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
     }
   }
 
-  ///
+  /// 親から渡されたデータが変わったら、共有の状態（AppParam）に反映し直す。
   @override
   void didUpdateWidget(HomeScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // 20260925: 以前は一部の項目（schedule / race / horse / odds / timing / median）の変化時だけ同期していたため、
+    // 以前は一部の項目（schedule / race / horse / odds / timing / median）の変化時だけ同期していたため、
     // loginUser・騎手/馬スコア・開発者ニュース・push通知ユーザーなどが後から届くと appParam に反映されなかった。
     // 各 setter が「値（インスタンス）が同じなら何もしない」ようになったので、毎回すべて同期しても余計な再描画は起きない。
     WidgetsBinding.instance.addPostFrameCallback((_) => _syncAppParam());
   }
 
-  ///
+  /// 監視・タイマー・WebSocket・オーバーレイ・タブの制御を片付ける。
   @override
   void dispose() {
     raceOverlayHiddenNotifier.removeListener(_onRaceOverlayHiddenChanged);
@@ -278,7 +284,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
     super.dispose();
   }
 
-  ///
+  /// ログアウトしてよいかを確認するダイアログを表示する。
   void _confirmLogout() {
     errorConfirmDialog(
       context: context,
@@ -302,7 +308,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
     );
   }
 
-  ///
+  /// 親から渡された取得済みデータを、共有の状態（AppParam）に反映する。
   void _syncAppParam() {
     if (!mounted) {
       return;
@@ -338,7 +344,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
     appParamNotifier.setKeepAiAnalysisMap2(map: widget.aiAnalysisMap2);
   }
 
-  ///
+  /// 選択中の開催のレース一覧から、レースタブの情報を作る。
   void _makeRaceTab() {
     _raceTabs.clear();
     try {
@@ -371,7 +377,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
     }
   }
 
-  ///
+  /// レースタブが切り替わったら、選択中のレース番号を更新する。
   void _onRaceTabChanged() {
     try {
       final TabController? c = _raceTabController;
@@ -386,7 +392,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
     }
   }
 
-  ///
+  /// 開催やレース数が変わったときだけ、レースタブの制御を作り直す。
   void _updateRaceTabController() {
     final String currentMapKey = _mapKey;
 
@@ -421,7 +427,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
             return;
           }
           if (hasRaces) {
-            // 20261029: 会場が変わったときは従来どおり先頭から表示する
+            // 会場が変わったときは従来どおり先頭から表示する
             _raceOverlayScrollOffset = 0;
             _showRaceListOverlay();
           } else {
@@ -446,7 +452,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
     }
   }
 
-  ///
+  /// 画面の背景（画像と半透明の重ね）を表示する。
   List<Widget> _buildBackgroundLayers() {
     return <Widget>[
       Positioned(
@@ -493,8 +499,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
     ];
   }
 
-  ///
-  /// 20261101: 「通知」スイッチの状態をサーバーから取得する
+  /// 「通知」スイッチの状態をサーバーから取得する
   /// 起動直後は push の登録（main.dart の FcmService.registerToken）が終わっていないことがあるため、
   /// 登録端末数が 0 のときは少し待ってもう一度だけ取り直す。
   Future<void> _loadPushReceive({int retry = 0}) async {
@@ -523,8 +528,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
     }
   }
 
-  ///
-  /// 20261101: 「通知」スイッチを切り替えたとき
+  /// 「通知」スイッチを切り替えたとき
   Future<void> _onChangePushReceive(bool value) async {
     if (_pushChanging) {
       return;
@@ -553,8 +557,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
     await _loadPushReceive();
   }
 
-  ///
-  /// 20261101: ホーム画面左上の「通知」スイッチ
+  /// ホーム画面左上の「通知」スイッチ
   Widget _buildPushReceiveSwitch() {
     if (widget.loggedInUserId.isEmpty) {
       return const SizedBox.shrink();
@@ -566,7 +569,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
-        // 20261101: スイッチを左、文言を右に入れ替え
+        // スイッチを左、文言を右に入れ替え
         SizedBox(
           height: 24,
           child: FittedBox(
@@ -580,7 +583,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
         ),
         const SizedBox(width: 5),
         Text(
-          // (_pushIsReceive != null && _pushSubscriptionCount == 0) ? '通知（未許可）' : '通知',
           (_pushIsReceive != null && _pushSubscriptionCount == 0) ? 'push通知を受信する（未許可）' : 'push通知を受信する',
           style: const TextStyle(fontSize: 12, color: Colors.white),
         ),
@@ -588,7 +590,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
     );
   }
 
-  ///
+  /// 開催日を選ぶボタンの行を表示する。
   Widget _buildDateRow() {
     return Row(
       children: widget.scheduleDateBashoMap.entries.map((MapEntry<String, List<ScheduleModel>> e) {
@@ -627,7 +629,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
     );
   }
 
-  ///
+  /// 選択中の開催日の競馬場を選ぶボタンの行を表示する。
   Widget _buildVenueRow() {
     final List<ScheduleModel> venues = widget.scheduleDateBashoMap[appParamState.selectedScheduleDate]!;
     return Row(
@@ -658,7 +660,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
     );
   }
 
-  ///
+  /// 指定した位置のレースタブを選択する。
   void _selectRaceByIndex(int idx) {
     if (_raceTabController == null || idx < 0 || idx >= _raceTabs.length) {
       return;
@@ -667,7 +669,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
     appParamNotifier.setSelectedRaceNumber(num: _raceTabs[idx].raceNumber);
   }
 
-  /// 20261005: raceOverlayHiddenNotifier の変化でレース選択オーバーレイを外す／戻す。
+  /// raceOverlayHiddenNotifier の変化でレース選択オーバーレイを外す／戻す。
   /// 位置は _raceOverlayPosition に残っているので、戻したときは同じ場所に出る。
   void _onRaceOverlayHiddenChanged() {
     if (!mounted) {
@@ -692,13 +694,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
     }
   }
 
-  ///
+  /// レースを選ぶ一覧を、移動できるオーバーレイで表示する。
   void _showRaceListOverlay() {
     if (_raceTabs.isEmpty) {
       return;
     }
 
-    // 20261029: 前回のスクロール位置から表示するため、毎回その位置で ScrollController を作る。
+    // 前回のスクロール位置から表示するため、毎回その位置で ScrollController を作る。
     // 古いコントローラーは外したオーバーレイから切り離された後（次フレーム後）に破棄する。
     final ScrollController? oldScrollController = _raceOverlayScrollController;
     final ScrollController scrollController = ScrollController(initialScrollOffset: _raceOverlayScrollOffset);
@@ -736,7 +738,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
     );
   }
 
-  ///
+  /// レース選択オーバーレイの中身（レース番号・発走時刻・レース名の一覧）を表示する。
   Widget _buildRaceListOverlayContent({required int selectedRaceNumber}) {
     // 未選択(0)の時は先頭レースが選択されている扱い
     final int currentIndex = (selectedRaceNumber > 0)
@@ -764,7 +766,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
     );
   }
 
-  ///
+  /// 選択中のレースの内容（RaceContentPage）をタブで切り替えて表示する。
   Widget _buildRaceTabSection() {
     if (_raceTabController == null || _raceTabs.isEmpty) {
       return const SizedBox.shrink();
@@ -785,7 +787,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
     );
   }
 
-  ///
+  /// ホーム画面（開催日・競馬場の選択とレースの内容）を組み立てる。
   @override
   Widget build(BuildContext context) {
     ref.listen<int>(appParamProvider.select((AppParamState s) => s.selectedRaceNumber), (int? prev, int next) {
@@ -834,8 +836,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: <Widget>[
-                          // const SizedBox.shrink(),
-                          // 20261101: push 通知の受信/非受信スイッチ
+                          // push 通知の受信/非受信スイッチ
                           _buildPushReceiveSwitch(),
 
                           Row(
@@ -843,7 +844,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                               const SizedBox(width: 20),
 
                               GestureDetector(
-                                // 20261011: 表示中はレース選択オーバーレイを隠す
+                                // 表示中はレース選択オーバーレイを隠す
                                 onTap: () => OddsFinderDialog(
                                   context: context,
                                   widget: const WeekendRaceCalendarAlert(),
@@ -894,7 +895,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
       ),
 
       drawer: _dispDrawer(),
-      // 20261006: ドロア表示時はレース選択オーバーレイを隠し、非表示時に戻す（ダイアログと同じ仕組み）
+      // ドロア表示時はレース選択オーバーレイを隠し、非表示時に戻す（ダイアログと同じ仕組み）
       onDrawerChanged: (bool isOpened) {
         raceOverlayDrawerOpen = isOpened;
         raceOverlayHiddenNotifier.value = isOpened;
@@ -914,7 +915,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                   children: <Widget>[
                     GestureDetector(
                       onTap: () {
-                        // 20261028: 表示中はレース選択オーバーレイを隠す
+                        // 表示中はレース選択オーバーレイを隠す
                         OddsFinderDialog(context: context, widget: const TermsAlert(), hideRaceOverlay: true);
                       },
                       child: const Padding(
@@ -932,7 +933,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
     );
   }
 
-  ///
+  /// 左から開くメニュー（各画面へのボタン・管理者メニュー・ログアウト）を表示する。
   Widget _dispDrawer() {
     return Drawer(
       backgroundColor: Colors.blueGrey.withOpacity(0.2),

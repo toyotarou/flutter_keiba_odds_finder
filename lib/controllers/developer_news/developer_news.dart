@@ -1,3 +1,11 @@
+// =============================================================================
+// ファイル名   : developer_news.dart
+// 概要         : 開発者向けお知らせを API から取得して保持する Riverpod の Notifier と、その状態クラス。
+// 作成者       : Hideyuki Toyoda
+// 作成日       : 2026-08-25
+// 最終更新日   : 2026-11-17
+// =============================================================================
+
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -11,6 +19,7 @@ part 'developer_news.freezed.dart';
 
 part 'developer_news.g.dart';
 
+/// 開発者向けお知らせの状態。
 @freezed
 class DeveloperNewsState with _$DeveloperNewsState {
   const factory DeveloperNewsState({
@@ -20,17 +29,19 @@ class DeveloperNewsState with _$DeveloperNewsState {
   }) = _DeveloperNewsState;
 }
 
+/// 開発者向けお知らせを API から取得して保持する Notifier。
 @riverpod
 class DeveloperNews extends _$DeveloperNews {
   final Utility utility = Utility();
 
-  ///
+  /// 状態の初期値を返す。
   @override
   DeveloperNewsState build() => const DeveloperNewsState();
 
   //============================================== api
 
-  ///
+  /// API から開発者向けお知らせを全件取得し、新しい状態を作って返す。
+  /// 取得に失敗したときはエラーを表示し、例外を呼び出し元へ投げ直す。
   Future<DeveloperNewsState> fetchAllDeveloperNewsData() async {
     final HttpClient client = ref.read(httpClientProvider);
 
@@ -61,7 +72,7 @@ class DeveloperNews extends _$DeveloperNews {
     }
   }
 
-  ///
+  /// 開発者向けお知らせを全件取得して状態に反映する。失敗したときは状態を変えない。
   Future<void> getAllDeveloperNewsData() async {
     try {
       final DeveloperNewsState newState = await fetchAllDeveloperNewsData();

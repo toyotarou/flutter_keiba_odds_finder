@@ -1,3 +1,11 @@
+// =============================================================================
+// ファイル名   : horse_race_result_display_alert.dart
+// 概要         : レース結果（1〜3着）の画面。当日はレース結果から、過去レースはサマリーから表示する。
+// 作成者       : Hideyuki Toyoda
+// 作成日       : 2026-06-10
+// 最終更新日   : 2026-11-17
+// =============================================================================
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -8,8 +16,10 @@ import '../../models/race_result_model.dart';
 import '../../models/summary_model.dart';
 import '../parts/race_top_three_widget.dart';
 
+/// レース結果をどのデータから表示するか（raceResult: 当日のレース結果、summary: 過去レースのサマリー）。
 enum ResultDisplayFrom { raceResult, summary }
 
+/// レース結果（1〜3着）の画面。
 class HorseRaceResultDisplayAlert extends ConsumerStatefulWidget {
   const HorseRaceResultDisplayAlert({super.key, required this.from, this.numToPopularityRank = const <int, int>{}});
 
@@ -20,9 +30,10 @@ class HorseRaceResultDisplayAlert extends ConsumerStatefulWidget {
   ConsumerState<HorseRaceResultDisplayAlert> createState() => _HorseRaceResultDisplayAlertState();
 }
 
+/// レース結果の画面の状態。
 class _HorseRaceResultDisplayAlertState extends ConsumerState<HorseRaceResultDisplayAlert>
     with ControllersMixin<HorseRaceResultDisplayAlert> {
-  ///
+  /// レース結果（1〜3着）の画面を組み立てる。
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -51,7 +62,7 @@ class _HorseRaceResultDisplayAlertState extends ConsumerState<HorseRaceResultDis
     );
   }
 
-  ///
+  /// サマリーのうち、いちばん発走に近い時点の単勝オッズを返す。
   static String _latestOddsFrom(SummaryModel m) {
     return <String>[
           m.oddsTanBefore0,
@@ -67,7 +78,7 @@ class _HorseRaceResultDisplayAlertState extends ConsumerState<HorseRaceResultDis
         '-';
   }
 
-  ///
+  /// 当日のレース結果から、1〜3着の馬を表示する。
   Widget _displayFromRaceResult() {
     final String mapKey = '${appParamState.selectedScheduleDate}_${appParamState.selectedScheduleKaisuuBashoDay}';
 
@@ -103,7 +114,7 @@ class _HorseRaceResultDisplayAlertState extends ConsumerState<HorseRaceResultDis
     return RaceTopThreeWidget(entries: entries, showTitle: true);
   }
 
-  ///
+  /// 過去レースのサマリーから、1〜3着の馬を表示する。
   Widget _displayFromSummary() {
     final List<SummaryModel> top3 =
         (<SummaryModel>[...summaryState.oneRaceSummaryList]

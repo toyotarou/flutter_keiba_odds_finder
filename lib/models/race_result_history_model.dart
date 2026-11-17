@@ -1,3 +1,12 @@
+// =============================================================================
+// ファイル名   : race_result_history_model.dart
+// 概要         : 過去レースの馬ごとの結果（オッズ・人気・着順）を保持するモデル。
+// 作成者       : Hideyuki Toyoda
+// 作成日       : 2026-06-27
+// 最終更新日   : 2026-11-17
+// =============================================================================
+
+/// 過去レースの馬ごとの結果。
 class RaceResultHistoryModel {
   RaceResultHistoryModel({
     required this.id,
@@ -44,23 +53,41 @@ class RaceResultHistoryModel {
     );
   }
 
+  /// レコードID
   final int id;
+  /// 開催日
   final String date;
+  /// 開催回（第何回の開催か）
   final int kaisuu;
+  /// 競馬場
   final String basho;
+  /// 競馬場コード
   final String bashoCode;
+  /// 開催日目（何日目か）
   final int day;
+  /// レース番号
   final int race;
+  /// レース名
   final String raceName;
+  /// 馬番
   final int num;
+  /// 馬名
   final String name;
+  /// 単勝オッズ
   final String tan;
+  /// 複勝オッズ（下限）
   final String fukuMin;
+  /// 複勝オッズ（上限）
   final String fukuMax;
+  /// 人気順
   final int popularityRank;
+  /// 着順
   final int finishingPosition;
 
+  /// コース種別（芝・ダート・障害）
   final String course;
+  /// 距離（m）
   final int dist;
+  /// 内回り・外回りの区分
   final String innerOuter;
 }

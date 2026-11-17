@@ -1,3 +1,12 @@
+// =============================================================================
+// ファイル名   : weekend_race_calendar_alert.dart
+// 概要         : 週末のレースカレンダーの画面。開催日ごとのタブに、競馬場別の時間割でレースを並べ、
+//                タップしたレースを選択する。
+// 作成者       : Hideyuki Toyoda
+// 作成日       : 2026-07-19
+// 最終更新日   : 2026-11-17
+// =============================================================================
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -13,6 +22,7 @@ const double _kGutterWidth = 38.0;
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
+/// 週末のレースカレンダーの画面。
 class WeekendRaceCalendarAlert extends ConsumerStatefulWidget {
   const WeekendRaceCalendarAlert({super.key});
 
@@ -20,12 +30,13 @@ class WeekendRaceCalendarAlert extends ConsumerStatefulWidget {
   ConsumerState<WeekendRaceCalendarAlert> createState() => _WeekendRaceCalendarAlertState();
 }
 
+/// 週末のレースカレンダーの画面の状態。
 class _WeekendRaceCalendarAlertState extends ConsumerState<WeekendRaceCalendarAlert>
     with ControllersMixin<WeekendRaceCalendarAlert>, SingleTickerProviderStateMixin {
   late TabController _tabController;
   late List<String> _tabDates;
 
-  ///
+  /// 開催日ごとのタブを作り、選択中の日付のタブを開く。
   @override
   void initState() {
     super.initState();
@@ -44,14 +55,14 @@ class _WeekendRaceCalendarAlertState extends ConsumerState<WeekendRaceCalendarAl
     );
   }
 
-  ///
+  /// タブの制御を破棄する。
   @override
   void dispose() {
     _tabController.dispose();
     super.dispose();
   }
 
-  ///
+  /// 週末のレースカレンダー（開催日ごとのタブ）の画面を組み立てる。
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -97,6 +108,7 @@ class _WeekendRaceCalendarAlertState extends ConsumerState<WeekendRaceCalendarAl
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
+/// 1日ぶんのカレンダー。
 class _DateCalendarView extends ConsumerStatefulWidget {
   const _DateCalendarView({required this.date});
 
@@ -106,18 +118,19 @@ class _DateCalendarView extends ConsumerStatefulWidget {
   ConsumerState<_DateCalendarView> createState() => _DateCalendarViewState();
 }
 
+/// 1日ぶんのカレンダーの状態。
 class _DateCalendarViewState extends ConsumerState<_DateCalendarView> with ControllersMixin<_DateCalendarView> {
   final ScrollController _gutterController = ScrollController();
   final ScrollController _calendarScrollController = ScrollController();
 
-  ///
+  /// 画面表示後に、選択中のレースが見える位置までスクロールする。
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToSelectedRace());
   }
 
-  ///
+  /// 選択中のレース（未選択なら最初のレース）の発走時刻が見える位置まで、縦にスクロールする。
   void _scrollToSelectedRace() {
     if (!_calendarScrollController.hasClients) {
       return;
@@ -145,7 +158,7 @@ class _DateCalendarViewState extends ConsumerState<_DateCalendarView> with Contr
     _calendarScrollController.animateTo(top, duration: const Duration(milliseconds: 300), curve: Curves.easeOut);
   }
 
-  ///
+  /// スクロールの制御を破棄する。
   @override
   void dispose() {
     _gutterController.dispose();
@@ -153,10 +166,10 @@ class _DateCalendarViewState extends ConsumerState<_DateCalendarView> with Contr
     super.dispose();
   }
 
-  ///
+  /// カレンダー部分の高さ（表示する時間帯 × 1分あたりのピクセル数）。
   double get _gridHeight => (_kEndHour - _kStartHour) * 60 * _kPxPerMinute;
 
-  ///
+  /// この日付に開催される競馬場の一覧。
   List<ScheduleModel> get _schedulesForDate {
     final List<ScheduleModel> list = List<ScheduleModel>.from(
       appParamState.keepScheduleDateBashoMap[widget.date] ?? <ScheduleModel>[],
@@ -165,13 +178,13 @@ class _DateCalendarViewState extends ConsumerState<_DateCalendarView> with Contr
     return list;
   }
 
-  ///
+  /// 指定した開催のレース一覧。
   List<RaceModel> _racesForSchedule(ScheduleModel schedule) {
     final String key = '${schedule.date}_${schedule.kaisuu}_${schedule.basho}_${schedule.day}';
     return appParamState.keepRaceMap[key] ?? <RaceModel>[];
   }
 
-  ///
+  /// タップしたレースを選択状態にして、カレンダーを閉じる。
   void _onRaceTap(RaceModel race) {
     appParamNotifier.setSelectedScheduleDate(date: race.date);
     appParamNotifier.setSelectedScheduleKaisuuBashoDay(
@@ -183,7 +196,7 @@ class _DateCalendarViewState extends ConsumerState<_DateCalendarView> with Contr
     Navigator.pop(context);
   }
 
-  ///
+  /// 1日ぶんのカレンダー（競馬場の見出しと時間割）を表示する。
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -194,7 +207,7 @@ class _DateCalendarViewState extends ConsumerState<_DateCalendarView> with Contr
     );
   }
 
-  ///
+  /// 競馬場名の見出し行を表示する。
   Widget _buildVenueHeader() {
     final List<ScheduleModel> schedules = _schedulesForDate;
     return Row(
@@ -237,7 +250,7 @@ class _DateCalendarViewState extends ConsumerState<_DateCalendarView> with Contr
     );
   }
 
-  ///
+  /// 時刻の目盛りと、レースのブロックを並べたカレンダー本体を表示する。
   Widget _buildCalendar() {
     final List<ScheduleModel> schedules = _schedulesForDate;
     return Stack(
@@ -311,7 +324,7 @@ class _DateCalendarViewState extends ConsumerState<_DateCalendarView> with Contr
     );
   }
 
-  ///
+  /// レース1件ずつを、競馬場の列・発走時刻の位置にブロックとして配置する。
   List<Widget> _buildRaceBlocks(double colW, List<ScheduleModel> schedules) {
     final List<Widget> widgets = <Widget>[];
     const double blockH = 30 * _kPxPerMinute;
@@ -359,13 +372,14 @@ class _DateCalendarViewState extends ConsumerState<_DateCalendarView> with Contr
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
+/// レース1件ぶんのブロック。
 class _RaceBlock extends StatelessWidget {
   const _RaceBlock({required this.race, required this.isSelected});
 
   final RaceModel race;
   final bool isSelected;
 
-  ///
+  /// レースのブロック（レース番号・レース名・グレード）を表示する。
   @override
   Widget build(BuildContext context) {
     return Stack(
@@ -444,6 +458,7 @@ class _RaceBlock extends StatelessWidget {
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
+/// カレンダーの罫線（競馬場の区切りと1時間ごとの線）を描く。
 class _RaceGridPainter extends CustomPainter {
   _RaceGridPainter({
     required this.startHour,
@@ -457,7 +472,7 @@ class _RaceGridPainter extends CustomPainter {
   final double pxPerMinute, columnWidth;
   final int columnCount;
 
-  ///
+  /// 競馬場の区切り線と、1時間ごとの横線を描く。
   @override
   void paint(Canvas canvas, Size size) {
     final Paint vertLine = Paint()
@@ -469,7 +484,7 @@ class _RaceGridPainter extends CustomPainter {
     }
   }
 
-  ///
+  /// 表示範囲や列の数が変わったときだけ描き直す。
   @override
   bool shouldRepaint(covariant _RaceGridPainter old) =>
       old.startHour != startHour ||
@@ -481,13 +496,14 @@ class _RaceGridPainter extends CustomPainter {
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
+/// カレンダー左端の時刻の目盛り。
 class _TimeGutter extends StatelessWidget {
   const _TimeGutter({required this.startHour, required this.endHour, required this.pxPerMinute});
 
   final int startHour, endHour;
   final double pxPerMinute;
 
-  ///
+  /// 左端に時刻の目盛りを表示する。
   @override
   Widget build(BuildContext context) {
     return Stack(
@@ -508,13 +524,14 @@ class _TimeGutter extends StatelessWidget {
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
+/// 今の時刻を示す横線。
 class _NowIndicatorLine extends StatelessWidget {
   const _NowIndicatorLine({required this.startHour, required this.endHour, required this.pxPerMinute});
 
   final int startHour, endHour;
   final double pxPerMinute;
 
-  ///
+  /// 今の時刻の位置に横線を表示する（表示範囲外のときは何も出さない）。
   @override
   Widget build(BuildContext context) {
     final TimeOfDay now = TimeOfDay.now();

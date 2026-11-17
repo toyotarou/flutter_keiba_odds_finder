@@ -1,3 +1,12 @@
+// =============================================================================
+// ファイル名   : side_tab_panel.dart
+// 概要         : 縦に並んだタブと、右側のパネルを地続きに見せる部品。
+//                （現在、どこからも使われていない）
+// 作成者       : Hideyuki Toyoda
+// 作成日       : 2026-06-29
+// 最終更新日   : 2026-11-17
+// =============================================================================
+
 import 'package:flutter/material.dart';
 
 /// ルーズリーフの見出し（ツマミ）風の縦タブ + 右パネル。
@@ -146,6 +155,7 @@ class SideTabPanel extends StatelessWidget {
   }
 }
 
+/// タブとパネルの輪郭を描く（選択中のタブとパネルの境目は描かない）。
 class _SideTabPainter extends CustomPainter {
   _SideTabPainter({
     required this.tabCount,

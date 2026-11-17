@@ -1,10 +1,20 @@
+// =============================================================================
+// ファイル名   : utility.dart
+// 概要         : 画面共通の小さな処理（エラー表示・枠色・オッズ急落判定など）と、
+//                Navigator / ScaffoldMessenger のグローバルキー。
+// 作成者       : Hideyuki Toyoda
+// 作成日       : 2026-05-30
+// 最終更新日   : 2026-11-17
+// =============================================================================
+
 import 'package:flutter/material.dart';
 
 import '../const/const.dart';
 import '../models/race_result_model.dart';
 
+/// 画面共通の小さな処理（エラー表示・枠色・オッズ急落判定など）をまとめたクラス。
 class Utility {
-  ///
+  /// 画面下部にエラーメッセージ（SnackBar）を5秒間表示する。
   void showError(String msg) {
     final ScaffoldMessengerState? messenger = NavigationService.scaffoldMessengerKey.currentState;
     if (messenger == null) {
@@ -13,10 +23,10 @@ class Utility {
     messenger.showSnackBar(SnackBar(content: Text(msg), duration: const Duration(seconds: 5)));
   }
 
-  ///
+  /// 枠番（1〜8）ごとの枠色を返す。
   Map<int, Color> getHorseWakuColorMap() => _horseWakuColorMap;
 
-  // 20260925: 呼ぶたびに作り直さないよう定数にした（読み取り専用）
+  // 呼ぶたびに作り直さないよう定数にした（読み取り専用）
   static const Map<int, Color> _horseWakuColorMap = <int, Color>{
     1: Color(0xFFFFFFFF),
     2: Color(0xFF000000),
@@ -28,7 +38,10 @@ class Utility {
     8: Color(0xFFFFC0CB),
   };
 
+  /// 発走30分前と6分前の単勝オッズから、急落の有無と種別（本命・中穴・大穴）を判定する。
   ///
+  /// 戻り値は display（表示するか）、message（見出し）、description（説明文）、
+  /// flag（0:本命急落、1:中穴急落、-1:対象外）を持つ Map。
   Map<String, dynamic> judgeOdds({
     required double before30,
     required double before6,
@@ -58,7 +71,7 @@ class Utility {
     return <String, dynamic>{'display': false, 'message': '大穴急落 → 対象外', 'description': '', 'flag': -1};
   }
 
-  ///
+  /// 指定レースの3着以内の馬について、馬番 → 着順 の対応表を作る。
   Map<int, int> buildNumToRankMap(List<RaceResultModel> results, int raceNumber) => <int, int>{
     for (final RaceResultModel r in results.where(
       (RaceResultModel r) => r.race == raceNumber && r.result <= kRaceTopFinishers,
@@ -67,6 +80,7 @@ class Utility {
   };
 }
 
+/// アプリ全体で使う Navigator と ScaffoldMessenger のキーを保持するクラス。
 class NavigationService {
   const NavigationService._();
 

@@ -1,3 +1,11 @@
+// =============================================================================
+// ファイル名   : push_notifier_user.dart
+// 概要         : プッシュ通知の送信対象ユーザーを API から取得して保持する Riverpod の Notifier と、その状態クラス。
+// 作成者       : Hideyuki Toyoda
+// 作成日       : 2026-06-22
+// 最終更新日   : 2026-11-17
+// =============================================================================
+
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -11,6 +19,7 @@ part 'push_notifier_user.freezed.dart';
 
 part 'push_notifier_user.g.dart';
 
+/// プッシュ通知の送信対象ユーザーの状態。
 @freezed
 class PushNotifierUserState with _$PushNotifierUserState {
   const factory PushNotifierUserState({
@@ -19,17 +28,19 @@ class PushNotifierUserState with _$PushNotifierUserState {
   }) = _PushNotifierUserState;
 }
 
+/// プッシュ通知の送信対象ユーザーを API から取得して保持する Notifier。
 @riverpod
 class PushNotifierUser extends _$PushNotifierUser {
   final Utility utility = Utility();
 
-  ///
+  /// 状態の初期値を返す。
   @override
   PushNotifierUserState build() => const PushNotifierUserState();
 
   //============================================== api
 
-  ///
+  /// API からプッシュ通知の送信対象ユーザーを全件取得し、新しい状態を作って返す。
+  /// 取得に失敗したときはエラーを表示し、例外を呼び出し元へ投げ直す。
   Future<PushNotifierUserState> fetchAllPushNotifierUserData() async {
     final HttpClient client = ref.read(httpClientProvider);
 
@@ -57,7 +68,7 @@ class PushNotifierUser extends _$PushNotifierUser {
     }
   }
 
-  ///
+  /// プッシュ通知の送信対象ユーザーを全件取得して状態に反映する。失敗したときは状態を変えない。
   Future<void> getAllPushNotifierUserData() async {
     try {
       final PushNotifierUserState newState = await fetchAllPushNotifierUserData();
@@ -68,7 +79,7 @@ class PushNotifierUser extends _$PushNotifierUser {
 
   //============================================== api
 
-  ///
+  /// 指定したプッシュ通知送信対象ユーザーの削除フラグを変更する。失敗したときはエラーを表示する。
   Future<void> changePushNotifierUserDelete({required int id, required int isDelete}) async {
     final HttpClient client = ref.read(httpClientProvider);
 
@@ -84,7 +95,7 @@ class PushNotifierUser extends _$PushNotifierUser {
 
   //============================================== api
 
-  /// 20261101: ホーム画面の「通知」スイッチ用。ログインユーザーの push 受信設定を取得する
+  /// ホーム画面の「通知」スイッチ用。ログインユーザーの push 受信設定を取得する
   /// 戻り値: isReceive（true=受信 / false=非受信）, count（登録端末数。0 なら通知が許可されていない）
   /// 取得に失敗したときは null
   Future<({bool isReceive, int count})?> fetchMyPushReceive({required String userId}) async {
@@ -104,9 +115,7 @@ class PushNotifierUser extends _$PushNotifierUser {
       return null;
     }
   }
-
-  ///
-  /// 20261101: ホーム画面の「通知」スイッチ用。ログインユーザーの全端末の受信/非受信を切り替える
+  /// ホーム画面の「通知」スイッチ用。ログインユーザーの全端末の受信/非受信を切り替える
   Future<bool> changeMyPushReceive({required String userId, required bool isReceive}) async {
     final HttpClient client = ref.read(httpClientProvider);
 

@@ -1,3 +1,11 @@
+// =============================================================================
+// ファイル名   : developer_news_minutes_display_alert.dart
+// 概要         : 開発者向けお知らせの画面（管理者用）。1週間の時間割カレンダー形式で表示する。
+// 作成者       : Hideyuki Toyoda
+// 作成日       : 2026-08-25
+// 最終更新日   : 2026-11-17
+// =============================================================================
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -6,13 +14,13 @@ import '../../models/developer_news_model.dart';
 import '../parts/widget_display_overlay.dart';
 
 const int _kStartMinutes = 330; // 5:30
-// const int _kEndMinutes = 1440; // 24:00
 const int _kEndMinutes = 1480; // 24:40（翌0:00・0:10 の送信も表示するため。0:10 のブロックの高さぶん余白を取る）
 const double _kPxPerMinute = 2.0;
 const double _kGutterWidth = 38.0;
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
+/// 開発者向けお知らせの画面。
 class DeveloperNewsMinutesDisplayAlert extends ConsumerStatefulWidget {
   const DeveloperNewsMinutesDisplayAlert({super.key});
 
@@ -20,26 +28,26 @@ class DeveloperNewsMinutesDisplayAlert extends ConsumerStatefulWidget {
   ConsumerState<DeveloperNewsMinutesDisplayAlert> createState() => _DeveloperNewsMinutesDisplayAlertState();
 }
 
+/// 開発者向けお知らせの画面の状態。
 class _DeveloperNewsMinutesDisplayAlertState extends ConsumerState<DeveloperNewsMinutesDisplayAlert>
     with ControllersMixin<DeveloperNewsMinutesDisplayAlert> {
   final ScrollController _gutterController = ScrollController();
   final ScrollController _calendarScrollController = ScrollController();
 
-  ///
+  /// 画面表示後に、最初のお知らせの位置までスクロールする。
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToFirstNews());
   }
 
-  ///
+  /// 今週いちばん早い時刻のお知らせが見える位置まで、カレンダーを縦にスクロールする。
   void _scrollToFirstNews() {
     if (!_calendarScrollController.hasClients) {
       return;
     }
     for (int h = _kStartMinutes ~/ 60; h <= _kEndMinutes ~/ 60; h++) {
       for (int m = 0; m <= 59; m++) {
-        // final String time = '$h:${m.toString().padLeft(2, '0')}';
         final String time = '${h % 24}:${m.toString().padLeft(2, '0')}';
         if (appParamState.keepDeveloperNewsTimeMap[time] != null &&
             appParamState.keepDeveloperNewsTimeMap[time]!.isNotEmpty) {
@@ -55,7 +63,7 @@ class _DeveloperNewsMinutesDisplayAlertState extends ConsumerState<DeveloperNews
     }
   }
 
-  ///
+  /// スクロールの制御を破棄する。
   @override
   void dispose() {
     _gutterController.dispose();
@@ -63,10 +71,10 @@ class _DeveloperNewsMinutesDisplayAlertState extends ConsumerState<DeveloperNews
     super.dispose();
   }
 
-  ///
+  /// カレンダー部分の高さ（表示する時間帯 × 1分あたりのピクセル数）。
   double get _gridHeight => (_kEndMinutes - _kStartMinutes) * _kPxPerMinute;
 
-  ///
+  /// 直近の土曜日から始まる1週間（土〜金）の日付一覧。
   List<DateTime> get _weekDates {
     final DateTime today = DateTime.now();
     final int daysSinceSaturday = (today.weekday + 1) % 7;
@@ -74,7 +82,7 @@ class _DeveloperNewsMinutesDisplayAlertState extends ConsumerState<DeveloperNews
     return List<DateTime>.generate(7, (int i) => lastSaturday.add(Duration(days: i)));
   }
 
-  ///
+  /// 開発者向けお知らせを、1週間の時間割カレンダー形式で表示する画面を組み立てる。
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -104,7 +112,7 @@ class _DeveloperNewsMinutesDisplayAlertState extends ConsumerState<DeveloperNews
     );
   }
 
-  ///
+  /// 曜日と日付の見出し行を表示する（今日の列は強調する）。
   Widget _buildDayHeader() {
     const List<String> dayNames = <String>['土', '日', '月', '火', '水', '木', '金'];
     final List<DateTime> dates = _weekDates;
@@ -149,7 +157,7 @@ class _DeveloperNewsMinutesDisplayAlertState extends ConsumerState<DeveloperNews
     );
   }
 
-  ///
+  /// 時刻の目盛りと、お知らせのブロックを並べたカレンダー本体を表示する。
   Widget _buildCalendar() {
     return Stack(
       children: <Widget>[
@@ -224,7 +232,8 @@ class _DeveloperNewsMinutesDisplayAlertState extends ConsumerState<DeveloperNews
     );
   }
 
-  ///
+  /// お知らせ1件ずつを、送信した曜日の列・時刻の位置にブロックとして配置する。
+  /// 0時台の送信は前日の夜の処理なので、前日の列に表示する。
   List<Widget> _buildNewsBlocks(double colW) {
     final List<Widget> widgets = <Widget>[];
     const double blockH = 30 * _kPxPerMinute;
@@ -235,11 +244,9 @@ class _DeveloperNewsMinutesDisplayAlertState extends ConsumerState<DeveloperNews
 
     for (int h = _kStartMinutes ~/ 60; h <= _kEndMinutes ~/ 60; h++) {
       for (int m = 0; m <= 59; m++) {
-        // final String time = '$h:${m.toString().padLeft(2, '0')}';
         final String time = '${h % 24}:${m.toString().padLeft(2, '0')}';
         if (appParamState.keepDeveloperNewsTimeMap[time] != null) {
           for (final DeveloperNewsModel item in appParamState.keepDeveloperNewsTimeMap[time]!) {
-            // final DateTime itemDate = DateTime.parse(item.sentDate.split(' ')[0]);
             // 0時台（5:30より前）の送信は前日の夜の処理なので、前日の列に表示する
             DateTime itemDate = DateTime.parse(item.sentDate.split(' ')[0]);
             if (h >= 24) {
@@ -273,7 +280,6 @@ class _DeveloperNewsMinutesDisplayAlertState extends ConsumerState<DeveloperNews
           continue;
         }
 
-        // final int minutes = int.parse(parts[0]) * 60 + int.parse(parts[1]);
         int minutes = int.parse(parts[0]) * 60 + int.parse(parts[1]);
         // 0時台（5:30より前）は 24:xx として扱い、23:50 の下に表示する
         if (minutes < _kStartMinutes) {
@@ -304,6 +310,7 @@ class _DeveloperNewsMinutesDisplayAlertState extends ConsumerState<DeveloperNews
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
+/// お知らせ1件ぶんのブロック。
 class _NewsBlock extends StatefulWidget {
   const _NewsBlock({required this.time, required this.items});
 
@@ -314,10 +321,11 @@ class _NewsBlock extends StatefulWidget {
   State<_NewsBlock> createState() => _NewsBlockState();
 }
 
+/// お知らせのブロックの状態（タップで内容の表示を切り替える）。
 class _NewsBlockState extends State<_NewsBlock> {
   bool _isTapped = false;
 
-  ///
+  /// お知らせのブロックを表示する。タップすると内容を表示する。
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
@@ -403,6 +411,7 @@ class _NewsBlockState extends State<_NewsBlock> {
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
+/// カレンダーの罫線（曜日の区切りと1時間ごとの線）を描く。
 class _NewsGridPainter extends CustomPainter {
   _NewsGridPainter({
     required this.startMinutes,
@@ -416,7 +425,7 @@ class _NewsGridPainter extends CustomPainter {
   final double pxPerMinute, columnWidth;
   final int columnCount;
 
-  ///
+  /// 曜日の区切り線と、1時間ごとの横線を描く。
   @override
   void paint(Canvas canvas, Size size) {
     final Paint vertLine = Paint()
@@ -428,7 +437,7 @@ class _NewsGridPainter extends CustomPainter {
     }
   }
 
-  ///
+  /// 表示範囲や列の数が変わったときだけ描き直す。
   @override
   bool shouldRepaint(covariant _NewsGridPainter old) =>
       old.startMinutes != startMinutes ||
@@ -440,13 +449,14 @@ class _NewsGridPainter extends CustomPainter {
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
+/// カレンダー左端の時刻の目盛り。
 class _TimeGutter extends StatelessWidget {
   const _TimeGutter({required this.startMinutes, required this.endMinutes, required this.pxPerMinute});
 
   final int startMinutes, endMinutes;
   final double pxPerMinute;
 
-  ///
+  /// 左端に時刻の目盛りを表示する。
   @override
   Widget build(BuildContext context) {
     final int startHour = startMinutes ~/ 60;
@@ -460,7 +470,6 @@ class _TimeGutter extends StatelessWidget {
             child: Column(
               children: <Widget>[
                 Text(
-                  // '${h.toString().padLeft(2, '0')}:00',
                   '${(h % 24).toString().padLeft(2, '0')}:00',
                   style: const TextStyle(fontSize: 9, color: Colors.yellowAccent, fontWeight: FontWeight.bold),
                 ),
@@ -474,13 +483,14 @@ class _TimeGutter extends StatelessWidget {
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
+/// 今の時刻を示す横線。
 class _NowIndicatorLine extends StatelessWidget {
   const _NowIndicatorLine({required this.startMinutes, required this.endMinutes, required this.pxPerMinute});
 
   final int startMinutes, endMinutes;
   final double pxPerMinute;
 
-  ///
+  /// 今の時刻の位置に横線を表示する（表示範囲外のときは何も出さない）。
   @override
   Widget build(BuildContext context) {
     final TimeOfDay now = TimeOfDay.now();

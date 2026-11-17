@@ -1,3 +1,11 @@
+// =============================================================================
+// ファイル名   : ai_analysis_display_alert.dart
+// 概要         : AI 予想の画面。レース指標と、1st AI・2nd AI を統合した候補馬（おすすめ度・選出理由）を表示する。
+// 作成者       : Hideyuki Toyoda
+// 作成日       : 2026-07-14
+// 最終更新日   : 2026-11-17
+// =============================================================================
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -11,11 +19,7 @@ import '../../utility/functions.dart';
 import '../parts/odds_finder_dialog.dart';
 import 'payout_data_display_alert.dart';
 
-// import '../parts/odds_finder_dialog.dart';
-// import 'ai_analysis_payout_result_alert.dart';
-//
-//
-
+/// AI 予想の画面。
 class AiAnalysisDisplayAlert extends ConsumerStatefulWidget {
   const AiAnalysisDisplayAlert({
     this.overrideDate,
@@ -43,21 +47,22 @@ class AiAnalysisDisplayAlert extends ConsumerStatefulWidget {
   final int? upsetRaceValue;
   final Map<String, int?>? raceMetrics;
 
-  /// 20261025: サーバーの統合結果の状態（'undetermined' ＝ 採用できるAI回答が無かった）。
+  /// サーバーの統合結果の状態（'undetermined' ＝ 採用できるAI回答が無かった）。
   /// 「基準を満たす候補がいない」と「AIの回答を受け取れなかった」を画面で区別するために使う。
   final String? mergeStatus;
 
-  /// 20261111: 予想を出さなかった理由の文言（サーバーの status_reason）。
+  /// 予想を出さなかった理由の文言（サーバーの status_reason）。
   /// 文言はサーバーが決める（アプリでは決めない）。空のときだけ、従来の固定文言を出す。
   final String? mergeStatusReason;
 
-  /// 20261026: 馬番 → 枠番。過去レースの画面から渡す（馬データが無い古いレースの枠連判定用）。払戻金画面へそのまま渡す。
+  /// 馬番 → 枠番。過去レースの画面から渡す（馬データが無い古いレースの枠連判定用）。払戻金画面へそのまま渡す。
   final Map<int, int> numToWaku;
 
   @override
   ConsumerState<AiAnalysisDisplayAlert> createState() => _AiAnalysisDisplayAlertState();
 }
 
+/// AI 予想の画面の状態。
 class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
     with ControllersMixin<AiAnalysisDisplayAlert> {
   final Map<String, RaceResultPayoutModel> _payoutMap = <String, RaceResultPayoutModel>{};
@@ -92,7 +97,7 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
     return !widget.aiHorseList.any((AiResponseRecommendHorseModel a) => a.num == h.num);
   }
 
-  ///
+  /// 画面表示後に、払戻金と馬眼力指数を取得する。
   @override
   void initState() {
     super.initState();
@@ -100,14 +105,14 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
       _fetchPayout();
       _fetchBaganrikiIndex();
 
-      // 20260924: 振り返りは起動時に取得しなくなったため、未取得ならここで取得する
+      // 振り返りは起動時に取得しなくなったため、未取得ならここで取得する
       if (ref.read(raceIntrospectionProvider).raceIntrospectionMap.isEmpty) {
         raceIntrospectionNotifier.getAllRaceIntrospectionData();
       }
     });
   }
 
-  ///
+  /// 表示中のレースの払戻金を取得する（結果ボタン・払戻金画面で使う）。
   Future<void> _fetchPayout() async {
     final String date = _effectiveDate;
     final (:String kaisuu, :String basho, day: _) = parseKbdParts(_effectiveKbd);
@@ -126,7 +131,7 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
     } catch (_) {}
   }
 
-  ///
+  /// 表示中のレースの馬眼力指数を取得する。
   Future<void> _fetchBaganrikiIndex() async {
     final String date = _effectiveDate;
     final (:String kaisuu, :String basho, :String day) = parseKbdParts(_effectiveKbd);
@@ -147,7 +152,7 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
     } catch (_) {}
   }
 
-  ///
+  /// AI 予想の画面（レース指標・候補馬カード・振り返り）を組み立てる。
   @override
   Widget build(BuildContext context) {
     final (:String kaisuu, :String basho, day: String dayStr) = parseKbdParts(_effectiveKbd);
@@ -175,10 +180,6 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
     final List<AiResponseRecommendHorseModel> displayHorses = _displayHorses;
 
     // 画面に並んでいる馬のうち 3着以内に入った頭数を numToRankMap から直接計算
-    // 20261116 合致数の文は buildMatchResultText（functions.dart）で作るので使わなくなった
-    // final int matchedCount = displayHorses
-    //     .where((AiResponseRecommendHorseModel h) => (widget.numToRankMap[h.num] ?? 99) <= 3)
-    //     .length;
 
     // 画面に並んでいる馬で 1着・2着・3着 がすべて揃っているか
     final Set<int> hitRankSet = displayHorses
@@ -186,7 +187,7 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
         .where((int r) => r <= 3)
         .toSet();
 
-    // 20261005: 各馬カードで着順バッジ（rank <= 3）が付く馬の馬番。払戻金画面の「獲得」判定に渡す
+    // 各馬カードで着順バッジ（rank <= 3）が付く馬の馬番。払戻金画面の「獲得」判定に渡す
     final Set<int> hitHorseNums = displayHorses
         .where((AiResponseRecommendHorseModel h) => (widget.numToRankMap[h.num] ?? 99) <= 3)
         .map((AiResponseRecommendHorseModel h) => h.num)
@@ -199,24 +200,14 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
     if (resultText != null && displayHorses.isNotEmpty) {
       final RegExp pattern = RegExp(r'\d+頭中\d+頭が合致');
       if (pattern.hasMatch(resultText)) {
-        // adjustedResultText = resultText.replaceFirst(pattern, '${displayHorses.length}頭中$matchedCount頭が合致');   // 旧（20261116 なる11/16 仕上げ①：補充の内訳を出す）
         adjustedResultText = resultText.replaceFirst(pattern, buildMatchResultText(displayHorses, hitHorseNums));
       }
     }
-    // 20261111: 予想を出さなかったレース（undetermined・0頭）は、振り返りの「X頭中Y頭が合致」を出さない
+    // 予想を出さなかったレース（undetermined・0頭）は、振り返りの「X頭中Y頭が合致」を出さない
     //   本文の「予想は出せませんでした」と食い違うため（11/8 東京6Rで「6頭中2頭が合致」と並んで出ていた）
     if (displayHorses.isEmpty && widget.mergedHorseList != null && widget.mergeStatus == 'undetermined') {
       adjustedResultText = null;
     }
-
-    // // 結果ボタンの主数字: 画面に並んでいる馬の合致数（numToRankMap ベース）
-    // final String matchCount = matchedCount > 0 ? matchedCount.toString() : '';
-    //
-    // final bool showResultButton = payout != null && resultText != null && matchedCount > 0;
-    //
-    //
-    //
-    //
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -237,22 +228,6 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
 
                         SizedBox.shrink(),
 
-                        // Column(
-                        //   crossAxisAlignment: CrossAxisAlignment.start,
-                        //   children: <Widget>[
-                        //     const Text('馬眼力ピックアップ', style: TextStyle(fontSize: 12)),
-                        //     if (adjustedResultText != null)
-                        //       Text(
-                        //         adjustedResultText,
-                        //         style: const TextStyle(
-                        //           fontSize: 11,
-                        //           color: Colors.yellowAccent,
-                        //           fontWeight: FontWeight.bold,
-                        //         ),
-                        //       ),
-                        //   ],
-                        // ),
-                        // if (showResultButton) _buildResultButton(matchCount: matchCount, displayHorses: displayHorses),
                       ],
                     ),
 
@@ -340,7 +315,7 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
 
                         GestureDetector(
                           onTap: () {
-                            // 20261005: 払戻金画面を開く。着順バッジが付いた馬の馬番を渡し、合致した払戻にだけ「獲得」を出す
+                            // 払戻金画面を開く。着順バッジが付いた馬の馬番を渡し、合致した払戻にだけ「獲得」を出す
                             OddsFinderDialog(
                               context: context,
                               hideRaceOverlay: true,
@@ -351,8 +326,8 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
                                 hitHorseNums: hitHorseNums,
                                 numToRankMap: widget.numToRankMap,
                                 aiHorseNums: displayHorses.map((AiResponseRecommendHorseModel h) => h.num).toList(),
-                                numToWaku: widget.numToWaku, // 20261026
-                                // 20261102: 馬番の下に人気順を出す
+                                numToWaku: widget.numToWaku,
+                                // 馬番の下に人気順を出す
                                 aiHorseNumToPopularity: <int, String>{
                                   for (final AiResponseRecommendHorseModel h in displayHorses) h.num: h.popularity,
                                 },
@@ -388,72 +363,10 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
     );
   }
 
-  // ///
-  // Widget _buildResultButton({required String matchCount, required List<AiResponseRecommendHorseModel> displayHorses}) {
-  //   return Stack(
-  //     children: <Widget>[
-  //       Positioned(
-  //         right: 0,
-  //         bottom: 0,
-  //         child: Row(
-  //           crossAxisAlignment: CrossAxisAlignment.end,
-  //           children: <Widget>[
-  //             Transform(
-  //               alignment: Alignment.centerLeft,
-  //               transform: Matrix4.identity()..setEntry(0, 1, -0.8),
-  //               child: Text(
-  //                 matchCount,
-  //                 style: const TextStyle(fontSize: 20, color: Color(0xFFFBB6CE), fontWeight: FontWeight.bold),
-  //               ),
-  //             ),
-  //           ],
-  //         ),
-  //       ),
-  //       Column(
-  //         children: <Widget>[
-  //           const SizedBox(height: 10),
-  //           Material(
-  //             color: Colors.transparent,
-  //             borderRadius: BorderRadius.circular(10),
-  //             child: InkWell(
-  //               onTap: () {
-  //                 OddsFinderDialog(
-  //                   context: context,
-  //                   widget: AiAnalysisPayoutResultAlert(
-  //                     aiRecommendHorses: displayHorses,
-  //                     raceNumber: widget.raceNumber,
-  //                   ),
-  //                   paddingLeft: context.screenSize.width * 0.2,
-  //                 );
-  //               },
-  //               borderRadius: BorderRadius.circular(10),
-  //               splashColor: const Color(0xFFFFD700).withValues(alpha: 0.35),
-  //               highlightColor: const Color(0xFFFFD700).withValues(alpha: 0.1),
-  //               child: Container(
-  //                 padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 10),
-  //                 decoration: BoxDecoration(
-  //                   border: Border.all(color: const Color(0xFFFFD700)),
-  //                   borderRadius: BorderRadius.circular(10),
-  //                 ),
-  //                 child: const Text(
-  //                   '合致結果',
-  //                   style: TextStyle(fontSize: 10, color: Color(0xFFFFD700), fontWeight: FontWeight.bold),
-  //                 ),
-  //               ),
-  //             ),
-  //           ),
-  //           const SizedBox(height: 10),
-  //         ],
-  //       ),
-  //     ],
-  //   );
-  // }
-
-  ///
-  // 20261110 項目ごとに null＝「未算出」を表示する（よっしー11/9 2A）
+  /// レース指標（波乱度・下位進入度・大穴進入度）を星の数で表示する。
+  /// 値が null の項目は「未算出」と表示する。
   Widget _buildRaceMetrics(Map<String, int?> metrics) {
-    // String stars(int? v) => v == null ? '' : '★' * v + '☆' * (5 - v);   // 旧
-    String stars(int? v) => (v == null || v == 0) ? '' : '★' * v + '☆' * (5 - v);   // 20261115 0＝「対象外」は星を出さない
+    String stars(int? v) => (v == null || v == 0) ? '' : '★' * v + '☆' * (5 - v);   // 0＝「対象外」は星を出さない
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
       decoration: BoxDecoration(
@@ -472,88 +385,24 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
     );
   }
 
-  ///
+  /// レース指標1項目ぶん（見出し・数値・星）を表示する。
   Widget _buildMetricItem(String label, int? value, String stars) {
     return Column(
       children: <Widget>[
         Text(label, style: const TextStyle(fontSize: 9, color: Colors.white70)),
         const SizedBox(height: 2),
         Text(stars, style: const TextStyle(fontSize: 10, color: Colors.yellowAccent, letterSpacing: 1)),
-        // 20261110 数字が無い項目は「未算出」
-        // Text(value == null ? '未算出' : value.toString(), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),   // 旧
-        // 20261115 0 は「対象外」（その人気帯の馬がいない）
+        // 数字が無い項目は「未算出」
+        // 0 は「対象外」（その人気帯の馬がいない）
         Text(value == null ? '未算出' : (value == 0 ? '対象外' : value.toString()), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
       ],
     );
   }
 
-  // 20261026 なる回答（C案）により、画面の印（補充枠・購入推奨外）は表示しない。
+  // 画面の印（補充枠・購入推奨外）は表示しない。
   // 購入判定（purchase_recommended）と補充枠の記録はサーバ側にそのまま残している。
-  // /// 補充枠で入った馬に付ける印。
-  // ///
-  // /// 目標頭数に届かないとき、人気薄の資格を満たしていない7番人気以下を
-  // /// おすすめ度の順で補うことがある。その馬は通常の選出とは性質が違うので、
-  // /// 候補としては出しつつ「買う対象には入れていない」ことがわかるようにする。
-  // /// 補充枠でなければ何も出さない（表示は従来どおり）。
-  // Widget _buildFillSlotBadge(AiResponseRecommendHorseModel h) {
-  //   if (!h.fillSlot) {
-  //     return const SizedBox.shrink();
-  //   }
-  //   return _buildBadge(
-  //     // 20261026 なる回答（B案）により文言を短く変更
-  //     // '補充枠 / 買い目には入れていません',
-  //     '補充枠・購入推奨外',
-  //     Colors.cyanAccent,
-  //   );
-  // }
 
-  // /// 公開候補ではあるが、買い目には入れていない馬に付ける印。
-  // ///
-  // /// 20261014（7回目ご指摘⑦）「公開候補と購入推奨の区別が画面上でも
-  // /// 明確になっているか確認してください」への対応。
-  // ///
-  // /// 補充枠（上の印）以外にも、買い目から外れる場合がある。
-  // ///   ・最低基準点に届かない
-  // ///   ・人気薄で回収率が低い帯に入る
-  // ///   ・低配当で妙味が小さい
-  // ///   ・過去回収率が低い
-  // /// これらはいずれも「候補としては出すが、買う対象にはしない」扱いで、
-  // /// サーバ側は purchase_recommended = false で返してくる。
-  // /// 補充枠の印が出ない馬でも買い目に入っていないことがあるため、
-  // /// その場合もはっきり分かるようにする。
-  // /// 買い目に入っている馬には何も出さない（表示は従来どおり）。
-  // Widget _buildNotRecommendedBadge(AiResponseRecommendHorseModel h) {
-  //   // 補充枠の印を出している馬は、そちらに「買い目には入れていません」と
-  //   // 書いてあるので二重に出さない。
-  //   if (h.fillSlot || h.purchaseRecommended) {
-  //     return const SizedBox.shrink();
-  //   }
-  //   return _buildBadge(
-  //     // 20261026 なる回答（B案）により文言を短く変更
-  //     // '公開候補のみ / 買い目には入れていません',
-  //     '購入推奨外',
-  //     Colors.orangeAccent,
-  //   );
-  // }
-
-  // /// 印の見た目をそろえるための共通部品。
-  // Widget _buildBadge(String label, Color color) {
-  //   return Container(
-  //     margin: const EdgeInsets.only(left: 6),
-  //     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-  //     decoration: BoxDecoration(
-  //       color: color.withValues(alpha: 0.12),
-  //       border: Border.all(color: color.withValues(alpha: 0.7)),
-  //       borderRadius: BorderRadius.circular(4),
-  //     ),
-  //     child: Text(
-  //       label,
-  //       style: TextStyle(color: color, fontSize: 9, fontWeight: FontWeight.bold),
-  //     ),
-  //   );
-  // }
-
-  /// 20261115 よっしー11/14 B案：頭数に足りない分を補った馬に付ける印。
+  /// 頭数に足りない分を補った馬に付ける印。
   /// 根拠を確かめられた馬（印なし）と区別する。補充の馬でなければ何も出さない。
   Widget _buildRefillBadge(AiResponseRecommendHorseModel h) {
     if (!h.fillSlot) {
@@ -574,8 +423,8 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
     );
   }
 
-  /// 20261116 3指標（波乱度・下位進入度・大穴進入度）で、サーバーが最終の枠を1頭動かしたときに入った馬に付ける印。
-  /// 「補充」とは別の印にする（なる11/15 仕様9節）。該当しなければ何も出さない。
+  /// 3指標（波乱度・下位進入度・大穴進入度）で、サーバーが最終の枠を1頭動かしたときに入った馬に付ける印。
+  /// 「補充」とは別の印にする。該当しなければ何も出さない。
   Widget _buildMetricsBadge(AiResponseRecommendHorseModel h) {
     if (!h.metricsSlot) {
       return const SizedBox.shrink();
@@ -595,7 +444,7 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
     );
   }
 
-  ///
+  /// 候補馬1頭ぶんのカード（馬番・馬名・人気・おすすめ度・選出理由）を表示する。
   Widget _buildHorseCard(AiResponseRecommendHorseModel h) {
     // 2nd AI だけが選んだ馬は reason 自体が 2nd AI の文章なので、枠線ボックス側へ回す。
     // 両AIが選んだ馬は reason が 1st AI・reasonSecond が 2nd AI の文章。
@@ -753,16 +602,11 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
                                 ),
                               ),
                             ),
-                            // 20261026 なる回答（C案）により印は表示しない
-                            // // 補充枠で入った馬だけ、通常の選出と区別する印を出す
-                            // _buildFillSlotBadge(h),
-                            // 20261115 よっしー11/14 B案：頭数に足りない分を補った馬に「補充」の印を出す
+                            // 印は表示しない
+                            // 頭数に足りない分を補った馬に「補充」の印を出す
                             _buildRefillBadge(h),
-                            // 20261116 3指標で枠を1頭動かしたときに入った馬に「指標反映」の印を出す（なる11/15 仕様9節。補充とは別の印）
+                            // 3指標で枠を1頭動かしたときに入った馬に「指標反映」の印を出す
                             _buildMetricsBadge(h),
-                            // // 補充枠ではないが買い目に入れていない馬にも印を出す
-                            // // （20261014 7回目ご指摘⑦）
-                            // _buildNotRecommendedBadge(h),
                           ],
                         ),
                         const SizedBox.shrink(),
@@ -841,15 +685,13 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
     );
   }
 
-  ///
+  /// 候補馬の一覧を表示する。
+  /// 候補が0頭のときは、サーバーが返した理由（無ければ既定の文言）を表示する。
   Widget _buildHorseList(List<AiResponseRecommendHorseModel> displayHorses) {
     // 統合の結果、基準を満たす馬が1頭もいなかったレース（無理に候補を埋めない仕様）
-    // 20261025: 採用できるAI回答が無かったレース（未確定）は、「候補なし」とは別の文言にする
+    // 採用できるAI回答が無かったレース（未確定）は、「候補なし」とは別の文言にする
     if (displayHorses.isEmpty && widget.mergedHorseList != null && widget.mergeStatus == 'undetermined') {
-      // return const Center(
-      //   child: Text('AIの回答を受け取れなかったため、このレースの予想は出せませんでした', style: TextStyle(fontSize: 12, color: Colors.white70)),
-      // );   // 旧（サーバーの理由に関係なく固定の文言だった）
-      // 20261111: サーバーが送る理由の文言（status_reason）をそのまま出す。空のときだけ従来の文言
+      // サーバーが送る理由の文言（status_reason）をそのまま出す。空のときだけ従来の文言
       final String reason = (widget.mergeStatusReason ?? '').trim();
       return Center(
         child: Text(

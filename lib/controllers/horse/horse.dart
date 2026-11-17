@@ -1,3 +1,11 @@
+// =============================================================================
+// ファイル名   : horse.dart
+// 概要         : 出走馬を API から取得して保持する Riverpod の Notifier と、その状態クラス。
+// 作成者       : Hideyuki Toyoda
+// 作成日       : 2026-05-30
+// 最終更新日   : 2026-11-17
+// =============================================================================
+
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -12,6 +20,7 @@ part 'horse.freezed.dart';
 
 part 'horse.g.dart';
 
+/// 出走馬の状態。
 @freezed
 class HorseState with _$HorseState {
   const factory HorseState({
@@ -23,17 +32,19 @@ class HorseState with _$HorseState {
   }) = _HorseState;
 }
 
+/// 出走馬を API から取得して保持する Notifier。
 @riverpod
 class Horse extends _$Horse {
   final Utility utility = Utility();
 
-  ///
+  /// 状態の初期値を返す。
   @override
   HorseState build() => const HorseState();
 
   //============================================== api
 
-  ///
+  /// API から出走馬を全件取得し、新しい状態を作って返す。
+  /// 取得に失敗したときはエラーを表示し、例外を呼び出し元へ投げ直す。
   Future<HorseState> fetchAllHorseData() async {
     final HttpClient client = ref.read(httpClientProvider);
 
@@ -61,7 +72,7 @@ class Horse extends _$Horse {
     }
   }
 
-  ///
+  /// 出走馬を全件取得して状態に反映する。失敗したときは状態を変えない。
   Future<void> getAllHorseData() async {
     try {
       final HorseState newState = await fetchAllHorseData();
@@ -72,7 +83,8 @@ class Horse extends _$Horse {
 
   //============================================== api
 
-  ///
+  /// 指定した馬の詳細情報を API から取得し、状態に反映する。
+  /// 取得に失敗したときはエラーを表示し、例外を呼び出し元へ投げ直す。
   Future<void> fetchHorseDetail({required String horseId}) async {
     final HttpClient client = ref.read(httpClientProvider);
 

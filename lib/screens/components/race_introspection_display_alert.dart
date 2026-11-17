@@ -1,3 +1,11 @@
+// =============================================================================
+// ファイル名   : race_introspection_display_alert.dart
+// 概要         : レースの振り返りの画面。振り返りの文章と、ピックアップされた馬の着順を表示する。
+// 作成者       : Hideyuki Toyoda
+// 作成日       : 2026-08-03
+// 最終更新日   : 2026-11-17
+// =============================================================================
+
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,6 +17,7 @@ import '../../models/race_result_history_model.dart';
 import '../../models/summary_model.dart';
 import '../../utility/functions.dart';
 
+/// レースの振り返りの画面。
 class RaceIntrospectionDisplayAlert extends ConsumerStatefulWidget {
   const RaceIntrospectionDisplayAlert({super.key});
 
@@ -16,25 +25,26 @@ class RaceIntrospectionDisplayAlert extends ConsumerStatefulWidget {
   ConsumerState<RaceIntrospectionDisplayAlert> createState() => _RaceIntrospectionDisplayAlertState();
 }
 
+/// レースの振り返りの画面の状態。
 class _RaceIntrospectionDisplayAlertState extends ConsumerState<RaceIntrospectionDisplayAlert>
     with ControllersMixin<RaceIntrospectionDisplayAlert> {
   Map<int, List<RaceResultHistoryModel>> _battleRecordMap = <int, List<RaceResultHistoryModel>>{};
 
-  ///
+  /// 画面表示後に、振り返りに出てくる馬の過去成績を取得する。
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _fetchHorseBattleRecords();
 
-      // 20260924: 振り返りは起動時に取得しなくなったため、未取得ならここで取得する
+      // 振り返りは起動時に取得しなくなったため、未取得ならここで取得する
       if (ref.read(raceIntrospectionProvider).raceIntrospectionMap.isEmpty) {
         raceIntrospectionNotifier.getAllRaceIntrospectionData();
       }
     });
   }
 
-  ///
+  /// 表示中のレースの振り返り。未取得なら null。
   RaceIntrospectionModel? get _model {
     final List<SummaryModel> list = summaryState.oneRaceSummaryList;
     if (list.isEmpty) {
@@ -52,7 +62,7 @@ class _RaceIntrospectionDisplayAlertState extends ConsumerState<RaceIntrospectio
     );
   }
 
-  ///
+  /// レースの振り返りの画面を組み立てる。
   @override
   Widget build(BuildContext context) {
     final RaceIntrospectionModel? model = _model;
@@ -75,7 +85,7 @@ class _RaceIntrospectionDisplayAlertState extends ConsumerState<RaceIntrospectio
     );
   }
 
-  ///
+  /// 振り返りの文章から、ピックアップされた馬（馬番 → 馬名）を取り出す。
   static Map<int, String> _parsePickupHorses(String introspection) {
     final Map<int, String> result = <int, String>{};
     final List<String> lines = introspection.split('\n');
@@ -103,7 +113,7 @@ class _RaceIntrospectionDisplayAlertState extends ConsumerState<RaceIntrospectio
     return result;
   }
 
-  ///
+  /// ピックアップされた馬の過去成績を取得する。
   Future<void> _fetchHorseBattleRecords() async {
     final RaceIntrospectionModel? model = _model;
     if (model == null || model.introspection.isEmpty) {
@@ -136,7 +146,7 @@ class _RaceIntrospectionDisplayAlertState extends ConsumerState<RaceIntrospectio
     }
   }
 
-  ///
+  /// ピックアップされた馬の、このレースでの着順を返す。分からなければ null。
   int? _pickupFinishingPosition(int? horseNum) {
     if (horseNum == null) {
       return null;
@@ -159,7 +169,7 @@ class _RaceIntrospectionDisplayAlertState extends ConsumerState<RaceIntrospectio
     return (pos >= 1 && pos <= 3) ? pos : null;
   }
 
-  ///
+  /// 画面上部の見出し（レース名など）を表示する。
   Widget _buildHeader(RaceIntrospectionModel? model) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 16, 12, 0),
@@ -178,7 +188,7 @@ class _RaceIntrospectionDisplayAlertState extends ConsumerState<RaceIntrospectio
     );
   }
 
-  ///
+  /// 振り返りの本文を表示する。データが無いときはその旨を表示する。
   Widget _buildBody(RaceIntrospectionModel? model) {
     if (model == null || model.introspection.isEmpty) {
       return const Center(
@@ -197,7 +207,7 @@ class _RaceIntrospectionDisplayAlertState extends ConsumerState<RaceIntrospectio
     );
   }
 
-  ///
+  /// 振り返りの文章を「## 見出し」ごとのセクションに分けて表示する。
   Widget _buildContent(String text) {
     final List<Widget> widgets = <Widget>[];
     final List<String> sections = text.split(RegExp(r'\n(?=##)'));
@@ -252,7 +262,7 @@ class _RaceIntrospectionDisplayAlertState extends ConsumerState<RaceIntrospectio
 
   static final RegExp _pickupLineReg = RegExp(r'^(\d+)番\s*(.*)$');
 
-  ///
+  /// ピックアップされた馬の行を、着順付きで表示する。
   Widget _buildPickupRow(String line) {
     final RegExpMatch? m = _pickupLineReg.firstMatch(line);
 

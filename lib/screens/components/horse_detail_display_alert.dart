@@ -1,3 +1,11 @@
+// =============================================================================
+// ファイル名   : horse_detail_display_alert.dart
+// 概要         : 馬の詳細画面。基本情報・血統・条件別成績・過去の出走履歴を表示する。
+// 作成者       : Hideyuki Toyoda
+// 作成日       : 2026-06-01
+// 最終更新日   : 2026-11-17
+// =============================================================================
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -9,6 +17,7 @@ import '../../models/horse_detail_model.dart';
 import '../../models/shutsuba_history_model.dart';
 import '../../utility/functions.dart';
 
+/// 馬の詳細画面。
 class HorseDetailDisplayAlert extends ConsumerStatefulWidget {
   const HorseDetailDisplayAlert({super.key});
 
@@ -16,12 +25,13 @@ class HorseDetailDisplayAlert extends ConsumerStatefulWidget {
   ConsumerState<HorseDetailDisplayAlert> createState() => _HorseDetailDisplayAlertState();
 }
 
+/// 馬の詳細画面の状態。
 class _HorseDetailDisplayAlertState extends ConsumerState<HorseDetailDisplayAlert>
     with ControllersMixin<HorseDetailDisplayAlert> {
   List<ShutsubaHistoryModel>? _shutsubaHistoryList;
   String _fetchedHorseName = '';
 
-  ///
+  /// 指定した馬の過去の出走履歴を API から取得する。
   Future<void> _fetchShutsubaHistory(String horseName) async {
     if (horseName.isEmpty) {
       return;
@@ -41,7 +51,7 @@ class _HorseDetailDisplayAlertState extends ConsumerState<HorseDetailDisplayAler
     } catch (_) {}
   }
 
-  ///
+  /// 馬の詳細画面を組み立てる。表示する馬が変わったときは出走履歴を取り直す。
   @override
   Widget build(BuildContext context) {
     final HorseDetailModel? detail = horseState.horseDetail;
@@ -79,7 +89,7 @@ class _HorseDetailDisplayAlertState extends ConsumerState<HorseDetailDisplayAler
     );
   }
 
-  ///
+  /// 馬の詳細の各セクション（基本情報・血統・成績・出走履歴）を並べる。
   List<Widget> _buildContent(BuildContext context, HorseDetailModel detail) {
     return <Widget>[
       _buildBasicInfo(detail),
@@ -105,7 +115,7 @@ class _HorseDetailDisplayAlertState extends ConsumerState<HorseDetailDisplayAler
     ];
   }
 
-  ///
+  /// 馬の基本情報（性別・年齢・調教師・馬主・賞金など）を表示する。
   Widget _buildBasicInfo(HorseDetailModel detail) {
     return DefaultTextStyle(
       style: const TextStyle(color: Colors.white, fontSize: 12),
@@ -149,7 +159,7 @@ class _HorseDetailDisplayAlertState extends ConsumerState<HorseDetailDisplayAler
     );
   }
 
-  ///
+  /// 見出しと値を1行で表示する。
   Widget _buildInfoRow({required String label, required String value, String? layerDispValue}) {
     return DefaultTextStyle(
       style: const TextStyle(fontSize: 12),
@@ -165,7 +175,7 @@ class _HorseDetailDisplayAlertState extends ConsumerState<HorseDetailDisplayAler
     );
   }
 
-  ///
+  /// 表の見出しセルを表示する。
   Widget _labelCell(String text) {
     return Expanded(
       child: Container(
@@ -178,7 +188,7 @@ class _HorseDetailDisplayAlertState extends ConsumerState<HorseDetailDisplayAler
     );
   }
 
-  ///
+  /// 表の値セルを表示する。layerDispValue があれば背景に重ねて表示する。
   Widget _valueCell({required String text, String? layerDispValue}) {
     return Stack(
       children: <Widget>[
@@ -204,7 +214,7 @@ class _HorseDetailDisplayAlertState extends ConsumerState<HorseDetailDisplayAler
     );
   }
 
-  ///
+  /// セクションの見出しを表示する。
   Widget _buildSectionHeader(String title) {
     return Container(
       decoration: BoxDecoration(color: Colors.greenAccent.withValues(alpha: 0.2)),
@@ -216,7 +226,7 @@ class _HorseDetailDisplayAlertState extends ConsumerState<HorseDetailDisplayAler
     );
   }
 
-  ///
+  /// 成績セクションの見出しを表示する。
   Widget _buildRaceRecordHeader({required String title, required HorseDetailModel detail}) {
     return Container(
       width: double.infinity,
@@ -226,7 +236,7 @@ class _HorseDetailDisplayAlertState extends ConsumerState<HorseDetailDisplayAler
     );
   }
 
-  ///
+  /// 血統（父・母・母の父・母の母）を表示する。
   Widget _buildPedigree(HorseDetailProfileModel profile) {
     return DefaultTextStyle(
       style: const TextStyle(fontSize: 10, color: Colors.white),
@@ -265,7 +275,7 @@ class _HorseDetailDisplayAlertState extends ConsumerState<HorseDetailDisplayAler
     );
   }
 
-  ///
+  /// 過去の出走履歴を一覧で表示する。取得中・データなしのときはその旨を表示する。
   Widget _displayShutsubaHistoryList() {
     final List<Widget> list = <Widget>[];
 
@@ -456,6 +466,7 @@ class _HorseDetailDisplayAlertState extends ConsumerState<HorseDetailDisplayAler
 
 // ── 父・母ラベル用アバター ────────────────────────────────────────────
 
+/// 役割（騎手・調教師など）を1文字で示す丸いアイコン。
 class _RoleAvatar extends StatelessWidget {
   const _RoleAvatar({required this.label});
 

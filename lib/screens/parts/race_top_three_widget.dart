@@ -1,8 +1,17 @@
+// =============================================================================
+// ファイル名   : race_top_three_widget.dart
+// 概要         : レースの1〜3着（馬番・馬名・オッズ・人気）を表示する部品。
+// 作成者       : Hideyuki Toyoda
+// 作成日       : 2026-06-30
+// 最終更新日   : 2026-11-17
+// =============================================================================
+
 import 'package:flutter/material.dart';
 
 import '../../const/const.dart';
 import '../../utility/functions.dart';
 
+/// 1〜3着の馬1頭ぶんの情報。
 class RaceTopThreeEntry {
   const RaceTopThreeEntry({required this.num, required this.name, required this.odds, required this.popularity});
 
@@ -12,6 +21,7 @@ class RaceTopThreeEntry {
   final int? popularity;
 }
 
+/// レースの1〜3着を表示する部品。
 class RaceTopThreeWidget extends StatelessWidget {
   const RaceTopThreeWidget({super.key, required this.entries, this.showTitle = false});
 

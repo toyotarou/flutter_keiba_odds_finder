@@ -1,3 +1,11 @@
+// =============================================================================
+// ファイル名   : payout_data_display_alert.dart
+// 概要         : 払戻金の画面。券種ごとの払戻金を表示し、AI 予想で当たった組み合わせには「獲得」と表示する。
+// 作成者       : Hideyuki Toyoda
+// 作成日       : 2026-10-05
+// 最終更新日   : 2026-11-17
+// =============================================================================
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -7,10 +15,7 @@ import '../../models/horse_model.dart';
 import '../../models/race_result_payout_model.dart';
 import '../../utility/functions.dart';
 
-// 20261005: OddsFinderDialog(hideRaceOverlay: true) に移したため不要
-// import '../parts/odds_finder_overlay.dart';
-
-/// 20261005: 払戻金表示（ざっくり版）
+/// 払戻金表示（ざっくり版）
 /// 作りは ai_analysis_display_alert.dart に合わせている（Scaffold + DefaultTextStyle + Padding(20)）
 class PayoutDataDisplayAlert extends ConsumerStatefulWidget {
   const PayoutDataDisplayAlert({
@@ -32,28 +37,28 @@ class PayoutDataDisplayAlert extends ConsumerStatefulWidget {
   final String? overrideDate;
   final String? overrideKaisuuBashoDay;
 
-  /// 20261005: 着順バッジ（3着以内）が付いている馬の馬番。
+  /// 着順バッジ（3着以内）が付いている馬の馬番。
   /// 払戻の組み合わせの馬番がすべてここに含まれるときだけ「獲得」ラベルを出す。
   /// 空（既定）のときは「獲得」を一切出さない。
   final Set<int> hitHorseNums;
 
-  /// 20261005: 馬番 → 着順。空（既定）のときは「1着」「2着」「3着」のラベルを出さない。
+  /// 馬番 → 着順。空（既定）のときは「1着」「2着」「3着」のラベルを出さない。
   /// AI予想画面・過去レースのオッズ遷移表から開いたときだけ渡す。
   final Map<int, int> numToRankMap;
 
-  /// 20261006: AIが予想した馬の馬番。空（既定）のときは一覧を出さない。
+  /// AIが予想した馬の馬番。空（既定）のときは一覧を出さない。
   /// AI予想画面・過去レースのオッズ遷移表から開いたときだけ渡す。
   final List<int> aiHorseNums;
 
-  /// 20261008: 呼び出し元で取得済みの払戻データ。渡されたときはAPIを呼ばずにこれを表示する。
+  /// 呼び出し元で取得済みの払戻データ。渡されたときはAPIを呼ばずにこれを表示する。
   /// null（既定）のときは、これまで通り自分でAPIから取得する。
   final RaceResultPayoutModel? payout;
 
-  /// 20261026: 馬番 → 枠番（呼び出し元が summary から作ったもの）。
+  /// 馬番 → 枠番（呼び出し元が summary から作ったもの）。
   /// 馬データ（keepHorseMap）が無い古いレースで、枠連の「獲得」判定に使う。
   final Map<int, int> numToWaku;
 
-  /// 20261102: AIが予想した馬の 馬番 → 人気順（AI予想の popularity）。
+  /// AIが予想した馬の 馬番 → 人気順（AI予想の popularity）。
   /// 馬番の四角の下に「人気順:X」を出すのに使う。無い馬番は出さない。
   final Map<int, String> aiHorseNumToPopularity;
 
@@ -61,24 +66,25 @@ class PayoutDataDisplayAlert extends ConsumerStatefulWidget {
   ConsumerState<PayoutDataDisplayAlert> createState() => _PayoutDataDisplayAlertState();
 }
 
+/// 払戻金の画面の状態。
 class _PayoutDataDisplayAlertState extends ConsumerState<PayoutDataDisplayAlert>
     with ControllersMixin<PayoutDataDisplayAlert> {
   RaceResultPayoutModel? _payout;
   bool _isLoading = true;
 
-  /// 20261008: 通信に失敗したか（「払戻データがありません」と区別して表示するため）
+  /// 通信に失敗したか（「払戻データがありません」と区別して表示するため）
   bool _hasError = false;
 
   String get _effectiveDate => widget.overrideDate ?? appParamState.selectedScheduleDate;
 
   String get _effectiveKbd => widget.overrideKaisuuBashoDay ?? appParamState.selectedScheduleKaisuuBashoDay;
 
-  ///
+  /// 払戻金を取得する。取得済みのデータが渡されたときは API を呼ばない。
   @override
   void initState() {
     super.initState();
 
-    // 20261008: 取得済みの払戻データが渡されたときはAPIを呼ばない（通信失敗・遅延を避ける）
+    // 取得済みの払戻データが渡されたときはAPIを呼ばない（通信失敗・遅延を避ける）
     final RaceResultPayoutModel? given = widget.payout;
     if (given != null) {
       _payout = given;
@@ -87,21 +93,11 @@ class _PayoutDataDisplayAlertState extends ConsumerState<PayoutDataDisplayAlert>
     }
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      // 20261005: 表示中のレース選択オーバーレイ非表示は OddsFinderDialog(hideRaceOverlay: true) に移したため不要
-      // raceOverlayHiddenNotifier.value = true;
       _fetchPayout();
     });
   }
 
-  // 20261005: 閉じたときのレース選択オーバーレイ再表示も OddsFinderDialog 側に移したため不要
-  // ///
-  // @override
-  // void dispose() {
-  //   Future<void>(() => raceOverlayHiddenNotifier.value = false);
-  //   super.dispose();
-  // }
-
-  ///
+  /// 表示中のレースの払戻金を取得する。一時的な通信失敗に備えて最大3回まで再試行する。
   Future<void> _fetchPayout() async {
     final String date = _effectiveDate;
     final (:String kaisuu, :String basho, day: _) = parseKbdParts(_effectiveKbd);
@@ -112,7 +108,7 @@ class _PayoutDataDisplayAlertState extends ConsumerState<PayoutDataDisplayAlert>
       return;
     }
 
-    // 20261008: 一時的な通信失敗に備えて、最大3回まで自動で再試行する（間隔1秒）
+    // 一時的な通信失敗に備えて、最大3回まで自動で再試行する（間隔1秒）
     const int maxAttempts = 3;
     for (int attempt = 1; attempt <= maxAttempts; attempt++) {
       try {
@@ -146,18 +142,17 @@ class _PayoutDataDisplayAlertState extends ConsumerState<PayoutDataDisplayAlert>
     }
   }
 
-  /// 20261005: 馬番 → 枠番。枠連（枠番の組み合わせ）の「獲得」判定に使う。
+  /// 馬番 → 枠番。枠連（枠番の組み合わせ）の「獲得」判定に使う。
   /// 馬データ（horse_model の waku）は keepHorseMap にあるので、呼び出し元から引数で渡さなくても自分で引く。
   /// 馬データが無い（古いレースなど）ときは空で、枠連は「獲得」にならない。
   Map<int, int> get _numToWaku {
     final List<HorseModel> horses = appParamState.keepHorseMap['${_effectiveDate}_$_effectiveKbd'] ?? <HorseModel>[];
-    // return buildNumToWakuMap(horses.where((HorseModel h) => h.race == widget.raceNumber));
-    // 20261026: 馬データが無いときは、呼び出し元から渡された枠番を使う
+    // 馬データが無いときは、呼び出し元から渡された枠番を使う
     final Map<int, int> fromHorses = buildNumToWakuMap(horses.where((HorseModel h) => h.race == widget.raceNumber));
     return fromHorses.isNotEmpty ? fromHorses : widget.numToWaku;
   }
 
-  /// 20261006: 出走頭数（「X頭立て」）。馬データ（keepHorseMap）のそのレースの頭数。
+  /// 出走頭数（「X頭立て」）。馬データ（keepHorseMap）のそのレースの頭数。
   /// 馬データが無い（古いレースなど）ときは 0。
   int get _fieldSize {
     final List<HorseModel> horses = appParamState.keepHorseMap['${_effectiveDate}_$_effectiveKbd'] ?? <HorseModel>[];
@@ -185,7 +180,7 @@ class _PayoutDataDisplayAlertState extends ConsumerState<PayoutDataDisplayAlert>
     return entries;
   }
 
-  ///
+  /// 払戻金の画面を組み立てる。
   @override
   Widget build(BuildContext context) {
     final RaceResultPayoutModel? payout = _payout;
@@ -195,7 +190,7 @@ class _PayoutDataDisplayAlertState extends ConsumerState<PayoutDataDisplayAlert>
       body: SafeArea(
         child: DefaultTextStyle(
           style: const TextStyle(color: Colors.white),
-          // 20261005: 後ろの画面が透けて払戻金が読みにくいので、黒背景にする（角丸は OddsFinderDialog の Dialog と同じ 30）
+          // 後ろの画面が透けて払戻金が読みにくいので、黒背景にする（角丸は OddsFinderDialog の Dialog と同じ 30）
           child: Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
@@ -255,13 +250,13 @@ class _PayoutDataDisplayAlertState extends ConsumerState<PayoutDataDisplayAlert>
     );
   }
 
-  ///
+  /// 券種ごとの払戻金を表示する。読み込み中・失敗・データなしのときはその旨を表示する。
   Widget _buildBody(RaceResultPayoutModel? payout) {
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
 
-    // 20261008: 通信失敗は「データなし」と区別し、再読み込みできるようにする
+    // 通信失敗は「データなし」と区別し、再読み込みできるようにする
     if (_hasError) {
       return Center(
         child: Column(
@@ -302,7 +297,7 @@ class _PayoutDataDisplayAlertState extends ConsumerState<PayoutDataDisplayAlert>
     );
   }
 
-  /// 20261005: 金額・組み合わせの Text 共通の行の高さ。
+  /// 金額・組み合わせの Text 共通の行の高さ。
   /// 金額は「円」を含み、日本語フォント（フォールバック）の行高になって数字の縦位置が組み合わせとずれるため、
   /// 行の高さを固定して揃える。
   static const StrutStyle _valueStrut = StrutStyle(fontSize: 12, height: 1.3, forceStrutHeight: true);
@@ -331,7 +326,7 @@ class _PayoutDataDisplayAlertState extends ConsumerState<PayoutDataDisplayAlert>
           const SizedBox(height: 2),
 
           ...entries.map((({String combo, String amount}) e) {
-            // 20261005: 着順バッジが付いた馬の馬番だけで組み合わせが成り立つか（成り立つ行だけ「獲得」と赤文字）
+            // 着順バッジが付いた馬の馬番だけで組み合わせが成り立つか（成り立つ行だけ「獲得」と赤文字）
             final bool isHit = isWaku ? isWakuComboHit(e.combo, widget.hitHorseNums, _numToWaku) : _isHit(e.combo);
 
             // 獲得した行の金額・馬番の文字色（色を変えるときはここ）。獲得していない行は null（既定の白）
@@ -361,7 +356,7 @@ class _PayoutDataDisplayAlertState extends ConsumerState<PayoutDataDisplayAlert>
     );
   }
 
-  /// 20261006: 「AIが予想した馬番：X頭」の下に、馬番を白枠で囲んで並べる。
+  /// 「AIが予想した馬番：X頭」の下に、馬番を白枠で囲んで並べる。
   Widget _buildAiHorseNums() {
     // 3着以内に入った（合致した）馬の頭数。3頭合致のときだけピンクの文字にする（AI予想画面の結果文と同じ色）
     final int matchedCount = widget.aiHorseNums.where(widget.hitHorseNums.contains).length;
@@ -380,7 +375,7 @@ class _PayoutDataDisplayAlertState extends ConsumerState<PayoutDataDisplayAlert>
           runSpacing: 4,
           // 馬番の昇順に並べる（元のリストは変更しない）
           children: (List<int>.of(widget.aiHorseNums)..sort()).map((int n) {
-            // 20261102: 四角の下に「人気順:X」を出す
+            // 四角の下に「人気順:X」を出す
             final String popularity = widget.aiHorseNumToPopularity[n] ?? '';
 
             return SizedBox(
@@ -427,7 +422,7 @@ class _PayoutDataDisplayAlertState extends ConsumerState<PayoutDataDisplayAlert>
     );
   }
 
-  /// 20261005: 「1着 5」「2着 13」「3着 1」のように、着順ごとの馬番を並べる。
+  /// 「1着 5」「2着 13」「3着 1」のように、着順ごとの馬番を並べる。
   /// 同着で同じ着順の馬が複数いるときは、馬番を昇順に並べて続けて表示する。
   Widget _buildRankLabels() {
     return Wrap(

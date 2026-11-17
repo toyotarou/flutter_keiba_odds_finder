@@ -1,9 +1,18 @@
+// =============================================================================
+// ファイル名   : baganriki_brain_display_alert.dart
+// 概要         : 「AI予想の判断基準」の画面。サーバーの設定値に入っている文章を表示する。
+// 作成者       : Hideyuki Toyoda
+// 作成日       : 2026-08-03
+// 最終更新日   : 2026-11-17
+// =============================================================================
+
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../controllers/controllers_mixin.dart';
 
+/// 「AI予想の判断基準」の画面。
 class BaganrikiBrainDisplayAlert extends ConsumerStatefulWidget {
   const BaganrikiBrainDisplayAlert({super.key});
 
@@ -11,9 +20,10 @@ class BaganrikiBrainDisplayAlert extends ConsumerStatefulWidget {
   ConsumerState<BaganrikiBrainDisplayAlert> createState() => _BaganrikiBrainDisplayAlertState();
 }
 
+/// 「AI予想の判断基準」の画面の状態。
 class _BaganrikiBrainDisplayAlertState extends ConsumerState<BaganrikiBrainDisplayAlert>
     with ControllersMixin<BaganrikiBrainDisplayAlert> {
-  ///
+  /// 「AI予想の判断基準」の画面を組み立てる。
   @override
   Widget build(BuildContext context) {
     final String content = appParamState.configBaganrikiBrain;
@@ -33,7 +43,7 @@ class _BaganrikiBrainDisplayAlertState extends ConsumerState<BaganrikiBrainDispl
     );
   }
 
-  ///
+  /// 画面上部の見出しを表示する。
   Widget _buildHeader() {
     return const Padding(
       padding: EdgeInsets.fromLTRB(20, 16, 12, 0),
@@ -41,7 +51,7 @@ class _BaganrikiBrainDisplayAlertState extends ConsumerState<BaganrikiBrainDispl
     );
   }
 
-  ///
+  /// サーバーの設定値から取得した判断基準の文章を表示する。空のときは「データがありません」と表示する。
   Widget _buildBody(String content) {
     if (content.isEmpty) {
       return const Center(

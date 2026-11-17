@@ -1,3 +1,11 @@
+// =============================================================================
+// ファイル名   : functions.dart
+// 概要         : 複数の画面で共通に使う処理（API 取得・AI 応答の解析・払戻金の的中判定・期待数値の計算など）。
+// 作成者       : Hideyuki Toyoda
+// 作成日       : 2026-07-13
+// 最終更新日   : 2026-11-17
+// =============================================================================
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -263,7 +271,7 @@ Future<Map<String, dynamic>> fetchAiAnalysisData(
   required int race,
   required List<int> gapHorseNums,
   required List<int> upsetPickupHorseNums,
-  // 20261026: true のときは保存済みの結果だけを返してもらう（AIは呼ばない。未保存なら not_ready）
+  // true のときは保存済みの結果だけを返してもらう（AIは呼ばない。未保存なら not_ready）
   bool cacheOnly = false,
 }) async {
   final dynamic response = await ref
@@ -293,7 +301,7 @@ Future<Map<String, dynamic>> fetchSecondAiOpinionData(
   required String basho,
   required String day,
   required int race,
-  // 20261026: true のときは保存済みの結果だけを返してもらう（AIは呼ばない。未保存なら not_ready）
+  // true のときは保存済みの結果だけを返してもらう（AIは呼ばない。未保存なら not_ready）
   bool cacheOnly = false,
 }) async {
   final dynamic response = await ref
@@ -319,7 +327,7 @@ Future<Map<String, dynamic>> fetchSecondAiOpinionData(
   return <String, dynamic>{};
 }
 
-/// 20261026: [fetchAiAnalysisByDate] の応答を引くキーを作る。
+/// [fetchAiAnalysisByDate] の応答を引くキーを作る。
 /// サーバーとFlutterで "05" / 5 のような表記ゆれがあっても一致するよう、数値にできる部分は数値に揃える。
 String aiByDateKey({
   required String date,
@@ -332,7 +340,7 @@ String aiByDateKey({
   return '${date}_${n(kaisuu)}_${n(basho)}_${n(day)}_${n(race)}';
 }
 
-/// 20261026: 1日分の AI 結果（1st / 2nd）を、保存済みの結果だけからまとめて取得する。
+/// 1日分の AI 結果（1st / 2nd）を、保存済みの結果だけからまとめて取得する。
 /// サーバー側で AI は呼ばない（未保存のレースは first_analysis_text / second が null）。
 /// 戻り値のキーは [aiByDateKey] で作ったもの。値は API の1件分
 /// （'first_analysis_text': String?、'second': 2nd AI の応答と同じ形の Map または null）。
@@ -370,14 +378,10 @@ int? parseUpsetRaceValue(String text) {
   return null;
 }
 
-/// analysis_text を解析して推奨馬リストを返す。
 /// analysis_text から波乱度・下位進入度・大穴進入度を取得する。
-/// 「レース指標|波乱度: X|下位進入度: X|大穴進入度: X」の行をパースして返す。
-/// 該当行がない・パース不能な場合は null を返す。
-// 20261110 よっしー11/9 2A「算出できない項目は数字を埋めず『未算出』」に合わせて、項目ごとに null を許すよう変更。
-//   【旧】3つのうち1つでも数字でなければ、3つとも出さなかった（下に旧版をコメントで残す）。
-//   【いま】レース指標の行（または race_metrics）があれば Map を返し、数字でない項目は null（画面で「未算出」）。
-//          行・race_metrics そのものが無いときだけ null（何も出さない）。
+/// 「レース指標|波乱度: X|下位進入度: X|大穴進入度: X」の行を解析して返す。
+/// 数字でない項目は null（画面では「未算出」と表示する）。
+/// レース指標の行そのものが無いときは null を返す（何も表示しない）。
 Map<String, int?>? parseRaceMetrics(String text) {
   for (final String line in text.split('\n')) {
     final String trimmed = line.trim();
@@ -386,7 +390,7 @@ Map<String, int?>? parseRaceMetrics(String text) {
       int? extract(String key) {
         for (final String p in parts) {
           if (p.startsWith(key)) {
-            // 20261115 人気帯の馬がいないときは「対象外」（0 で受け取り、画面で「対象外」と出す。点数の0ではない）
+            // 人気帯の馬がいないときは「対象外」（0 で受け取り、画面で「対象外」と出す。点数の0ではない）
             if (p.substring(key.length).trim() == '対象外') {
               return 0;
             }
@@ -411,7 +415,7 @@ Map<String, int?>? parseRaceMetrics(String text) {
 ///
 /// 1st AI テキストを再パースする parseRaceMetrics と違い、
 /// サーバーが確定させた値をそのまま受け取るために使う。
-/// 20261110：数字でない項目は null（画面で「未算出」）。race_metrics が Map でないときだけ null を返す。
+/// 数字でない項目は null（画面で「未算出」）。race_metrics が Map でないときだけ null を返す。
 Map<String, int?>? parseRaceMetricsJson(dynamic raw) {
   if (raw is! Map) {
     return null;
@@ -419,7 +423,7 @@ Map<String, int?>? parseRaceMetricsJson(dynamic raw) {
 
   int? pick(String key) {
     final dynamic v = raw[key];
-    // 20261115 人気帯の馬がいないときは「対象外」（0 で受け取り、画面で「対象外」と出す。点数の0ではない）
+    // 人気帯の馬がいないときは「対象外」（0 で受け取り、画面で「対象外」と出す。点数の0ではない）
     if (v == '対象外') {
       return 0;
     }
@@ -434,62 +438,6 @@ Map<String, int?>? parseRaceMetricsJson(dynamic raw) {
 
   return <String, int?>{'波乱度': pick('波乱度'), '下位進入度': pick('下位進入度'), '大穴進入度': pick('大穴進入度')};
 }
-
-// 【旧】20261110 までの版
-// Map<String, int>? parseRaceMetrics(String text) {
-//   for (final String line in text.split('\n')) {
-//     final String trimmed = line.trim();
-//     if (trimmed.startsWith('レース指標|')) {
-//       final List<String> parts = trimmed.split('|');
-//       int? extract(String key) {
-//         for (final String p in parts) {
-//           if (p.startsWith(key)) {
-//             return int.tryParse(p.substring(key.length).trim());
-//           }
-//         }
-//         return null;
-//       }
-//
-//       final int? upset = extract('波乱度: ');
-//       final int? lower = extract('下位進入度: ');
-//       final int? longShot = extract('大穴進入度: ');
-//       if (upset != null && lower != null && longShot != null) {
-//         return <String, int>{'波乱度': upset, '下位進入度': lower, '大穴進入度': longShot};
-//       }
-//     }
-//   }
-//   return null;
-// }
-//
-// /// API 応答の race_metrics（{"波乱度":x,"下位進入度":y,"大穴進入度":z}）を Map<String,int> に変換する。
-// ///
-// /// 1st AI テキストを再パースする parseRaceMetrics と違い、
-// /// サーバーが確定させた値をそのまま受け取るために使う。
-// /// 3項目すべてが数値で揃っていない場合は null を返す。
-// Map<String, int>? parseRaceMetricsJson(dynamic raw) {
-//   if (raw is! Map) {
-//     return null;
-//   }
-//
-//   int? pick(String key) {
-//     final dynamic v = raw[key];
-//     if (v is num) {
-//       return v.toInt();
-//     }
-//     if (v is String) {
-//       return int.tryParse(v);
-//     }
-//     return null;
-//   }
-//
-//   final int? upset = pick('波乱度');
-//   final int? lower = pick('下位進入度');
-//   final int? longShot = pick('大穴進入度');
-//   if (upset == null || lower == null || longShot == null) {
-//     return null;
-//   }
-//   return <String, int>{'波乱度': upset, '下位進入度': lower, '大穴進入度': longShot};
-// }
 
 /// \n\n 区切りでも \n 区切りでも動作するよう、馬番：の出現位置でブロックを分割する。
 List<AiResponseRecommendHorseModel> parseAnalysisText(String text) {
@@ -887,7 +835,7 @@ PopularityRankOddsMedianModel? lookupMedianModel(
 }
 
 /// merged_horses JSON リストを AiResponseRecommendHorseModel リストに変換する。
-/// PHP の _mergeAiResults() が返す構造に対応する。
+/// PHP の _mergeAiResults が返す構造に対応する。
 /// num が 0 以下の不正な要素は除外する。
 List<AiResponseRecommendHorseModel> parseMergedHorses(List<dynamic> list) {
   // 【型に寛容にしている理由】
@@ -923,15 +871,9 @@ List<AiResponseRecommendHorseModel> parseMergedHorses(List<dynamic> list) {
           score1st: asInt(m['score_1st']),
           score2nd: asInt(m['score_2nd']),
           reasonSecond: m['reason_2nd'] as String?,
-          // 20261026 なる回答（C案）で画面の印をやめたため、受け取らない
-          // // 補充枠と購入推奨（サーバーが merged_horses に載せる）。
-          // //   古いサーバー応答にはキーが無いので、無ければ
-          // //   「補充枠ではない・購入推奨の対象」として扱う（従来どおりの表示）。
-          // fillSlot: m['fill_slot_unqualified'] == true,
-          // purchaseRecommended: m['purchase_recommended'] != false,
-          // 20261115 よっしー11/14 B案：補充を戻したので、補充の馬かどうかだけ受け取る
+          // 補充を戻したので、補充の馬かどうかだけ受け取る
           fillSlot: m['fill_slot'] == true,
-          // 20261116 3指標で枠を1頭動かしたときに入った馬
+          // 3指標で枠を1頭動かしたときに入った馬
           metricsSlot: m['metrics_slot'] == true,
         );
       })
@@ -939,7 +881,7 @@ List<AiResponseRecommendHorseModel> parseMergedHorses(List<dynamic> list) {
       .toList();
 }
 
-/// 20261116 なる11/16 仕上げ①：合致数の表示文を、AI予想画面と過去レース画面で共通にする。
+/// 合致数の表示文を、AI予想画面と過去レース画面で共通にする。
 ///   ・通常の候補だけ：「7頭中2頭が合致」
 ///   ・通常と補充が混ざる：「全体（補充含む）7頭中2頭が合致（通常5頭中1頭・補充2頭中1頭）」
 ///   ・全頭が補充：「参考表示 7頭中2頭が合致（全頭が補充）」
@@ -972,23 +914,3 @@ List<AiResponseRecommendHorseModel> mergeAiHorseLists(
   ];
 }
 
-// ── 20261025: r12.2 確認ボタンを外したので使いません ──
-// /// @ANCHOR-20261020-R122-FLUTTER  r12.2 の race_id を組み立てます
-// ///   形は `YYYYMMDD-回-場-日-R`（例 20261018-4-08-7-9）。
-// ///   date は `2026-10-18`、kbd は `回_場_日` です。
-// ///   足りない値があるときは空文字を返します（当てずっぽうで作りません）。
-// String buildPredictionRaceId({required String date, required String kbd, required int raceNumber}) {
-//   final String ymd = date.replaceAll('-', '');
-//
-//   if (ymd.length != 8 || raceNumber <= 0) {
-//     return '';
-//   }
-//
-//   final ({String kaisuu, String basho, String day}) parts = parseKbdParts(kbd);
-//
-//   if (parts.kaisuu.isEmpty || parts.basho.isEmpty || parts.day.isEmpty) {
-//     return '';
-//   }
-//
-//   return '$ymd-${parts.kaisuu}-${parts.basho}-${parts.day}-$raceNumber';
-// }

@@ -1,3 +1,11 @@
+// =============================================================================
+// ファイル名   : race_result.dart
+// 概要         : レース結果を API から取得して保持する Riverpod の Notifier と、その状態クラス。
+// 作成者       : Hideyuki Toyoda
+// 作成日       : 2026-06-15
+// 最終更新日   : 2026-11-17
+// =============================================================================
+
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -11,6 +19,7 @@ part 'race_result.freezed.dart';
 
 part 'race_result.g.dart';
 
+/// レース結果の状態。
 @freezed
 class RaceResultState with _$RaceResultState {
   const factory RaceResultState({
@@ -19,17 +28,19 @@ class RaceResultState with _$RaceResultState {
   }) = _RaceResultState;
 }
 
+/// レース結果を API から取得して保持する Notifier。
 @riverpod
 class RaceResult extends _$RaceResult {
   final Utility utility = Utility();
 
-  ///
+  /// 状態の初期値を返す。
   @override
   RaceResultState build() => const RaceResultState();
 
   //============================================== api
 
-  ///
+  /// API からレース結果を全件取得し、新しい状態を作って返す。
+  /// 取得に失敗したときはエラーを表示し、例外を呼び出し元へ投げ直す。
   Future<RaceResultState> fetchAllRaceResultData() async {
     final HttpClient client = ref.read(httpClientProvider);
 
@@ -58,7 +69,7 @@ class RaceResult extends _$RaceResult {
     }
   }
 
-  ///
+  /// レース結果を全件取得して状態に反映する。失敗したときは状態を変えない。
   Future<void> getAllRaceResultData() async {
     try {
       final RaceResultState newState = await fetchAllRaceResultData();

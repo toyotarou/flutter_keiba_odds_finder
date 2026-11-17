@@ -1,3 +1,11 @@
+// =============================================================================
+// ファイル名   : horse_score.dart
+// 概要         : 馬ごとのスコアを API から取得して保持する Riverpod の Notifier と、その状態クラス。
+// 作成者       : Hideyuki Toyoda
+// 作成日       : 2026-07-29
+// 最終更新日   : 2026-11-17
+// =============================================================================
+
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -11,6 +19,7 @@ part 'horse_score.freezed.dart';
 
 part 'horse_score.g.dart';
 
+/// 馬ごとのスコアの状態。
 @freezed
 class HorseScoreState with _$HorseScoreState {
   const factory HorseScoreState({
@@ -19,17 +28,19 @@ class HorseScoreState with _$HorseScoreState {
   }) = _HorseScoreState;
 }
 
+/// 馬ごとのスコアを API から取得して保持する Notifier。
 @riverpod
 class HorseScore extends _$HorseScore {
   final Utility utility = Utility();
 
-  ///
+  /// 状態の初期値を返す。
   @override
   HorseScoreState build() => const HorseScoreState();
 
   //============================================== api
 
-  ///
+  /// API から馬ごとのスコアを全件取得し、新しい状態を作って返す。
+  /// 取得に失敗したときはエラーを表示し、例外を呼び出し元へ投げ直す。
   Future<HorseScoreState> fetchAllHorseScoreData() async {
     final HttpClient client = ref.read(httpClientProvider);
 
@@ -57,7 +68,7 @@ class HorseScore extends _$HorseScore {
     }
   }
 
-  ///
+  /// 馬ごとのスコアを全件取得して状態に反映する。失敗したときは状態を変えない。
   Future<void> getAllHorseScoreData() async {
     try {
       final HorseScoreState newState = await fetchAllHorseScoreData();

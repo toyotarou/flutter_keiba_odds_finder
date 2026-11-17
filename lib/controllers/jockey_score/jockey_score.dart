@@ -1,3 +1,11 @@
+// =============================================================================
+// ファイル名   : jockey_score.dart
+// 概要         : 騎手ごとのスコアを API から取得して保持する Riverpod の Notifier と、その状態クラス。
+// 作成者       : Hideyuki Toyoda
+// 作成日       : 2026-07-29
+// 最終更新日   : 2026-11-17
+// =============================================================================
+
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -11,6 +19,7 @@ part 'jockey_score.freezed.dart';
 
 part 'jockey_score.g.dart';
 
+/// 騎手ごとのスコアの状態。
 @freezed
 class JockeyScoreState with _$JockeyScoreState {
   const factory JockeyScoreState({
@@ -19,17 +28,19 @@ class JockeyScoreState with _$JockeyScoreState {
   }) = _JockeyScoreState;
 }
 
+/// 騎手ごとのスコアを API から取得して保持する Notifier。
 @riverpod
 class JockeyScore extends _$JockeyScore {
   final Utility utility = Utility();
 
-  ///
+  /// 状態の初期値を返す。
   @override
   JockeyScoreState build() => const JockeyScoreState();
 
   //============================================== api
 
-  ///
+  /// API から騎手ごとのスコアを全件取得し、新しい状態を作って返す。
+  /// 取得に失敗したときはエラーを表示し、例外を呼び出し元へ投げ直す。
   Future<JockeyScoreState> fetchAllJockeyScoreData() async {
     final HttpClient client = ref.read(httpClientProvider);
 
@@ -57,7 +68,7 @@ class JockeyScore extends _$JockeyScore {
     }
   }
 
-  ///
+  /// 騎手ごとのスコアを全件取得して状態に反映する。失敗したときは状態を変えない。
   Future<void> getAllJockeyScoreData() async {
     try {
       final JockeyScoreState newState = await fetchAllJockeyScoreData();

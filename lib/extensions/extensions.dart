@@ -1,7 +1,16 @@
+// =============================================================================
+// ファイル名   : extensions.dart
+// 概要         : BuildContext・DateTime・String・List の拡張メソッド。
+// 作成者       : Hideyuki Toyoda
+// 作成日       : 2026-05-30
+// 最終更新日   : 2026-11-17
+// =============================================================================
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
+/// BuildContext からテーマ・画面サイズなどを短く取り出すための拡張。
 extension ContextEx on BuildContext {
   TextTheme get textTheme => Theme.of(this).textTheme;
 
@@ -15,7 +24,7 @@ extension ContextEx on BuildContext {
   }
 }
 
-// 20260925: DateFormat / NumberFormat / RegExp は呼ぶたびに生成すると重いので使い回す
+// DateFormat / NumberFormat / RegExp は呼ぶたびに生成すると重いので使い回す
 // （youbiStr の 'EEEE' はロケールの初期化状態に依存するため従来どおり都度生成）
 final DateFormat _yyyymmddFormat = DateFormat('yyyy-MM-dd');
 final DateFormat _yyyymmFormat = DateFormat('yyyy-MM');
@@ -28,6 +37,7 @@ final NumberFormat _currencyFormat = NumberFormat('#,###');
 final RegExp _halfAlphanumericRegExp = RegExp(r'^[a-zA-Z0-9]+$');
 final RegExp _fullAlphanumericRegExp = RegExp(r'^[Ａ-Ｚａ-ｚ０-９]+$');
 
+/// DateTime を各種書式の文字列にしたり、日単位で比較したりするための拡張。
 extension DateTimeEx on DateTime {
   String get yyyymmdd => _yyyymmddFormat.format(this);
 
@@ -46,7 +56,7 @@ extension DateTimeEx on DateTime {
     return outputFormat.format(this);
   }
 
-  // ===== ここから追記：日付比較を“日単位”で扱うためのヘルパ =====
+  // ── 日付比較を「日単位」で扱うためのヘルパ ──
 
   /// 時刻を切り捨てた "日付のみ"（00:00:00）を返す
   DateTime get dateOnly => DateTime(year, month, day);
@@ -71,12 +81,11 @@ extension DateTimeEx on DateTime {
 
   /// 範囲内かどうか（開区間: start < this < end）
   bool isBetweenDatesExclusive(DateTime start, DateTime end) => isAfterDate(start) && isBeforeDate(end);
-
-  // ===== 追記ここまで =====
 }
 
 const int _fullLengthCode = 65248;
 
+/// String を日付・数値・通貨表記・全角/半角に変換するための拡張。
 extension StringEx on String {
   DateTime toDateTime() {
     return _dateTimeParseFormat.parseStrict(this);
@@ -115,6 +124,7 @@ extension StringEx on String {
   }
 }
 
+/// List のインデックスが範囲内かを調べるための拡張。
 // ignore: strict_raw_type, always_specify_types
 extension ListIndexCheck on List {
   bool isInRange(int i) => i >= 0 && i < length;

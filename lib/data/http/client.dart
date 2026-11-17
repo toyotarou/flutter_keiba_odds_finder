@@ -1,3 +1,11 @@
+// =============================================================================
+// ファイル名   : client.dart
+// 概要         : サーバー API と通信する HTTP クライアントと、接続先の設定。
+// 作成者       : Hideyuki Toyoda
+// 作成日       : 2026-05-30
+// 最終更新日   : 2026-11-17
+// =============================================================================
+
 // ignore_for_file: public_member_api_docs, depend_on_referenced_packages
 import 'dart:convert';
 
@@ -7,12 +15,14 @@ import 'package:http/http.dart';
 import 'path.dart';
 
 ///////////////////////////////////////////////////////////////////
+/// HttpClient を提供する Provider。
 final Provider<HttpClient> httpClientProvider = Provider<HttpClient>(
   // ignore: deprecated_member_use
   (ProviderRef<HttpClient> ref) => HttpClient(),
 );
 
 ///////////////////////////////////////////////////////////////////
+/// サーバー API に GET / POST を送り、レスポンスを JSON として返すクライアント。
 class HttpClient {
   HttpClient() {
     _client = Client();
@@ -22,9 +32,7 @@ class HttpClient {
 
   /// GETリクエストを送信し、レスポンスをJSONとして返す
   ///
-  /// @ANCHOR-20261020-R122-FLUTTER  pathSuffix
-  ///   r12.2 の読取APIは `/api/baganriki/r12-2/races/{race_id}` のように
-  ///   パスの末尾に値が付きます。渡さなければ今までと同じURLです。
+  /// [pathSuffix] を渡すと、パスの末尾に `/値` を付けて送る。渡さなければ通常の URL になる。
   Future<dynamic> get({
     required APIPath path,
     Map<String, dynamic>? queryParameters,
@@ -96,6 +104,7 @@ class HttpClient {
 }
 
 ///////////////////////////////////////////////////////////////////
+/// 接続先サーバーの情報。
 class Environment {
   Environment._();
 

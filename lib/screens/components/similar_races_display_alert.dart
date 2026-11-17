@@ -1,3 +1,12 @@
+// =============================================================================
+// ファイル名   : similar_races_display_alert.dart
+// 概要         : 類似レースの画面。過去の似たレースの人気比率の一致率と払戻金を表示する。
+//                （現在、どこからも使われていない）
+// 作成者       : Hideyuki Toyoda
+// 作成日       : 2026-07-06
+// 最終更新日   : 2026-11-17
+// =============================================================================
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -10,6 +19,7 @@ import '../../models/race_result_payout_model.dart';
 import '../../models/races_popularity_ratio_model.dart';
 import '../../utility/functions.dart';
 
+/// 類似レースの画面。
 class SimilarRacesDisplayAlert extends ConsumerStatefulWidget {
   const SimilarRacesDisplayAlert({super.key, required this.raceModel});
 
@@ -19,6 +29,7 @@ class SimilarRacesDisplayAlert extends ConsumerStatefulWidget {
   ConsumerState<SimilarRacesDisplayAlert> createState() => _SimilarRacesDisplayAlertState();
 }
 
+/// 類似レースの画面の状態。
 class _SimilarRacesDisplayAlertState extends ConsumerState<SimilarRacesDisplayAlert> {
   bool _isLoading = false;
 
@@ -30,7 +41,7 @@ class _SimilarRacesDisplayAlertState extends ConsumerState<SimilarRacesDisplayAl
 
   String? _error;
 
-  ///
+  /// 画面表示時に、類似レースのデータを取得する。
   @override
   void initState() {
     super.initState();
@@ -38,7 +49,7 @@ class _SimilarRacesDisplayAlertState extends ConsumerState<SimilarRacesDisplayAl
     _fetchData();
   }
 
-  ///
+  /// 類似レースの払戻金と人気比率を取得する。
   Future<void> _fetchData() async {
     setState(() {
       _isLoading = true;
@@ -116,7 +127,7 @@ class _SimilarRacesDisplayAlertState extends ConsumerState<SimilarRacesDisplayAl
     }
   }
 
-  ///
+  /// 類似レースの画面を組み立てる。
   @override
   Widget build(BuildContext context) {
     return DefaultTextStyle(
@@ -125,7 +136,7 @@ class _SimilarRacesDisplayAlertState extends ConsumerState<SimilarRacesDisplayAl
     );
   }
 
-  ///
+  /// 類似レースのカードを一覧で表示する。読み込み中・失敗のときはその旨を表示する。
   Widget _buildBody() {
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator(color: Colors.greenAccent));
@@ -227,7 +238,7 @@ class _SimilarRacesDisplayAlertState extends ConsumerState<SimilarRacesDisplayAl
     );
   }
 
-  ///
+  /// 類似レース1件ぶんのカード（レース情報・人気比率の一致率・払戻金）を表示する。
   Widget _buildRaceCard({
     required RaceResultPayoutModel payout,
     RacesPopularityRatioModel? popularity,
@@ -506,7 +517,7 @@ class _SimilarRacesDisplayAlertState extends ConsumerState<SimilarRacesDisplayAl
     );
   }
 
-  ///
+  /// 券種1つぶんの払戻金を1行で表示する。値が無いときは何も出さない。
   Widget _buildPayoutRow(String label, String value) {
     if (value.isEmpty) {
       return const SizedBox.shrink();

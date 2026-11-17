@@ -1,3 +1,12 @@
+// =============================================================================
+// ファイル名   : popularity_rank_odds_median_model.dart
+// 概要         : レースごとの人気順（1〜18番人気）別オッズ中央値を保持するモデル。
+// 作成者       : Hideyuki Toyoda
+// 作成日       : 2026-07-20
+// 最終更新日   : 2026-11-17
+// =============================================================================
+
+/// 人気順（1〜18番人気）別のオッズ中央値。median01 が1番人気、median18 が18番人気。
 class PopularityRankOddsMedianModel {
   PopularityRankOddsMedianModel({
     required this.id,
@@ -60,13 +69,21 @@ class PopularityRankOddsMedianModel {
     );
   }
 
+  /// レコードID
   final int id;
+  /// 開催日
   final String date;
+  /// 開催回（第何回の開催か）
   final String kaisuu;
+  /// 競馬場
   final String basho;
+  /// 競馬場名
   final String bashoName;
+  /// 開催日目（何日目か）
   final String day;
+  /// レース番号
   final int race;
+  /// レース名
   final String raceName;
 
   final String median01;

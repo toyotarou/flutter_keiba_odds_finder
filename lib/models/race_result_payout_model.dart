@@ -1,3 +1,12 @@
+// =============================================================================
+// ファイル名   : race_result_payout_model.dart
+// 概要         : レースごとの払戻金（単勝〜3連単）を保持するモデル。
+// 作成者       : Hideyuki Toyoda
+// 作成日       : 2026-07-06
+// 最終更新日   : 2026-11-17
+// =============================================================================
+
+/// レースごとの払戻金。
 class RaceResultPayoutModel {
   RaceResultPayoutModel({
     required this.id,
@@ -49,26 +58,46 @@ class RaceResultPayoutModel {
     );
   }
 
+  /// レコードID
   final int id;
+  /// 開催日
   final String date;
+  /// 開催回（第何回の開催か）
   final int kaisuu;
+  /// 競馬場
   final String basho;
+  /// 競馬場コード
   final String bashoCode;
+  /// 開催日目（何日目か）
   final int day;
+  /// レース番号
   final int race;
+  /// レース名
   final String raceName;
 
+  /// 単勝の払戻金
   final String tan;
+  /// 複勝の払戻金
   final String fuku;
+  /// 枠連の払戻金
   final String waku;
+  /// ワイドの払戻金
   final String wide;
+  /// 馬連の払戻金
   final String umaren;
+  /// 馬単の払戻金
   final String umatan;
+  /// 3連複の払戻金
   final String trio;
+  /// 3連単の払戻金
   final String trifecta;
 
+  /// グレード（G1・G2 など）
   final String grade;
+  /// コース種別（芝・ダート・障害）
   final String course;
+  /// 距離（m）
   final String dist;
+  /// 内回り・外回りの区分
   final String innerOuter;
 }

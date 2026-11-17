@@ -1,3 +1,12 @@
+// =============================================================================
+// ファイル名   : shutsuba_history_model.dart
+// 概要         : 出走馬の過去の出走履歴1件分（着順・通過順・上がり3F など）を保持するモデル。
+// 作成者       : Hideyuki Toyoda
+// 作成日       : 2026-07-16
+// 最終更新日   : 2026-11-17
+// =============================================================================
+
+/// 出走馬の過去の出走履歴1件分。
 class ShutsubaHistoryModel {
   ShutsubaHistoryModel({
     required this.id,
@@ -82,33 +91,61 @@ class ShutsubaHistoryModel {
     return int.tryParse(raw.replaceAll(RegExp(r'\D'), '')) ?? 0;
   }
 
+  /// レコードID
   final int id;
+  /// 馬名
   final String name;
+  /// 開催日
   final String date;
+  /// 競馬場
   final String basho;
+  /// 競馬場コード
   final String bashoCode;
+  /// レース番号
   final int race;
+  /// レース名
   final String raceName;
+  /// グレード（G1・G2 など）
   final String grade;
+  /// 着順
   final int finishingPosition;
+  /// 出走頭数
   final int numHorses;
+  /// 枠番
   final int gate;
+  /// 人気順
   final int popularity;
+  /// 騎手名
   final String jockey;
+  /// 斤量
   final String burdenWeight;
+  /// コース種別（芝・ダート・障害）
   final String course;
+  /// 距離（m）
   final int dist;
+  /// 走破タイム
   final String time;
+  /// 馬場状態
   final String condition;
+  /// 馬体重
   final String horseWeight;
+  /// 1コーナー通過順
   final int corner1;
+  /// 2コーナー通過順
   final int corner2;
+  /// 3コーナー通過順
   final int corner3;
+  /// 4コーナー通過順
   final int corner4;
+  /// 上がり3F
   final String last3f;
+  /// 1着馬（自身が1着なら2着馬）
   final String finHorse;
+  /// 1着馬とのタイム差
   final String finTimeDiff;
+  /// 作成日時
   final String createdAt;
+  /// 更新日時
   final String updatedAt;
 }
 
