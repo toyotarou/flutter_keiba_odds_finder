@@ -96,6 +96,12 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
 
   final Set<String> _fetchedSecondAiDates = <String>{};
 
+  /// 1日分の AI 予想を取る通信の待ち時間の上限（サーバーは普段1秒ほどで返す）
+  static const Duration _aiByDateTimeout = Duration(seconds: 15);
+
+  /// 1日分の AI 予想を取る通信の最大回数（最初の1回＋自動の取り直し1回）
+  static const int _aiByDateMaxAttempts = 2;
+
   final Map<String, String?> _firstAiTextMap = <String, String?>{};
 
   final Set<String> _fetchedFirstAiDates = <String>{};
@@ -175,7 +181,7 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
     }
 
     try {
-      final Map<String, Map<String, dynamic>> byKey = await fetchAiAnalysisByDate(ref, date: date);
+      final Map<String, Map<String, dynamic>> byKey = await _fetchAiAnalysisByDateWithRetry(date);
 
       if (!mounted) {
         return;
@@ -223,6 +229,22 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
             _secondAiTextMap[r.key] = null;
           }
         });
+      }
+    }
+  }
+
+  /// 1日分の AI 予想を取得する。
+  /// 通信が返ってこないまま止まると「AI予想を取得中...」が回り続けるため、
+  /// [_aiByDateTimeout] で打ち切り、[_aiByDateMaxAttempts] 回まで自動で取り直す。
+  /// すべて失敗したときは例外を投げる（呼び出し元で取得中の表示を消す）。
+  Future<Map<String, Map<String, dynamic>>> _fetchAiAnalysisByDateWithRetry(String date) async {
+    for (int attempt = 1; ; attempt++) {
+      try {
+        return await fetchAiAnalysisByDate(ref, date: date).timeout(_aiByDateTimeout);
+      } catch (_) {
+        if (attempt >= _aiByDateMaxAttempts) {
+          rethrow;
+        }
       }
     }
   }
