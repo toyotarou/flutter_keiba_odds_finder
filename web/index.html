@@ -235,5 +235,65 @@
     })();
   </script>
 
+  <!-- 強制アップデート：デプロイ時に deploy.sh が __BUILD_ID__ をビルド日時に置き換える。
+       サーバーの build_id.txt と違っていたら、閉じられない「更新」画面を出す。 -->
+  <script>
+    (function () {
+      var APP_BUILD_ID = '__BUILD_ID__';
+
+      // ローカル実行（flutter run）では置き換えられていないので何もしない
+      if (APP_BUILD_ID.indexOf('__') === 0) return;
+
+      var CHECK_INTERVAL = 5 * 60 * 1000; // 5分ごとに確認
+      var shown = false;
+
+      function showUpdateOverlay() {
+        if (shown) return;
+        shown = true;
+
+        var overlay = document.createElement('div');
+        overlay.id = 'force-update-overlay';
+        overlay.style.cssText =
+          'position:fixed;inset:0;z-index:10001;background:rgba(0,0,0,0.85);' +
+          'display:flex;justify-content:center;align-items:center;font-family:sans-serif;';
+        overlay.innerHTML =
+          '<div style="background:#1a1a2e;color:#fff;border-radius:12px;padding:24px 20px;' +
+          'width:80%;max-width:320px;text-align:center;box-shadow:0 4px 20px rgba(0,0,0,0.6);">' +
+          '<div style="font-size:16px;font-weight:bold;margin-bottom:12px;">アップデートのお知らせ</div>' +
+          '<div style="font-size:13px;color:#ccc;line-height:1.6;margin-bottom:20px;">' +
+          '最新版を公開いたしました。<br>お手数ですが、「更新する」を押して<br>最新版へ更新してください。<br>更新が完了するまでご利用いただけません。</div>' +
+          '<button id="force-update-btn" style="background:#4a90d9;color:#fff;border:none;' +
+          'border-radius:6px;padding:10px 24px;font-size:14px;font-weight:bold;cursor:pointer;">' +
+          '更新する</button></div>';
+        document.body.appendChild(overlay);
+
+        document.getElementById('force-update-btn').addEventListener('click', function () {
+          location.reload();
+        });
+      }
+
+      function checkBuildId() {
+        if (shown) return;
+        fetch('build_id.txt?t=' + Date.now(), { cache: 'no-store' })
+          .then(function (res) { return res.ok ? res.text() : ''; })
+          .then(function (text) {
+            var serverId = text.trim();
+            if (serverId !== '' && serverId !== APP_BUILD_ID) {
+              showUpdateOverlay();
+            }
+          })
+          .catch(function () {}); // 通信失敗時は何もしない（次回の確認に任せる）
+      }
+
+      checkBuildId();
+      setInterval(checkBuildId, CHECK_INTERVAL);
+
+      // アプリ（タブ）に戻ってきたときにも確認する
+      document.addEventListener('visibilitychange', function () {
+        if (document.visibilityState === 'visible') checkBuildId();
+      });
+    })();
+  </script>
+
   <script src="flutter_bootstrap.js" async=""></script>
 </body></html>
