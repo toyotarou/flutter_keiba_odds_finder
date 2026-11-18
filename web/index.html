@@ -1,4 +1,4 @@
-<!DOCTYPE html><html><head>
+<!DOCTYPE html><html lang="ja"><head>
   <base href="$FLUTTER_BASE_HREF">
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
@@ -295,5 +295,8 @@
     })();
   </script>
 
+  <!-- flutter_bootstrap.js は flutter build web のときに自動で作られるため、web/ フォルダには無い。
+       IDE の「ファイルが見つからない」警告を止めるための指定。 -->
+  <!--suppress HtmlUnknownTarget -->
   <script src="flutter_bootstrap.js" async=""></script>
 </body></html>
