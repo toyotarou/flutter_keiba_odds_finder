@@ -4,7 +4,7 @@
 //                左のメニューから各画面を開く。WebSocket でオッズ更新を受け取り、該当レースだけ取り直す。
 // 作成者       : Hideyuki Toyoda
 // 作成日       : 2026-05-30
-// 最終更新日   : 2026-11-17
+// 最終更新日   : 2026-11-24
 // =============================================================================
 
 import 'dart:async';
@@ -128,6 +128,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
   TabController? _raceTabControllerPendingDispose;
   String _raceTabMapKey = '';
 
+  // 今の会場キーで、レース一覧がすでに届いていたか。
+  // push通知から開いたときは、会場キーが先に決まり、レース一覧はあとから届く。
+  // そのとき「会場キーが変わった」とは判定されないため、これを見てレース選択オーバーレイを出す。
+  bool _raceTabsArrivedForKey = false;
+
   // レース一覧オーバーレイ
   final List<OverlayEntry> _firstEntries = <OverlayEntry>[];
   final List<OverlayEntry> _secondEntries = <OverlayEntry>[];
@@ -238,7 +243,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
 
         appParamNotifier.setIsShowUpperBox2(flag: true);
 
-        OddsFinderDialog(context: context, widget: const HorseOddsRankingDisplayAlert()).then((_) async {
+        // 表示中はレース選択オーバーレイを隠し、閉じたら出す（レースの「list」ボタンから開いたときと同じ）
+        OddsFinderDialog(context: context, widget: const HorseOddsRankingDisplayAlert(), hideRaceOverlay: true).then((
+          _,
+        ) async {
           final SharedPreferences prefs = await SharedPreferences.getInstance();
           await prefs.setBool('isRankingDialogOpen', false);
         });
@@ -396,8 +404,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
   void _updateRaceTabController() {
     final String currentMapKey = _mapKey;
 
+    // 同じ会場キーのまま、レース一覧があとから届いた（push通知から開いた直後など）
+    final bool racesArrivedLater = currentMapKey == _raceTabMapKey && !_raceTabsArrivedForKey && _raceTabs.isNotEmpty;
+
     final bool needsNewController =
-        _raceTabController == null || currentMapKey != _raceTabMapKey || _raceTabController!.length != _raceTabs.length;
+        _raceTabController == null ||
+        currentMapKey != _raceTabMapKey ||
+        _raceTabController!.length != _raceTabs.length ||
+        racesArrivedLater;
 
     if (needsNewController) {
       // 会場変更またはレース数変化: 正しい initialIndex で新しいコントローラーを作成
@@ -419,8 +433,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
       );
       _raceTabController!.addListener(_onRaceTabChanged);
 
-      // 会場が選ばれた（会場キーが変わった）時にレース一覧オーバーレイを表示する
-      if (currentMapKey != _raceTabMapKey) {
+      // 会場が選ばれた（会場キーが変わった）時、または同じ会場でレース一覧があとから届いた時に
+      // レース一覧オーバーレイを表示する
+      if (currentMapKey != _raceTabMapKey || racesArrivedLater) {
         final bool hasRaces = _raceTabs.isNotEmpty;
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!mounted) {
@@ -429,6 +444,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
           if (hasRaces) {
             // 会場が変わったときは従来どおり先頭から表示する
             _raceOverlayScrollOffset = 0;
+            // 隠す指定のダイアログ（push通知から開いた人気順位の推移など）の表示中は、
+            // ここでは出さず、閉じたときに _onRaceOverlayHiddenChanged で出す
+            if (raceOverlayHiddenNotifier.value) {
+              _restoreRaceOverlay = true;
+              return;
+            }
             _showRaceListOverlay();
           } else {
             for (final OverlayEntry e in _firstEntries) {
@@ -442,6 +463,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
       }
 
       _raceTabMapKey = currentMapKey;
+      _raceTabsArrivedForKey = _raceTabs.isNotEmpty;
 
       // 旧コントローラーを次フレーム後に破棄（現フレームはまだ旧コントローラーを使用中）
       WidgetsBinding.instance.addPostFrameCallback((_) {
