@@ -85,6 +85,9 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
   /// サーバーが確定させたレース指標（波乱度・下位進入度・大穴進入度）。
   final Map<String, Map<String, int?>> _mergedRaceMetricsMap = <String, Map<String, int?>>{};
 
+  /// 3指標の数字に添える言葉（サーバーが計算した値のときだけ入る）。
+  final Map<String, Map<String, String>> _mergedRaceMetricNotesMap = <String, Map<String, String>>{};
+
   /// 統合結果の状態（'undetermined' ＝ 採用できるAI回答が無かった）
   final Map<String, String?> _mergeStatusMap = <String, String?>{};
 
@@ -215,6 +218,10 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
           final Map<String, int?>? metrics = parseRaceMetricsJson(second['race_metrics']);
           if (metrics != null) {
             _mergedRaceMetricsMap[r.key] = metrics;
+          }
+          final Map<String, String>? metricNotes = parseRaceMetricNotesJson(second['race_metric_notes']);
+          if (metricNotes != null) {
+            _mergedRaceMetricNotesMap[r.key] = metricNotes;
           }
         }
       });
@@ -903,6 +910,7 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
                                         upsetRaceValue:
                                             _mergedUpsetRaceMap[lookupKey] ?? parseUpsetRaceValue(firstText),
                                         raceMetrics: _mergedRaceMetricsMap[lookupKey] ?? parseRaceMetrics(firstText),
+                                        raceMetricNotes: _mergedRaceMetricNotesMap[lookupKey],
                                         mergeStatus: _mergeStatusMap[lookupKey],
                                         mergeStatusReason: _mergeStatusReasonMap[lookupKey],
                                         numToWaku: numToWaku,   // 古いレースの枠連判定用
@@ -966,6 +974,7 @@ class _PastRaceOddsTransitionAlertState extends ConsumerState<PastRaceOddsTransi
                                               _mergedUpsetRaceMap[lookupKey] ?? parseUpsetRaceValue(firstAiText),
                                           raceMetrics:
                                               _mergedRaceMetricsMap[lookupKey] ?? parseRaceMetrics(firstAiText),
+                                          raceMetricNotes: _mergedRaceMetricNotesMap[lookupKey],
                                         ),
                                       );
                                     },

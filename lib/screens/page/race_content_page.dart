@@ -11,7 +11,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+// 馬アイコンを画像に変えたため未使用になった（2026-11-24）
+// import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:scroll_to_index/scroll_to_index.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -96,6 +97,9 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
   List<AiResponseRecommendHorseModel> _totalForecastAiHorseList = <AiResponseRecommendHorseModel>[];
   int? _totalForecastUpsetRaceValue;
   Map<String, int?>? _totalForecastRaceMetrics;
+
+  /// 3指標の数字に添える言葉（サーバーが計算した値のときだけ入る）。
+  Map<String, String>? _totalForecastRaceMetricNotes;
   List<AiResponseRecommendHorseModel> _secondAiHorseList = <AiResponseRecommendHorseModel>[];
   List<AiResponseRecommendHorseModel> _mergedHorseList = <AiResponseRecommendHorseModel>[];
 
@@ -385,6 +389,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
       // 1st AI テキストの行をパースした値とは食い違うことがある。
       final int? mergedUpsetRace = (data['upset_race'] as num?)?.toInt();
       final Map<String, int?>? mergedMetrics = parseRaceMetricsJson(data['race_metrics']);
+      final Map<String, String>? mergedMetricNotes = parseRaceMetricNotesJson(data['race_metric_notes']);
       if (mounted) {
         setState(() {
           _secondAiHorseList = horses;
@@ -399,6 +404,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
           }
           if (mergedMetrics != null) {
             _totalForecastRaceMetrics = mergedMetrics;
+            _totalForecastRaceMetricNotes = mergedMetricNotes;
           }
         });
       }
@@ -751,36 +757,36 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                             ],
                           ),
                         ),
-
-                        Container(
-                          decoration: BoxDecoration(
-                            border: Border(bottom: BorderSide(color: Colors.white60.withValues(alpha: 0.5))),
-                          ),
-
-                          child: Row(
-                            children: <Widget>[
-                              Expanded(
-                                child: Container(
-                                  alignment: Alignment.topRight,
-                                  child: const Text('馬券締切まで', style: TextStyle(fontSize: 8, color: Colors.white60)),
-                                ),
-                              ),
-                              SizedBox(
-                                width: context.screenSize.width * 0.15,
-                                child: Container(
-                                  alignment: Alignment.topRight,
-                                  child: ValueListenableBuilder<int>(
-                                    valueListenable: _remainingSecondsNotifier,
-                                    builder: (BuildContext context, int seconds, Widget? _) => Text(
-                                      _formatCountdown(seconds > 180 ? seconds - 180 : 0),
-                                      style: const TextStyle(fontSize: 13, color: Colors.white60),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+                        // 馬券締切までのタイマーは表示しないことになったためコメントアウト（2026-11-24）
+                        // Container(
+                          // decoration: BoxDecoration(
+                            // border: Border(bottom: BorderSide(color: Colors.white60.withValues(alpha: 0.5))),
+                          // ),
+                          //
+                          // child: Row(
+                            // children: <Widget>[
+                              // Expanded(
+                                // child: Container(
+                                  // alignment: Alignment.topRight,
+                                  // child: const Text('馬券締切まで', style: TextStyle(fontSize: 8, color: Colors.white60)),
+                                // ),
+                              // ),
+                              // SizedBox(
+                                // width: context.screenSize.width * 0.15,
+                                // child: Container(
+                                  // alignment: Alignment.topRight,
+                                  // child: ValueListenableBuilder<int>(
+                                    // valueListenable: _remainingSecondsNotifier,
+                                    // builder: (BuildContext context, int seconds, Widget? _) => Text(
+                                      // _formatCountdown(seconds > 180 ? seconds - 180 : 0),
+                                      // style: const TextStyle(fontSize: 13, color: Colors.white60),
+                                    // ),
+                                  // ),
+                                // ),
+                              // ),
+                            // ],
+                          // ),
+                        // ),
                       ],
                     ),
                   ),
@@ -1391,7 +1397,15 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                   OddsFinderDialog(context: context, widget: const HorseDetailDisplayAlert(), hideRaceOverlay: true);
                 }
               },
-              child: FaIcon(FontAwesomeIcons.horse, size: 20, color: Colors.green[500]!.withValues(alpha: 0.6)),
+              // 馬アイコンをドロアの「過去レースのオッズ遷移表」と同じ画像に変更（2026-11-24）
+              // child: FaIcon(FontAwesomeIcons.horse, size: 20, color: Colors.green[500]!.withValues(alpha: 0.6)),
+              // 白い画像を、元の馬アイコンと同じ緑に塗る（2026-11-24）
+              child: Image.asset(
+                'assets/images/jockey.png',
+                width: 35,
+                color: Colors.green[500]!.withValues(alpha: 0.6),
+                colorBlendMode: BlendMode.srcIn,
+              ),
             ),
 
             const SizedBox(width: 20),
@@ -1742,6 +1756,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                             mergedHorseList: _mergedReceived ? _mergedHorseList : null,
                             upsetRaceValue: _totalForecastUpsetRaceValue,
                             raceMetrics: _totalForecastRaceMetrics,
+                            raceMetricNotes: _totalForecastRaceMetricNotes,
                             mergeStatus: _mergeStatus,
                             mergeStatusReason: _mergeStatusReason,
                           ),
@@ -1793,6 +1808,7 @@ class _RaceContentPageState extends ConsumerState<RaceContentPage> with Controll
                                 : mergeAiHorseLists(_totalForecastAiHorseList, _secondAiHorseList),
                             upsetRaceValue: _totalForecastUpsetRaceValue,
                             raceMetrics: _totalForecastRaceMetrics,
+                            raceMetricNotes: _totalForecastRaceMetricNotes,
                           ),
                         );
                       },

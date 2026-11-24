@@ -913,3 +913,23 @@ List<AiResponseRecommendHorseModel> mergeAiHorseLists(
     ...second.where((AiResponseRecommendHorseModel h) => !firstNums.contains(h.num)),
   ];
 }
+
+/// API 応答の race_metric_notes を、指標名 → 数字に添える言葉（「暫定」「E5」「参考・複勝オッズ」「時系列不足」など）に変換する。
+///
+/// 2026年11月24日から、3指標はサーバーが計算した値になり、何から算出したかをこの言葉で区別する。
+/// 添える言葉が無い項目は Map に入れない。race_metric_notes が Map でないとき（古い応答）は null を返す。
+Map<String, String>? parseRaceMetricNotesJson(dynamic raw) {
+  if (raw is! Map) {
+    return null;
+  }
+
+  final Map<String, String> notes = <String, String>{};
+  for (final String key in <String>['波乱度', '下位進入度', '大穴進入度']) {
+    final dynamic item = raw[key];
+    final dynamic note = (item is Map) ? item['note'] : null;
+    if (note is String && note.isNotEmpty) {
+      notes[key] = note;
+    }
+  }
+  return notes;
+}

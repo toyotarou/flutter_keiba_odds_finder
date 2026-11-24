@@ -32,6 +32,7 @@ class AiAnalysisDisplayAlert extends ConsumerStatefulWidget {
     this.mergedHorseList,
     this.upsetRaceValue,
     this.raceMetrics,
+    this.raceMetricNotes,
     this.mergeStatus,
     this.mergeStatusReason,
     this.numToWaku = const <int, int>{},
@@ -46,6 +47,9 @@ class AiAnalysisDisplayAlert extends ConsumerStatefulWidget {
   final List<AiResponseRecommendHorseModel>? mergedHorseList;
   final int? upsetRaceValue;
   final Map<String, int?>? raceMetrics;
+
+  /// 3指標の数字に添える言葉（「暫定」「E5」「参考・複勝オッズ」など）。サーバーが計算した値のときだけ入る。
+  final Map<String, String>? raceMetricNotes;
 
   /// サーバーの統合結果の状態（'undetermined' ＝ 採用できるAI回答が無かった）。
   /// 「基準を満たす候補がいない」と「AIの回答を受け取れなかった」を画面で区別するために使う。
@@ -377,16 +381,16 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: <Widget>[
-          _buildMetricItem('波乱度', metrics['波乱度'], stars(metrics['波乱度'])),
-          _buildMetricItem('下位進入度', metrics['下位進入度'], stars(metrics['下位進入度'])),
-          _buildMetricItem('大穴進入度', metrics['大穴進入度'], stars(metrics['大穴進入度'])),
+          _buildMetricItem('波乱度', metrics['波乱度'], stars(metrics['波乱度']), widget.raceMetricNotes?['波乱度']),
+          _buildMetricItem('下位進入度', metrics['下位進入度'], stars(metrics['下位進入度']), widget.raceMetricNotes?['下位進入度']),
+          _buildMetricItem('大穴進入度', metrics['大穴進入度'], stars(metrics['大穴進入度']), widget.raceMetricNotes?['大穴進入度']),
         ],
       ),
     );
   }
 
-  /// レース指標1項目ぶん（見出し・数値・星）を表示する。
-  Widget _buildMetricItem(String label, int? value, String stars) {
+  /// レース指標1項目ぶん（見出し・数値・星・算出元の言葉）を表示する。
+  Widget _buildMetricItem(String label, int? value, String stars, String? note) {
     return Column(
       children: <Widget>[
         Text(label, style: const TextStyle(fontSize: 9, color: Colors.white70)),
@@ -395,6 +399,8 @@ class _AiAnalysisDisplayAlertState extends ConsumerState<AiAnalysisDisplayAlert>
         // 数字が無い項目は「未算出」
         // 0 は「対象外」（その人気帯の馬がいない）
         Text(value == null ? '未算出' : (value == 0 ? '対象外' : value.toString()), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+        // 何から算出したか（「暫定」「E5」「参考・複勝オッズ」「時系列不足」など）。添える言葉があるときだけ出す
+        if (note != null) Text('（$note）', style: const TextStyle(fontSize: 8, color: Colors.white70)),
       ],
     );
   }
