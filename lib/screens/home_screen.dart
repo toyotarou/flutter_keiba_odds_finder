@@ -4,7 +4,7 @@
 //                左のメニューから各画面を開く。WebSocket でオッズ更新を受け取り、該当レースだけ取り直す。
 // 作成者       : Hideyuki Toyoda
 // 作成日       : 2026-05-30
-// 最終更新日   : 2026-11-24
+// 最終更新日   : 2026-11-25
 // =============================================================================
 
 import 'dart:async';
@@ -33,6 +33,7 @@ import '../services/odds_websocket_service.dart';
 import 'components/admin_menu_alert.dart';
 import 'components/horse_odds_ranking_display_alert.dart';
 import 'components/past_race_odds_transition_alert.dart';
+import 'components/specified_commercial_transactions_alert.dart';
 import 'components/terms_alert.dart';
 import 'components/weekend_race_calendar_alert.dart';
 import 'page/race_content_page.dart';
@@ -995,6 +996,26 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with ControllersMixin<H
                       Image.asset('assets/images/jockey.png', width: 35),
                       const SizedBox(width: 20),
                       const Text('過去レースのオッズ遷移表', style: TextStyle(fontSize: 12)),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: GestureDetector(
+                onTap: () => OddsFinderDialog(context: context, widget: const SpecifiedCommercialTransactionsAlert()),
+                child: Container(
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    border: Border(bottom: BorderSide(color: Colors.white.withValues(alpha: 0.5))),
+                  ),
+                  child: const Row(
+                    children: <Widget>[
+                      SizedBox(width: 35, child: Icon(Icons.description_outlined, size: 30, color: Colors.white70)),
+                      SizedBox(width: 20),
+                      Text('特定商取引法にもとづく表記', style: TextStyle(fontSize: 12)),
                     ],
                   ),
                 ),
