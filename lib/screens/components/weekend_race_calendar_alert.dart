@@ -4,7 +4,7 @@
 //                タップしたレースを選択する。
 // 作成者       : Hideyuki Toyoda
 // 作成日       : 2026-07-19
-// 最終更新日   : 2026-11-17
+// 最終更新日   : 2026-11-28
 // =============================================================================
 
 import 'package:flutter/material.dart';
@@ -53,6 +53,13 @@ class _WeekendRaceCalendarAlertState extends ConsumerState<WeekendRaceCalendarAl
       vsync: this,
       initialIndex: initialIndex,
     );
+
+    // タブを切り替えたら、日付の楕円の色（選択中は緑）を描き直す。
+    _tabController.addListener(() {
+      if (mounted) {
+        setState(() {});
+      }
+    });
   }
 
   /// タブの制御を破棄する。
@@ -75,16 +82,24 @@ class _WeekendRaceCalendarAlertState extends ConsumerState<WeekendRaceCalendarAl
               const SizedBox(height: 8),
               TabBar(
                 controller: _tabController,
-                tabs: _tabDates
-                    .map(
-                      (String date) => Tab(
-                        child: FittedBox(
-                          fit: BoxFit.scaleDown,
-                          child: Text(date, maxLines: 1, softWrap: false, overflow: TextOverflow.visible),
-                        ),
+                tabs: _tabDates.asMap().entries.map((MapEntry<int, String> entry) {
+                  final bool isDateSelected = entry.key == _tabController.index;
+                  return Tab(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: isDateSelected
+                            ? Colors.green[800]!.withValues(alpha: 0.4)
+                            : Colors.black.withValues(alpha: 0.5),
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                    )
-                    .toList(),
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(entry.value, maxLines: 1, softWrap: false, overflow: TextOverflow.visible),
+                      ),
+                    ),
+                  );
+                }).toList(),
                 labelColor: Colors.white,
                 unselectedLabelColor: Colors.white54,
                 indicatorColor: Colors.greenAccent,
